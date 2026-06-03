@@ -338,4 +338,283 @@ Data bahan baku yang dihasilkan dari proses daur ulang sampah.
 
 ---
 
+
+## 11. Panduan UI & Design System
+
+### 11.1. Prinsip Desain
+
+- **Tema:** Light mode, bersih, dan profesional dengan aksen warna hijau — mencerminkan nilai keberlanjutan lingkungan.
+- **Nuansa:** Fresh, terpercaya, dan mudah dibaca. Hindari warna gelap dominan.
+- **Font:** Inter atau Geist (default Next.js/ShadcnUI) — sans-serif, mudah dibaca di semua ukuran layar.
+- **Border radius:** Rounded medium (`rounded-lg` / `8px`) — modern namun tidak terlalu playful.
+- **Spacing:** Konsisten 4px base unit (Tailwind default).
+- **Icon:** Lucide React (sudah bundled di ShadcnUI).
+
+---
+
+### 11.2. Palet Warna
+
+> Semua warna di bawah didefinisikan sebagai design token di `globals.css` menggunakan blok `@theme` (Tailwind CSS v4 — tidak ada `tailwind.config.ts`).
+
+#### 🎨 Primary — Green (Brand Utama)
+
+| Nama Token | Hex | Tailwind Class | Kegunaan |
+|---|---|---|---|
+| `primary-950` | `#052e16` | `green-950` | Teks heading gelap, kontras tinggi |
+| `primary-900` | `#14532d` | `green-900` | Sidebar background aktif |
+| `primary-800` | `#166534` | `green-800` | Hover state tombol utama |
+| `primary-700` | `#15803d` | `green-700` | Tombol primer (CTA) |
+| `primary-600` | `#16a34a` | `green-600` | Link aktif, icon aktif |
+| `primary-500` | `#22c55e` | `green-500` | Badge sukses, aksen |
+| `primary-400` | `#4ade80` | `green-400` | Progress bar, indikator |
+| `primary-300` | `#86efac` | `green-300` | Border highlight |
+| `primary-200` | `#bbf7d0` | `green-200` | Background card ringan |
+| `primary-100` | `#dcfce7` | `green-100` | Background section / hover row |
+| `primary-50`  | `#f0fdf4` | `green-50`  | Background halaman utama |
+
+#### 🌿 Secondary — Emerald (Aksen Pendukung)
+
+| Nama Token | Hex | Tailwind Class | Kegunaan |
+|---|---|---|---|
+| `secondary-700` | `#047857` | `emerald-700` | Tombol sekunder hover |
+| `secondary-600` | `#059669` | `emerald-600` | Tombol sekunder |
+| `secondary-500` | `#10b981` | `emerald-500` | Chip / tag aktif |
+| `secondary-100` | `#d1fae5` | `emerald-100` | Background chip/tag |
+| `secondary-50`  | `#ecfdf5` | `emerald-50`  | Background alternatif |
+
+#### ⚪ Neutral — Slate (Teks & Background)
+
+| Nama Token | Hex | Tailwind Class | Kegunaan |
+|---|---|---|---|
+| `neutral-900` | `#0f172a` | `slate-900` | Teks utama / heading |
+| `neutral-700` | `#334155` | `slate-700` | Teks body / paragraf |
+| `neutral-500` | `#64748b` | `slate-500` | Teks placeholder, label ringan |
+| `neutral-300` | `#cbd5e1` | `slate-300` | Border default |
+| `neutral-200` | `#e2e8f0` | `slate-200` | Border ringan, divider |
+| `neutral-100` | `#f1f5f9` | `slate-100` | Background card, tabel row alt |
+| `neutral-50`  | `#f8fafc` | `slate-50`  | Background halaman |
+| `white`       | `#ffffff` | `white`     | Background card utama |
+
+#### 🚦 Semantic — Status
+
+| Nama Token | Hex | Kegunaan |
+|---|---|---|
+| `success` | `#16a34a` | Status berhasil, setoran diterima |
+| `warning` | `#d97706` | Menunggu verifikasi, pending |
+| `danger`  | `#dc2626` | Error, ditolak, nonaktif |
+| `info`    | `#2563eb` | Informasi umum, notifikasi |
+
+---
+
+### 11.3. Konfigurasi — `src/app/globals.css`
+
+> **Tailwind CSS v4** tidak lagi menggunakan `tailwind.config.ts`. Semua konfigurasi tema, custom color, font, dan radius didefinisikan langsung di `globals.css` menggunakan direktif `@import "tailwindcss"` dan blok `@theme`.
+
+```css
+/* src/app/globals.css */
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────
+   @theme — Konfigurasi design token global
+   Menggantikan tailwind.config.ts sepenuhnya
+   ───────────────────────────────────────── */
+@theme {
+
+  /* === FONT === */
+  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui;
+
+  /* === BORDER RADIUS === */
+  --radius:    8px;
+
+  /* === PRIMARY — Green (Brand Utama) === */
+  --color-primary-50:  #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a; /* DEFAULT — tombol, link aktif */
+  --color-primary-700: #15803d; /* hover tombol */
+  --color-primary-800: #166534; /* hover sidebar item */
+  --color-primary-900: #14532d; /* sidebar background */
+  --color-primary-950: #052e16; /* sidebar header / teks kontras */
+
+  /* === SECONDARY — Emerald (Aksen Pendukung) === */
+  --color-secondary-50:  #ecfdf5;
+  --color-secondary-100: #d1fae5;
+  --color-secondary-500: #10b981;
+  --color-secondary-600: #059669; /* DEFAULT tombol sekunder */
+  --color-secondary-700: #047857; /* hover tombol sekunder */
+
+  /* === NEUTRAL — Slate (Teks & Background) === */
+  --color-neutral-50:  #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-500: #64748b;
+  --color-neutral-700: #334155;
+  --color-neutral-900: #0f172a;
+
+  /* === STATUS / SEMANTIC === */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger:  #dc2626;
+  --color-info:    #2563eb;
+
+  /* === BACKGROUND & FOREGROUND (ShadcnUI compatible) === */
+  --color-background:       #f0fdf4; /* primary-50 — halaman utama */
+  --color-background-card:  #ffffff;
+  --color-background-muted: #f1f5f9; /* neutral-100 */
+  --color-foreground:       #0f172a; /* neutral-900 */
+  --color-foreground-muted: #64748b; /* neutral-500 */
+
+  /* === BORDER === */
+  --color-border:       #e2e8f0; /* neutral-200 */
+  --color-border-focus: #16a34a; /* primary-600 */
+
+  /* === SIDEBAR === */
+  --color-sidebar-bg:     #14532d; /* primary-900 */
+  --color-sidebar-text:   #dcfce7; /* primary-100 */
+  --color-sidebar-active: #16a34a; /* primary-600 */
+  --color-sidebar-hover:  #166534; /* primary-800 */
+}
+
+/* ─────────────────────────────────────────
+   Base styles
+   ───────────────────────────────────────── */
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+}
+```
+
+---
+
+### 11.4. Panduan Komponen UI
+
+#### Tombol (Button)
+
+```
+Primer   → bg #16a34a (green-600), teks putih, hover #15803d (green-700)
+Sekunder → bg #ecfdf5 (emerald-50), teks #059669 (emerald-600), border #059669, hover bg #d1fae5
+Outline  → bg transparan, border #16a34a, teks #16a34a, hover bg #f0fdf4
+Danger   → bg #dc2626, teks putih, hover #b91c1c
+```
+
+#### Card
+
+```
+Background  : #ffffff (white)
+Border      : 1px solid #e2e8f0 (slate-200)
+Border Radius: 8px (rounded-lg)
+Shadow      : shadow-sm (0 1px 2px rgba(0,0,0,0.05))
+Padding     : 24px (p-6)
+```
+
+#### Sidebar / Navigasi
+
+```
+Background        : #14532d (green-900)
+Teks default      : #dcfce7 (green-100)
+Item aktif bg     : #16a34a (green-600)
+Item aktif teks   : #ffffff
+Item hover bg     : #166534 (green-800)
+Logo / header area: #052e16 (green-950)
+```
+
+#### Tabel Data
+
+```
+Header row bg   : #dcfce7 (green-100)
+Header teks     : #15803d (green-700), font-medium
+Row ganjil bg   : #ffffff (white)
+Row genap bg    : #f0fdf4 (green-50)
+Row hover bg    : #dcfce7 (green-100)
+Border          : #e2e8f0 (slate-200)
+```
+
+#### Badge / Status
+
+```
+Aktif / Sukses   → bg #dcfce7 (green-100), teks #15803d (green-700)
+Pending          → bg #fef3c7 (amber-100), teks #b45309 (amber-700)
+Ditolak / Error  → bg #fee2e2 (red-100),  teks #b91c1c (red-700)
+Info             → bg #dbeafe (blue-100),  teks #1d4ed8 (blue-700)
+```
+
+#### Input / Form
+
+```
+Border default  : #e2e8f0 (slate-200)
+Border focus    : #16a34a (green-600), ring-2 ring-green-600/20
+Background      : #ffffff
+Placeholder     : #94a3b8 (slate-400)
+Label           : #334155 (slate-700), text-sm font-medium
+Error border    : #dc2626 (red-600)
+```
+
+---
+
+### 11.5. Layout Halaman
+
+#### Dashboard Admin
+
+```
+┌─────────────────────────────────────────────────┐
+│  SIDEBAR (#14532d)   │  MAIN CONTENT (#f0fdf4)  │
+│  w-64 fixed          │  flex-1, overflow-y-auto  │
+│                      │                           │
+│  Logo + Nama App     │  Topbar (bg white, shadow)│
+│  ─────────────────   │  ─────────────────────── │
+│  Menu navigasi       │  Halaman konten           │
+│  (icon + label)      │  (grid cards, tabel, dll) │
+│                      │                           │
+└─────────────────────────────────────────────────┘
+```
+
+#### Halaman Role Konsumen / Warmiendo / Bank Sampah
+
+```
+┌─────────────────────────────────────────────────┐
+│  TOPBAR (bg #14532d, sticky)                    │
+│  Logo | Nama Pengguna | Notifikasi | Logout      │
+├─────────────────────────────────────────────────┤
+│  BOTTOM NAVIGATION (mobile) / SIDEBAR (desktop) │
+├─────────────────────────────────────────────────┤
+│  KONTEN UTAMA (#f0fdf4)                         │
+│  Ringkasan → Card statistik (grid 2-4 kolom)    │
+│  Tabel histori / Form setor                     │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+### 11.6. Ringkasan Warna Utama (Quick Reference)
+
+```
+Background halaman    → #f0fdf4
+Background card       → #ffffff
+Teks utama            → #0f172a
+Teks ringan           → #64748b
+Tombol primer         → #16a34a
+Tombol primer hover   → #15803d
+Sidebar               → #14532d
+Sidebar aktif         → #16a34a
+Border                → #e2e8f0
+Aksen hijau muda      → #dcfce7
+Status sukses         → #16a34a
+Status warning        → #d97706
+Status error          → #dc2626
+Status info           → #2563eb
+```
+
+---
+
 *Akhir Dokumen PRD SICUAN v1.0 — PT. Indofood CBP Sukses Makmur Tbk*
