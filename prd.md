@@ -311,7 +311,7 @@ Data bahan baku yang dihasilkan dari proses daur ulang sampah.
 
 | Layer | Teknologi |
 |---|---|
-| **Frontend** | Next.js + ShadcnUI + Tailwind CSS + Motion React|
+| **Frontend** | Next.js + Tailwind CSS + Motion React|
 | **Backend / ORM** | Drizzle ORM |
 | **Database** | Neon Database (PostgreSQL serverless) |
 | **Autentikasi** | JWT (JSON Web Token) + argon2 |
