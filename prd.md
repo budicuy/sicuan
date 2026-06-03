@@ -311,12 +311,12 @@ Data bahan baku yang dihasilkan dari proses daur ulang sampah.
 
 | Layer | Teknologi |
 |---|---|
-| **Frontend** | Next.js + ShadcnUI + Tailwind CSS |
+| **Frontend** | Next.js + ShadcnUI + Tailwind CSS + Frammer Motion|
 | **Backend / ORM** | Drizzle ORM |
 | **Database** | Neon Database (PostgreSQL serverless) |
-| **Autentikasi** | JWT (JSON Web Token) + bcrypt |
+| **Autentikasi** | JWT (JSON Web Token) + argon2 |
 | **File Storage** | Cloudflare R2 (untuk bukti foto setoran ekspedisi) |
-| **Ekspor Laporan** | PDFKit / ExcelJS (berjalan di Next.js API Routes) |
+| **Ekspor Laporan** | PDFKit / ExcelJS (berjalan di Next.js Server Action) |
 | **Deployment** | Vercel |
 
 ---
