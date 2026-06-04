@@ -1,0 +1,130 @@
+"use client";
+
+import { Menu, Recycle, X } from "lucide-react";
+
+interface NavbarProps {
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+}
+
+const NAV_LINKS = [
+  { href: "#fitur", label: "Fitur Utama" },
+  { href: "#mitra", label: "Skema Kemitraan" },
+  { href: "#kalkulator", label: "Kalkulator Reward" },
+  { href: "#alur", label: "Alur Setoran" },
+  { href: "#faq", label: "FAQ" },
+];
+
+export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
+  const scrollTo = (id: string) => {
+    setMobileMenuOpen(false);
+    document
+      .getElementById(id.replace("#", ""))
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  return (
+    <header className="relative z-50 w-full border-b border-neutral-200/50 glassmorphism transition-all duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-md shadow-primary-600/30">
+            <Recycle className="w-6 h-6 animate-spin-slow" />
+          </div>
+          <div>
+            <span className="text-xl font-bold tracking-tight text-primary-950 flex items-center gap-1.5">
+              SICUAN
+              <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-medium border border-primary-200">
+                Official
+              </span>
+            </span>
+            <p className="text-[9px] text-neutral-500 font-medium tracking-wider uppercase leading-none mt-0.5">
+              Daur Ulang Sampah Jadi Nilai Ekonomi
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-neutral-700">
+          {NAV_LINKS.map(({ href, label }) => (
+            <a
+              key={href}
+              href={href}
+              className="relative py-2 hover:text-primary-600 transition-colors group"
+            >
+              {label}
+              <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center" />
+            </a>
+          ))}
+        </nav>
+
+        {/* Desktop CTAs */}
+        <div className="hidden md:flex items-center gap-4">
+          <a
+            id="nav-login-btn"
+            href="#login"
+            className="text-sm font-semibold text-primary-700 hover:text-primary-800 px-4 py-2 transition-colors rounded-lg hover:bg-primary-100/50"
+          >
+            Masuk
+          </a>
+          <a
+            id="nav-register-btn"
+            href="#login"
+            className="text-sm font-semibold bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg shadow-sm shadow-primary-600/10 hover:shadow-primary-600/20 transition-all duration-200"
+          >
+            Mulai Setor
+          </a>
+        </div>
+
+        {/* Mobile Menu Toggle */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 focus:outline-none"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-b border-neutral-200 bg-white px-4 py-6 space-y-4 animate-fade-in">
+          <nav className="flex flex-col gap-4 font-medium text-neutral-700 items-start">
+            {NAV_LINKS.map(({ href, label }) => (
+              <button
+                type="button"
+                key={href}
+                onClick={() => scrollTo(href)}
+                className="hover:text-primary-600 py-1 transition-colors text-left w-full cursor-pointer"
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <div className="h-px bg-neutral-200 w-full my-4" />
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => scrollTo("#login")}
+              className="w-full text-center py-2.5 rounded-lg border border-neutral-200 font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
+            >
+              Masuk
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollTo("#login")}
+              className="w-full text-center py-2.5 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-sm transition-colors cursor-pointer"
+            >
+              Mulai Setor
+            </button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
