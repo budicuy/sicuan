@@ -44,9 +44,9 @@ export async function readWeightFromImage(
   }
 
   const models = [
-    process.env.MODEL_1 || "gemini-2.0-flash",
-    process.env.MODEL_2 || "gemini-1.5-flash",
-    process.env.MODEL_3 || "gemini-1.5-pro",
+    process.env.MODEL_1 || "",
+    process.env.MODEL_2 || "",
+    process.env.MODEL_3 || "",
   ].filter(Boolean);
 
   const genAI = new GoogleGenerativeAI(apiKey);

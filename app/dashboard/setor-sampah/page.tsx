@@ -1,5 +1,6 @@
 "use client";
 
+import imageCompression from "browser-image-compression";
 import {
   AlertCircle,
   Camera,
@@ -224,6 +225,7 @@ export default function SetorSampahPage() {
   // Foto bukti tambahan
   const [fotoBuktiList, setFotoBuktiList] = useState<string[]>([]);
   const buktiInputRef = useRef<HTMLInputElement>(null);
+  const timbanganInputRef = useRef<HTMLInputElement>(null);
 
   // History state
   const [history, setHistory] = useState<SetorSampahItem[]>([]);
@@ -257,6 +259,35 @@ export default function SetorSampahPage() {
     loadHistory();
   }, [loadHistory]);
 
+  // ── Helper: utilitas kompresi gambar ──────────────────────────────────
+  const compressImage = async (
+    dataUrl: string,
+    maxSizeBytes: number,
+  ): Promise<string> => {
+    try {
+      // Ubah dataUrl ke Blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "image.jpg", { type: "image/jpeg" });
+
+      const options = {
+        maxSizeMB: maxSizeBytes / (1024 * 1024),
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(compressedFile);
+      });
+    } catch (err) {
+      console.error("Gagal kompres gambar:", err);
+      return dataUrl; // fallback dataUrl asli jika gagal
+    }
+  };
+
   // ── Handler: foto timbangan dari kamera ──────────────────────────────
 
   const handleCameraCapture = async (rawDataUrl: string) => {
@@ -267,7 +298,30 @@ export default function SetorSampahPage() {
 
     // Tambah watermark timestamp
     const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
-    setFotoTimbangan(withWatermark);
+    // Kompres ke target 200KB (200 * 1024 bytes)
+    const compressed = await compressImage(withWatermark, 200 * 1024);
+    setFotoTimbangan(compressed);
+  };
+
+  const handleTimbanganFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAiValidated(false);
+    setAiError("");
+    setBeratAiKg(null);
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const rawDataUrl = ev.target?.result as string;
+      const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
+      // Kompres ke target 200KB
+      const compressed = await compressImage(withWatermark, 200 * 1024);
+      setFotoTimbangan(compressed);
+    };
+    reader.readAsDataURL(file);
   };
 
   // ── Handler: validasi AI ──────────────────────────────────────────────
@@ -292,7 +346,6 @@ export default function SetorSampahPage() {
       setBeratAiKg(result.berat);
     } else {
       setAiError(result.message);
-      setFotoTimbangan(null); // paksa foto ulang
       setBeratAiKg(null);
     }
   };
@@ -308,10 +361,12 @@ export default function SetorSampahPage() {
 
     files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         const result = ev.target?.result as string;
+        // Kompres ke target 100KB (100 * 1024 bytes)
+        const compressed = await compressImage(result, 100 * 1024);
         setFotoBuktiList((prev) =>
-          prev.length < 3 ? [...prev, result] : prev,
+          prev.length < 3 ? [...prev, compressed] : prev,
         );
       };
       reader.readAsDataURL(file);
@@ -510,11 +565,14 @@ export default function SetorSampahPage() {
                   <input
                     id="tanggalSetor"
                     type="date"
+                    value={tanggalSetor}
+                    readOnly
+                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-500 cursor-not-allowed"
+                  />
+                  <input
+                    type="hidden"
                     name="tanggalSetor"
                     value={tanggalSetor}
-                    onChange={(e) => setTanggalSetor(e.target.value)}
-                    required
-                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
                   />
                 </div>
               </div>
@@ -597,19 +655,44 @@ export default function SetorSampahPage() {
                   </div>
                 ) : (
                   <div>
-                    <button
-                      type="button"
-                      onClick={() => setShowCamera(true)}
-                      className="w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-primary-300 bg-primary-50/50 hover:bg-primary-50 hover:border-primary-400 text-primary-600 transition-all cursor-pointer"
-                    >
-                      <Camera className="w-8 h-8" />
-                      <span className="font-semibold text-sm">
-                        Ambil Foto Timbangan
-                      </span>
-                      <span className="text-xs text-primary-500">
-                        Kamera kanan belakang akan digunakan
-                      </span>
-                    </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowCamera(true)}
+                        className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-primary-300 bg-primary-50/50 hover:bg-primary-50 hover:border-primary-400 text-primary-600 transition-all cursor-pointer"
+                      >
+                        <Camera className="w-8 h-8" />
+                        <span className="font-semibold text-sm">
+                          Ambil Foto Timbangan
+                        </span>
+                        <span className="text-xs text-primary-500">
+                          Menggunakan Kamera
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => timbanganInputRef.current?.click()}
+                        className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-600 transition-all cursor-pointer"
+                      >
+                        <Upload className="w-8 h-8" />
+                        <span className="font-semibold text-sm">
+                          Upload Foto Timbangan
+                        </span>
+                        <span className="text-xs text-neutral-500">
+                          Pilih dari Galeri/File
+                        </span>
+                      </button>
+                    </div>
+
+                    <input
+                      ref={timbanganInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleTimbanganFileChange}
+                    />
+
                     {formErrors.fotoTimbangan && (
                       <p className="text-red-500 text-xs mt-1">
                         {formErrors.fotoTimbangan[0]}

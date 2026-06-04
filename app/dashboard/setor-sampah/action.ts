@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -55,24 +55,14 @@ function formatTanggalIndo(date: Date): string {
 async function getHargaAktif(
   jenis: string,
 ): Promise<{ hargaPerKg: number; pointPerKg: number } | null> {
-  const now = new Date();
-  // Cari harga dengan periode bulan ini (hari pertama bulan)
-  const periodeAwal = new Date(now.getFullYear(), now.getMonth(), 1)
-    .toISOString()
-    .split("T")[0]; // YYYY-MM-01
-
   const result = await db
     .select({
       hargaPerKg: hargaSampah.hargaPerKg,
       pointPerKg: hargaSampah.pointPerKg,
     })
     .from(hargaSampah)
-    .where(
-      and(
-        eq(hargaSampah.jenisSampah, jenis),
-        eq(hargaSampah.periode, periodeAwal),
-      ),
-    )
+    .where(eq(hargaSampah.jenisSampah, jenis))
+    .orderBy(desc(hargaSampah.periode))
     .limit(1);
 
   return result[0] ?? null;
@@ -118,17 +108,27 @@ export async function validateFotoTimbangan(
   berat: number;
   message: string;
 }> {
-  const aiResult = await readWeightFromImage(imageBase64);
+  let aiResult: { success: boolean; berat: number; message: string };
+  try {
+    aiResult = await readWeightFromImage(imageBase64);
+  } catch (e) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    return {
+      success: false,
+      berat: 0,
+      message: `Gagal memproses gambar timbangan: ${errorMsg}`,
+    };
+  }
 
   if (!aiResult.success) {
     return {
       success: false,
       berat: 0,
-      message: aiResult.message,
+      message: `${aiResult.message} (Detail: Pastikan API Key GEMINI_API_KEY sudah diset dengan benar di env dan gambar tidak terlalu besar)`,
     };
   }
 
-  const isValid = validateBeratTolerance(beratInputKg, aiResult.berat);
+  const isValid = await validateBeratTolerance(beratInputKg, aiResult.berat);
 
   if (!isValid) {
     return {
