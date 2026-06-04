@@ -53,7 +53,7 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
               className="relative py-2 hover:text-primary-600 transition-colors group"
             >
               {label}
-              <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center" />
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center" />
             </a>
           ))}
         </nav>

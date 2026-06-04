@@ -71,8 +71,8 @@ export default function Home() {
       {!showSplash && (
         <div className="flex flex-col min-h-dvh bg-primary-50 text-neutral-900 font-sans selection:bg-primary-200 selection:text-primary-900 overflow-x-hidden bg-grid-pattern">
           {/* Background decorations */}
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary-200/30 rounded-full blur-3xl pointer-events-none -z-10" />
-          <div className="absolute top-[800px] right-10 w-[600px] h-[600px] bg-secondary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute top-0 left-1/4 w-125 h-125 bg-primary-200/30 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="absolute top-200 right-10 w-150 h-150 bg-secondary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
           <Navbar
             mobileMenuOpen={mobileMenuOpen}

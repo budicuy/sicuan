@@ -7,7 +7,7 @@ export function SplashScreen() {
   return (
     <motion.div
       key="splash"
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-primary-950 text-white select-none"
+      className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-primary-950 text-white select-none"
       exit={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
       transition={{ duration: 0.6, ease: [0.43, 0.13, 0.23, 0.96] }}
     >
