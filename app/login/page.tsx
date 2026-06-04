@@ -3,7 +3,6 @@
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
   Eye,
   EyeOff,
   Leaf,
@@ -14,25 +13,26 @@ import {
   TrendingUp,
   User,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { loginAction } from "./action";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const router = useRouter();
 
   // Use React 19 useActionState to bind the server action
   const [state, formAction, isPending] = useActionState(loginAction, null);
 
-  // Trigger success screen when server action returns success
+  // Redirect directly to dashboard when server action returns success
   useEffect(() => {
     if (state?.success) {
-      setLoginSuccess(true);
+      router.push("/dashboard");
     }
-  }, [state]);
+  }, [state, router]);
 
   return (
     <div className="min-h-screen flex bg-neutral-50 text-neutral-900 selection:bg-primary-200 overflow-hidden font-sans">
@@ -138,236 +138,182 @@ export default function LoginPage() {
 
         {/* Login Container */}
         <div className="my-auto max-w-md w-full mx-auto py-8 space-y-8">
-          {/* Success screen overlay */}
-          <AnimatePresence mode="wait">
-            {loginSuccess ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="text-center py-8 space-y-6"
-              >
-                <div className="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                  <CheckCircle2 className="w-10 h-10" />
-                </div>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
-                    Autentikasi Berhasil!
-                  </h2>
-                  <p className="text-sm text-neutral-500 max-w-xs mx-auto">
-                    Selamat datang kembali,{" "}
-                    <span className="font-semibold text-primary-700">
-                      {state?.user?.name}
-                    </span>
-                    . Anda berhasil masuk sebagai{" "}
-                    <span className="font-bold capitalize">
-                      {state?.user?.role}
-                    </span>
-                    .
-                  </p>
-                </div>
+          <div className="space-y-6">
+            {/* Heading */}
+            <div className="space-y-2">
+              <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900">
+                Masuk ke Akun
+              </h2>
+              <p className="text-xs text-neutral-500">
+                Masukkan username dan kata sandi Anda untuk mengakses layanan.
+              </p>
+            </div>
 
-                {/* Simulated Dashboard Loading */}
-                <div className="p-4 rounded-xl bg-primary-50 border border-primary-100 flex items-center gap-3 text-left">
-                  <div className="w-2 h-2 rounded-full bg-primary-600 animate-ping" />
-                  <span className="text-xs font-medium text-primary-800">
-                    Mengarahkan Anda ke panel dashboard pribadi...
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setLoginSuccess(false)}
-                  className="text-xs font-bold text-neutral-400 hover:text-neutral-600 transition-colors block mx-auto underline cursor-pointer text-center bg-transparent border-0"
+            {/* Form */}
+            <form action={formAction} className="space-y-5">
+              {/* Server Validation Alert */}
+              {state?.error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2.5"
                 >
-                  Keluar dari Simulasi
-                </button>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-6"
-              >
-                {/* Heading */}
-                <div className="space-y-2">
-                  <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900">
-                    Masuk ke Akun
-                  </h2>
-                  <p className="text-xs text-neutral-500">
-                    Masukkan username dan kata sandi Anda untuk mengakses
-                    layanan.
-                  </p>
+                  <ShieldAlert className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block">Gagal Masuk</span>
+                    {state.error}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Info helper showing credentials */}
+              <div className="p-3 bg-neutral-100 rounded-xl border border-neutral-200/50 text-[10px] text-neutral-600 space-y-1">
+                <span className="font-bold block text-neutral-700 text-xs mb-1">
+                  Akun Demo untuk Uji Coba:
+                </span>
+                <div>
+                  •{" "}
+                  <span className="font-medium text-neutral-700">
+                    superadmin.sicuan
+                  </span>{" "}
+                  (Pass:{" "}
+                  <span className="font-medium text-neutral-700">
+                    PasswordSuper123
+                  </span>
+                  )
                 </div>
+                <div>
+                  •{" "}
+                  <span className="font-medium text-neutral-700">
+                    admin.banjarmasin
+                  </span>{" "}
+                  (Pass:{" "}
+                  <span className="font-medium text-neutral-700">
+                    PasswordAdmin456
+                  </span>
+                  )
+                </div>
+                <div>
+                  •{" "}
+                  <span className="font-medium text-neutral-700">
+                    budi.santoso
+                  </span>{" "}
+                  (Pass:{" "}
+                  <span className="font-medium text-neutral-700">
+                    BudiSetorSampah88
+                  </span>
+                  )
+                </div>
+              </div>
 
-                {/* Form */}
-                <form action={formAction} className="space-y-5">
-                  {/* Server Validation Alert */}
-                  {state?.error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2.5"
-                    >
-                      <ShieldAlert className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold block">Gagal Masuk</span>
-                        {state.error}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Info helper showing credentials */}
-                  <div className="p-3 bg-neutral-100 rounded-xl border border-neutral-200/50 text-[10px] text-neutral-600 space-y-1">
-                    <span className="font-bold block text-neutral-700 text-xs mb-1">
-                      Akun Demo untuk Uji Coba:
-                    </span>
-                    <div>
-                      •{" "}
-                      <span className="font-medium text-neutral-700">
-                        superadmin.sicuan
-                      </span>{" "}
-                      (Pass:{" "}
-                      <span className="font-medium text-neutral-700">
-                        PasswordSuper123
-                      </span>
-                      )
-                    </div>
-                    <div>
-                      •{" "}
-                      <span className="font-medium text-neutral-700">
-                        admin.banjarmasin
-                      </span>{" "}
-                      (Pass:{" "}
-                      <span className="font-medium text-neutral-700">
-                        PasswordAdmin456
-                      </span>
-                      )
-                    </div>
-                    <div>
-                      •{" "}
-                      <span className="font-medium text-neutral-700">
-                        budi.santoso
-                      </span>{" "}
-                      (Pass:{" "}
-                      <span className="font-medium text-neutral-700">
-                        BudiSetorSampah88
-                      </span>
-                      )
-                    </div>
+              {/* Username Field */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="username"
+                  className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+                >
+                  Username / ID Pengguna
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+                    <User className="w-4.5 h-4.5" />
                   </div>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
+                    placeholder="Masukkan username Anda"
+                  />
+                </div>
+              </div>
 
-                  {/* Username Field */}
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="username"
-                      className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
-                    >
-                      Username / ID Pengguna
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                        <User className="w-4.5 h-4.5" />
-                      </div>
-                      <input
-                        id="username"
-                        name="username"
-                        type="text"
-                        required
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
-                        placeholder="Masukkan username Anda"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password Field */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <label
-                        htmlFor="password"
-                        className="text-xs font-bold text-neutral-700 uppercase tracking-wider"
-                      >
-                        Kata Sandi
-                      </label>
-                      <button
-                        type="button"
-                        onClick={(e) => e.preventDefault()}
-                        className="text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors cursor-pointer bg-transparent border-0 p-0"
-                      >
-                        Lupa Password?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                        <Lock className="w-4.5 h-4.5" />
-                      </div>
-                      <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        required
-                        className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
-                        placeholder="Masukkan kata sandi Anda"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                        title={
-                          showPassword
-                            ? "Sembunyikan password"
-                            : "Tampilkan password"
-                        }
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4.5 h-4.5" />
-                        ) : (
-                          <Eye className="w-4.5 h-4.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Keep logged in check */}
-                  <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 focus:ring-offset-0 accent-primary-600"
-                    />
-                    <label
-                      htmlFor="remember-me"
-                      className="ml-2 block text-xs text-neutral-600 select-none cursor-pointer"
-                    >
-                      Biarkan saya tetap masuk
-                    </label>
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full py-3.5 px-5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/10 hover:shadow-primary-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed group text-sm"
+              {/* Password Field */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label
+                    htmlFor="password"
+                    className="text-xs font-bold text-neutral-700 uppercase tracking-wider"
                   >
-                    {isPending ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Memverifikasi Akun...</span>
-                      </>
+                    Kata Sandi
+                  </label>
+                  <button
+                    type="button"
+                    onClick={(e) => e.preventDefault()}
+                    className="text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    Lupa Password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+                    <Lock className="w-4.5 h-4.5" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
+                    placeholder="Masukkan kata sandi Anda"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                    title={
+                      showPassword
+                        ? "Sembunyikan password"
+                        : "Tampilkan password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4.5 h-4.5" />
                     ) : (
-                      <>
-                        <span>Masuk ke Dashboard</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                      </>
+                      <Eye className="w-4.5 h-4.5" />
                     )}
                   </button>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Keep logged in check */}
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 focus:ring-offset-0 accent-primary-600"
+                />
+                <label
+                  htmlFor="remember-me"
+                  className="ml-2 block text-xs text-neutral-600 select-none cursor-pointer"
+                >
+                  Biarkan saya tetap masuk
+                </label>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full py-3.5 px-5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/10 hover:shadow-primary-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed group text-sm"
+              >
+                {isPending ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Memverifikasi Akun...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Masuk ke Dashboard</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* Bottom mobile disclaimer */}

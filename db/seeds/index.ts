@@ -1,3 +1,13 @@
+import { seedEkspedisi } from "./ekspedisi.seed";
+import { seedHargaSampah } from "./harga-sampah.seed";
+import { seedNasabah } from "./nasabah.seed";
+import { seedRawMaterial } from "./raw-material.seed";
 import { seedUsers } from "./users.seed";
 
-export const seeders = [seedUsers];
+export const seeders = [
+  seedUsers,
+  seedNasabah,
+  seedEkspedisi,
+  seedHargaSampah,
+  seedRawMaterial,
+];

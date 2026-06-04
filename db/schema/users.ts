@@ -1,4 +1,5 @@
 import { pgEnum, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const userRoleEnum = pgEnum("user_role", [
   "superadmin",
@@ -23,6 +24,9 @@ export const users = pgTable("users", {
     .defaultNow()
     .notNull(),
 });
+
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
