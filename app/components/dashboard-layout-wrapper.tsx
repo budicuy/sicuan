@@ -11,6 +11,7 @@ import {
   Menu,
   Recycle,
   Settings,
+  Star,
   User,
   X,
 } from "lucide-react";
@@ -46,6 +47,7 @@ export function DashboardLayoutWrapper({
     { href: "/dashboard/ekspedisi", label: "Data Ekspedisi", icon: FileText },
     { href: "/dashboard/harga-sampah", label: "Harga Sampah", icon: Settings },
     { href: "/dashboard/raw-material", label: "Raw Material", icon: Recycle },
+    { href: "/dashboard/kupon", label: "Master Kupon", icon: Star },
   ];
 
   const otherMenuItems = [
