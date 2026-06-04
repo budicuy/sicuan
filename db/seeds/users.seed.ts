@@ -99,6 +99,20 @@ export async function seedUsers() {
       role: "admin" as const,
       status: "Aktif",
     },
+    {
+      name: "Mitra Warmiendo Demo",
+      username: "warmiendo.demo",
+      password: defaultPasswordHash,
+      role: "warmiendo" as const,
+      status: "Aktif",
+    },
+    {
+      name: "Mitra Bank Sampah Demo",
+      username: "banksampah.demo",
+      password: defaultPasswordHash,
+      role: "bank-sampah" as const,
+      status: "Aktif",
+    },
   );
 
   // Generate 98 random users to reach 100 users total

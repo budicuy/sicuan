@@ -49,8 +49,9 @@ function ValidationContent() {
 
   const handleMarkAsUsed = () => {
     if (!data?.kuponData?.id) return;
+    const kuponId = data.kuponData.id;
     startTransition(async () => {
-      const res = await markKuponAsUsed(data.kuponData?.id);
+      const res = await markKuponAsUsed(kuponId);
       if (res.success) {
         // Refresh details
         const updated = await getKuponDetailForValidation(code);

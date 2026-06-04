@@ -16,12 +16,14 @@ import {
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { loginAction } from "./action";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter();
 
   // Use React 19 useActionState to bind the server action
@@ -33,6 +35,20 @@ export default function LoginPage() {
       router.push("/dashboard");
     }
   }, [state, router]);
+
+  const handleUseDemo = (demoUsername: string, demoPassword: string) => {
+    setUsername(demoUsername);
+    setPassword(demoPassword);
+
+    // Trigger submission directly with FormData
+    const formData = new FormData();
+    formData.append("username", demoUsername);
+    formData.append("password", demoPassword);
+
+    startTransition(() => {
+      formAction(formData);
+    });
+  };
 
   return (
     <div className="min-h-screen flex bg-neutral-50 text-neutral-900 selection:bg-primary-200 overflow-hidden font-sans">
@@ -167,42 +183,130 @@ export default function LoginPage() {
               )}
 
               {/* Info helper showing credentials */}
-              <div className="p-3 bg-neutral-100 rounded-xl border border-neutral-200/50 text-[10px] text-neutral-600 space-y-1">
+              <div className="p-3 bg-neutral-100 rounded-xl border border-neutral-200/50 text-[10px] text-neutral-600 space-y-1.5">
                 <span className="font-bold block text-neutral-700 text-xs mb-1">
                   Akun Demo untuk Uji Coba:
                 </span>
-                <div>
-                  •{" "}
-                  <span className="font-medium text-neutral-700">
-                    superadmin.sicuan
-                  </span>{" "}
-                  (Pass:{" "}
-                  <span className="font-medium text-neutral-700">
-                    PasswordSuper123
-                  </span>
-                  )
-                </div>
-                <div>
-                  •{" "}
-                  <span className="font-medium text-neutral-700">
-                    admin.banjarmasin
-                  </span>{" "}
-                  (Pass:{" "}
-                  <span className="font-medium text-neutral-700">
-                    PasswordAdmin456
-                  </span>
-                  )
-                </div>
-                <div>
-                  •{" "}
-                  <span className="font-medium text-neutral-700">
-                    budi.santoso
-                  </span>{" "}
-                  (Pass:{" "}
-                  <span className="font-medium text-neutral-700">
-                    BudiSetorSampah88
-                  </span>
-                  )
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>•</span>
+                      <span className="font-semibold text-neutral-800">
+                        superadmin.sicuan
+                      </span>
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 uppercase border border-red-200">
+                        Superadmin
+                      </span>
+                      <span className="text-neutral-500 font-mono text-[9px]">
+                        (Pass: PasswordSuper123)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleUseDemo("superadmin.sicuan", "PasswordSuper123")
+                      }
+                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
+                    >
+                      Gunakan ini
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>•</span>
+                      <span className="font-semibold text-neutral-800">
+                        admin.banjarmasin
+                      </span>
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 uppercase border border-blue-200">
+                        Admin
+                      </span>
+                      <span className="text-neutral-500 font-mono text-[9px]">
+                        (Pass: PasswordAdmin456)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleUseDemo("admin.banjarmasin", "PasswordAdmin456")
+                      }
+                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
+                    >
+                      Gunakan ini
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>•</span>
+                      <span className="font-semibold text-neutral-800">
+                        budi.santoso
+                      </span>
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase border border-emerald-200">
+                        Konsumen
+                      </span>
+                      <span className="text-neutral-500 font-mono text-[9px]">
+                        (Pass: BudiSetorSampah88)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleUseDemo("budi.santoso", "BudiSetorSampah88")
+                      }
+                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
+                    >
+                      Gunakan ini
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>•</span>
+                      <span className="font-semibold text-neutral-800">
+                        warmiendo.demo
+                      </span>
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase border border-amber-200">
+                        Warmiendo
+                      </span>
+                      <span className="text-neutral-500 font-mono text-[9px]">
+                        (Pass: Password123)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleUseDemo("warmiendo.demo", "Password123")
+                      }
+                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
+                    >
+                      Gunakan ini
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>•</span>
+                      <span className="font-semibold text-neutral-800">
+                        banksampah.demo
+                      </span>
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 uppercase border border-purple-200">
+                        Bank Sampah
+                      </span>
+                      <span className="text-neutral-500 font-mono text-[9px]">
+                        (Pass: Password123)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleUseDemo("banksampah.demo", "Password123")
+                      }
+                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
+                    >
+                      Gunakan ini
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -223,6 +327,8 @@ export default function LoginPage() {
                     name="username"
                     type="text"
                     required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
                     placeholder="Masukkan username Anda"
                   />
@@ -255,6 +361,8 @@ export default function LoginPage() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
                     placeholder="Masukkan kata sandi Anda"
                   />
