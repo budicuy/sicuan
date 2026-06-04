@@ -145,7 +145,12 @@ interface MiniCardData {
   value: string;
   trend?: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  colorClass: string;
+  cardBg: string;
+  cardBorder: string;
+  iconColor: string;
+  iconBg: string;
+  glowColor: string;
+  trendColor: string;
 }
 
 const MINI_CARDS: MiniCardData[] = [
@@ -157,7 +162,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "412.5 Kg",
     trend: "+12.4% bln ini",
     icon: UtensilsIcon,
-    colorClass: "from-green-500/10 to-emerald-500/5 border-green-500/20",
+    cardBg: "bg-gradient-to-br from-green-950/80 to-neutral-900/90",
+    cardBorder: "border-green-500/25 hover:border-green-500/50",
+    iconColor: "text-green-400",
+    iconBg: "bg-green-500/10 border-green-500/20",
+    glowColor: "from-green-500/20",
+    trendColor: "text-green-400",
   },
   {
     id: "budi",
@@ -167,7 +177,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "1.260 Poin",
     trend: "Gold Tier 🥇",
     icon: Award,
-    colorClass: "from-amber-500/10 to-yellow-500/5 border-amber-500/20",
+    cardBg: "bg-gradient-to-br from-amber-950/80 to-neutral-900/90",
+    cardBorder: "border-amber-500/25 hover:border-amber-500/50",
+    iconColor: "text-amber-400",
+    iconBg: "bg-amber-500/10 border-amber-500/20",
+    glowColor: "from-amber-500/20",
+    trendColor: "text-amber-400",
   },
   {
     id: "carbon",
@@ -177,7 +192,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "0.42 Ton CO2",
     trend: "Efisiensi 94%",
     icon: Leaf,
-    colorClass: "from-emerald-500/10 to-teal-500/5 border-emerald-500/20",
+    cardBg: "bg-gradient-to-br from-emerald-950/80 to-neutral-900/90",
+    cardBorder: "border-emerald-500/25 hover:border-emerald-500/50",
+    iconColor: "text-emerald-400",
+    iconBg: "bg-emerald-500/10 border-emerald-500/20",
+    glowColor: "from-emerald-500/20",
+    trendColor: "text-emerald-400",
   },
   {
     id: "truk",
@@ -187,7 +207,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "1.2 Ton Karton",
     trend: "Dalam Perjalanan",
     icon: Truck,
-    colorClass: "from-blue-500/10 to-indigo-500/5 border-blue-500/20",
+    cardBg: "bg-gradient-to-br from-blue-950/80 to-neutral-900/90",
+    cardBorder: "border-blue-500/25 hover:border-blue-500/50",
+    iconColor: "text-blue-400",
+    iconBg: "bg-blue-500/10 border-blue-500/20",
+    glowColor: "from-blue-500/20",
+    trendColor: "text-blue-400",
   },
   {
     id: "kedai",
@@ -197,7 +222,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "24.8 Kg",
     trend: "Terverifikasi",
     icon: CheckCircle,
-    colorClass: "from-green-500/10 to-teal-500/5 border-green-500/20",
+    cardBg: "bg-gradient-to-br from-teal-950/80 to-neutral-900/90",
+    cardBorder: "border-teal-500/25 hover:border-teal-500/50",
+    iconColor: "text-teal-400",
+    iconBg: "bg-teal-500/10 border-teal-500/20",
+    glowColor: "from-teal-500/20",
+    trendColor: "text-teal-400",
   },
   {
     id: "voucher",
@@ -207,7 +237,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "Voucher Belanja",
     trend: "Senilai Rp 75.000",
     icon: Gift,
-    colorClass: "from-rose-500/10 to-pink-500/5 border-rose-500/20",
+    cardBg: "bg-gradient-to-br from-rose-950/80 to-neutral-900/90",
+    cardBorder: "border-rose-500/25 hover:border-rose-500/50",
+    iconColor: "text-rose-400",
+    iconBg: "bg-rose-500/10 border-rose-500/20",
+    glowColor: "from-rose-500/20",
+    trendColor: "text-rose-400",
   },
   {
     id: "volume",
@@ -217,7 +252,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "12,450 Kg",
     trend: "+18.7% bln lalu",
     icon: TrendingUp,
-    colorClass: "from-emerald-500/10 to-green-500/5 border-emerald-500/20",
+    cardBg: "bg-gradient-to-br from-green-950/80 to-neutral-900/90",
+    cardBorder: "border-green-500/25 hover:border-green-500/50",
+    iconColor: "text-green-400",
+    iconBg: "bg-green-500/10 border-green-500/20",
+    glowColor: "from-green-500/20",
+    trendColor: "text-green-400",
   },
   {
     id: "retail",
@@ -227,7 +267,12 @@ const MINI_CARDS: MiniCardData[] = [
     value: "Mitra Baru",
     trend: "Aktif Setor",
     icon: User,
-    colorClass: "from-violet-500/10 to-fuchsia-500/5 border-violet-500/20",
+    cardBg: "bg-gradient-to-br from-violet-950/80 to-neutral-900/90",
+    cardBorder: "border-violet-500/25 hover:border-violet-500/50",
+    iconColor: "text-violet-400",
+    iconBg: "bg-violet-500/10 border-violet-500/20",
+    glowColor: "from-violet-500/20",
+    trendColor: "text-violet-400",
   },
   {
     id: "rewards",
@@ -237,21 +282,34 @@ const MINI_CARDS: MiniCardData[] = [
     value: "Rp 14.580.000",
     trend: "Ditransfer H+1",
     icon: Coins,
-    colorClass: "from-cyan-500/10 to-blue-500/5 border-cyan-500/20",
+    cardBg: "bg-gradient-to-br from-cyan-950/80 to-neutral-900/90",
+    cardBorder: "border-cyan-500/25 hover:border-cyan-500/50",
+    iconColor: "text-cyan-400",
+    iconBg: "bg-cyan-500/10 border-cyan-500/20",
+    glowColor: "from-cyan-500/20",
+    trendColor: "text-cyan-400",
   },
 ];
 
 function MiniCard({ card }: { card: MiniCardData }) {
   const IconComponent = card.icon;
   return (
-    <div className="bg-neutral-900/85 backdrop-blur-md border border-neutral-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg h-[140px] w-full text-white transition-all duration-300 hover:border-primary-500/40 hover:shadow-primary-500/10 group overflow-hidden relative">
+    <div
+      className={`${card.cardBg} backdrop-blur-md border ${card.cardBorder} rounded-2xl p-4 flex flex-col justify-between shadow-lg h-[140px] w-full text-white transition-all duration-300 hover:shadow-lg group overflow-hidden relative`}
+    >
       {/* Glow dot in background */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent blur-md rounded-full -z-10 group-hover:scale-125 transition-transform duration-500" />
+      <div
+        className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${card.glowColor} to-transparent blur-md rounded-full -z-10 group-hover:scale-125 transition-transform duration-500`}
+      />
 
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center border border-neutral-700/50">
-            <IconComponent className="w-4 h-4 text-primary-400 group-hover:scale-110 transition-transform duration-300" />
+          <div
+            className={`w-8 h-8 rounded-lg ${card.iconBg} flex items-center justify-center`}
+          >
+            <IconComponent
+              className={`w-4 h-4 ${card.iconColor} group-hover:scale-110 transition-transform duration-300`}
+            />
           </div>
           <div>
             <h5 className="text-[11px] font-bold text-neutral-100 truncate max-w-[125px] leading-tight">
@@ -275,7 +333,7 @@ function MiniCard({ card }: { card: MiniCardData }) {
         </p>
         {card.trend && (
           <div className="flex items-center gap-1 mt-1">
-            <span className="text-[9px] text-emerald-400 font-semibold">
+            <span className={`text-[9px] ${card.trendColor} font-semibold`}>
               {card.trend}
             </span>
           </div>
