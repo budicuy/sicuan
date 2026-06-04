@@ -59,7 +59,12 @@ export async function seedKupon() {
     const suffix = suffixList[i % suffixList.length];
     const nama = `${prefix} ${suffix} ${i}`;
     const deskripsi = deskripsiList[i % deskripsiList.length];
-    const poin = tier === "silver" ? 50 + i % 50 : tier === "gold" ? 150 + i % 150 : 300 + i % 300;
+    const poin =
+      tier === "silver"
+        ? 50 + (i % 50)
+        : tier === "gold"
+          ? 150 + (i % 150)
+          : 300 + (i % 300);
     const colorCode = warnaList[i % warnaList.length];
 
     data.push({

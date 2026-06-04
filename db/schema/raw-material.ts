@@ -4,7 +4,6 @@ import {
   pgEnum,
   pgTable,
   serial,
-  text,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";

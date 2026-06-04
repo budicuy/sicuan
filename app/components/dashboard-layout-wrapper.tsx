@@ -11,6 +11,7 @@ import {
   Menu,
   Recycle,
   Settings,
+  ShoppingBag,
   Star,
   User,
   X,
@@ -51,7 +52,11 @@ export function DashboardLayoutWrapper({
   ];
 
   const otherMenuItems = [
-    { href: "#setoran", label: "Kelola Setoran", icon: Coins },
+    {
+      href: "/dashboard/setor-sampah",
+      label: "Setor Sampah",
+      icon: ShoppingBag,
+    },
     { href: "#laporan", label: "Laporan Aktivitas", icon: FileText },
     { href: "#profil", label: "Profil Saya", icon: User },
     { href: "#pengaturan", label: "Pengaturan", icon: Settings },
