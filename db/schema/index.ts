@@ -2,6 +2,7 @@ export * from "./ekspedisi";
 export * from "./harga-sampah";
 export * from "./kupon";
 export * from "./nasabah";
+export * from "./penukaran-kupon";
 export * from "./raw-material";
 export * from "./relations";
 export * from "./setor-sampah";

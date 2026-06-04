@@ -84,7 +84,6 @@ export async function createKupon(
   const deskripsi = formData.get("deskripsi") as string;
   const poinRaw = formData.get("poin") as string;
   const tier = formData.get("tier") as string;
-  const colorCode = formData.get("colorCode") as string;
 
   const poin = poinRaw ? Number.parseFloat(poinRaw) : 0;
 
@@ -93,7 +92,6 @@ export async function createKupon(
     deskripsi,
     poin,
     tier,
-    colorCode,
   });
 
   if (!parsed.success) {
@@ -120,7 +118,6 @@ export async function updateKupon(
   const deskripsi = formData.get("deskripsi") as string;
   const poinRaw = formData.get("poin") as string;
   const tier = formData.get("tier") as string;
-  const colorCode = formData.get("colorCode") as string;
 
   const poin = poinRaw ? Number.parseFloat(poinRaw) : 0;
 
@@ -129,7 +126,6 @@ export async function updateKupon(
     deskripsi,
     poin,
     tier,
-    colorCode,
   });
 
   if (!parsed.success) {

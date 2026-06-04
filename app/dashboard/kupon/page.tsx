@@ -23,7 +23,6 @@ interface Kupon {
   deskripsi: string;
   poin: number;
   tier: "silver" | "gold" | "diamond";
-  colorCode: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -230,21 +229,6 @@ export default function KuponPage() {
         </span>
       ),
     },
-    {
-      header: "Warna",
-      sortKey: "colorCode",
-      render: (item) => (
-        <span className="inline-flex items-center gap-2">
-          <span
-            className="w-4 h-4 rounded-full border border-neutral-200"
-            style={{ backgroundColor: item.colorCode }}
-          />
-          <span className="text-neutral-700 font-mono text-xs">
-            {item.colorCode}
-          </span>
-        </span>
-      ),
-    },
   ];
 
   const filters: TableFilter<Kupon>[] = [
@@ -402,39 +386,6 @@ export default function KuponPage() {
               <p className="text-red-600 text-xs mt-1">{formErrors.poin[0]}</p>
             )}
           </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="colorCode-input"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Warna
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              id="colorCode-input"
-              type="color"
-              name="colorCode"
-              required
-              defaultValue={editingKupon?.colorCode ?? "#9ca3af"}
-              className="h-10 w-10 cursor-pointer rounded-lg border border-neutral-200 bg-white p-0"
-            />
-            <input
-              id="colorCode-text"
-              type="text"
-              name="colorCode"
-              required
-              defaultValue={editingKupon?.colorCode ?? "#9ca3af"}
-              placeholder="#9ca3af"
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
-            />
-          </div>
-          {formErrors.colorCode && (
-            <p className="text-red-600 text-xs mt-1">
-              {formErrors.colorCode[0]}
-            </p>
-          )}
         </div>
       </FormModal>
 

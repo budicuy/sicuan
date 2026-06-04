@@ -41,7 +41,7 @@ export async function uploadToR2(buffer: Buffer, key: string): Promise<string> {
   });
 
   await r2Client.send(command);
-  return `${process.env.R2_PUBLIC_URL}/${key}`;
+  return `${process.env.R2_ENDPOINT ?? ""}/${key}`;
 }
 
 /**

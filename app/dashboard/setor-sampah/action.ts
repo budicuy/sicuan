@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -18,7 +18,10 @@ export type ActionState = {
   errors?: Record<string, string[]>;
 };
 
-// ── Helper: ambil user dari JWT cookie ─────────────────────────────────────
+export async function getCurrentUserRole(): Promise<string | null> {
+  const user = await getCurrentUser();
+  return user?.role ?? null;
+}
 
 async function getCurrentUser(): Promise<{
   id: number;
@@ -37,6 +40,30 @@ async function getCurrentUser(): Promise<{
     return payload;
   } catch {
     return null;
+  }
+}
+
+export async function updateSetorSampahStatus(
+  id: number,
+  status: "pending" | "diterima" | "ditolak",
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return {
+      success: false,
+      message:
+        "Akses ditolak. Hanya admin/superadmin yang dapat mengubah status.",
+    };
+  }
+
+  try {
+    await db.update(setorSampah).set({ status }).where(eq(setorSampah.id, id));
+
+    revalidatePath("/dashboard/laporan");
+    return { success: true, message: "Status setoran berhasil diperbarui." };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return { success: false, message: `Gagal memperbarui status: ${errorMsg}` };
   }
 }
 
@@ -69,30 +96,113 @@ async function getHargaAktif(
 }
 
 // ── READ: Ambil setoran milik konsumen yang sedang login ────────────────────
-
 export async function getMySetoran({
   page = 1,
-  limit = 10,
+  limit = 50,
+  search = "",
+  jenisSampah = "",
+  status = "",
+  sortBy = "id",
+  sortOrder = "desc",
 }: {
   page?: number;
   limit?: number;
+  search?: string;
+  jenisSampah?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }): Promise<{ data: (typeof setorSampah.$inferSelect)[]; total: number }> {
   const user = await getCurrentUser();
   if (!user) return { data: [], total: 0 };
 
+  const isAdmin = user.role === "admin" || user.role === "superadmin";
   const offset = (page - 1) * limit;
+
+  // Build dynamic SQL/drizzle queries
+  const filters: SQL[] = [];
+
+  if (!isAdmin) {
+    filters.push(eq(setorSampah.userId, user.id));
+  }
+
+  if (jenisSampah && jenisSampah !== "Semua") {
+    filters.push(
+      eq(
+        setorSampah.jenisSampah,
+        jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+      ),
+    );
+  }
+
+  if (status && status !== "Semua") {
+    filters.push(
+      eq(setorSampah.status, status as "pending" | "diterima" | "ditolak"),
+    );
+  }
+
+  // search query filter
+  let searchFilter: SQL | undefined;
+  if (search) {
+    searchFilter = or(
+      ilike(setorSampah.nomorSetor, `%${search}%`),
+      ilike(setorSampah.catatan, `%${search}%`),
+    );
+  }
+
+  const combinedWhere =
+    filters.length > 0
+      ? searchFilter
+        ? and(...filters, searchFilter)
+        : and(...filters)
+      : searchFilter
+        ? searchFilter
+        : undefined;
+
+  // Sorting
+  let orderColumn: SQL = desc(setorSampah.id);
+  if (sortBy === "beratKg") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.beratKg)
+        : desc(setorSampah.beratKg);
+  } else if (sortBy === "totalPoin") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.totalPoin)
+        : desc(setorSampah.totalPoin);
+  } else if (sortBy === "tanggalSetor") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.tanggalSetor)
+        : desc(setorSampah.tanggalSetor);
+  } else if (sortBy === "status") {
+    orderColumn =
+      sortOrder === "asc" ? asc(setorSampah.status) : desc(setorSampah.status);
+  } else if (sortBy === "jenisSampah") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.jenisSampah)
+        : desc(setorSampah.jenisSampah);
+  } else if (sortBy === "nomorSetor") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.nomorSetor)
+        : desc(setorSampah.nomorSetor);
+  } else {
+    orderColumn =
+      sortOrder === "asc" ? asc(setorSampah.id) : desc(setorSampah.id);
+  }
 
   const [data, countResult] = await Promise.all([
     db.query.setorSampah.findMany({
-      where: eq(setorSampah.userId, user.id),
-      orderBy: [desc(setorSampah.createdAt)],
+      where: combinedWhere,
+      with: isAdmin ? { user: true } : undefined,
+      orderBy: [orderColumn],
       limit,
       offset,
     }),
-    db
-      .select({ id: setorSampah.id })
-      .from(setorSampah)
-      .where(eq(setorSampah.userId, user.id)),
+    db.select({ id: setorSampah.id }).from(setorSampah).where(combinedWhere),
   ]);
 
   return { data, total: countResult.length };

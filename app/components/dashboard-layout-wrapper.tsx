@@ -40,6 +40,7 @@ export function DashboardLayoutWrapper({
 
   const standardMenuItems = [
     { href: "/dashboard", label: "Ringkasan", icon: LayoutDashboard },
+    { href: "/dashboard/laporan", label: "Laporan Setoran", icon: FileText },
   ];
 
   const masterMenuItems = [
@@ -57,7 +58,11 @@ export function DashboardLayoutWrapper({
       label: "Setor Sampah",
       icon: ShoppingBag,
     },
-    { href: "/dashboard/laporan", label: "Laporan Aktivitas", icon: FileText },
+    {
+      href: "/dashboard/tukar-kupon",
+      label: "Tukar Kupon",
+      icon: Star,
+    },
     { href: "#profil", label: "Profil Saya", icon: User },
     { href: "#pengaturan", label: "Pengaturan", icon: Settings },
   ];

@@ -21,7 +21,6 @@ export const kupon = pgTable("kupon", {
   deskripsi: text("deskripsi").notNull(),
   poin: doublePrecision("poin").notNull(),
   tier: kuponTierEnum("tier").notNull(),
-  colorCode: text("color_code").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
