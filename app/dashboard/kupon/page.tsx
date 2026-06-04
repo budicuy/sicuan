@@ -409,17 +409,27 @@ export default function KuponPage() {
             htmlFor="colorCode-input"
             className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
           >
-            Kode Warna (hex)
+            Warna
           </label>
-          <input
-            id="colorCode-input"
-            type="text"
-            name="colorCode"
-            required
-            defaultValue={editingKupon?.colorCode ?? "#9ca3af"}
-            placeholder="#9ca3af"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
-          />
+          <div className="flex items-center gap-3">
+            <input
+              id="colorCode-input"
+              type="color"
+              name="colorCode"
+              required
+              defaultValue={editingKupon?.colorCode ?? "#9ca3af"}
+              className="h-10 w-10 cursor-pointer rounded-lg border border-neutral-200 bg-white p-0"
+            />
+            <input
+              id="colorCode-text"
+              type="text"
+              name="colorCode"
+              required
+              defaultValue={editingKupon?.colorCode ?? "#9ca3af"}
+              placeholder="#9ca3af"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
+            />
+          </div>
           {formErrors.colorCode && (
             <p className="text-red-600 text-xs mt-1">
               {formErrors.colorCode[0]}

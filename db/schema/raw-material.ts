@@ -4,6 +4,7 @@ import {
   pgEnum,
   pgTable,
   serial,
+  text,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -22,7 +23,7 @@ export const rawMaterialKlasifikasiEnum = pgEnum("raw_material_klasifikasi", [
 
 export const rawMaterial = pgTable("raw_material", {
   id: serial("id").primaryKey(),
-  periode: date("periode").notNull(), // format: YYYY-MM-DD (simpan hari-1 tiap bulan)
+  periode: date("periode").notNull(),
   kategori: rawMaterialKategoriEnum("kategori").notNull(),
   klasifikasi: rawMaterialKlasifikasiEnum("klasifikasi").notNull(),
   beratKg: doublePrecision("berat_kg").notNull(),

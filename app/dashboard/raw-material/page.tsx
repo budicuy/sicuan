@@ -104,11 +104,29 @@ export default function RawMaterialPage() {
     setCurrentPage(1);
   };
 
-  const formatNumber = (val: number) =>
+  const _formatNumber = (val: number) =>
     new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(val);
+
+  // "1000" → "1.000 gr"
+  const formatGram = (val: number) =>
+    new Intl.NumberFormat("id-ID", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(val);
+
+  // "1.000" → "1 kg", "0.0063" → "0,006 kg" (tanpa trailing zero)
+  const formatKg = (val: number) => {
+    // hitung dari gram agar presisi terjaga
+    const rounded = Number(val.toFixed(4));
+    // hilangkan trailing zero: parse lagi dengan toLocaleString
+    return new Intl.NumberFormat("id-ID", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4,
+    }).format(rounded);
+  };
 
   // Konversi YYYY-MM-DD → "Januari 2026"
   const formatPeriode = (dateStr: string) =>
@@ -278,21 +296,18 @@ export default function RawMaterialPage() {
       sortKey: "beratGram",
       render: (item) => (
         <span className="text-neutral-950 font-semibold font-mono text-xs">
-          {formatNumber(item.beratGram)} gr
+          {formatGram(item.beratGram)} gr
         </span>
       ),
     },
     {
       header: "Berat (KG)",
       sortKey: "beratKg",
-      render: (item) => {
-        const kg = Number((item.beratGram / 1000).toFixed(3));
-        return (
-          <span className="text-neutral-600 font-semibold font-mono text-xs">
-            {kg} kg
-          </span>
-        );
-      },
+      render: (item) => (
+        <span className="text-neutral-600 font-semibold font-mono text-xs">
+          {formatKg(item.beratKg)} kg
+        </span>
+      ),
     },
   ];
 
