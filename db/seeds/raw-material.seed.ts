@@ -4,10 +4,6 @@ import { rawMaterial } from "../schema";
 export async function seedRawMaterial() {
   console.log("🌱 Seeding raw material by period/category/classification...");
 
-  const data = [];
-  let count = 0;
-
-  // Combination items per period
   const combinations = [
     {
       kategori: "Cup" as const,
@@ -53,7 +49,13 @@ export async function seedRawMaterial() {
     }
   }
 
-  const data = [];
+  const seedData: {
+    periode: string;
+    kategori: "Cup" | "Etiket" | "Karton";
+    klasifikasi: "Cup Noodle (CN)" | "Glass Noodle (GN)" | "Normal Noodle (NN)";
+    beratKg: number;
+    beratGram: number;
+  }[] = [];
   let count = 0;
 
   for (const periode of periods) {
@@ -74,7 +76,7 @@ export async function seedRawMaterial() {
       );
       const beratKg = Number((beratGram / 1000).toFixed(4));
 
-      data.push({
+      seedData.push({
         periode,
         kategori: comb.kategori,
         klasifikasi: comb.klasifikasi,
@@ -85,7 +87,7 @@ export async function seedRawMaterial() {
     }
   }
 
-  await db.insert(rawMaterial).values(data).onConflictDoNothing();
+  await db.insert(rawMaterial).values(seedData).onConflictDoNothing();
 
-  console.log(`✅ Seeded ${data.length} raw material records`);
+  console.log(`✅ Seeded ${seedData.length} raw material records`);
 }

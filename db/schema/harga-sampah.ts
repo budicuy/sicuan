@@ -1,4 +1,11 @@
-import { date, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  date,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const hargaSampah = pgTable("harga_sampah", {

@@ -25,8 +25,7 @@ export async function seedHargaSampah() {
       const baseHarga =
         jenis === "Plastik" ? 4500 : jenis === "Paper Cup" ? 3000 : 2000;
       const priceVariation =
-        monthIndex * 50 +
-        (year === 2026 ? 300 : year === 2025 ? 150 : 0);
+        monthIndex * 50 + (year === 2026 ? 300 : year === 2025 ? 150 : 0);
       const hargaPerKg = baseHarga + priceVariation;
       const pointPerKg = Math.round(hargaPerKg / 100);
 

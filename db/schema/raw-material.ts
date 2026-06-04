@@ -41,4 +41,3 @@ export const selectRawMaterialSchema = createSelectSchema(rawMaterial);
 
 export type RawMaterial = typeof rawMaterial.$inferSelect;
 export type NewRawMaterial = typeof rawMaterial.$inferInsert;
-  

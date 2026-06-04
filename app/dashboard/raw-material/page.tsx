@@ -285,11 +285,14 @@ export default function RawMaterialPage() {
     {
       header: "Berat (KG)",
       sortKey: "beratKg",
-      render: (item) => (
-        <span className="text-neutral-600 font-semibold font-mono text-xs">
-          {item.beratKg.toFixed(4)} kg
-        </span>
-      ),
+      render: (item) => {
+        const kg = Number((item.beratGram / 1000).toFixed(3));
+        return (
+          <span className="text-neutral-600 font-semibold font-mono text-xs">
+            {kg} kg
+          </span>
+        );
+      },
     },
   ];
 

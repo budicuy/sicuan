@@ -122,7 +122,9 @@ export async function saveRawMaterial(
   if (!periodeRaw || !/^\d{4}-\d{2}$/.test(periodeRaw)) {
     return {
       success: false,
-      errors: { periode: ["Periode harus diisi dengan format bulan yang valid"] },
+      errors: {
+        periode: ["Periode harus diisi dengan format bulan yang valid"],
+      },
     };
   }
 
