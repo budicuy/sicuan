@@ -2,6 +2,7 @@
 
 import { ArrowRight, Leaf } from "lucide-react";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { MINI_CARDS, type MiniCardData } from "./shared-data";
 
 // ─── Mini Card Component ──────────────────────────────────────────────────────
@@ -182,13 +183,13 @@ export function HeroSection() {
               transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
               className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2"
             >
-              <a
-                href="#login"
+              <Link
+                href="/login"
                 className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold shadow-lg shadow-primary-600/20 hover:shadow-primary-600/35 transition-all duration-300 flex items-center justify-center gap-2 group"
               >
                 Mulai Setor Sekarang
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
               <a
                 href="#mitra"
                 className="w-full sm:w-auto px-8 py-4 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 font-bold transition-all duration-300 flex items-center justify-center gap-2 hover:border-neutral-400"

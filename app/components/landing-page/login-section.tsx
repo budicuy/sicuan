@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock, FileText, Lock, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 export function LoginSection() {
   return (
@@ -27,13 +28,13 @@ export function LoginSection() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <a
+                <Link
                   id="hero-cta-login"
-                  href="#masuk"
+                  href="/login"
                   className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-center rounded-xl transition-all shadow-md shadow-emerald-600/10 hover:shadow-emerald-600/25"
                 >
                   Masuk ke Dashboard
-                </a>
+                </Link>
                 <a
                   id="hero-cta-support"
                   href="#faq"
