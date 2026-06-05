@@ -1,8 +1,13 @@
 import { relations } from "drizzle-orm";
+import { ekspedisi } from "./ekspedisi";
 import { kupon } from "./kupon";
 import { nasabah } from "./nasabah";
 import { penukaranKupon } from "./penukaran-kupon";
-import { setorSampah } from "./setor-sampah";
+import {
+  setorSampahBankSampah,
+  setorSampahKonsumen,
+  setorSampahWarmiendo,
+} from "./setor-sampah";
 import { users } from "./users";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -10,7 +15,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [nasabah.userId],
   }),
-  setorSampah: many(setorSampah),
+  setorSampahKonsumen: many(setorSampahKonsumen),
+  setorSampahWarmiendo: many(setorSampahWarmiendo),
+  setorSampahBankSampah: many(setorSampahBankSampah),
   penukaranKupon: many(penukaranKupon),
 }));
 
@@ -21,18 +28,39 @@ export const nasabahRelations = relations(nasabah, ({ one }) => ({
   }),
 }));
 
-import { ekspedisi } from "./ekspedisi";
+export const setorSampahKonsumenRelations = relations(
+  setorSampahKonsumen,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [setorSampahKonsumen.userId],
+      references: [users.id],
+    }),
+  }),
+);
 
-export const setorSampahRelations = relations(setorSampah, ({ one }) => ({
-  user: one(users, {
-    fields: [setorSampah.userId],
-    references: [users.id],
+export const setorSampahWarmiendoRelations = relations(
+  setorSampahWarmiendo,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [setorSampahWarmiendo.userId],
+      references: [users.id],
+    }),
+    ekspedisi: one(ekspedisi, {
+      fields: [setorSampahWarmiendo.ekspedisiId],
+      references: [ekspedisi.id],
+    }),
   }),
-  ekspedisi: one(ekspedisi, {
-    fields: [setorSampah.ekspedisiId],
-    references: [ekspedisi.id],
+);
+
+export const setorSampahBankSampahRelations = relations(
+  setorSampahBankSampah,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [setorSampahBankSampah.userId],
+      references: [users.id],
+    }),
   }),
-}));
+);
 
 export const kuponRelations = relations(kupon, ({ many }) => ({
   penukaranKupon: many(penukaranKupon),

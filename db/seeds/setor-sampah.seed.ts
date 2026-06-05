@@ -1,12 +1,22 @@
 import { eq } from "drizzle-orm";
 import { db } from "../index";
-import { pencairanDana, setorSampah, users } from "../schema";
+import {
+  pencairanDana,
+  setorSampahBankSampah,
+  setorSampahKonsumen,
+  setorSampahWarmiendo,
+  users,
+} from "../schema";
 
 export async function seedSetorSampah() {
-  console.log("🌱 Seeding setor sampah and pencairan dana...");
+  console.log(
+    "🌱 Seeding setor sampah for Konsumen, Warmiendo, and Bank Sampah tables...",
+  );
 
   await db.delete(pencairanDana);
-  await db.delete(setorSampah);
+  await db.delete(setorSampahKonsumen);
+  await db.delete(setorSampahWarmiendo);
+  await db.delete(setorSampahBankSampah);
 
   // Get active users
   const budi = await db.query.users.findFirst({
@@ -26,10 +36,10 @@ export async function seedSetorSampah() {
 
   const jneId = activeEkspedisi[0]?.id || null;
 
-  // Placeholder R2 URL
-  const placeholderR2 = "https://placehold.co/600x400";
+  // Placeholder image
+  const placeholderImage = "https://placehold.co/600x400";
 
-  // 1. Seed budi.santoso setoran (POIN)
+  // 1. Seed budi.santoso setoran (POIN) -> masuk ke setoran_konsumen
   const budiSetoran = [
     {
       nomorSetor: `Setoran Budi Santoso – 1 Juni 2026`,
@@ -38,11 +48,10 @@ export async function seedSetorSampah() {
       beratKg: 10,
       beratAiKg: 10,
       tanggalSetor: "2026-06-01",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 200,
       status: "diterima" as const,
-      metodeSetor: "langsung",
     },
     {
       nomorSetor: `Setoran Budi Santoso – 2 Juni 2026`,
@@ -51,11 +60,10 @@ export async function seedSetorSampah() {
       beratKg: 8,
       beratAiKg: 8,
       tanggalSetor: "2026-06-02",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 200,
       status: "diterima" as const,
-      metodeSetor: "langsung",
     },
     {
       nomorSetor: `Setoran Budi Santoso – 3 Juni 2026`,
@@ -64,17 +72,16 @@ export async function seedSetorSampah() {
       beratKg: 10,
       beratAiKg: 10,
       tanggalSetor: "2026-06-03",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 300,
       status: "diterima" as const,
-      metodeSetor: "langsung",
     },
   ];
 
-  await db.insert(setorSampah).values(budiSetoran);
+  await db.insert(setorSampahKonsumen).values(budiSetoran);
 
-  // 2. Seed warmiendo.demo setoran (Kredit)
+  // 2. Seed warmiendo.demo setoran (Kredit) -> masuk ke setoran_warmiendo
   const warmiendoSetoran = [
     {
       nomorSetor: `Setoran Mitra Warmiendo Demo – 1 Juni 2026`,
@@ -83,8 +90,8 @@ export async function seedSetorSampah() {
       beratKg: 10,
       beratAiKg: 10,
       tanggalSetor: "2026-06-01",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 200,
       status: "diterima" as const,
       metodeSetor: "langsung",
@@ -96,8 +103,8 @@ export async function seedSetorSampah() {
       beratKg: 20,
       beratAiKg: 20,
       tanggalSetor: "2026-06-02",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 500,
       status: "diterima" as const,
       metodeSetor: "langsung",
@@ -109,8 +116,8 @@ export async function seedSetorSampah() {
       beratKg: 15,
       beratAiKg: 15,
       tanggalSetor: "2026-06-03",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 450,
       status: "diterima" as const,
       metodeSetor: "ekspedisi",
@@ -118,7 +125,7 @@ export async function seedSetorSampah() {
     },
   ];
 
-  await db.insert(setorSampah).values(warmiendoSetoran);
+  await db.insert(setorSampahWarmiendo).values(warmiendoSetoran);
 
   // Seed warmiendo.demo withdrawals (Pencairan)
   const warmiendoPencairan = [
@@ -128,7 +135,7 @@ export async function seedSetorSampah() {
       jenisBank: "BCA",
       noRekening: "1234567890",
       status: "berhasil",
-      buktiTransfer: placeholderR2,
+      buktiTransfer: placeholderImage,
     },
     {
       userId: warmiendo.id,
@@ -136,7 +143,7 @@ export async function seedSetorSampah() {
       jenisBank: "BCA",
       noRekening: "1234567890",
       status: "berhasil",
-      buktiTransfer: placeholderR2,
+      buktiTransfer: placeholderImage,
     },
     {
       userId: warmiendo.id,
@@ -149,7 +156,7 @@ export async function seedSetorSampah() {
 
   await db.insert(pencairanDana).values(warmiendoPencairan);
 
-  // 3. Seed banksampah.demo setoran (Kredit)
+  // 3. Seed banksampah.demo setoran (Kredit) -> masuk ke setoran_bank_sampah
   const bankSampahSetoran = [
     {
       nomorSetor: `Setoran Mitra Bank Sampah Demo – 1 Juni 2026`,
@@ -158,11 +165,10 @@ export async function seedSetorSampah() {
       beratKg: 15,
       beratAiKg: 15,
       tanggalSetor: "2026-06-01",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 300,
       status: "diterima" as const,
-      metodeSetor: "langsung",
     },
     {
       nomorSetor: `Setoran Mitra Bank Sampah Demo – 2 Juni 2026`,
@@ -171,15 +177,14 @@ export async function seedSetorSampah() {
       beratKg: 20,
       beratAiKg: 20,
       tanggalSetor: "2026-06-02",
-      fotoTimbangan: placeholderR2,
-      fotoBuktiTambahan: [placeholderR2],
+      fotoTimbangan: placeholderImage,
+      fotoBuktiTambahan: [placeholderImage],
       totalPoin: 600,
       status: "diterima" as const,
-      metodeSetor: "langsung",
     },
   ];
 
-  await db.insert(setorSampah).values(bankSampahSetoran);
+  await db.insert(setorSampahBankSampah).values(bankSampahSetoran);
 
   // Seed banksampah.demo withdrawals (Pencairan)
   const bankSampahPencairan = [
@@ -189,7 +194,7 @@ export async function seedSetorSampah() {
       jenisBank: "BRI",
       noRekening: "0987654321",
       status: "berhasil",
-      buktiTransfer: placeholderR2,
+      buktiTransfer: placeholderImage,
     },
     {
       userId: bankSampah.id,
@@ -202,5 +207,5 @@ export async function seedSetorSampah() {
 
   await db.insert(pencairanDana).values(bankSampahPencairan);
 
-  console.log("✅ Seeded setoran and pencairan successfully");
+  console.log("✅ Seeded split setoran and pencairan successfully");
 }

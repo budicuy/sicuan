@@ -9,8 +9,11 @@ import {
   nasabah,
   pencairanDana,
   penukaranKupon,
-  setorSampah,
+  setorSampahBankSampah,
+  setorSampahKonsumen,
+  setorSampahWarmiendo,
 } from "@/db/schema";
+import type { SetoranType } from "./setor-sampah/action";
 
 async function getCurrentUser() {
   try {
@@ -51,9 +54,23 @@ export async function getDashboardData() {
     // ADMIN / SUPERADMIN DASHBOARD DATA
     const allUsers = await db.query.users.findMany();
     const allNasabah = await db.query.nasabah.findMany();
-    const allSetoran = await db.query.setorSampah.findMany({
-      orderBy: [desc(setorSampah.createdAt)],
-    });
+
+    const [konsumenSetoran, warmiendoSetoran, bankSampahSetoran] =
+      await Promise.all([
+        db.query.setorSampahKonsumen.findMany({ with: { user: true } }),
+        db.query.setorSampahWarmiendo.findMany({
+          with: { user: true, ekspedisi: true },
+        }),
+        db.query.setorSampahBankSampah.findMany({ with: { user: true } }),
+      ]);
+
+    // Combine and sort by createdAt desc
+    const allSetoran = [
+      ...konsumenSetoran,
+      ...warmiendoSetoran,
+      ...bankSampahSetoran,
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
     const _allPencairan = await db.query.pencairanDana.findMany();
 
     // Metrics
@@ -170,10 +187,24 @@ export async function getDashboardData() {
     };
   } else {
     // CLIENT SIDE (KONSUMEN / WARMIENDO / BANK SAMPAH)
-    const mySetoran = await db.query.setorSampah.findMany({
-      where: eq(setorSampah.userId, user.id),
-      orderBy: [desc(setorSampah.createdAt)],
-    });
+    let mySetoran: SetoranType[] = [];
+    if (user.role === "warmiendo") {
+      mySetoran = await db.query.setorSampahWarmiendo.findMany({
+        where: eq(setorSampahWarmiendo.userId, user.id),
+        with: { ekspedisi: true },
+        orderBy: [desc(setorSampahWarmiendo.createdAt)],
+      });
+    } else if (user.role === "bank-sampah") {
+      mySetoran = await db.query.setorSampahBankSampah.findMany({
+        where: eq(setorSampahBankSampah.userId, user.id),
+        orderBy: [desc(setorSampahBankSampah.createdAt)],
+      });
+    } else {
+      mySetoran = await db.query.setorSampahKonsumen.findMany({
+        where: eq(setorSampahKonsumen.userId, user.id),
+        orderBy: [desc(setorSampahKonsumen.createdAt)],
+      });
+    }
 
     const myPencairan = await db.query.pencairanDana.findMany({
       where: eq(pencairanDana.userId, user.id),
@@ -222,7 +253,7 @@ export async function getDashboardData() {
     }
 
     // Daily history for the user's line charts
-    // Group last 7 setoran
+    // Group last 10 setoran
     const setoranHistory = mySetoran
       .filter((s) => s.status === "diterima")
       .slice(0, 10)

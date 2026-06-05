@@ -40,7 +40,33 @@ export function DashboardLayoutWrapper({
 
   const standardMenuItems = [
     { href: "/dashboard", label: "Ringkasan", icon: LayoutDashboard },
-    { href: "/dashboard/laporan", label: "Laporan Setoran", icon: FileText },
+    ...(user?.role !== "admin" && user?.role !== "superadmin"
+      ? [
+          {
+            href: "/dashboard/laporan",
+            label: "Laporan Setoran",
+            icon: FileText,
+          },
+        ]
+      : []),
+  ];
+
+  const laporanMenuItems = [
+    {
+      href: "/dashboard/laporan/bank-sampah",
+      label: "Setoran Bank Sampah",
+      icon: Coins,
+    },
+    {
+      href: "/dashboard/laporan/warmiendo",
+      label: "Setoran Warmiendo",
+      icon: ShoppingBag,
+    },
+    {
+      href: "/dashboard/laporan/konsumen",
+      label: "Setoran Konsumen",
+      icon: User,
+    },
   ];
 
   const masterMenuItems = [
@@ -80,6 +106,11 @@ export function DashboardLayoutWrapper({
   );
   const [masterOpen, setMasterOpen] = useState(isMasterPathActive);
 
+  const isLaporanPathActive = laporanMenuItems.some(
+    (item) => pathname === item.href,
+  );
+  const [laporanOpen, setLaporanOpen] = useState(isLaporanPathActive);
+
   // Sync open state on navigation
   useEffect(() => {
     if (isMasterPathActive) {
@@ -87,8 +118,15 @@ export function DashboardLayoutWrapper({
     }
   }, [isMasterPathActive]);
 
+  useEffect(() => {
+    if (isLaporanPathActive) {
+      setLaporanOpen(true);
+    }
+  }, [isLaporanPathActive]);
+
   const activeMenuItem =
     standardMenuItems.find((item) => pathname === item.href) ||
+    laporanMenuItems.find((item) => pathname === item.href) ||
     masterMenuItems.find((item) => pathname === item.href) ||
     otherMenuItems.find((item) => pathname === item.href) ||
     adminMenuItems.find((item) => pathname === item.href);
@@ -141,6 +179,57 @@ export function DashboardLayoutWrapper({
             </Link>
           );
         })}
+
+        {/* Laporan Setoran Collapsible (Admin/Superadmin only) */}
+        {(user?.role === "superadmin" || user?.role === "admin") && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setLaporanOpen(!laporanOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all border-0 cursor-pointer ${
+                isLaporanPathActive
+                  ? "bg-neutral-50/80 text-primary-700 font-semibold"
+                  : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <FileText
+                  className={`w-4.5 h-4.5 shrink-0 ${isLaporanPathActive ? "text-primary-600" : "text-neutral-400"}`}
+                />
+                <span>Setoran Sampah</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${laporanOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {laporanOpen && (
+              <div className="pl-6 mt-1.5 space-y-1 border-l border-neutral-200 ml-6">
+                {laporanMenuItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleLinkClick}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all ${
+                        isActive
+                          ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100/50"
+                          : "text-neutral-500 hover:text-primary-600 hover:bg-primary-50/30"
+                      }`}
+                    >
+                      <Icon
+                        className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                      />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Pencairan Dana for Admin/Superadmin (Outside Master Data) */}
         {(user?.role === "superadmin" || user?.role === "admin") && (

@@ -26,22 +26,48 @@ export const statusSetorEnum = pgEnum("status_setor", [
   "ditolak",
 ]);
 
-export const setorSampah = pgTable("setor_sampah", {
+// 1. Table Setoran Konsumen
+export const setorSampahKonsumen = pgTable("setoran_konsumen", {
   id: serial("id").primaryKey(),
   nomorSetor: text("nomor_setor").notNull(), // "Setoran [Nama User] – [Tanggal]"
   userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   jenisSampah: jenisSampahEnum("jenis_sampah").notNull(),
-  beratKg: doublePrecision("berat_kg").notNull(), // input user
-  beratAiKg: doublePrecision("berat_ai_kg"), // hasil baca AI (nullable)
+  beratKg: doublePrecision("berat_kg").notNull(),
+  beratAiKg: doublePrecision("berat_ai_kg"),
   tanggalSetor: date("tanggal_setor").notNull(),
-  fotoTimbangan: text("foto_timbangan").notNull(), // R2 URL
-  fotoBuktiTambahan: text("foto_bukti_tambahan").array().notNull().default([]), // R2 URLs array
-  catatan: text("catatan"), // opsional
-  totalPoin: integer("total_poin").notNull().default(0), // poin yang didapat
+  fotoTimbangan: text("foto_timbangan").notNull(),
+  fotoBuktiTambahan: text("foto_bukti_tambahan").array().notNull().default([]),
+  catatan: text("catatan"),
+  totalPoin: integer("total_poin").notNull().default(0),
   status: statusSetorEnum("status").notNull().default("diterima"),
-  metodeSetor: text("metode_setor").notNull().default("langsung"), // "langsung" atau "ekspedisi"
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// 2. Table Setoran Warmiendo (Supports Expedition/Shipment)
+export const setorSampahWarmiendo = pgTable("setoran_warmiendo", {
+  id: serial("id").primaryKey(),
+  nomorSetor: text("nomor_setor").notNull(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  jenisSampah: jenisSampahEnum("jenis_sampah").notNull(),
+  beratKg: doublePrecision("berat_kg").notNull(),
+  beratAiKg: doublePrecision("berat_ai_kg"),
+  tanggalSetor: date("tanggal_setor").notNull(),
+  fotoTimbangan: text("foto_timbangan").notNull(),
+  fotoBuktiTambahan: text("foto_bukti_tambahan").array().notNull().default([]),
+  catatan: text("catatan"),
+  totalPoin: integer("total_poin").notNull().default(0),
+  status: statusSetorEnum("status").notNull().default("diterima"),
+  metodeSetor: text("metode_setor").notNull().default("ekspedisi"), // "ekspedisi" or "langsung" (by default ekspedisi as direct is removed for warmiendo)
   ekspedisiId: integer("ekspedisi_id").references(() => ekspedisi.id, {
     onDelete: "set null",
   }),
@@ -54,8 +80,44 @@ export const setorSampah = pgTable("setor_sampah", {
     .notNull(),
 });
 
-export const insertSetorSampahSchema = createInsertSchema(setorSampah);
-export const selectSetorSampahSchema = createSelectSchema(setorSampah);
+// 3. Table Setoran Bank Sampah
+export const setorSampahBankSampah = pgTable("setoran_bank_sampah", {
+  id: serial("id").primaryKey(),
+  nomorSetor: text("nomor_setor").notNull(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  jenisSampah: jenisSampahEnum("jenis_sampah").notNull(),
+  beratKg: doublePrecision("berat_kg").notNull(),
+  beratAiKg: doublePrecision("berat_ai_kg"),
+  tanggalSetor: date("tanggal_setor").notNull(),
+  fotoTimbangan: text("foto_timbangan").notNull(),
+  fotoBuktiTambahan: text("foto_bukti_tambahan").array().notNull().default([]),
+  catatan: text("catatan"),
+  totalPoin: integer("total_poin").notNull().default(0),
+  status: statusSetorEnum("status").notNull().default("diterima"),
 
-export type SetorSampah = typeof setorSampah.$inferSelect;
-export type NewSetorSampah = typeof setorSampah.$inferInsert;
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const insertSetorSampahKonsumenSchema =
+  createInsertSchema(setorSampahKonsumen);
+export const selectSetorSampahKonsumenSchema =
+  createSelectSchema(setorSampahKonsumen);
+
+export const insertSetorSampahWarmiendoSchema =
+  createInsertSchema(setorSampahWarmiendo);
+export const selectSetorSampahWarmiendoSchema =
+  createSelectSchema(setorSampahWarmiendo);
+
+export const insertSetorSampahBankSampahSchema = createInsertSchema(
+  setorSampahBankSampah,
+);
+export const selectSetorSampahBankSampahSchema = createSelectSchema(
+  setorSampahBankSampah,
+);
