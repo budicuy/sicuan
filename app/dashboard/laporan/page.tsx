@@ -75,6 +75,12 @@ export default function LaporanPage() {
     { id: number; namaVendor: string; noTelepon: string }[]
   >([]);
   const [selectedEkspedisiId, setSelectedEkspedisiId] = useState<string>("");
+  const [selectedEkspedisiMap, setSelectedEkspedisiMap] = useState<
+    Record<number, string>
+  >({});
+  const [selectedImageLightBox, setSelectedImageLightBox] = useState<
+    string | null
+  >(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -270,50 +276,193 @@ export default function LaporanPage() {
     {
       header: "Status",
       sortKey: "status",
-      render: (item: SetorSampahItem) =>
-        (userRole === "admin" || userRole === "superadmin") &&
-        item.metodeSetor !== "ekspedisi" ? (
-          <div className="flex items-center gap-2">
-            <select
-              value={item.status}
-              disabled={updatingId === item.id}
-              onChange={(e) =>
-                handleStatusUpdate(
-                  item.id,
-                  e.target.value as
-                    | "pending"
-                    | "diverifikasi"
-                    | "diserahkan"
-                    | "diterima"
-                    | "ditolak",
-                )
-              }
-              className="px-2 py-1 border border-neutral-200 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600/10 text-neutral-800 cursor-pointer"
-            >
-              <option value="pending">Pending</option>
-              <option value="diterima">Diterima</option>
-              <option value="ditolak">Ditolak</option>
-            </select>
-            {updatingId === item.id && (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-600" />
-            )}
-          </div>
-        ) : (
-          getStatusBadge(item.status)
-        ),
+      render: (item: SetorSampahItem) => getStatusBadge(item.status),
     },
     {
       header: "Aksi",
-      render: (item: SetorSampahItem) => (
-        <button
-          type="button"
-          onClick={() => setSelectedItem(item)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-primary-50 hover:text-primary-700 text-neutral-700 rounded-lg text-xs font-semibold border border-neutral-200 hover:border-primary-200 transition-all cursor-pointer"
-        >
-          <Eye className="w-3.5 h-3.5" />
-          Lihat Detail
-        </button>
-      ),
+      render: (item: SetorSampahItem) => {
+        const isEkspedisi = item.metodeSetor === "ekspedisi";
+        const isPending = item.status === "pending";
+        const isDiverifikasi = item.status === "diverifikasi";
+        const isDiserahkan = item.status === "diserahkan";
+        const isCompleted =
+          item.status === "diterima" || item.status === "ditolak";
+
+        // If not admin/superadmin, show simple detail button
+        if (userRole !== "admin" && userRole !== "superadmin") {
+          return (
+            <button
+              type="button"
+              onClick={() => setSelectedItem(item)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-primary-50 text-neutral-700 rounded-lg text-xs font-semibold border border-neutral-200 transition-all cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Detail
+            </button>
+          );
+        }
+
+        // Admin actions
+        if (isCompleted) {
+          return (
+            <button
+              type="button"
+              onClick={() => setSelectedItem(item)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-primary-50 text-neutral-700 rounded-lg text-xs font-semibold border border-neutral-200 transition-all cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Detail
+            </button>
+          );
+        }
+
+        if (isEkspedisi) {
+          if (isPending) {
+            const currentCourierId =
+              selectedEkspedisiMap[item.id] ||
+              (ekspedisiList[0] ? String(ekspedisiList[0].id) : "");
+            return (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <select
+                  value={currentCourierId}
+                  onChange={(e) =>
+                    setSelectedEkspedisiMap({
+                      ...selectedEkspedisiMap,
+                      [item.id]: e.target.value,
+                    })
+                  }
+                  className="px-2 py-1.5 border border-neutral-200 rounded-lg text-xs bg-white focus:outline-none focus:border-primary-600 text-neutral-800 cursor-pointer min-w-[120px]"
+                >
+                  {ekspedisiList.length === 0 ? (
+                    <option value="">Tidak ada kurir</option>
+                  ) : (
+                    ekspedisiList.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.namaVendor}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    disabled={updatingId === item.id || !currentCourierId}
+                    onClick={() =>
+                      handleStatusUpdate(
+                        item.id,
+                        "diverifikasi",
+                        Number(currentCourierId),
+                      )
+                    }
+                    className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-lg shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1 shrink-0"
+                  >
+                    {updatingId === item.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    )}
+                    Tugaskan
+                  </button>
+                  <button
+                    type="button"
+                    disabled={updatingId === item.id}
+                    onClick={() => handleStatusUpdate(item.id, "ditolak")}
+                    className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg border-0 cursor-pointer disabled:opacity-50 transition-all"
+                  >
+                    Tolak
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          if (isDiverifikasi) {
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-neutral-500 whitespace-nowrap bg-neutral-100 px-2 py-1 rounded">
+                  Menunggu penyerahan...
+                </span>
+                <button
+                  type="button"
+                  disabled={updatingId === item.id}
+                  onClick={() => handleStatusUpdate(item.id, "ditolak")}
+                  className="px-2.5 py-1.5 bg-red-650 hover:bg-red-700 text-white font-bold text-xs rounded-lg border-0 cursor-pointer disabled:opacity-50 transition-all"
+                >
+                  Tolak
+                </button>
+              </div>
+            );
+          }
+
+          if (isDiserahkan) {
+            return (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={updatingId === item.id}
+                  onClick={() => handleStatusUpdate(item.id, "diterima")}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
+                >
+                  {updatingId === item.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  )}
+                  Terima Sampah &amp; Cairkan
+                </button>
+                <button
+                  type="button"
+                  disabled={updatingId === item.id}
+                  onClick={() => handleStatusUpdate(item.id, "ditolak")}
+                  className="px-2.5 py-1.5 bg-red-650 hover:bg-red-700 text-white font-bold text-xs rounded-lg border-0 cursor-pointer disabled:opacity-50 transition-all"
+                >
+                  Tolak
+                </button>
+              </div>
+            );
+          }
+        }
+
+        // Direct / langsung deposit
+        if (isPending) {
+          return (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={updatingId === item.id}
+                onClick={() => handleStatusUpdate(item.id, "diterima")}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
+              >
+                {updatingId === item.id ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                )}
+                Terima
+              </button>
+              <button
+                type="button"
+                disabled={updatingId === item.id}
+                onClick={() => handleStatusUpdate(item.id, "ditolak")}
+                className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg border-0 cursor-pointer disabled:opacity-50 transition-all"
+              >
+                Tolak
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <button
+            type="button"
+            onClick={() => setSelectedItem(item)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-primary-50 text-neutral-700 rounded-lg text-xs font-semibold border border-neutral-200 transition-all cursor-pointer"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            Detail
+          </button>
+        );
+      },
     },
   ];
 
@@ -643,15 +792,22 @@ export default function LaporanPage() {
                   Foto Bukti Timbangan
                 </span>
                 {selectedItem.fotoTimbangan ? (
-                  <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedImageLightBox(selectedItem.fotoTimbangan)
+                    }
+                    className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group w-full"
+                    title="Klik zoom foto timbangan"
+                  >
                     <Image
                       src={selectedItem.fotoTimbangan}
                       alt="Foto timbangan detail"
                       fill
-                      className="object-contain"
+                      className="object-contain group-hover:scale-102 transition-all"
                       unoptimized
                     />
-                  </div>
+                  </button>
                 ) : (
                   <span className="text-sm text-neutral-400">
                     Tidak ada foto bukti timbangan.
@@ -668,18 +824,21 @@ export default function LaporanPage() {
                 selectedItem.fotoBuktiTambahan.length > 0 ? (
                   <div className="grid grid-cols-3 gap-3">
                     {selectedItem.fotoBuktiTambahan.map((imgUrl, idx) => (
-                      <div
+                      <button
                         key={imgUrl}
-                        className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100"
+                        type="button"
+                        onClick={() => setSelectedImageLightBox(imgUrl)}
+                        className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 cursor-zoom-in p-0 block group w-full"
+                        title="Klik zoom foto bukti tambahan"
                       >
                         <Image
                           src={imgUrl}
                           alt={`Bukti Tambahan ${idx + 1}`}
                           fill
-                          className="object-cover"
+                          className="object-cover group-hover:scale-105 transition-all"
                           unoptimized
                         />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 ) : (
@@ -838,6 +997,36 @@ export default function LaporanPage() {
               >
                 Tutup
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LIGHTBOX MODAL OVERLAY */}
+      {selectedImageLightBox && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 w-full h-full bg-black/80 backdrop-blur-sm cursor-zoom-out border-0"
+            onClick={() => setSelectedImageLightBox(null)}
+            aria-label="Tutup gambar"
+          />
+          <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center z-10 pointer-events-none">
+            <div className="relative w-full h-[80vh] pointer-events-auto">
+              <button
+                type="button"
+                onClick={() => setSelectedImageLightBox(null)}
+                className="absolute -top-12 right-0 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 transition-colors cursor-pointer"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <Image
+                src={selectedImageLightBox}
+                alt="Bukti foto diperbesar"
+                fill
+                className="object-contain"
+                unoptimized
+              />
             </div>
           </div>
         </div>

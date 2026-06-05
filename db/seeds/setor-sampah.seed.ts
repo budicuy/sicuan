@@ -1,96 +1,206 @@
 import { eq } from "drizzle-orm";
 import { db } from "../index";
-import { setorSampah, users } from "../schema";
+import { pencairanDana, setorSampah, users } from "../schema";
 
 export async function seedSetorSampah() {
-  console.log("🌱 Seeding setor sampah...");
+  console.log("🌱 Seeding setor sampah and pencairan dana...");
 
-  // Ambil user konsumen yang ada
-  const konsumenUsers = await db
-    .select({ id: users.id, name: users.name })
-    .from(users)
-    .where(eq(users.role, "konsumen"))
-    .limit(10);
+  await db.delete(pencairanDana);
+  await db.delete(setorSampah);
 
-  if (konsumenUsers.length === 0) {
-    console.log("⚠ Tidak ada user konsumen. Skip seeding setor sampah.");
-    return;
+  // Get active users
+  const budi = await db.query.users.findFirst({
+    where: eq(users.username, "budi.santoso"),
+  });
+  const warmiendo = await db.query.users.findFirst({
+    where: eq(users.username, "warmiendo.demo"),
+  });
+  const bankSampah = await db.query.users.findFirst({
+    where: eq(users.username, "banksampah.demo"),
+  });
+  const activeEkspedisi = await db.query.ekspedisi.findMany();
+
+  if (!budi || !warmiendo || !bankSampah) {
+    throw new Error("Mandatory users not found during setor-sampah seeding!");
   }
 
-  const jenisOptions = ["Karton", "Etiket", "Paper Cup"] as const;
-  const statusOptions = [
-    "diterima",
-    "diterima",
-    "diterima",
-    "pending",
-    "ditolak",
-  ] as const;
+  const jneId = activeEkspedisi[0]?.id || null;
 
-  // Placeholder R2 URL (dalam production akan diisi URL asli)
-  const placeholderR2 = "https://placeholder.r2.dev/setor-sampah/sample.webp";
+  // Placeholder R2 URL
+  const placeholderR2 = "https://placehold.co/600x400";
 
-  const data: {
-    nomorSetor: string;
-    userId: number;
-    jenisSampah: "Karton" | "Etiket" | "Paper Cup";
-    beratKg: number;
-    beratAiKg: number;
-    tanggalSetor: string;
-    fotoTimbangan: string;
-    fotoBuktiTambahan: string[];
-    catatan: string | null;
-    totalPoin: number;
-    status: "pending" | "diterima" | "ditolak";
-  }[] = [];
+  // 1. Seed budi.santoso setoran (POIN)
+  const budiSetoran = [
+    {
+      nomorSetor: `Setoran Budi Santoso – 1 Juni 2026`,
+      userId: budi.id,
+      jenisSampah: "Karton" as const,
+      beratKg: 10,
+      beratAiKg: 10,
+      tanggalSetor: "2026-06-01",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 200,
+      status: "diterima" as const,
+      metodeSetor: "langsung",
+    },
+    {
+      nomorSetor: `Setoran Budi Santoso – 2 Juni 2026`,
+      userId: budi.id,
+      jenisSampah: "Etiket" as const,
+      beratKg: 8,
+      beratAiKg: 8,
+      tanggalSetor: "2026-06-02",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 200,
+      status: "diterima" as const,
+      metodeSetor: "langsung",
+    },
+    {
+      nomorSetor: `Setoran Budi Santoso – 3 Juni 2026`,
+      userId: budi.id,
+      jenisSampah: "Paper Cup" as const,
+      beratKg: 10,
+      beratAiKg: 10,
+      tanggalSetor: "2026-06-03",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 300,
+      status: "diterima" as const,
+      metodeSetor: "langsung",
+    },
+  ];
 
-  const months = [0, 1, 2, 3, 4, 5]; // 6 bulan terakhir
-  let count = 0;
+  await db.insert(setorSampah).values(budiSetoran);
 
-  for (const user of konsumenUsers) {
-    for (const monthOffset of months) {
-      if (count >= 50) break;
+  // 2. Seed warmiendo.demo setoran (Kredit)
+  const warmiendoSetoran = [
+    {
+      nomorSetor: `Setoran Mitra Warmiendo Demo – 1 Juni 2026`,
+      userId: warmiendo.id,
+      jenisSampah: "Karton" as const,
+      beratKg: 10,
+      beratAiKg: 10,
+      tanggalSetor: "2026-06-01",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 200,
+      status: "diterima" as const,
+      metodeSetor: "langsung",
+    },
+    {
+      nomorSetor: `Setoran Mitra Warmiendo Demo – 2 Juni 2026`,
+      userId: warmiendo.id,
+      jenisSampah: "Etiket" as const,
+      beratKg: 20,
+      beratAiKg: 20,
+      tanggalSetor: "2026-06-02",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 500,
+      status: "diterima" as const,
+      metodeSetor: "langsung",
+    },
+    {
+      nomorSetor: `Setoran Mitra Warmiendo Demo – 3 Juni 2026`,
+      userId: warmiendo.id,
+      jenisSampah: "Paper Cup" as const,
+      beratKg: 15,
+      beratAiKg: 15,
+      tanggalSetor: "2026-06-03",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 450,
+      status: "diterima" as const,
+      metodeSetor: "ekspedisi",
+      ekspedisiId: jneId,
+    },
+  ];
 
-      const date = new Date();
-      date.setMonth(date.getMonth() - monthOffset);
-      date.setDate(Math.floor(Math.random() * 28) + 1);
-      const tanggalSetor = date.toISOString().split("T")[0];
-      const tanggalFormatted = date.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
+  await db.insert(setorSampah).values(warmiendoSetoran);
 
-      const jenis =
-        jenisOptions[Math.floor(Math.random() * jenisOptions.length)];
-      const beratKg = Number((Math.random() * 9 + 1).toFixed(2)); // 1–10 kg
-      const beratAiKg = Number(
-        (beratKg + (Math.random() * 0.3 - 0.15)).toFixed(2),
-      ); // ±150gr variation
-      const pointPerKg =
-        jenis === "Paper Cup" ? 30 : jenis === "Etiket" ? 25 : 20;
-      const totalPoin = Math.floor(beratKg * pointPerKg);
-      const status =
-        statusOptions[Math.floor(Math.random() * statusOptions.length)];
+  // Seed warmiendo.demo withdrawals (Pencairan)
+  const warmiendoPencairan = [
+    {
+      userId: warmiendo.id,
+      jumlah: 30000,
+      jenisBank: "BCA",
+      noRekening: "1234567890",
+      status: "berhasil",
+      buktiTransfer: placeholderR2,
+    },
+    {
+      userId: warmiendo.id,
+      jumlah: 20000,
+      jenisBank: "BCA",
+      noRekening: "1234567890",
+      status: "berhasil",
+      buktiTransfer: placeholderR2,
+    },
+    {
+      userId: warmiendo.id,
+      jumlah: 15000,
+      jenisBank: "BCA",
+      noRekening: "1234567890",
+      status: "pending",
+    },
+  ];
 
-      data.push({
-        nomorSetor: `Setoran ${user.name} – ${tanggalFormatted}`,
-        userId: user.id,
-        jenisSampah: jenis,
-        beratKg,
-        beratAiKg,
-        tanggalSetor,
-        fotoTimbangan: placeholderR2,
-        fotoBuktiTambahan: [placeholderR2, placeholderR2],
-        catatan: count % 3 === 0 ? "Sampah sudah dipilah sebelumnya." : null,
-        totalPoin,
-        status,
-      });
-      count++;
-    }
-    if (count >= 50) break;
-  }
+  await db.insert(pencairanDana).values(warmiendoPencairan);
 
-  await db.insert(setorSampah).values(data).onConflictDoNothing();
+  // 3. Seed banksampah.demo setoran (Kredit)
+  const bankSampahSetoran = [
+    {
+      nomorSetor: `Setoran Mitra Bank Sampah Demo – 1 Juni 2026`,
+      userId: bankSampah.id,
+      jenisSampah: "Karton" as const,
+      beratKg: 15,
+      beratAiKg: 15,
+      tanggalSetor: "2026-06-01",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 300,
+      status: "diterima" as const,
+      metodeSetor: "langsung",
+    },
+    {
+      nomorSetor: `Setoran Mitra Bank Sampah Demo – 2 Juni 2026`,
+      userId: bankSampah.id,
+      jenisSampah: "Paper Cup" as const,
+      beratKg: 20,
+      beratAiKg: 20,
+      tanggalSetor: "2026-06-02",
+      fotoTimbangan: placeholderR2,
+      fotoBuktiTambahan: [placeholderR2],
+      totalPoin: 600,
+      status: "diterima" as const,
+      metodeSetor: "langsung",
+    },
+  ];
 
-  console.log(`✅ Seeded ${data.length} setor sampah records`);
+  await db.insert(setorSampah).values(bankSampahSetoran);
+
+  // Seed banksampah.demo withdrawals (Pencairan)
+  const bankSampahPencairan = [
+    {
+      userId: bankSampah.id,
+      jumlah: 40000,
+      jenisBank: "BRI",
+      noRekening: "0987654321",
+      status: "berhasil",
+      buktiTransfer: placeholderR2,
+    },
+    {
+      userId: bankSampah.id,
+      jumlah: 10000,
+      jenisBank: "BRI",
+      noRekening: "0987654321",
+      status: "pending",
+    },
+  ];
+
+  await db.insert(pencairanDana).values(bankSampahPencairan);
+
+  console.log("✅ Seeded setoran and pencairan successfully");
 }

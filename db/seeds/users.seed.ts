@@ -3,20 +3,53 @@ import { db } from "../index";
 import { users } from "../schema";
 
 export async function seedUsers() {
-  console.log("🌱 Seeding 100 users...");
+  console.log("🌱 Seeding 55 users (5 mandatory + 50 random)...");
 
-  const defaultPasswordHash = await argon2.hash("Password123");
+  // Hashing passwords for mandatory users
+  const hashSuperadmin = await argon2.hash("PasswordSuper123");
+  const hashAdmin = await argon2.hash("PasswordAdmin456");
+  const hashBudi = await argon2.hash("BudiSetorSampah88");
+  const hashDefault = await argon2.hash("Password123");
 
-  const _roles = [
-    "superadmin",
-    "admin",
-    "konsumen",
-    "warmiendo",
-    "bank-sampah",
-  ] as const;
+  const data = [
+    {
+      name: "Superadmin Sicuan",
+      username: "superadmin.sicuan",
+      password: hashSuperadmin,
+      role: "superadmin" as const,
+      status: "Aktif",
+    },
+    {
+      name: "Admin Banjarmasin",
+      username: "admin.banjarmasin",
+      password: hashAdmin,
+      role: "admin" as const,
+      status: "Aktif",
+    },
+    {
+      name: "Budi Santoso",
+      username: "budi.santoso",
+      password: hashBudi,
+      role: "konsumen" as const,
+      status: "Aktif",
+    },
+    {
+      name: "Mitra Warmiendo Demo",
+      username: "warmiendo.demo",
+      password: hashDefault,
+      role: "warmiendo" as const,
+      status: "Aktif",
+    },
+    {
+      name: "Mitra Bank Sampah Demo",
+      username: "banksampah.demo",
+      password: hashDefault,
+      role: "bank-sampah" as const,
+      status: "Aktif",
+    },
+  ];
 
   const firstNames = [
-    "Budi",
     "Andi",
     "Siti",
     "Dewi",
@@ -46,10 +79,10 @@ export async function seedUsers() {
     "Anas",
     "Yusuf",
     "Ibrahim",
+    "Dewo",
   ];
 
   const lastNames = [
-    "Santoso",
     "Wijaya",
     "Susanto",
     "Saputra",
@@ -74,64 +107,18 @@ export async function seedUsers() {
     "Ginting",
     "Harahap",
     "Lubis",
-    "Pane",
-    "Batubara",
-    "Tanjung",
-    "Daulay",
-    "Regar",
   ];
 
-  const data = [];
-
-  // Seed fixed admin users first for safety
-  data.push(
-    {
-      name: "Superadmin Sicuan",
-      username: "superadmin.sicuan",
-      password: defaultPasswordHash,
-      role: "superadmin" as const,
-      status: "Aktif",
-    },
-    {
-      name: "Admin Banjarmasin",
-      username: "admin.banjarmasin",
-      password: defaultPasswordHash,
-      role: "admin" as const,
-      status: "Aktif",
-    },
-    {
-      name: "Mitra Warmiendo Demo",
-      username: "warmiendo.demo",
-      password: defaultPasswordHash,
-      role: "warmiendo" as const,
-      status: "Aktif",
-    },
-    {
-      name: "Mitra Bank Sampah Demo",
-      username: "banksampah.demo",
-      password: defaultPasswordHash,
-      role: "bank-sampah" as const,
-      status: "Aktif",
-    },
-  );
-
-  // Generate 98 random users to reach 100 users total
-  for (let i = 1; i <= 98; i++) {
+  // Generate 50 random users
+  for (let i = 1; i <= 50; i++) {
     const firstName = firstNames[i % firstNames.length];
     const lastName = lastNames[(i * 3) % lastNames.length];
     const name = `${firstName} ${lastName}`;
     const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${i}`;
 
-    // Distribute roles: i % 10 === 0 -> admin, i % 3 === 0 -> konsumen, i % 3 === 1 -> warmiendo, else -> bank-sampah
-    let role:
-      | "superadmin"
-      | "admin"
-      | "konsumen"
-      | "warmiendo"
-      | "bank-sampah" = "konsumen";
-    if (i % 12 === 0) {
-      role = "admin";
-    } else if (i % 3 === 0) {
+    // Random role distribution among non-admin/superadmin roles
+    let role: "konsumen" | "warmiendo" | "bank-sampah" = "konsumen";
+    if (i % 3 === 0) {
       role = "konsumen";
     } else if (i % 3 === 1) {
       role = "warmiendo";
@@ -142,13 +129,15 @@ export async function seedUsers() {
     data.push({
       name,
       username,
-      password: defaultPasswordHash,
+      password: hashDefault,
       role,
-      status: i % 15 === 0 ? "Nonaktif" : "Aktif",
+      status: "Aktif",
     });
   }
 
-  await db.insert(users).values(data).onConflictDoNothing();
+  // Clear existing users before seeding to ensure complete consistency
+  await db.delete(users);
+  await db.insert(users).values(data);
 
-  console.log(`✅ Seeded ${data.length} users`);
+  console.log(`✅ Seeded ${data.length} users successfully`);
 }

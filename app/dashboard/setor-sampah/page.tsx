@@ -544,7 +544,7 @@ export default function SetorSampahPage() {
                         ["pending", "diverifikasi", "diserahkan"].includes(
                           activeEkspedisiSetoran.status,
                         )
-                          ? "bg-primary-600 text-white"
+                          ? "bg-amber-500 text-white"
                           : "bg-neutral-200 text-neutral-400"
                       }`}
                     >
@@ -573,7 +573,7 @@ export default function SetorSampahPage() {
                         ["diverifikasi", "diserahkan"].includes(
                           activeEkspedisiSetoran.status,
                         )
-                          ? "bg-primary-600 text-white"
+                          ? "bg-sky-500 text-white"
                           : "bg-neutral-200 text-neutral-400"
                       }`}
                     >
@@ -630,7 +630,7 @@ export default function SetorSampahPage() {
                     <span
                       className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
                         activeEkspedisiSetoran.status === "diserahkan"
-                          ? "bg-primary-600 text-white"
+                          ? "bg-indigo-500 text-white"
                           : "bg-neutral-200 text-neutral-400"
                       }`}
                     >

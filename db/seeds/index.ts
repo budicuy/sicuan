@@ -8,10 +8,10 @@ import { seedUsers } from "./users.seed";
 
 export const seeders = [
   seedUsers,
-  seedNasabah,
   seedEkspedisi,
   seedHargaSampah,
   seedRawMaterial,
   seedKupon,
   seedSetorSampah,
+  seedNasabah,
 ];
