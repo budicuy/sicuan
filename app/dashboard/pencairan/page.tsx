@@ -1,5 +1,6 @@
 "use client";
 
+import imageCompression from "browser-image-compression";
 import {
   Camera,
   CheckCircle2,
@@ -55,6 +56,7 @@ export default function PencairanAdminPage() {
   // File upload state for approval
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageError, setImageError] = useState("");
+  const [isCompressing, setIsCompressing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   // DataTable states
@@ -103,8 +105,8 @@ export default function PencairanAdminPage() {
     loadData();
   }, [loadData]);
 
-  // Handle image upload and convert to base64
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle image upload and convert to base64 with compression
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setImageError("");
     if (!file) return;
@@ -114,19 +116,38 @@ export default function PencairanAdminPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError("Ukuran gambar maksimal adalah 5MB.");
-      return;
+    setIsCompressing(true);
+    try {
+      const options = {
+        maxSizeMB: 0.1, // 100 KB
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+      };
+      const compressedFile = await imageCompression(file, options);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setUploadedImage(reader.result as string);
+        setIsCompressing(false);
+      };
+      reader.onerror = () => {
+        setImageError("Gagal membaca file.");
+        setIsCompressing(false);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (err) {
+      console.error("Gagal kompres gambar:", err);
+      // Fallback to reading original file as base64
+      const reader = new FileReader();
+      reader.onload = () => {
+        setUploadedImage(reader.result as string);
+        setIsCompressing(false);
+      };
+      reader.onerror = () => {
+        setImageError("Gagal membaca file.");
+        setIsCompressing(false);
+      };
+      reader.readAsDataURL(file);
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setUploadedImage(reader.result as string);
-    };
-    reader.onerror = () => {
-      setImageError("Gagal membaca file.");
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleApprove = () => {
@@ -444,7 +465,14 @@ export default function PencairanAdminPage() {
                 Unggah Bukti Transfer (Wajib)
               </span>
 
-              {uploadedImage ? (
+              {isCompressing ? (
+                <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50/50 h-[200px] flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                  <p className="text-xs font-semibold text-neutral-500">
+                    Mengompresi gambar...
+                  </p>
+                </div>
+              ) : uploadedImage ? (
                 <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-[200px] flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {/* biome-ignore lint/performance/noImgElement: Base64 data url preview is used */}
@@ -479,7 +507,7 @@ export default function PencairanAdminPage() {
                         Pilih Foto Bukti Transfer
                       </p>
                       <p className="text-[10px] text-neutral-400 mt-0.5">
-                        Maksimal ukuran file 5MB
+                        Maksimal ukuran file 5MB (akan dikompresi otomatis)
                       </p>
                     </div>
                   </div>
@@ -509,7 +537,7 @@ export default function PencairanAdminPage() {
               <button
                 type="button"
                 onClick={handleApprove}
-                disabled={isPending || !uploadedImage}
+                disabled={isPending || isCompressing || !uploadedImage}
                 className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1 border-0 cursor-pointer"
               >
                 {isPending ? (

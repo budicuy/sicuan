@@ -9,6 +9,7 @@ import {
   Loader2,
   Plus,
   Recycle,
+  Truck,
   Upload,
   X,
 } from "lucide-react";
@@ -17,7 +18,9 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { FeedbackModal } from "@/app/components/FeedbackModal";
 import {
   createSetorSampah,
+  getCurrentUserRole,
   getMySetoran,
+  handoverSetorSampahToEkspedisi,
   validateFotoTimbangan,
 } from "./action";
 
@@ -29,9 +32,15 @@ interface SetorSampahItem {
   jenisSampah: string;
   beratKg: number;
   totalPoin: number;
+  totalKredit?: number;
   tanggalSetor: string;
   status: string;
   createdAt: Date;
+  metodeSetor?: string;
+  ekspedisi?: {
+    namaVendor: string;
+    noTelepon: string;
+  } | null;
 }
 
 // ── Helper: watermark timestamp pada gambar via Canvas ───────────────────
@@ -213,6 +222,9 @@ export default function SetorSampahPage() {
     new Date().toISOString().split("T")[0],
   );
   const [catatan, setCatatan] = useState("");
+  const [metodeSetorTab, setMetodeSetorTab] = useState<
+    "langsung" | "ekspedisi"
+  >("langsung");
 
   // Foto timbangan state
   const [showCamera, setShowCamera] = useState(false);
@@ -227,8 +239,9 @@ export default function SetorSampahPage() {
   const buktiInputRef = useRef<HTMLInputElement>(null);
   const timbanganInputRef = useRef<HTMLInputElement>(null);
 
-  // History state
+  // History & Role state
   const [history, setHistory] = useState<SetorSampahItem[]>([]);
+  const [role, setRole] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
 
@@ -249,15 +262,30 @@ export default function SetorSampahPage() {
   // Nama setor otomatis (ditampilkan ke user)
   const namaSetorPreview = `Setoran – ${new Date(tanggalSetor).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`;
 
-  // Load history
-  const loadHistory = useCallback(async () => {
-    const res = await getMySetoran({ page: 1, limit: 10 });
-    setHistory(res.data as SetorSampahItem[]);
+  const activeEkspedisiSetoran = history.find(
+    (item) =>
+      item.metodeSetor === "ekspedisi" &&
+      ["pending", "diverifikasi", "diserahkan"].includes(item.status),
+  );
+
+  // Load history & user role
+  const loadData = useCallback(async () => {
+    const [historyRes, roleRes] = await Promise.all([
+      getMySetoran({ page: 1, limit: 10 }),
+      getCurrentUserRole(),
+    ]);
+    setHistory(historyRes.data as SetorSampahItem[]);
+    setRole(roleRes);
+    if (roleRes === "warmiendo") {
+      setMetodeSetorTab("ekspedisi");
+    } else {
+      setMetodeSetorTab("langsung");
+    }
   }, []);
 
   useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+    loadData();
+  }, [loadData]);
 
   // ── Helper: utilitas kompresi gambar ──────────────────────────────────
   const compressImage = async (
@@ -406,6 +434,7 @@ export default function SetorSampahPage() {
 
     const formData = new FormData(e.currentTarget);
     formData.set("fotoTimbanganBase64", fotoTimbangan);
+    formData.set("metodeSetor", metodeSetorTab);
     if (beratAiKg !== null) formData.set("beratAiKg", String(beratAiKg));
     fotoBuktiList.forEach((b64) => {
       formData.append("fotoBuktiBase64[]", b64);
@@ -427,7 +456,7 @@ export default function SetorSampahPage() {
         setAiValidated(false);
         setBeratAiKg(null);
         setTanggalSetor(new Date().toISOString().split("T")[0]);
-        loadHistory();
+        loadData();
       } else {
         if (result.errors?._form) {
           showFeedback("error", "Gagal!", result.errors._form[0]);
@@ -449,7 +478,11 @@ export default function SetorSampahPage() {
 
   const getStatusBadge = (status: string) => {
     if (status === "diterima")
-      return "bg-primary-100 text-primary-700 border-primary-200";
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    if (status === "diverifikasi")
+      return "bg-sky-100 text-sky-700 border-sky-200";
+    if (status === "diserahkan")
+      return "bg-indigo-100 text-indigo-700 border-indigo-200";
     if (status === "pending")
       return "bg-amber-100 text-amber-700 border-amber-200";
     return "bg-red-100 text-red-700 border-red-200";
@@ -469,7 +502,9 @@ export default function SetorSampahPage() {
               Setor Sampah
             </h1>
             <p className="text-sm text-neutral-500">
-              Input data setoran sampah Anda dan dapatkan poin reward
+              {role === "warmiendo" || role === "bank-sampah"
+                ? "Input data setoran sampah Anda dan dapatkan kredit saldo"
+                : "Input data setoran sampah Anda dan dapatkan poin reward"}
             </p>
           </div>
         </div>
@@ -485,332 +520,466 @@ export default function SetorSampahPage() {
               </h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              {/* Nama Setor — readonly */}
-              <div>
-                <label
-                  htmlFor="namaSetor"
-                  className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
-                >
-                  Nama Setoran (otomatis)
-                </label>
-                <input
-                  id="namaSetor"
-                  type="text"
-                  value={namaSetorPreview}
-                  readOnly
-                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-500 cursor-not-allowed"
-                />
-              </div>
-
-              {/* Jenis Sampah */}
-              <div>
-                <label
-                  htmlFor="jenisSampah"
-                  className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
-                >
-                  Jenis Sampah <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="jenisSampah"
-                  name="jenisSampah"
-                  value={jenisSampah}
-                  onChange={(e) => setJenisSampah(e.target.value)}
-                  required
-                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
-                >
-                  <option value="Karton">Karton</option>
-                  <option value="Etiket">Etiket</option>
-                  <option value="Paper Cup">Paper Cup</option>
-                </select>
-              </div>
-
-              {/* Berat & Tanggal */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="beratKg"
-                    className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
-                  >
-                    Berat (kg) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="beratKg"
-                    type="number"
-                    name="beratKg"
-                    value={beratKg}
-                    onChange={(e) => {
-                      setBeratKg(e.target.value);
-                      setAiValidated(false); // reset validasi jika berat berubah
-                    }}
-                    step="0.01"
-                    min="0.01"
-                    required
-                    placeholder="0.00"
-                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
-                  />
-                  {formErrors.beratKg && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.beratKg[0]}
+            {metodeSetorTab === "ekspedisi" && activeEkspedisiSetoran ? (
+              <div className="p-6 space-y-6">
+                <div className="bg-primary-50/50 border border-primary-100 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in duration-300">
+                  <Truck className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-bold text-neutral-800">
+                      Ada Pengiriman Ekspedisi Aktif
+                    </h4>
+                    <p className="text-[11px] text-neutral-500 mt-1">
+                      Anda sedang memiliki setoran via ekspedisi yang sedang
+                      diproses. Form pengajuan baru akan dikunci hingga proses
+                      selesai.
                     </p>
-                  )}
+                  </div>
                 </div>
+
+                <div className="relative pl-6 border-l-2 border-neutral-150 space-y-6">
+                  {/* Step 1: Diajukan */}
+                  <div className="relative">
+                    <span
+                      className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
+                        ["pending", "diverifikasi", "diserahkan"].includes(
+                          activeEkspedisiSetoran.status,
+                        )
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-200 text-neutral-400"
+                      }`}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                    </span>
+                    <div className="text-xs">
+                      <p className="font-bold text-neutral-800">
+                        Pengajuan Setoran
+                      </p>
+                      <p className="text-neutral-500 mt-0.5">
+                        Menunggu verifikasi admin untuk penjemputan sampah.
+                      </p>
+                      <p className="text-[10px] text-neutral-400 mt-1">
+                        Diajukan:{" "}
+                        {new Date(
+                          activeEkspedisiSetoran.createdAt,
+                        ).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Diverifikasi (Courier Assigned) */}
+                  <div className="relative">
+                    <span
+                      className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
+                        ["diverifikasi", "diserahkan"].includes(
+                          activeEkspedisiSetoran.status,
+                        )
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-200 text-neutral-400"
+                      }`}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                    </span>
+                    <div className="text-xs">
+                      <p className="font-bold text-neutral-800">
+                        Verifikasi & Penjadwalan Kurir
+                      </p>
+                      <p className="text-neutral-500 mt-0.5">
+                        {activeEkspedisiSetoran.status === "pending"
+                          ? "Menunggu penunjukan kurir oleh admin."
+                          : `Kurir ditunjuk: ${activeEkspedisiSetoran.ekspedisi?.namaVendor || "Ekspedisi"} (${activeEkspedisiSetoran.ekspedisi?.noTelepon || ""})`}
+                      </p>
+                      {activeEkspedisiSetoran.status === "diverifikasi" && (
+                        <div className="mt-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              startTransition(async () => {
+                                const res =
+                                  await handoverSetorSampahToEkspedisi(
+                                    activeEkspedisiSetoran.id,
+                                  );
+                                if (res.success) {
+                                  showFeedback(
+                                    "success",
+                                    "Berhasil!",
+                                    res.message,
+                                  );
+                                  loadData();
+                                } else {
+                                  showFeedback("error", "Gagal!", res.message);
+                                }
+                              });
+                            }}
+                            disabled={isPending}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold text-[11px] shadow-sm flex items-center gap-1.5 border-0 cursor-pointer transition-all"
+                          >
+                            {isPending ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Truck className="w-3.5 h-3.5" />
+                            )}
+                            Serahkan Sampah ke Ekspedisi
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Step 3: Diserahkan */}
+                  <div className="relative">
+                    <span
+                      className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
+                        activeEkspedisiSetoran.status === "diserahkan"
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-200 text-neutral-400"
+                      }`}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                    </span>
+                    <div className="text-xs">
+                      <p className="font-bold text-neutral-800">
+                        Sampah dalam Perjalanan
+                      </p>
+                      <p className="text-neutral-500 mt-0.5">
+                        Sampah sedang diantar oleh kurir ke gudang pusat. Saldo
+                        akan otomatis bertambah setelah sampah selesai
+                        diverifikasi diterima oleh admin.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                {/* Nama Setor — readonly */}
                 <div>
                   <label
-                    htmlFor="tanggalSetor"
+                    htmlFor="namaSetor"
                     className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
                   >
-                    Tanggal Setor <span className="text-red-500">*</span>
+                    Nama Setoran (otomatis)
                   </label>
                   <input
-                    id="tanggalSetor"
-                    type="date"
-                    value={tanggalSetor}
+                    id="namaSetor"
+                    type="text"
+                    value={namaSetorPreview}
                     readOnly
                     className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-500 cursor-not-allowed"
                   />
-                  <input
-                    type="hidden"
-                    name="tanggalSetor"
-                    value={tanggalSetor}
-                  />
                 </div>
-              </div>
 
-              {/* Foto Timbangan */}
-              <div className="space-y-3">
-                <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                  Foto Bukti Timbangan <span className="text-red-500">*</span>
-                </span>
-                <p className="text-xs text-neutral-500">
-                  Wajib diambil menggunakan kamera. Foto akan otomatis mendapat
-                  watermark tanggal & jam.
-                </p>
+                {/* Jenis Sampah */}
+                <div>
+                  <label
+                    htmlFor="jenisSampah"
+                    className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                  >
+                    Jenis Sampah <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="jenisSampah"
+                    name="jenisSampah"
+                    value={jenisSampah}
+                    onChange={(e) => setJenisSampah(e.target.value)}
+                    required
+                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
+                  >
+                    <option value="Karton">Karton</option>
+                    <option value="Etiket">Etiket</option>
+                    <option value="Paper Cup">Paper Cup</option>
+                  </select>
+                </div>
 
-                {fotoTimbangan ? (
-                  <div className="space-y-3">
-                    <div className="relative rounded-xl overflow-hidden border border-neutral-200 aspect-video bg-neutral-50">
-                      <Image
-                        src={fotoTimbangan}
-                        alt="Foto timbangan"
-                        className="w-full h-full object-contain"
-                        fill
-                        unoptimized
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFotoTimbangan(null);
-                          setAiValidated(false);
-                          setAiError("");
-                          setBeratAiKg(null);
-                        }}
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Status validasi AI */}
-                    {aiValidated ? (
-                      <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-50 border border-primary-200">
-                        <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
-                        <p className="text-xs text-primary-700 font-medium">
-                          Berat tervalidasi AI: {beratAiKg} kg ✓
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {aiError && (
-                          <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
-                            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                            <p className="text-xs text-red-600">{aiError}</p>
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={handleValidasiAI}
-                          disabled={isValidatingAI || !beratKg}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-                        >
-                          {isValidatingAI ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Memvalidasi dengan AI...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-4 h-4" />
-                              Validasi Berat dengan AI
-                            </>
-                          )}
-                        </button>
-                        {!beratKg && (
-                          <p className="text-xs text-amber-600 text-center">
-                            ⚠ Isi berat (kg) terlebih dahulu sebelum validasi
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
+                {/* Berat & Tanggal */}
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowCamera(true)}
-                        className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-primary-300 bg-primary-50/50 hover:bg-primary-50 hover:border-primary-400 text-primary-600 transition-all cursor-pointer"
-                      >
-                        <Camera className="w-8 h-8" />
-                        <span className="font-semibold text-sm">
-                          Ambil Foto Timbangan
-                        </span>
-                        <span className="text-xs text-primary-500">
-                          Menggunakan Kamera
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => timbanganInputRef.current?.click()}
-                        className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-600 transition-all cursor-pointer"
-                      >
-                        <Upload className="w-8 h-8" />
-                        <span className="font-semibold text-sm">
-                          Upload Foto Timbangan
-                        </span>
-                        <span className="text-xs text-neutral-500">
-                          Pilih dari Galeri/File
-                        </span>
-                      </button>
-                    </div>
-
+                    <label
+                      htmlFor="beratKg"
+                      className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                    >
+                      Berat (kg) <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      ref={timbanganInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleTimbanganFileChange}
+                      id="beratKg"
+                      type="number"
+                      name="beratKg"
+                      value={beratKg}
+                      onChange={(e) => {
+                        setBeratKg(e.target.value);
+                        setAiValidated(false); // reset validasi jika berat berubah
+                      }}
+                      step="0.01"
+                      min="0.01"
+                      required
+                      placeholder="0.00"
+                      className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
                     />
-
-                    {formErrors.fotoTimbangan && (
+                    {formErrors.beratKg && (
                       <p className="text-red-500 text-xs mt-1">
-                        {formErrors.fotoTimbangan[0]}
+                        {formErrors.beratKg[0]}
                       </p>
                     )}
                   </div>
-                )}
-              </div>
-
-              {/* Foto Bukti Tambahan */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                    Foto Bukti Tambahan <span className="text-red-500">*</span>
-                  </span>
-                  <span className="text-xs text-neutral-400">
-                    {fotoBuktiList.length}/3
-                  </span>
+                  <div>
+                    <label
+                      htmlFor="tanggalSetor"
+                      className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                    >
+                      Tanggal Setor <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="tanggalSetor"
+                      type="date"
+                      value={tanggalSetor}
+                      readOnly
+                      className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-500 cursor-not-allowed"
+                    />
+                    <input
+                      type="hidden"
+                      name="tanggalSetor"
+                      value={tanggalSetor}
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-neutral-500">
-                  Minimal 1, maksimal 3 foto. Bisa dari kamera atau galeri.
-                </p>
 
-                <div className="grid grid-cols-3 gap-3">
-                  {fotoBuktiList.map((src, idx) => (
-                    <div
-                      key={src.substring(100, 200)}
-                      className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50"
-                    >
-                      <Image
-                        src={src}
-                        alt={`Bukti ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                        fill
-                        unoptimized
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeBukti(idx)}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                {/* Foto Timbangan */}
+                <div className="space-y-3">
+                  <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                    Foto Bukti Timbangan <span className="text-red-500">*</span>
+                  </span>
+                  <p className="text-xs text-neutral-500">
+                    Wajib diambil menggunakan kamera. Foto akan otomatis
+                    mendapat watermark tanggal & jam.
+                  </p>
+
+                  {fotoTimbangan ? (
+                    <div className="space-y-3">
+                      <div className="relative rounded-xl overflow-hidden border border-neutral-200 aspect-video bg-neutral-50">
+                        <Image
+                          src={fotoTimbangan}
+                          alt="Foto timbangan"
+                          className="w-full h-full object-contain"
+                          fill
+                          unoptimized
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFotoTimbangan(null);
+                            setAiValidated(false);
+                            setAiError("");
+                            setBeratAiKg(null);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Status validasi AI */}
+                      {aiValidated ? (
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-50 border border-primary-200">
+                          <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
+                          <p className="text-xs text-primary-700 font-medium">
+                            Berat tervalidasi AI: {beratAiKg} kg ✓
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {aiError && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+                              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                              <p className="text-xs text-red-600">{aiError}</p>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={handleValidasiAI}
+                            disabled={isValidatingAI || !beratKg}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+                          >
+                            {isValidatingAI ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Memvalidasi dengan AI...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                Validasi Berat dengan AI
+                              </>
+                            )}
+                          </button>
+                          {!beratKg && (
+                            <p className="text-xs text-amber-600 text-center">
+                              ⚠ Isi berat (kg) terlebih dahulu sebelum validasi
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  ) : (
+                    <div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowCamera(true)}
+                          className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-primary-300 bg-primary-50/50 hover:bg-primary-50 hover:border-primary-400 text-primary-600 transition-all cursor-pointer"
+                        >
+                          <Camera className="w-8 h-8" />
+                          <span className="font-semibold text-sm">
+                            Ambil Foto Timbangan
+                          </span>
+                          <span className="text-xs text-primary-500">
+                            Menggunakan Kamera
+                          </span>
+                        </button>
 
-                  {fotoBuktiList.length < 3 && (
-                    <button
-                      type="button"
-                      onClick={() => buktiInputRef.current?.click()}
-                      className="aspect-square rounded-xl border-2 border-dashed border-neutral-300 hover:border-primary-400 hover:bg-primary-50/50 flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-primary-600 transition-all"
-                    >
-                      <Plus className="w-6 h-6" />
-                      <span className="text-xs font-medium">Tambah</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => timbanganInputRef.current?.click()}
+                          className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-600 transition-all cursor-pointer"
+                        >
+                          <Upload className="w-8 h-8" />
+                          <span className="font-semibold text-sm">
+                            Upload Foto Timbangan
+                          </span>
+                          <span className="text-xs text-neutral-500">
+                            Pilih dari Galeri/File
+                          </span>
+                        </button>
+                      </div>
+
+                      <input
+                        ref={timbanganInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleTimbanganFileChange}
+                      />
+
+                      {formErrors.fotoTimbangan && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {formErrors.fotoTimbangan[0]}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
 
-                <input
-                  ref={buktiInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleBuktiChange}
-                />
+                {/* Foto Bukti Tambahan */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                      Foto Bukti Tambahan{" "}
+                      <span className="text-red-500">*</span>
+                    </span>
+                    <span className="text-xs text-neutral-400">
+                      {fotoBuktiList.length}/3
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    Minimal 1, maksimal 3 foto. Bisa dari kamera atau galeri.
+                  </p>
 
-                {formErrors.fotoBukti && (
-                  <p className="text-red-500 text-xs">
-                    {formErrors.fotoBukti[0]}
+                  <div className="grid grid-cols-3 gap-3">
+                    {fotoBuktiList.map((src, idx) => (
+                      <div
+                        key={src.substring(100, 200)}
+                        className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50"
+                      >
+                        <Image
+                          src={src}
+                          alt={`Bukti ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          fill
+                          unoptimized
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeBukti(idx)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {fotoBuktiList.length < 3 && (
+                      <button
+                        type="button"
+                        onClick={() => buktiInputRef.current?.click()}
+                        className="aspect-square rounded-xl border-2 border-dashed border-neutral-300 hover:border-primary-400 hover:bg-primary-50/50 flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-primary-600 transition-all"
+                      >
+                        <Plus className="w-6 h-6" />
+                        <span className="text-xs font-medium">Tambah</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    ref={buktiInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleBuktiChange}
+                  />
+
+                  {formErrors.fotoBukti && (
+                    <p className="text-red-500 text-xs">
+                      {formErrors.fotoBukti[0]}
+                    </p>
+                  )}
+                </div>
+
+                {/* Catatan */}
+                <div>
+                  <label
+                    htmlFor="catatan"
+                    className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                  >
+                    Catatan Tambahan (opsional)
+                  </label>
+                  <textarea
+                    id="catatan"
+                    name="catatan"
+                    value={catatan}
+                    onChange={(e) => setCatatan(e.target.value)}
+                    rows={3}
+                    placeholder="Catatan kondisi sampah, dll..."
+                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all resize-none"
+                  />
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={
+                    isPending || !aiValidated || fotoBuktiList.length < 1
+                  }
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Memproses Setoran...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Submit Setoran
+                    </>
+                  )}
+                </button>
+
+                {!aiValidated && fotoTimbangan && (
+                  <p className="text-xs text-amber-600 text-center">
+                    ⚠ Validasi foto timbangan dengan AI sebelum submit
                   </p>
                 )}
-              </div>
-
-              {/* Catatan */}
-              <div>
-                <label
-                  htmlFor="catatan"
-                  className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
-                >
-                  Catatan Tambahan (opsional)
-                </label>
-                <textarea
-                  id="catatan"
-                  name="catatan"
-                  value={catatan}
-                  onChange={(e) => setCatatan(e.target.value)}
-                  rows={3}
-                  placeholder="Catatan kondisi sampah, dll..."
-                  className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all resize-none"
-                />
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isPending || !aiValidated || fotoBuktiList.length < 1}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Memproses Setoran...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    Submit Setoran
-                  </>
-                )}
-              </button>
-
-              {!aiValidated && fotoTimbangan && (
-                <p className="text-xs text-amber-600 text-center">
-                  ⚠ Validasi foto timbangan dengan AI sebelum submit
-                </p>
-              )}
-            </form>
+              </form>
+            )}
           </div>
         </div>
 
@@ -835,7 +1004,11 @@ export default function SetorSampahPage() {
                 history.map((item) => (
                   <div
                     key={item.id}
-                    className="px-5 py-4 hover:bg-neutral-50 transition-colors"
+                    className={`px-5 py-4 hover:bg-neutral-50 transition-colors ${
+                      item.metodeSetor === "ekspedisi"
+                        ? "bg-sky-50/35 border-l-4 border-sky-400"
+                        : ""
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -851,6 +1024,15 @@ export default function SetorSampahPage() {
                             {item.beratKg} kg
                           </span>
                         </div>
+                        {item.metodeSetor === "ekspedisi" && (
+                          <div className="flex items-center gap-1.5 mt-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded text-[10px] w-fit font-semibold border border-amber-100">
+                            <Truck className="w-3 h-3 text-amber-600" />
+                            Ekspedisi
+                            {item.ekspedisi
+                              ? `: ${item.ekspedisi.namaVendor}`
+                              : " (Menunggu kurir)"}
+                          </div>
+                        )}
                         <div className="flex items-center gap-1.5 mt-1.5">
                           <Clock className="w-3 h-3 text-neutral-400" />
                           <span className="text-xs text-neutral-400">
@@ -865,7 +1047,9 @@ export default function SetorSampahPage() {
                           {item.status}
                         </span>
                         <span className="text-xs font-bold text-primary-600">
-                          +{item.totalPoin} poin
+                          {role === "warmiendo" || role === "bank-sampah"
+                            ? `+Rp ${(item.totalKredit ?? 0).toLocaleString("id-ID")}`
+                            : `+${item.totalPoin} poin`}
                         </span>
                       </div>
                     </div>

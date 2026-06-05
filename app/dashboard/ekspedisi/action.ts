@@ -162,3 +162,11 @@ export async function deleteEkspedisi(id: number): Promise<ActionState> {
     return { success: false, errors: { _form: ["Gagal menghapus ekspedisi"] } };
   }
 }
+
+export async function getAllActiveEkspedisi() {
+  return db
+    .select()
+    .from(ekspedisi)
+    .where(eq(ekspedisi.status, "Aktif"))
+    .orderBy(asc(ekspedisi.namaVendor));
+}

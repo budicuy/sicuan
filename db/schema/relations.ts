@@ -21,10 +21,16 @@ export const nasabahRelations = relations(nasabah, ({ one }) => ({
   }),
 }));
 
+import { ekspedisi } from "./ekspedisi";
+
 export const setorSampahRelations = relations(setorSampah, ({ one }) => ({
   user: one(users, {
     fields: [setorSampah.userId],
     references: [users.id],
+  }),
+  ekspedisi: one(ekspedisi, {
+    fields: [setorSampah.ekspedisiId],
+    references: [ekspedisi.id],
   }),
 }));
 

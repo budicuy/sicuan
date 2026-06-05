@@ -7,12 +7,14 @@ import {
   FileText,
   Loader2,
   Printer,
+  Truck,
   X,
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { DataTable } from "@/app/components/DataTable";
+import { getAllActiveEkspedisi } from "../ekspedisi/action";
 import {
   getCurrentUserRole,
   getMySetoran,
@@ -25,15 +27,20 @@ interface SetorSampahItem {
   jenisSampah: string;
   beratKg: number;
   totalPoin: number;
+  totalKredit?: number;
   tanggalSetor: string;
   status: string;
   createdAt: Date;
   fotoTimbangan: string;
   fotoBuktiTambahan?: string[] | null;
   catatan: string | null;
+  metodeSetor?: string;
+  ekspedisiId?: number | null;
+  ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
   user?: {
     name: string;
     username: string;
+    role: string;
   } | null;
 }
 
@@ -42,6 +49,7 @@ export default function LaporanPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalBerat, setTotalBerat] = useState(0);
   const [totalPoin, setTotalPoin] = useState(0);
+  const [totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Table pagination state
@@ -63,6 +71,10 @@ export default function LaporanPage() {
   );
   const [userRole, setUserRole] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [ekspedisiList, setEkspedisiList] = useState<
+    { id: number; namaVendor: string; noTelepon: string }[]
+  >([]);
+  const [selectedEkspedisiId, setSelectedEkspedisiId] = useState<string>("");
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -80,6 +92,7 @@ export default function LaporanPage() {
       setTotalItems(res.total);
       setTotalBerat(res.totalBerat);
       setTotalPoin(res.totalPoin);
+      setTotalKredit(res.totalKredit);
     } catch (err) {
       console.error("Gagal memuat data laporan:", err);
     } finally {
@@ -99,18 +112,35 @@ export default function LaporanPage() {
   useEffect(() => {
     loadData();
     loadUserRole();
+    getAllActiveEkspedisi().then((res) => {
+      setEkspedisiList(res);
+      if (res.length > 0) {
+        setSelectedEkspedisiId(String(res[0].id));
+      }
+    });
   }, [loadData, loadUserRole]);
 
   const handleStatusUpdate = async (
     id: number,
-    status: "pending" | "diterima" | "ditolak",
+    status: "pending" | "diverifikasi" | "diserahkan" | "diterima" | "ditolak",
+    ekspedisiId?: number,
   ) => {
     setUpdatingId(id);
     try {
-      const res = await updateSetorSampahStatus(id, status);
+      const res = await updateSetorSampahStatus(id, status, ekspedisiId);
       if (res.success) {
         if (selectedItem && selectedItem.id === id) {
-          setSelectedItem((prev) => (prev ? { ...prev, status } : null));
+          setSelectedItem((prev) => {
+            if (!prev) return null;
+            const chosenEks =
+              ekspedisiList.find((e) => e.id === ekspedisiId) || null;
+            return {
+              ...prev,
+              status,
+              ekspedisiId: ekspedisiId || prev.ekspedisiId,
+              ekspedisi: chosenEks || prev.ekspedisi,
+            };
+          });
         }
         loadData();
       } else {
@@ -146,6 +176,22 @@ export default function LaporanPage() {
         <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
           <CheckCircle2 className="w-3.5 h-3.5" />
           Diterima
+        </span>
+      );
+    }
+    if (status === "diverifikasi") {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+          <Truck className="w-3.5 h-3.5" />
+          Diverifikasi
+        </span>
+      );
+    }
+    if (status === "diserahkan") {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+          <Truck className="w-3.5 h-3.5" />
+          Diserahkan
         </span>
       );
     }
@@ -205,17 +251,28 @@ export default function LaporanPage() {
       ),
     },
     {
-      header: "Poin",
+      header: "Reward",
       sortKey: "totalPoin",
-      render: (item: SetorSampahItem) => (
-        <span className="font-bold text-amber-600">+{item.totalPoin}</span>
-      ),
+      render: (item: SetorSampahItem) => {
+        const isMoney =
+          item.user?.role === "warmiendo" || item.user?.role === "bank-sampah";
+        return isMoney ? (
+          <span className="font-bold text-primary-600">
+            +Rp {(item.totalKredit ?? 0).toLocaleString("id-ID")}
+          </span>
+        ) : (
+          <span className="font-bold text-amber-600">
+            +{item.totalPoin} Poin
+          </span>
+        );
+      },
     },
     {
       header: "Status",
       sortKey: "status",
       render: (item: SetorSampahItem) =>
-        userRole === "admin" || userRole === "superadmin" ? (
+        (userRole === "admin" || userRole === "superadmin") &&
+        item.metodeSetor !== "ekspedisi" ? (
           <div className="flex items-center gap-2">
             <select
               value={item.status}
@@ -223,7 +280,12 @@ export default function LaporanPage() {
               onChange={(e) =>
                 handleStatusUpdate(
                   item.id,
-                  e.target.value as "pending" | "diterima" | "ditolak",
+                  e.target.value as
+                    | "pending"
+                    | "diverifikasi"
+                    | "diserahkan"
+                    | "diterima"
+                    | "ditolak",
                 )
               }
               className="px-2 py-1 border border-neutral-200 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600/10 text-neutral-800 cursor-pointer"
@@ -326,7 +388,7 @@ export default function LaporanPage() {
       </div>
 
       {/* Rangkuman Kartu */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 print:grid-cols-3 print:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 print:grid-cols-4 print:gap-4">
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
             Total Setoran
@@ -360,6 +422,15 @@ export default function LaporanPage() {
             <span className="text-sm font-semibold text-amber-400 ml-1">
               poin
             </span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+          <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
+            Total Kredit Diperoleh
+          </div>
+          <div className="text-3xl font-extrabold text-emerald-600">
+            Rp {totalKredit.toLocaleString("id-ID")}
           </div>
         </div>
       </div>
@@ -483,7 +554,8 @@ export default function LaporanPage() {
                     Status Verifikasi
                   </span>
                   <div className="mt-1">
-                    {userRole === "admin" || userRole === "superadmin" ? (
+                    {(userRole === "admin" || userRole === "superadmin") &&
+                    selectedItem.metodeSetor !== "ekspedisi" ? (
                       <div className="flex items-center gap-2">
                         <select
                           value={selectedItem.status}
@@ -493,6 +565,8 @@ export default function LaporanPage() {
                               selectedItem.id,
                               e.target.value as
                                 | "pending"
+                                | "diverifikasi"
+                                | "diserahkan"
                                 | "diterima"
                                 | "ditolak",
                             )
@@ -522,12 +596,35 @@ export default function LaporanPage() {
                 </div>
                 <div>
                   <span className="text-neutral-500 block text-xs">
-                    Poin Reward
+                    Reward diperoleh
                   </span>
-                  <span className="font-bold text-amber-600 text-lg">
-                    +{selectedItem.totalPoin} Poin
+                  <span className="font-bold text-neutral-800 text-lg">
+                    {selectedItem.user?.role === "warmiendo" ||
+                    selectedItem.user?.role === "bank-sampah"
+                      ? `+Rp ${(selectedItem.totalKredit ?? 0).toLocaleString("id-ID")}`
+                      : `+${selectedItem.totalPoin} Poin`}
                   </span>
                 </div>
+                <div>
+                  <span className="text-neutral-500 block text-xs">
+                    Metode Setor
+                  </span>
+                  <span className="font-semibold text-neutral-800 capitalize">
+                    {selectedItem.metodeSetor || "Langsung"}
+                  </span>
+                </div>
+                {selectedItem.metodeSetor === "ekspedisi" && (
+                  <div>
+                    <span className="text-neutral-500 block text-xs">
+                      Ekspedisi Penjemput
+                    </span>
+                    <span className="font-semibold text-neutral-800">
+                      {selectedItem.ekspedisi
+                        ? `${selectedItem.ekspedisi.namaVendor} (${selectedItem.ekspedisi.noTelepon})`
+                        : "Belum ditugaskan"}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Catatan */}
@@ -591,6 +688,145 @@ export default function LaporanPage() {
                   </span>
                 )}
               </div>
+              {/* Ekspedisi Verification Actions for Admin */}
+              {(userRole === "admin" || userRole === "superadmin") &&
+                selectedItem.metodeSetor === "ekspedisi" && (
+                  <div className="p-4 bg-primary-50/40 border border-primary-150 rounded-xl space-y-4">
+                    <h4 className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 uppercase tracking-wider">
+                      <Truck className="w-4 h-4 text-primary-600" />
+                      Panel Kontrol Ekspedisi (Admin)
+                    </h4>
+
+                    {selectedItem.status === "pending" && (
+                      <div className="space-y-3">
+                        <p className="text-xs text-neutral-500">
+                          Pilih vendor ekspedisi yang akan ditugaskan untuk
+                          menjemput sampah di lokasi Warmiendo:
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <select
+                            value={selectedEkspedisiId}
+                            onChange={(e) =>
+                              setSelectedEkspedisiId(e.target.value)
+                            }
+                            className="flex-1 px-3 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:border-primary-600"
+                          >
+                            {ekspedisiList.length === 0 ? (
+                              <option value="">
+                                Tidak ada vendor ekspedisi aktif
+                              </option>
+                            ) : (
+                              ekspedisiList.map((e) => (
+                                <option key={e.id} value={e.id}>
+                                  {e.namaVendor} ({e.noTelepon})
+                                </option>
+                              ))
+                            )}
+                          </select>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              disabled={
+                                updatingId === selectedItem.id ||
+                                !selectedEkspedisiId
+                              }
+                              onClick={() =>
+                                handleStatusUpdate(
+                                  selectedItem.id,
+                                  "diverifikasi",
+                                  Number(selectedEkspedisiId),
+                                )
+                              }
+                              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
+                            >
+                              {updatingId === selectedItem.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              )}
+                              Setujui &amp; Tugaskan
+                            </button>
+                            <button
+                              type="button"
+                              disabled={updatingId === selectedItem.id}
+                              onClick={() =>
+                                handleStatusUpdate(selectedItem.id, "ditolak")
+                              }
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all"
+                            >
+                              Tolak
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedItem.status === "diverifikasi" && (
+                      <div className="space-y-2 text-xs">
+                        <p className="text-neutral-600 font-semibold">
+                          Status: Menunggu mitra Warmiendo menyerahkan sampah ke
+                          kurir ({selectedItem.ekspedisi?.namaVendor}).
+                        </p>
+                        <button
+                          type="button"
+                          disabled={updatingId === selectedItem.id}
+                          onClick={() =>
+                            handleStatusUpdate(selectedItem.id, "ditolak")
+                          }
+                          className="px-4 py-2 bg-red-650 hover:bg-red-700 text-white font-bold text-xs rounded-xl border-0 cursor-pointer transition-all"
+                        >
+                          Batalkan / Tolak
+                        </button>
+                      </div>
+                    )}
+
+                    {selectedItem.status === "diserahkan" && (
+                      <div className="space-y-3">
+                        <p className="text-xs text-neutral-600 font-semibold">
+                          Status: Kurir telah mengambil sampah. Konfirmasi jika
+                          sampah sudah Anda terima dengan benar di pusat:
+                        </p>
+                        <div className="flex gap-2.5">
+                          <button
+                            type="button"
+                            disabled={updatingId === selectedItem.id}
+                            onClick={() =>
+                              handleStatusUpdate(selectedItem.id, "diterima")
+                            }
+                            className="px-4 py-2.5 bg-emerald-650 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
+                          >
+                            {updatingId === selectedItem.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                            Konfirmasi Sampah Diterima &amp; Cairkan Saldo
+                          </button>
+                          <button
+                            type="button"
+                            disabled={updatingId === selectedItem.id}
+                            onClick={() =>
+                              handleStatusUpdate(selectedItem.id, "ditolak")
+                            }
+                            className="px-4 py-2.5 bg-red-650 hover:bg-red-700 text-white font-bold text-xs rounded-xl border-0 cursor-pointer disabled:opacity-50 transition-all"
+                          >
+                            Tolak / Gagal
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {(selectedItem.status === "diterima" ||
+                      selectedItem.status === "ditolak") && (
+                      <p className="text-xs text-neutral-500 font-semibold">
+                        Proses selesai. Status akhir:{" "}
+                        <span className="capitalize font-bold text-neutral-700">
+                          {selectedItem.status}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Footer */}

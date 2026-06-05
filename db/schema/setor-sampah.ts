@@ -9,6 +9,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { ekspedisi } from "./ekspedisi";
 import { users } from "./users";
 
 export const jenisSampahEnum = pgEnum("jenis_sampah", [
@@ -19,6 +20,8 @@ export const jenisSampahEnum = pgEnum("jenis_sampah", [
 
 export const statusSetorEnum = pgEnum("status_setor", [
   "pending",
+  "diverifikasi",
+  "diserahkan",
   "diterima",
   "ditolak",
 ]);
@@ -38,6 +41,10 @@ export const setorSampah = pgTable("setor_sampah", {
   catatan: text("catatan"), // opsional
   totalPoin: integer("total_poin").notNull().default(0), // poin yang didapat
   status: statusSetorEnum("status").notNull().default("diterima"),
+  metodeSetor: text("metode_setor").notNull().default("langsung"), // "langsung" atau "ekspedisi"
+  ekspedisiId: integer("ekspedisi_id").references(() => ekspedisi.id, {
+    onDelete: "set null",
+  }),
 
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
