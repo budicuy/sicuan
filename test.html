@@ -1,0 +1,122 @@
+app/
+├── (konsumen)/
+│ ├── layout.tsx # Auth guard + Sidebar directly implemented here
+│ ├── dashboard/
+│ │ ├── page.tsx
+│ │ └── action.ts # Consumers dashboard actions
+│ ├── setor-sampah/
+│ │ ├── page.tsx
+│ │ └── action.ts # Consumers setoran actions
+│ ├── laporan/
+│ │ ├── page.tsx
+│ │ └── action.ts # Consumers report actions
+│ ├── tukar-kupon/
+│ │ ├── page.tsx
+│ │ └── action.ts # Coupon redeem actions
+│ └── profil/
+│ ├── page.tsx
+│ └── action.ts # Consumers profile actions
+│
+├── (bank-sampah)/
+│ ├── layout.tsx # Auth guard + Sidebar directly implemented here
+│ ├── dashboard/
+│ │ ├── page.tsx
+│ │ └── action.ts # Bank sampah dashboard actions
+│ ├── setor-sampah/
+│ │ ├── page.tsx
+│ │ └── action.ts # Bank sampah setoran actions
+│ ├── ajukan-pencairan-dana/
+│ │ ├── page.tsx
+│ │ └── action.ts # Bank sampah disbursement request actions
+│ ├── laporan/
+│ │ ├── page.tsx
+│ │ └── action.ts # Bank sampah report actions
+│ └── profil/
+│ ├── page.tsx
+│ └── action.ts # Bank sampah profile actions
+│
+├── (warmiendo)/
+│ ├── layout.tsx # Auth guard + Sidebar directly implemented here
+│ ├── dashboard/
+│ │ ├── page.tsx
+│ │ └── action.ts # Warmiendo dashboard actions
+│ ├── setor-sampah/
+│ │ ├── page.tsx
+│ │ └── action.ts # Warmiendo setoran actions (shipment)
+│ ├── ajukan-pencairan-dana/
+│ │ ├── page.tsx
+│ │ └── action.ts # Warmiendo disbursement request actions
+│ ├── laporan/
+│ │ ├── page.tsx
+│ │ └── action.ts # Warmiendo report actions
+│ └── profil/
+│ ├── page.tsx
+│ └── action.ts # Warmiendo profile actions
+│
+├── (admin-superadmin)/
+│ ├── layout.tsx # Auth guard + Sidebar directly implemented here
+│ ├── dashboard/
+│ │ ├── page.tsx
+│ │ └── action.ts # Admin dashboard metrics actions
+│ ├── Master Data (grouped logically under directories)
+│ │ ├── users/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # User CRUD actions
+│ │ ├── kupon/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # Coupon CRUD actions
+│ │ ├── ekspedisi/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # Expedition CRUD actions
+│ │ ├── harga-sampah/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # Waste pricing CRUD actions
+│ │ └── raw-material/
+│ │ ├── page.tsx
+│ │ └── action.ts # Raw material CRUD actions
+│ ├── laporan/
+│ │ ├── konsumen/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # Admin verif actions for konsumen setoran
+│ │ ├── warmiendo/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # Admin verif actions for warmiendo setoran
+│ │ └── bank-sampah/
+│ │ ├── page.tsx
+│ │ └── action.ts # Admin verif actions for bank-sampah setoran
+│ ├── setor-sampah/ # Routing / list page if any
+│ │ ├── konsumen/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # Verification for Consumers Setoran
+│ │ ├── warmiendo/
+│ │ │ ├── page.tsx
+│ │ │ └── action.ts # Verification for Warmiendo Setoran
+│ │ └── bank-sampah/
+│ │ ├── page.tsx
+│ │ └── action.ts # Verification for Bank-Sampah Setoran
+│ └── pencairan-dana/
+│ ├── page.tsx
+│ └── action.ts # Admin disbursement verification/approvals actions
+│
+├── components/
+│ ├── shared/
+│ │ ├── ConfirmModal.tsx
+│ │ ├── DataTable.tsx
+│ │ ├── FeedbackModal.tsx
+│ │ ├── FormModal.tsx
+│ │ ├── QrModal.tsx
+│ │ └── contoh.tsx # Reusable UI components (buttons, charts, sidebar templates)
+│ └── landing-page/
+│
+├── lib/
+│ ├── gemini-weight-reader.ts
+│ └── r2.ts
+│
+├── kupon-validasi/ # renamed from kupon-validasi or validasi-kupon
+│ ├── page.tsx
+│ └── action.ts # Validation actions without auth requirements
+├── login/
+│ ├── page.tsx
+│ └── action.ts # Login action
+├── proxy.ts # Root path router
+└── globals.css
