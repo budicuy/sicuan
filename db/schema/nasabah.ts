@@ -14,6 +14,8 @@ export const nasabah = pgTable("nasabah", {
   alamat: text("alamat"),
   jenisBank: text("jenis_bank"),
   noRekening: text("no_rekening"),
+  poin: integer("poin").notNull().default(0),
+  kredit: integer("kredit").notNull().default(0),
 
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

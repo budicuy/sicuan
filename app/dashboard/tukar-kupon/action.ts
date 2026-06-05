@@ -1,11 +1,11 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import { kupon, penukaranKupon, setorSampah } from "@/db/schema";
+import { kupon, nasabah, penukaranKupon } from "@/db/schema";
 
 export type ActionState = {
   success: boolean;
@@ -30,31 +30,22 @@ async function getCurrentUser() {
   }
 }
 
+export async function getUserRole() {
+  const user = await getCurrentUser();
+  return user?.role ?? null;
+}
+
 export async function getKonsumenPoints() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "konsumen") {
+  if (!user) {
     return 0;
   }
 
-  // Calculate total points from diterima setoran
-  const totalSetoranPoinRes = await db
-    .select({ total: sql<number>`sum(total_poin)` })
-    .from(setorSampah)
-    .where(
-      and(eq(setorSampah.userId, user.id), eq(setorSampah.status, "diterima")),
-    );
-  const totalEarned = Number(totalSetoranPoinRes[0]?.total ?? 0);
+  const profile = await db.query.nasabah.findFirst({
+    where: eq(nasabah.userId, user.id),
+  });
 
-  // Calculate points spent on coupon redemptions
-  const penukaranList = await db
-    .select({ poin: kupon.poin })
-    .from(penukaranKupon)
-    .innerJoin(kupon, eq(penukaranKupon.kuponId, kupon.id))
-    .where(eq(penukaranKupon.userId, user.id));
-
-  const totalSpent = penukaranList.reduce((sum, item) => sum + item.poin, 0);
-
-  return Math.max(0, totalEarned - totalSpent);
+  return profile?.poin ?? 0;
 }
 
 export async function getAvailableCoupons() {
@@ -129,6 +120,21 @@ export async function redeemCoupon(kuponId: number): Promise<ActionState> {
     }
 
     const uniqueCode = generateRandomCode();
+
+    // Deduct points from the nasabah table
+    const profile = await db.query.nasabah.findFirst({
+      where: eq(nasabah.userId, user.id),
+    });
+
+    if (profile) {
+      await db
+        .update(nasabah)
+        .set({
+          poin: Math.max(0, profile.poin - targetKupon.poin),
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.userId, user.id));
+    }
 
     // Insert redemption transaction directly since neon-http doesn't support interactive transactions
     await db.insert(penukaranKupon).values({

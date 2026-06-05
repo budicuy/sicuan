@@ -40,6 +40,8 @@ interface SetorSampahItem {
 export default function LaporanPage() {
   const [data, setData] = useState<SetorSampahItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
+  const [totalBerat, setTotalBerat] = useState(0);
+  const [totalPoin, setTotalPoin] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Table pagination state
@@ -76,6 +78,8 @@ export default function LaporanPage() {
       });
       setData(res.data as SetorSampahItem[]);
       setTotalItems(res.total);
+      setTotalBerat(res.totalBerat);
+      setTotalPoin(res.totalPoin);
     } catch (err) {
       console.error("Gagal memuat data laporan:", err);
     } finally {
@@ -128,16 +132,6 @@ export default function LaporanPage() {
     }
     setCurrentPage(1);
   };
-
-  // Calculate totals based on current items
-  const totalBerat = data.reduce(
-    (sum: number, item: SetorSampahItem) => sum + item.beratKg,
-    0,
-  );
-  const totalPoin = data.reduce(
-    (sum: number, item: SetorSampahItem) => sum + item.totalPoin,
-    0,
-  );
 
   const formatTanggal = (dateStr: string) =>
     new Date(`${dateStr}T00:00:00`).toLocaleDateString("id-ID", {

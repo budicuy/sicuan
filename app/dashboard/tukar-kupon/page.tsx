@@ -18,6 +18,7 @@ import {
   getAvailableCoupons,
   getKonsumenPoints,
   getRedemptionHistory,
+  getUserRole,
   redeemCoupon,
 } from "./action";
 
@@ -50,6 +51,7 @@ export default function TukarKuponPage() {
   const [coupons, setCoupons] = useState<Kupon[]>([]);
   const [history, setHistory] = useState<RedemptionHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"penukaran" | "kupon-saya">(
     "penukaran",
   );
@@ -78,14 +80,17 @@ export default function TukarKuponPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [userPoints, availCoupons, redempHistory] = await Promise.all([
-        getKonsumenPoints(),
-        getAvailableCoupons(),
-        getRedemptionHistory(),
-      ]);
+      const [userPoints, availCoupons, redempHistory, userRole] =
+        await Promise.all([
+          getKonsumenPoints(),
+          getAvailableCoupons(),
+          getRedemptionHistory(),
+          getUserRole(),
+        ]);
       setPoints(userPoints);
       setCoupons(availCoupons as Kupon[]);
       setHistory(redempHistory as RedemptionHistoryItem[]);
+      setRole(userRole);
     } catch (error) {
       console.error("Gagal memuat data penukaran kupon:", error);
     } finally {
@@ -183,6 +188,30 @@ export default function TukarKuponPage() {
         <p className="text-sm font-medium text-neutral-500">
           Memuat katalog penukaran kupon...
         </p>
+      </div>
+    );
+  }
+
+  if (role === "warmiendo" || role === "bank-sampah") {
+    return (
+      <div className="max-w-md mx-auto text-center py-12 space-y-4">
+        <div className="p-6 bg-white border border-neutral-200 rounded-3xl flex flex-col items-center gap-3 shadow-sm">
+          <div className="p-3 bg-red-50 rounded-full text-red-600">
+            <Info className="w-8 h-8" />
+          </div>
+          <h2 className="text-base font-extrabold text-neutral-800">
+            Akses Ditolak
+          </h2>
+          <p className="text-xs text-neutral-500 leading-relaxed">
+            Halaman penukaran kupon hanya dapat diakses oleh user dengan peranan{" "}
+            <strong>Konsumen</strong>. Sebagai mitra{" "}
+            <strong>
+              {role === "warmiendo" ? "Warmiendo" : "Bank Sampah"}
+            </strong>
+            , reward Anda adalah saldo tunai yang dapat dicairkan melalui menu{" "}
+            <strong>Pencairan Dana</strong>.
+          </p>
+        </div>
       </div>
     );
   }

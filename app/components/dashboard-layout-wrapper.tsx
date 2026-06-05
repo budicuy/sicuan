@@ -63,8 +63,16 @@ export function DashboardLayoutWrapper({
       label: "Tukar Kupon",
       icon: Star,
     },
-    { href: "#profil", label: "Profil Saya", icon: User },
-    { href: "#pengaturan", label: "Pengaturan", icon: Settings },
+    {
+      href: "/dashboard/pencairan-dana",
+      label: "Pencairan Dana",
+      icon: Coins,
+    },
+    { href: "/dashboard/profil", label: "Profil Saya", icon: User },
+  ];
+
+  const adminMenuItems = [
+    { href: "/dashboard/pencairan", label: "Pencairan Dana", icon: Coins },
   ];
 
   const isMasterPathActive = masterMenuItems.some(
@@ -82,7 +90,8 @@ export function DashboardLayoutWrapper({
   const activeMenuItem =
     standardMenuItems.find((item) => pathname === item.href) ||
     masterMenuItems.find((item) => pathname === item.href) ||
-    otherMenuItems.find((item) => pathname === item.href);
+    otherMenuItems.find((item) => pathname === item.href) ||
+    adminMenuItems.find((item) => pathname === item.href);
 
   const activeTitle = activeMenuItem ? activeMenuItem.label : "Dashboard";
 
@@ -132,6 +141,24 @@ export function DashboardLayoutWrapper({
             </Link>
           );
         })}
+
+        {/* Pencairan Dana for Admin/Superadmin (Outside Master Data) */}
+        {(user?.role === "superadmin" || user?.role === "admin") && (
+          <Link
+            href="/dashboard/pencairan"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
+              pathname === "/dashboard/pencairan"
+                ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100 shadow-xs"
+                : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
+            }`}
+          >
+            <Coins
+              className={`w-4.5 h-4.5 shrink-0 ${pathname === "/dashboard/pencairan" ? "text-primary-600" : "text-neutral-400"}`}
+            />
+            Pencairan Dana
+          </Link>
+        )}
 
         {/* 2. Collapsible Master Data (Admin/Superadmin only) */}
         {(user?.role === "superadmin" || user?.role === "admin") && (
@@ -187,27 +214,41 @@ export function DashboardLayoutWrapper({
         {/* 3. Customer-only Items */}
         {user?.role !== "superadmin" &&
           user?.role !== "admin" &&
-          otherMenuItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={handleLinkClick}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
-                  isActive
-                    ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100 shadow-xs"
-                    : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
-                }`}
-              >
-                <Icon
-                  className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
-                />
-                {item.label}
-              </Link>
-            );
-          })}
+          otherMenuItems
+            .filter((item) => {
+              if (item.href === "/dashboard/pencairan-dana") {
+                return (
+                  user?.role === "warmiendo" || user?.role === "bank-sampah"
+                );
+              }
+              if (item.href === "/dashboard/tukar-kupon") {
+                return (
+                  user?.role !== "warmiendo" && user?.role !== "bank-sampah"
+                );
+              }
+              return true;
+            })
+            .map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleLinkClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
+                    isActive
+                      ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100 shadow-xs"
+                      : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
+                  }`}
+                >
+                  <Icon
+                    className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                  />
+                  {item.label}
+                </Link>
+              );
+            })}
       </div>
     );
   };

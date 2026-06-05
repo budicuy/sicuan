@@ -11,7 +11,7 @@ import {
 } from "@/app/lib/gemini-weight-reader";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
-import { hargaSampah, setorSampah } from "@/db/schema";
+import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
 
 export type ActionState = {
   success: boolean;
@@ -112,9 +112,14 @@ export async function getMySetoran({
   status?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-}): Promise<{ data: (typeof setorSampah.$inferSelect)[]; total: number }> {
+}): Promise<{
+  data: (typeof setorSampah.$inferSelect)[];
+  total: number;
+  totalBerat: number;
+  totalPoin: number;
+}> {
   const user = await getCurrentUser();
-  if (!user) return { data: [], total: 0 };
+  if (!user) return { data: [], total: 0, totalBerat: 0, totalPoin: 0 };
 
   const isAdmin = user.role === "admin" || user.role === "superadmin";
   const offset = (page - 1) * limit;
@@ -202,10 +207,31 @@ export async function getMySetoran({
       limit,
       offset,
     }),
-    db.select({ id: setorSampah.id }).from(setorSampah).where(combinedWhere),
+    db
+      .select({
+        id: setorSampah.id,
+        beratKg: setorSampah.beratKg,
+        totalPoin: setorSampah.totalPoin,
+      })
+      .from(setorSampah)
+      .where(combinedWhere),
   ]);
 
-  return { data, total: countResult.length };
+  const totalBerat = countResult.reduce(
+    (sum, item) => sum + (item.beratKg || 0),
+    0,
+  );
+  const totalPoin = countResult.reduce(
+    (sum, item) => sum + (item.totalPoin || 0),
+    0,
+  );
+
+  return {
+    data,
+    total: countResult.length,
+    totalBerat,
+    totalPoin,
+  };
 }
 
 // ── VALIDATE AI: Validasi berat dari foto timbangan ─────────────────────────
@@ -384,8 +410,36 @@ export async function createSetorSampah(
       totalPoin,
       status: "diterima",
     });
+
+    // Update nasabah balance
+    const existingProfile = await db.query.nasabah.findFirst({
+      where: eq(nasabah.userId, user.id),
+    });
+
+    const isMoneyReward =
+      user.role === "warmiendo" || user.role === "bank-sampah";
+    const totalKredit = isMoneyReward
+      ? Math.floor(beratKg * (hargaAktif?.hargaPerKg ?? 0))
+      : 0;
+
+    if (existingProfile) {
+      await db
+        .update(nasabah)
+        .set({
+          poin: existingProfile.poin + totalPoin,
+          kredit: existingProfile.kredit + totalKredit,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.userId, user.id));
+    } else {
+      await db.insert(nasabah).values({
+        userId: user.id,
+        poin: totalPoin,
+        kredit: totalKredit,
+      });
+    }
   } catch (err) {
-    console.error("Insert setor sampah gagal:", err);
+    console.error("Insert setor sampah atau update nasabah gagal:", err);
     return {
       success: false,
       errors: { _form: ["Terjadi kesalahan server. Coba lagi."] },
