@@ -522,16 +522,37 @@ export async function getMySetoran({
     countResult = fetchedCount;
   }
 
-  const formattedData = await Promise.all(
-    data.map(async (item: SetoranType) => {
-      const harga = await getHargaAktif(item.jenisSampah, item.tanggalSetor);
-      const totalKredit = Math.floor(item.beratKg * (harga?.hargaPerKg ?? 0));
-      return {
-        ...item,
-        totalKredit,
-      };
-    }),
-  );
+  // Ambil semua harga sampah untuk pencarian lokal agar menghindari N+1 query
+  const allPrices = await db
+    .select({
+      id: hargaSampah.id,
+      jenisSampah: hargaSampah.jenisSampah,
+      hargaPerKg: hargaSampah.hargaPerKg,
+      pointPerKg: hargaSampah.pointPerKg,
+      periode: hargaSampah.periode,
+    })
+    .from(hargaSampah)
+    .orderBy(desc(hargaSampah.periode), desc(hargaSampah.id));
+
+  // Fungsi pembantu lokal untuk mencocokkan harga sampah secara efisien di memori
+  const getHargaAktifLokal = (jenis: string, tanggalSetorStr: string) => {
+    // Cari yang periode <= tanggalSetorStr
+    const matched = allPrices.find(
+      (p) => p.jenisSampah === jenis && p.periode <= tanggalSetorStr,
+    );
+    if (matched) return matched;
+    // Fallback: cari yang jenisnya sama (terbaru)
+    return allPrices.find((p) => p.jenisSampah === jenis) ?? null;
+  };
+
+  const formattedData = data.map((item: SetoranType) => {
+    const harga = getHargaAktifLokal(item.jenisSampah, item.tanggalSetor);
+    const totalKredit = Math.floor(item.beratKg * (harga?.hargaPerKg ?? 0));
+    return {
+      ...item,
+      totalKredit,
+    };
+  });
 
   const totalBerat = countResult.reduce(
     (sum: number, item: { beratKg: number }) => sum + (item.beratKg || 0),
@@ -541,23 +562,16 @@ export async function getMySetoran({
     (sum: number, item: { totalPoin: number }) => sum + (item.totalPoin || 0),
     0,
   );
-  const totalKredit = (
-    await Promise.all(
-      countResult.map(
-        async (item: {
-          jenisSampah: string;
-          tanggalSetor: string;
-          beratKg: number;
-        }) => {
-          const harga = await getHargaAktif(
-            item.jenisSampah,
-            item.tanggalSetor,
-          );
-          return Math.floor(item.beratKg * (harga?.hargaPerKg ?? 0));
-        },
-      ),
-    )
-  ).reduce((sum: number, val: number) => sum + val, 0);
+  const totalKredit = countResult.reduce(
+    (
+      sum: number,
+      item: { jenisSampah: string; tanggalSetor: string; beratKg: number },
+    ) => {
+      const harga = getHargaAktifLokal(item.jenisSampah, item.tanggalSetor);
+      return sum + Math.floor(item.beratKg * (harga?.hargaPerKg ?? 0));
+    },
+    0,
+  );
 
   return {
     data: formattedData,
