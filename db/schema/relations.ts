@@ -3,11 +3,9 @@ import { ekspedisi } from "./ekspedisi";
 import { kupon } from "./kupon";
 import { nasabah } from "./nasabah";
 import { penukaranKupon } from "./penukaran-kupon";
-import {
-  setorSampahBankSampah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-} from "./setor-sampah";
+import { setorSampahBankSampah } from "./setoran_bank_sampah";
+import { setorSampahKonsumen } from "./setoran_konsumen";
+import { setorSampahWarmiendo } from "./setoran_warmiendo";
 import { users } from "./users";
 
 export const usersRelations = relations(users, ({ one, many }) => ({

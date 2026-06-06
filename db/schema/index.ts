@@ -6,5 +6,7 @@ export * from "./pencairan-dana";
 export * from "./penukaran-kupon";
 export * from "./raw-material";
 export * from "./relations";
-export * from "./setor-sampah";
+export * from "./setoran_bank_sampah";
+export * from "./setoran_konsumen";
+export * from "./setoran_warmiendo";
 export * from "./users";
