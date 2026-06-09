@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { db } from "../../db";
-import { users } from "../../db/schema";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
