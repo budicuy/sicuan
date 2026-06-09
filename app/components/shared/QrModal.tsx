@@ -57,7 +57,7 @@ export function QrModal({
     <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
       <div className="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-neutral-200 overflow-hidden animate-scale-up relative">
         {/* Top colored indicator bar */}
-        <div className="h-2 bg-gradient-to-r from-orange-500 to-red-500 w-full" />
+        <div className="h-2 bg-linear-to-r from-orange-500 to-red-500 w-full" />
 
         <div className="p-6 space-y-5 text-center">
           {/* Header check icon */}

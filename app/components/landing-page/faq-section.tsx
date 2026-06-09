@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { FAQS } from "./shared-data";
+import { FAQS } from "@/app/components/landing-page/shared-data";
 
 interface FaqSectionProps {
   faqOpen: number | null;

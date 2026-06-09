@@ -1,6 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  type ActionState,
+  createNasabah,
+  deleteNasabah,
+  getAvailableUsers,
+  getNasabah,
+  updateNasabah,
+} from "@/app/(admin-superadmin)/nasabah/action";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import {
   type Column,
@@ -9,14 +17,6 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
-import {
-  type ActionState,
-  createNasabah,
-  deleteNasabah,
-  getAvailableUsers,
-  getNasabah,
-  updateNasabah,
-} from "./action";
 
 interface Nasabah {
   id: number;

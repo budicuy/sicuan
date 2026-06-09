@@ -16,16 +16,16 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
+  getDisbursementData,
+  getDisbursementHistory,
+  requestDisbursement,
+} from "@/app/(bank-sampah)/ajukan-pencairan-dana/bank-sampah-pencairan/action";
+import {
   type Column,
   DataTable,
   type TableFilter,
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-import {
-  getDisbursementData,
-  getDisbursementHistory,
-  requestDisbursement,
-} from "./action";
 
 interface DisbursementHistoryItem {
   id: number;
@@ -270,7 +270,7 @@ export default function PencairanDanaPage() {
         {/* Left Column: Balance & Withdraw Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Balance Card */}
-          <div className="relative overflow-hidden bg-gradient-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-white/5">
+          <div className="relative overflow-hidden bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-white/5">
             <div className="absolute top-[-30%] right-[-10%] w-[45%] h-[150%] bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
             <div className="relative z-10 space-y-4">
               <div className="flex justify-between items-start">
@@ -299,7 +299,7 @@ export default function PencairanDanaPage() {
                       {data?.jenisBank} — {data?.noRekening}
                     </span>
                   ) : (
-                    <span className="text-amber-400 font-semibold mt-0.5 block flex items-center gap-1">
+                    <span className="text-amber-400 font-semibold mt-0.5 block items-center gap-1">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />{" "}
                       Rekening belum diset
                     </span>
@@ -526,13 +526,13 @@ export default function PencairanDanaPage() {
               Bukti Foto Transfer Pencairan
             </h3>
 
-            <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-[400px] flex items-center justify-center">
+            <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-100 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {/* biome-ignore lint/performance/noImgElement: R2 remote proof image preview is used */}
               <img
                 src={viewProofUrl}
                 alt="Bukti Transfer"
-                className="max-h-[400px] object-contain w-full"
+                className="max-h-100 object-contain w-full"
               />
             </div>
 

@@ -1,4 +1,4 @@
-import { seeders } from "./index";
+import { seeders } from "@/db/seeds";
 
 async function main() {
   console.log("🚀 Starting database seeding...\n");

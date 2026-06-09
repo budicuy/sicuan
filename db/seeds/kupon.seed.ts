@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { db } from "../index";
-import { kupon, penukaranKupon, users } from "../schema";
+import { db } from "@/db";
+import { kupon, penukaranKupon, users } from "@/db/schema";
 
 export async function seedKupon() {
   console.log(

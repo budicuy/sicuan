@@ -1,7 +1,7 @@
 "use client";
 
 import { Gift, Info, Minus, Plus } from "lucide-react";
-import { TRASH_TYPES } from "./shared-data";
+import { TRASH_TYPES } from "@/app/components/landing-page/shared-data";
 
 interface CalculatorSectionProps {
   calcRole: string;

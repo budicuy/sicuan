@@ -1,5 +1,5 @@
-import { db } from "../index";
-import { rawMaterial } from "../schema";
+import { db } from "@/db";
+import { rawMaterial } from "@/db/schema";
 
 export async function seedRawMaterial() {
   console.log("🌱 Seeding raw material by period/category/classification...");

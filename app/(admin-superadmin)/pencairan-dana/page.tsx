@@ -11,6 +11,11 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  approveDisbursement,
+  getAllDisbursementsForAdmin,
+  rejectDisbursement,
+} from "@/app/(admin-superadmin)/pencairan-dana/action";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import {
   type Column,
@@ -18,11 +23,6 @@ import {
   type TableFilter,
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-import {
-  approveDisbursement,
-  getAllDisbursementsForAdmin,
-  rejectDisbursement,
-} from "./action";
 
 interface DisbursementItem {
   id: number;
@@ -466,20 +466,20 @@ export default function PencairanAdminPage() {
               </span>
 
               {isCompressing ? (
-                <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50/50 h-[200px] flex flex-col items-center justify-center gap-3">
+                <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50/50 h-50 flex flex-col items-center justify-center gap-3">
                   <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
                   <p className="text-xs font-semibold text-neutral-500">
                     Mengompresi gambar...
                   </p>
                 </div>
               ) : uploadedImage ? (
-                <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-[200px] flex items-center justify-center">
+                <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-50 flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {/* biome-ignore lint/performance/noImgElement: Base64 data url preview is used */}
                   <img
                     src={uploadedImage}
                     alt="Bukti Transfer"
-                    className="max-h-[200px] object-contain"
+                    className="max-h-50 object-contain"
                   />
                   <button
                     type="button"
@@ -578,13 +578,13 @@ export default function PencairanAdminPage() {
               Bukti Foto Transfer Pencairan
             </h3>
 
-            <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-[400px] flex items-center justify-center">
+            <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-100 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {/* biome-ignore lint/performance/noImgElement: R2 remote proof image preview is used */}
               <img
                 src={viewProofUrl}
                 alt="Bukti Transfer"
-                className="max-h-[400px] object-contain w-full"
+                className="max-h-100 object-contain w-full"
               />
             </div>
 

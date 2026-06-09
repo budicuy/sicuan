@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, CheckCircle, Gift } from "lucide-react";
-import { ROLES } from "./shared-data";
+import { ROLES } from "@/app/components/landing-page/shared-data";
 
 interface MitraSectionProps {
   activeRoleTab: string;

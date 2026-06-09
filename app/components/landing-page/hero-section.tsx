@@ -3,18 +3,21 @@
 import { ArrowRight, Leaf } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { MINI_CARDS, type MiniCardData } from "./shared-data";
+import {
+  MINI_CARDS,
+  type MiniCardData,
+} from "@/app/components/landing-page/shared-data";
 
 // ─── Mini Card Component ──────────────────────────────────────────────────────
 function MiniCard({ card }: { card: MiniCardData }) {
   const IconComponent = card.icon;
   return (
     <div
-      className={`${card.cardBg} backdrop-blur-md border ${card.cardBorder} rounded-2xl p-4 flex flex-col justify-between shadow-lg h-[140px] w-full text-white transition-all duration-300 hover:shadow-lg group overflow-hidden relative`}
+      className={`${card.cardBg} backdrop-blur-md border ${card.cardBorder} rounded-2xl p-4 flex flex-col justify-between shadow-lg h-35 w-full text-white transition-all duration-300 hover:shadow-lg group overflow-hidden relative`}
     >
       {/* Glow dot */}
       <div
-        className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${card.glowColor} to-transparent blur-md rounded-full -z-10 group-hover:scale-125 transition-transform duration-500`}
+        className={`absolute top-0 right-0 w-24 h-24 bg-linear-to-br ${card.glowColor} to-transparent blur-md rounded-full -z-10 group-hover:scale-125 transition-transform duration-500`}
       />
 
       <div className="flex justify-between items-start">
@@ -27,11 +30,11 @@ function MiniCard({ card }: { card: MiniCardData }) {
             />
           </div>
           <div>
-            <h5 className="text-[11px] font-bold text-white truncate max-w-[125px] leading-tight">
+            <h5 className="text-[11px] font-bold text-white truncate max-w-31.25 leading-tight">
               {card.title}
             </h5>
             {card.subtitle && (
-              <p className="text-[9px] text-white/70 truncate max-w-[125px] mt-0.5">
+              <p className="text-[9px] text-white/70 truncate max-w-31.25 mt-0.5">
                 {card.subtitle}
               </p>
             )}
@@ -67,16 +70,16 @@ function HeroVisual() {
       transition={{ duration: 0.9, delay: 0.35, ease: "easeOut" }}
       className="lg:col-span-5 relative mt-6 lg:mt-0"
     >
-      <div className="relative mx-auto max-w-[440px] lg:max-w-none h-[580px] overflow-hidden flex items-center justify-center">
+      <div className="relative mx-auto max-w-110 lg:max-w-none h-145 overflow-hidden flex items-center justify-center">
         {/* Ambient glows */}
         <div className="absolute top-10 left-10 w-48 h-48 rounded-full bg-primary-600/5 blur-[80px] pointer-events-none" />
         <div className="absolute bottom-10 right-10 w-56 h-56 rounded-full bg-emerald-500/10 blur-[90px] pointer-events-none" />
 
         {/* 3D Perspective Grid */}
-        <div className="w-[125%] h-[125%] flex gap-4 [perspective:1000px] [transform-style:preserve-3d] justify-center items-center">
-          <div className="grid grid-cols-3 gap-3 w-full max-w-[560px] [transform:rotateX(15deg)_rotateY(-18deg)_rotateZ(4deg)_scale(0.95)]">
+        <div className="w-[125%] h-[125%] flex gap-4 perspective-[1000px] transform-3d justify-center items-center">
+          <div className="grid grid-cols-3 gap-3 w-full max-w-140 transform-[rotateX(15deg)_rotateY(-18deg)_rotateZ(4deg)_scale(0.95)]">
             {/* Column 1 – Scroll Up */}
-            <div className="h-[600px] relative flex flex-col gap-3 py-1 select-none">
+            <div className="h-150 relative flex flex-col gap-3 py-1 select-none">
               <div className="flex flex-col gap-3 animate-ticker-up hover:[animation-play-state:paused] cursor-pointer">
                 {[MINI_CARDS[0], MINI_CARDS[3], MINI_CARDS[6]].map(
                   (card, idx) => (
@@ -92,7 +95,7 @@ function HeroVisual() {
             </div>
 
             {/* Column 2 – Scroll Down */}
-            <div className="h-[600px] relative flex flex-col gap-3 py-1 select-none">
+            <div className="h-150 relative flex flex-col gap-3 py-1 select-none">
               <div className="flex flex-col gap-3 animate-ticker-down hover:[animation-play-state:paused] cursor-pointer">
                 {[MINI_CARDS[1], MINI_CARDS[4], MINI_CARDS[7]].map(
                   (card, idx) => (
@@ -108,7 +111,7 @@ function HeroVisual() {
             </div>
 
             {/* Column 3 – Scroll Up */}
-            <div className="h-[600px] relative flex flex-col gap-3 py-1 select-none">
+            <div className="h-150 relative flex flex-col gap-3 py-1 select-none">
               <div className="flex flex-col gap-3 animate-ticker-up hover:[animation-play-state:paused] cursor-pointer">
                 {[MINI_CARDS[2], MINI_CARDS[5], MINI_CARDS[8]].map(
                   (card, idx) => (
@@ -126,8 +129,8 @@ function HeroVisual() {
         </div>
 
         {/* Fade overlays */}
-        <div className="absolute top-0 left-0 right-0 h-36 bg-gradient-to-b from-primary-50 via-primary-50/90 to-transparent z-40 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-primary-50 via-primary-50/90 to-transparent z-40 pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-36 bg-linear-to-b from-primary-50 via-primary-50/90 to-transparent z-40 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-36 bg-linear-to-t from-primary-50 via-primary-50/90 to-transparent z-40 pointer-events-none" />
       </div>
     </motion.div>
   );

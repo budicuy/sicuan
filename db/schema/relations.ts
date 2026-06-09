@@ -1,12 +1,12 @@
 import { relations } from "drizzle-orm";
-import { ekspedisi } from "./ekspedisi";
-import { kupon } from "./kupon";
-import { nasabah } from "./nasabah";
-import { penukaranKupon } from "./penukaran-kupon";
-import { setorSampahBankSampah } from "./setoran_bank_sampah";
-import { setorSampahKonsumen } from "./setoran_konsumen";
-import { setorSampahWarmiendo } from "./setoran_warmiendo";
-import { users } from "./users";
+import { ekspedisi } from "@/db/schema/ekspedisi";
+import { kupon } from "@/db/schema/kupon";
+import { nasabah } from "@/db/schema/nasabah";
+import { penukaranKupon } from "@/db/schema/penukaran-kupon";
+import { setorSampahBankSampah } from "@/db/schema/setoran_bank_sampah";
+import { setorSampahKonsumen } from "@/db/schema/setoran_konsumen";
+import { setorSampahWarmiendo } from "@/db/schema/setoran_warmiendo";
+import { users } from "@/db/schema/users";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   nasabah: one(nasabah, {

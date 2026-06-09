@@ -1,6 +1,6 @@
 import { notInArray } from "drizzle-orm";
-import { db } from "../index";
-import { nasabah, users } from "../schema";
+import { db } from "@/db";
+import { nasabah, users } from "@/db/schema";
 
 export async function seedNasabah() {
   console.log(

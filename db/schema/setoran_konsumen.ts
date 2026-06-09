@@ -9,7 +9,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { users } from "./users";
+import { users } from "@/db/schema/users";
 
 export const jenisSampahEnum = pgEnum("jenis_sampah", [
   "Karton",

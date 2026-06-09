@@ -1,6 +1,6 @@
 import argon2 from "argon2";
-import { db } from "../index";
-import { users } from "../schema";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 
 export async function seedUsers() {
   console.log("🌱 Seeding 55 users (5 mandatory + 50 random)...");

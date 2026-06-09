@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { DataTable } from "@/app/components/shared/DataTable";
 import {
   getCurrentUserRole,
   getMySetoran,
   updateSetorSampahStatus,
-} from "./action";
+} from "@/app/(bank-sampah)/laporan/bank-sampah-laporan/action";
+import { DataTable } from "@/app/components/shared/DataTable";
 
 interface SetorSampahItem {
   id: number;
@@ -607,7 +607,7 @@ export default function LaporanBankSampahPage() {
                     onClick={() =>
                       setSelectedImageLightBox(selectedItem.fotoTimbangan)
                     }
-                    className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group w-full"
+                    className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group"
                     title="Klik zoom foto timbangan"
                   >
                     <Image
@@ -675,7 +675,7 @@ export default function LaporanBankSampahPage() {
 
       {/* LIGHTBOX MODAL OVERLAY */}
       {selectedImageLightBox && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <button
             type="button"
             className="absolute inset-0 w-full h-full bg-black/80 backdrop-blur-sm cursor-zoom-out border-0"

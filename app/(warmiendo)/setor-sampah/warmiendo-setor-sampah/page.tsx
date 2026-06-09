@@ -15,13 +15,13 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import {
   createSetorSampah,
   getMySetoran,
   handoverSetorSampahToEkspedisi,
   validateFotoTimbangan,
-} from "./action";
+} from "@/app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";
+import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 
 interface SetorSampahItem {
   id: number;
@@ -481,7 +481,7 @@ export default function WarmiendoSetorSampah() {
                 <div className="relative pl-6 border-l-2 border-neutral-150 space-y-6">
                   {/* Step 1: Diajukan */}
                   <div className="relative">
-                    <span className="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white bg-amber-500 text-white">
+                    <span className="absolute -left-7.75 top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white bg-amber-500 text-white">
                       <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     </span>
                     <div className="text-xs">
@@ -503,7 +503,7 @@ export default function WarmiendoSetorSampah() {
                   {/* Step 2: Diverifikasi (Courier Assigned) */}
                   <div className="relative">
                     <span
-                      className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
+                      className={`absolute -left-7.75 top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
                         ["diverifikasi", "diserahkan"].includes(
                           activeEkspedisiSetoran.status,
                         )
@@ -562,7 +562,7 @@ export default function WarmiendoSetorSampah() {
                   {/* Step 3: Diserahkan */}
                   <div className="relative">
                     <span
-                      className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
+                      className={`absolute -left-7.75 top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${
                         activeEkspedisiSetoran.status === "diserahkan"
                           ? "bg-indigo-500 text-white"
                           : "bg-neutral-200 text-neutral-400"

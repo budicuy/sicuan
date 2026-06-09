@@ -2,18 +2,18 @@
 
 import { AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
-import { AlurSection } from "./components/landing-page/alur-section";
-import { CalculatorSection } from "./components/landing-page/calculator-section";
-import { FaqSection } from "./components/landing-page/faq-section";
-import { FeaturesSection } from "./components/landing-page/features-section";
-import { Footer } from "./components/landing-page/footer";
-import { HeroSection } from "./components/landing-page/hero-section";
-import { LoginSection } from "./components/landing-page/login-section";
-import { MitraSection } from "./components/landing-page/mitra-section";
-import { Navbar } from "./components/landing-page/navbar";
-import { TRASH_TYPES } from "./components/landing-page/shared-data";
-import { SplashScreen } from "./components/landing-page/splash-screen";
-import { StatsBar } from "./components/landing-page/stats-bar";
+import { AlurSection } from "@/app/components/landing-page/alur-section";
+import { CalculatorSection } from "@/app/components/landing-page/calculator-section";
+import { FaqSection } from "@/app/components/landing-page/faq-section";
+import { FeaturesSection } from "@/app/components/landing-page/features-section";
+import { Footer } from "@/app/components/landing-page/footer";
+import { HeroSection } from "@/app/components/landing-page/hero-section";
+import { LoginSection } from "@/app/components/landing-page/login-section";
+import { MitraSection } from "@/app/components/landing-page/mitra-section";
+import { Navbar } from "@/app/components/landing-page/navbar";
+import { TRASH_TYPES } from "@/app/components/landing-page/shared-data";
+import { SplashScreen } from "@/app/components/landing-page/splash-screen";
+import { StatsBar } from "@/app/components/landing-page/stats-bar";
 
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);

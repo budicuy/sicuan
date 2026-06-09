@@ -2,8 +2,12 @@
 
 import { Info, Key, Loader2, Lock, Save, User } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  getProfileData,
+  updatePassword,
+  updateProfileData,
+} from "@/app/(warmiendo)/profil/warmiendo-profil/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-import { getProfileData, updatePassword, updateProfileData } from "./action";
 
 interface ProfileData {
   id: number;
@@ -179,7 +183,7 @@ export default function ProfilPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Header Info Card */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
+      <div className="relative overflow-hidden bg-linear-to-r from-primary-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
         <div className="absolute top-[-30%] right-[-10%] w-[45%] h-[150%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
           <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white font-extrabold text-3xl shadow-lg border border-white/10 shrink-0">

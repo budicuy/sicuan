@@ -1,6 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  type ActionState,
+  createUser,
+  deleteUser,
+  getUsers,
+  updateUser,
+} from "@/app/(admin-superadmin)/users/action";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import {
   type Column,
@@ -9,13 +16,6 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
-import {
-  type ActionState,
-  createUser,
-  deleteUser,
-  getUsers,
-  updateUser,
-} from "./action";
 
 interface User {
   id: number;

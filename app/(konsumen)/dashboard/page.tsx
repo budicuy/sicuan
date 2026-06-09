@@ -23,7 +23,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getDashboardData } from "./action";
+import { getDashboardData } from "@/app/(konsumen)/dashboard/action";
 
 interface DashboardData {
   success: boolean;
@@ -115,7 +115,7 @@ export default function DashboardPage() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-primary-600 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 col-span-1 sm:col-span-2 lg:col-span-1">
+        <div className="bg-linear-to-br from-primary-600 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 col-span-1 sm:col-span-2 lg:col-span-1">
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider block">
             Saldo Poin Utama
@@ -174,7 +174,7 @@ export default function DashboardPage() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* History Chart */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-[320px]">
+        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80">
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-4 h-4 text-primary-600" />
             Tren Setoran Sampah Terakhir (Kg)
@@ -235,7 +235,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Composition */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-[320px]">
+        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80">
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
             Komposisi Sampah Anda
           </h3>
@@ -270,9 +270,7 @@ export default function DashboardPage() {
                         className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="truncate max-w-[80px]">
-                        {entry.name}
-                      </span>
+                      <span className="truncate max-w-20">{entry.name}</span>
                     </div>
                     <p className="font-extrabold text-neutral-800">
                       {entry.value} Kg

@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  deleteRawMaterial,
+  getRawMaterial,
+  getRawMaterialByPeriod,
+  saveRawMaterial,
+} from "@/app/(admin-superadmin)/raw-material/action";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import {
   type Column,
@@ -9,12 +15,6 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
-import {
-  deleteRawMaterial,
-  getRawMaterial,
-  getRawMaterialByPeriod,
-  saveRawMaterial,
-} from "./action";
 
 interface RawMaterial {
   id: number;

@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import {
   createSetorSampah,
   getMySetoran,
   validateFotoTimbangan,
-} from "./action";
+} from "@/app/(bank-sampah)/setor-sampah/bank-sampah-setor-sampah/action";
+import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 
 interface SetorSampahItem {
   id: number;

@@ -22,7 +22,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getDashboardData } from "./action";
+import { getDashboardData } from "@/app/(bank-sampah)/dashboard/bank-sampah-dashboard/action";
 
 interface DashboardData {
   success: boolean;
@@ -120,7 +120,7 @@ export default function DashboardPage() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Balance Card */}
-        <div className="bg-gradient-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2">
+        <div className="bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2">
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <span className="text-[10px] font-bold text-primary-300 uppercase tracking-widest block">
             KREDIT CAIR SEBAGAI UANG
@@ -159,7 +159,7 @@ export default function DashboardPage() {
             <span className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider text-neutral-405 block">
               Cair Berhasil
             </span>
-            <h2 className="text-xl font-black text-neutral-800 tracking-tight mt-1.5 text-emerald-600">
+            <h2 className="text-xl font-black text-neutral-800 tracking-tight mt-1.5">
               Rp{" "}
               {data.metrics?.totalPencairanBerhasil?.toLocaleString("id-ID") ??
                 0}
@@ -174,7 +174,7 @@ export default function DashboardPage() {
       {/* Chart Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* History Chart */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-[320px]">
+        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80">
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-4 h-4 text-primary-600" />
             Riwayat Volume Setoran Kemitraan (Kg)
@@ -234,7 +234,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Waste Composition */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-[320px]">
+        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80">
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
             Komposisi Bahan Disetor
           </h3>
@@ -269,9 +269,7 @@ export default function DashboardPage() {
                         className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="truncate max-w-[80px]">
-                        {entry.name}
-                      </span>
+                      <span className="truncate max-w-20">{entry.name}</span>
                     </div>
                     <p className="font-extrabold text-neutral-800">
                       {entry.value} Kg
@@ -314,7 +312,7 @@ export default function DashboardPage() {
                   data.recentSetoran.map((s) => (
                     <tr key={s.id}>
                       <td
-                        className="py-2.5 font-semibold text-neutral-850 truncate max-w-[120px]"
+                        className="py-2.5 font-semibold text-neutral-850 truncate max-w-30"
                         title={s.nomorSetor}
                       >
                         {s.nomorSetor}

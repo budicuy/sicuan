@@ -27,7 +27,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getDashboardData } from "./action";
+import { getDashboardData } from "@/app/(admin-superadmin)/dashboard/admin-dashboard/action";
 
 interface DashboardData {
   success: boolean;
@@ -148,7 +148,7 @@ export default function DashboardPage() {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="bg-linear-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
               Total Nasabah / Mitra
@@ -161,7 +161,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="bg-linear-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider block">
               Total Setoran Sampah
@@ -174,7 +174,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="bg-linear-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <span className="text-[10px] font-bold text-amber-100 uppercase tracking-wider block">
               Setoran Hari Ini
@@ -187,7 +187,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-600 to-violet-850 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="bg-linear-to-br from-indigo-600 to-violet-850 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <span className="text-[10px] font-bold text-indigo-200 uppercase tracking-wider block">
               Menunggu Verifikasi
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-red-600 to-rose-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="bg-linear-to-br from-red-600 to-rose-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <span className="text-[10px] font-bold text-red-200 uppercase tracking-wider block">
               Setoran Ditolak
@@ -217,7 +217,7 @@ export default function DashboardPage() {
         {/* Global Distribution & Top Contributors */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Distribution (Left) */}
-          <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-[350px]">
+          <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-87.5">
             <h3 className="font-bold text-sm text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
               Distribusi Kategori Sampah Global
             </h3>
@@ -258,9 +258,7 @@ export default function DashboardPage() {
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: entry.color }}
                         />
-                        <span className="truncate max-w-[80px]">
-                          {entry.name}
-                        </span>
+                        <span className="truncate max-w-20">{entry.name}</span>
                       </div>
                       <p className="font-extrabold text-neutral-800">
                         {entry.value} Kg
@@ -357,7 +355,7 @@ export default function DashboardPage() {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-primary-600 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 col-span-1 sm:col-span-2 lg:col-span-1">
+          <div className="bg-linear-to-br from-primary-600 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 col-span-1 sm:col-span-2 lg:col-span-1">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider block">
               Saldo Poin Utama
@@ -416,7 +414,7 @@ export default function DashboardPage() {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* History Chart (Left) */}
-          <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-[320px]">
+          <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80">
             <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-primary-600" />
               Tren Setoran Sampah Terakhir (Kg)
@@ -485,7 +483,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Composition (Right) */}
-          <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-[320px]">
+          <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80">
             <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
               Komposisi Sampah Anda
             </h3>
@@ -526,9 +524,7 @@ export default function DashboardPage() {
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: entry.color }}
                         />
-                        <span className="truncate max-w-[80px]">
-                          {entry.name}
-                        </span>
+                        <span className="truncate max-w-20">{entry.name}</span>
                       </div>
                       <p className="font-extrabold text-neutral-800">
                         {entry.value} Kg
@@ -648,7 +644,7 @@ export default function DashboardPage() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Balance Card */}
-        <div className="bg-gradient-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2">
+        <div className="bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2">
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <span className="text-[10px] font-bold text-primary-300 uppercase tracking-widest block">
             KREDIT CAIR SEBAGAI UANG
@@ -687,7 +683,7 @@ export default function DashboardPage() {
             <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
               Cair Berhasil
             </span>
-            <h2 className="text-xl font-black text-neutral-800 tracking-tight mt-1.5 text-emerald-600">
+            <h2 className="text-xl font-black tracking-tight mt-1.5 text-emerald-600">
               Rp{" "}
               {data.metrics?.totalPencairanBerhasil?.toLocaleString("id-ID") ??
                 0}
@@ -702,7 +698,7 @@ export default function DashboardPage() {
       {/* Chart Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Waste setoran trend */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-[320px]">
+        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80">
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-4 h-4 text-primary-600" />
             Riwayat Volume Setoran Kemitraan (Kg)
@@ -762,7 +758,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Waste Composition */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-[320px]">
+        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80">
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
             Komposisi Bahan Disetor
           </h3>
@@ -798,9 +794,7 @@ export default function DashboardPage() {
                         className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="truncate max-w-[80px]">
-                        {entry.name}
-                      </span>
+                      <span className="truncate max-w-20">{entry.name}</span>
                     </div>
                     <p className="font-extrabold text-neutral-800">
                       {entry.value} Kg

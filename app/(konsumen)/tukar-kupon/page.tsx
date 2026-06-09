@@ -11,16 +11,16 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
-import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-import { QrModal } from "@/app/components/shared/QrModal";
 import {
   getAvailableCoupons,
   getKonsumenPoints,
   getRedemptionHistory,
   getUserRole,
   redeemCoupon,
-} from "./action";
+} from "@/app/(konsumen)/tukar-kupon/action";
+import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
+import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { QrModal } from "@/app/components/shared/QrModal";
 
 interface Kupon {
   id: number;
@@ -232,7 +232,7 @@ export default function TukarKuponPage() {
       </div>
 
       {/* Points Display Widget */}
-      <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 rounded-2xl p-5 text-white flex items-center gap-4 shadow-md border border-orange-650 max-w-lg">
+      <div className="bg-linear-to-rrom-orange-500 via-orange-600 to-red-600 rounded-2xl p-5 text-white flex items-center gap-4 shadow-md border border-orange-650 max-w-lg">
         <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg text-white">
           <Award className="w-6 h-6 animate-pulse" />
         </div>
@@ -330,7 +330,7 @@ export default function TukarKuponPage() {
                   >
                     {/* Coupon Card Top Gradient Header */}
                     <div
-                      className={`bg-gradient-to-br ${details.gradient} p-5 text-white relative min-h-[100px] flex flex-col justify-between`}
+                      className={`bg-linear-to-br ${details.gradient} p-5 text-white relative min-h-25 flex flex-col justify-between`}
                     >
                       <div className="absolute right-3 top-3 opacity-15">
                         <Ticket className="w-20 h-20 rotate-12" />

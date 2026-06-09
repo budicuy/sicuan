@@ -13,13 +13,13 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { DataTable } from "@/app/components/shared/DataTable";
-import { getAllActiveEkspedisi } from "../../ekspedisi/action";
+import { getAllActiveEkspedisi } from "@/app/(admin-superadmin)/ekspedisi/action";
 import {
   getCurrentUserRole,
   getMySetoran,
   updateSetorSampahStatus,
-} from "./action";
+} from "@/app/(admin-superadmin)/laporan/warmiendo/action";
+import { DataTable } from "@/app/components/shared/DataTable";
 
 interface SetorSampahItem {
   id: number;
@@ -325,7 +325,7 @@ export default function LaporanWarmiendoPage() {
                       [item.id]: e.target.value,
                     })
                   }
-                  className="px-2 py-1.5 border border-neutral-200 rounded-lg text-xs bg-white focus:outline-none focus:border-primary-600 text-neutral-800 cursor-pointer min-w-[120px]"
+                  className="px-2 py-1.5 border border-neutral-200 rounded-lg text-xs bg-white focus:outline-none focus:border-primary-600 text-neutral-800 cursor-pointer min-w-30"
                 >
                   {ekspedisiList.length === 0 ? (
                     <option value="">Tidak ada kurir</option>
@@ -780,7 +780,7 @@ export default function LaporanWarmiendoPage() {
                     onClick={() =>
                       setSelectedImageLightBox(selectedItem.fotoTimbangan)
                     }
-                    className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group w-full"
+                    className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group"
                     title="Klik zoom foto timbangan"
                   >
                     <Image
@@ -988,7 +988,7 @@ export default function LaporanWarmiendoPage() {
 
       {/* LIGHTBOX MODAL OVERLAY */}
       {selectedImageLightBox && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <button
             type="button"
             className="absolute inset-0 w-full h-full bg-black/80 backdrop-blur-sm cursor-zoom-out border-0"

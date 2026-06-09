@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
-import { db } from "../index";
+import { db } from "@/db";
 import {
   pencairanDana,
   setorSampahBankSampah,
   setorSampahKonsumen,
   setorSampahWarmiendo,
   users,
-} from "../schema";
+} from "@/db/schema";
 
 export async function seedSetorSampah() {
   console.log(

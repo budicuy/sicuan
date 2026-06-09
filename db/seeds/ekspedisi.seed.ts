@@ -1,5 +1,5 @@
-import { db } from "../index";
-import { ekspedisi } from "../schema";
+import { db } from "@/db";
+import { ekspedisi } from "@/db/schema";
 
 export async function seedEkspedisi() {
   console.log("🌱 Seeding exactly 3 ekspedisi...");

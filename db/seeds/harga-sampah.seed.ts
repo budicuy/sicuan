@@ -1,5 +1,5 @@
-import { db } from "../index";
-import { hargaSampah } from "../schema";
+import { db } from "@/db";
+import { hargaSampah } from "@/db/schema";
 
 export async function seedHargaSampah() {
   console.log("🌱 Seeding flat harga sampah for Karton, Etiket, Paper Cup...");
