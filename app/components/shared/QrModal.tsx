@@ -69,7 +69,7 @@ export function QrModal({
             <h3 className="text-base font-extrabold text-neutral-900 uppercase">
               KUPON REWARD AKTIF
             </h3>
-            <p className="text-[10px] text-neutral-450 leading-relaxed max-w-[280px] mx-auto">
+            <p className="text-[10px] text-neutral-450 leading-relaxed max-w-70 mx-auto">
               Tunjukkan QR Code ini ke petugas atau merchant untuk memverifikasi
               dan menggunakan reward Anda.
             </p>
