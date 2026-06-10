@@ -213,6 +213,7 @@ export default function WarmiendoSetorSampah() {
   const [aiValidated, setAiValidated] = useState(false);
   const [beratAiKg, setBeratAiKg] = useState<number | null>(null);
   const [aiError, setAiError] = useState("");
+  const [requestManual, setRequestManual] = useState(false);
 
   const [fotoBuktiList, setFotoBuktiList] = useState<string[]>([]);
   const buktiInputRef = useRef<HTMLInputElement>(null);
@@ -284,6 +285,7 @@ export default function WarmiendoSetorSampah() {
     setAiValidated(false);
     setAiError("");
     setBeratAiKg(null);
+    setRequestManual(false);
 
     const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
     const compressed = await compressImage(withWatermark, 200 * 1024);
@@ -299,6 +301,7 @@ export default function WarmiendoSetorSampah() {
     setAiValidated(false);
     setAiError("");
     setBeratAiKg(null);
+    setRequestManual(false);
 
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -321,6 +324,7 @@ export default function WarmiendoSetorSampah() {
     setIsValidatingAI(true);
     setAiError("");
     setAiValidated(false);
+    setRequestManual(false);
 
     const result = await validateFotoTimbangan(fotoTimbangan, beratNum);
     setIsValidatingAI(false);
@@ -368,7 +372,7 @@ export default function WarmiendoSetorSampah() {
       setFormErrors({ fotoTimbangan: ["Wajib mengambil foto timbangan."] });
       return;
     }
-    if (!aiValidated) {
+    if (!aiValidated && !requestManual) {
       setFormErrors({
         fotoTimbangan: ["Foto timbangan harus divalidasi terlebih dahulu."],
       });
@@ -384,6 +388,7 @@ export default function WarmiendoSetorSampah() {
     const formData = new FormData(e.currentTarget);
     formData.set("fotoTimbanganBase64", fotoTimbangan);
     formData.set("metodeSetor", "ekspedisi");
+    formData.set("requestManualValidation", requestManual ? "true" : "false");
     if (beratAiKg !== null) formData.set("beratAiKg", String(beratAiKg));
     fotoBuktiList.forEach((b64) => {
       formData.append("fotoBuktiBase64[]", b64);
@@ -402,6 +407,7 @@ export default function WarmiendoSetorSampah() {
         setFotoTimbangan(null);
         setFotoBuktiList([]);
         setAiValidated(false);
+        setRequestManual(false);
         setBeratAiKg(null);
         setTanggalSetor(new Date().toISOString().split("T")[0]);
         loadData();
@@ -638,6 +644,7 @@ export default function WarmiendoSetorSampah() {
                       onChange={(e) => {
                         setBeratKg(e.target.value);
                         setAiValidated(false);
+                        setRequestManual(false);
                       }}
                       step="0.01"
                       min="0.01"
@@ -721,28 +728,59 @@ export default function WarmiendoSetorSampah() {
                               <p className="text-xs text-red-600">{aiError}</p>
                             </div>
                           )}
-                          <button
-                            type="button"
-                            onClick={handleValidasiAI}
-                            disabled={isValidatingAI || !beratKg}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-                          >
-                            {isValidatingAI ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Memvalidasi dengan AI...
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="w-4 h-4" />
-                                Validasi Berat dengan AI
-                              </>
-                            )}
-                          </button>
-                          {!beratKg && (
-                            <p className="text-xs text-amber-600 text-center">
-                              ⚠ Isi berat (kg) terlebih dahulu sebelum validasi
-                            </p>
+
+                          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                            <input
+                              type="checkbox"
+                              id="requestManual"
+                              checked={requestManual}
+                              onChange={(e) =>
+                                setRequestManual(e.target.checked)
+                              }
+                              className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 cursor-pointer mt-0.5"
+                            />
+                            <div className="flex flex-col">
+                              <label
+                                htmlFor="requestManual"
+                                className="text-xs text-amber-800 font-semibold cursor-pointer"
+                              >
+                                Ajukan validasi manual oleh Admin
+                              </label>
+                              <span className="text-[10px] text-amber-700 mt-1 leading-normal">
+                                💡 Info: Validasi AI diproses instan, sedangkan
+                                validasi manual oleh admin membutuhkan waktu 1-2
+                                hari kerja.
+                              </span>
+                            </div>
+                          </div>
+
+                          {!requestManual && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={handleValidasiAI}
+                                disabled={isValidatingAI || !beratKg}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+                              >
+                                {isValidatingAI ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Memvalidasi dengan AI...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Validasi Berat dengan AI
+                                  </>
+                                )}
+                              </button>
+                              {!beratKg && (
+                                <p className="text-xs text-amber-600 text-center">
+                                  ⚠ Isi berat (kg) terlebih dahulu sebelum
+                                  validasi
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
                       )}
@@ -882,7 +920,9 @@ export default function WarmiendoSetorSampah() {
                 <button
                   type="submit"
                   disabled={
-                    isPending || !aiValidated || fotoBuktiList.length < 1
+                    isPending ||
+                    (!aiValidated && !requestManual) ||
+                    fotoBuktiList.length < 1
                   }
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors"
                 >
@@ -899,9 +939,10 @@ export default function WarmiendoSetorSampah() {
                   )}
                 </button>
 
-                {!aiValidated && fotoTimbangan && (
+                {!aiValidated && !requestManual && fotoTimbangan && (
                   <p className="text-xs text-amber-600 text-center">
-                    ⚠ Validasi foto timbangan dengan AI sebelum submit
+                    ⚠ Validasi foto timbangan dengan AI atau ajukan validasi
+                    manual sebelum submit
                   </p>
                 )}
               </form>

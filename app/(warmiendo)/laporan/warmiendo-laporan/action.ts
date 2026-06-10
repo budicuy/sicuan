@@ -1,20 +1,22 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, ilike, lte, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
 import {
   readWeightFromImage,
   validateBeratTolerance,
 } from "@/app/lib/gemini-weight-reader";
+import { calculateSetoranReward } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
 import {
-  ekspedisi,
   hargaSampah,
   nasabah,
+  poinSampah,
   setorSampahBankSampah,
   setorSampahKonsumen,
   setorSampahWarmiendo,
@@ -134,23 +136,15 @@ export async function updateSetorSampahStatus(
       }
 
       // Hitung poin & kredit berdasarkan berat & tanggal setor
-      const hargaAktif = await getHargaAktif(
-        item.jenisSampah,
-        item.tanggalSetor,
-      );
-      const totalPoin = Math.floor(
-        item.beratKg * (hargaAktif?.pointPerKg ?? 0),
-      );
-
       const depositor = await db.query.users.findFirst({
         where: eq(users.id, item.userId),
       });
 
-      const isMoneyReward =
-        depositor?.role === "warmiendo" || depositor?.role === "bank-sampah";
-      const totalKredit = isMoneyReward
-        ? Math.floor(item.beratKg * (hargaAktif?.hargaPerKg ?? 0))
-        : 0;
+      const { totalPoin, totalKredit } = await calculateSetoranReward(
+        item.jenisSampah,
+        item.beratKg,
+        depositor?.role ?? "konsumen",
+      );
 
       // Update nasabah balance
       const existingProfile = await db.query.nasabah.findFirst({
@@ -277,39 +271,7 @@ function formatTanggalIndo(date: Date): string {
 
 // ── Helper: ambil harga sampah aktif bulan ini ──────────────────────────────
 
-async function getHargaAktif(
-  jenis: string,
-  tanggalSetorStr?: string,
-): Promise<{ hargaPerKg: number; pointPerKg: number } | null> {
-  const conditions = [eq(hargaSampah.jenisSampah, jenis)];
-  if (tanggalSetorStr) {
-    conditions.push(lte(hargaSampah.periode, tanggalSetorStr));
-  }
-
-  const result = await db
-    .select({
-      hargaPerKg: hargaSampah.hargaPerKg,
-      pointPerKg: hargaSampah.pointPerKg,
-    })
-    .from(hargaSampah)
-    .where(and(...conditions))
-    .orderBy(desc(hargaSampah.periode), desc(hargaSampah.id))
-    .limit(1);
-
-  if (result[0]) return result[0];
-
-  const fallback = await db
-    .select({
-      hargaPerKg: hargaSampah.hargaPerKg,
-      pointPerKg: hargaSampah.pointPerKg,
-    })
-    .from(hargaSampah)
-    .where(eq(hargaSampah.jenisSampah, jenis))
-    .orderBy(desc(hargaSampah.periode), desc(hargaSampah.id))
-    .limit(1);
-
-  return fallback[0] ?? null;
-}
+// getHargaAktif is deprecated. Use calculateSetoranReward from @/app/lib/pricing instead.
 
 // ── READ: Ambil setoran milik konsumen yang sedang login / list untuk admin ────────────────────
 export async function getMySetoran({
@@ -445,6 +407,7 @@ export async function getMySetoran({
     totalPoin: number;
     jenisSampah: "Karton" | "Etiket" | "Paper Cup";
     tanggalSetor: string;
+    userId: number;
   }[] = [];
 
   if (isTargetWarmiendo) {
@@ -466,6 +429,7 @@ export async function getMySetoran({
           totalPoin: targetTable.totalPoin,
           jenisSampah: targetTable.jenisSampah,
           tanggalSetor: targetTable.tanggalSetor,
+          userId: targetTable.userId,
         })
         .from(targetTable)
         .where(combinedWhere),
@@ -490,6 +454,7 @@ export async function getMySetoran({
           totalPoin: targetTable.totalPoin,
           jenisSampah: targetTable.jenisSampah,
           tanggalSetor: targetTable.tanggalSetor,
+          userId: targetTable.userId,
         })
         .from(targetTable)
         .where(combinedWhere),
@@ -514,6 +479,7 @@ export async function getMySetoran({
           totalPoin: targetTable.totalPoin,
           jenisSampah: targetTable.jenisSampah,
           tanggalSetor: targetTable.tanggalSetor,
+          userId: targetTable.userId,
         })
         .from(targetTable)
         .where(combinedWhere),
@@ -522,32 +488,26 @@ export async function getMySetoran({
     countResult = fetchedCount;
   }
 
-  // Ambil semua harga sampah untuk pencarian lokal agar menghindari N+1 query
-  const allPrices = await db
-    .select({
-      id: hargaSampah.id,
-      jenisSampah: hargaSampah.jenisSampah,
-      hargaPerKg: hargaSampah.hargaPerKg,
-      pointPerKg: hargaSampah.pointPerKg,
-      periode: hargaSampah.periode,
-    })
-    .from(hargaSampah)
-    .orderBy(desc(hargaSampah.periode), desc(hargaSampah.id));
+  // Ambil semua harga range dan master poin untuk pencarian lokal agar menghindari N+1 query
+  const allRanges = await db.select().from(hargaSampah);
+  const _allPoints = await db.select().from(poinSampah);
 
-  // Fungsi pembantu lokal untuk mencocokkan harga sampah secara efisien di memori
-  const getHargaAktifLokal = (jenis: string, tanggalSetorStr: string) => {
-    // Cari yang periode <= tanggalSetorStr
-    const matched = allPrices.find(
-      (p) => p.jenisSampah === jenis && p.periode <= tanggalSetorStr,
+  const getHargaRangeLokal = (jenis: string, berat: number) => {
+    const matched = allRanges.find(
+      (r) =>
+        r.jenisSampah === jenis &&
+        berat >= r.minBerat &&
+        (r.maxBerat === null || berat <= r.maxBerat),
     );
-    if (matched) return matched;
-    // Fallback: cari yang jenisnya sama (terbaru)
-    return allPrices.find((p) => p.jenisSampah === jenis) ?? null;
+    return matched?.harga ?? 0;
   };
 
   const formattedData = data.map((item: SetoranType) => {
-    const harga = getHargaAktifLokal(item.jenisSampah, item.tanggalSetor);
-    const totalKredit = Math.floor(item.beratKg * (harga?.hargaPerKg ?? 0));
+    const role = item.user?.role ?? resolvedRole;
+    const isMoneyReward = role === "warmiendo" || role === "bank-sampah";
+    const totalKredit = isMoneyReward
+      ? getHargaRangeLokal(item.jenisSampah, item.beratKg)
+      : 0;
     return {
       ...item,
       totalKredit,
@@ -565,10 +525,15 @@ export async function getMySetoran({
   const totalKredit = countResult.reduce(
     (
       sum: number,
-      item: { jenisSampah: string; tanggalSetor: string; beratKg: number },
+      item: { jenisSampah: string; beratKg: number; userId: number },
     ) => {
-      const harga = getHargaAktifLokal(item.jenisSampah, item.tanggalSetor);
-      return sum + Math.floor(item.beratKg * (harga?.hargaPerKg ?? 0));
+      const userObj = data.find((d) => d.userId === item.userId)?.user;
+      const role = userObj?.role ?? resolvedRole;
+      const isMoneyReward = role === "warmiendo" || role === "bank-sampah";
+      const price = isMoneyReward
+        ? getHargaRangeLokal(item.jenisSampah, item.beratKg)
+        : 0;
+      return sum + price;
     },
     0,
   );
@@ -652,6 +617,8 @@ export async function createSetorSampah(
   const beratAiKgRaw = formData.get("beratAiKg") as string; // sudah divalidasi di client
   const fotoBuktiBase64List = formData.getAll("fotoBuktiBase64[]") as string[];
   const metodeSetor = (formData.get("metodeSetor") as string) || "langsung";
+  const requestManualValidation =
+    formData.get("requestManualValidation") === "true";
 
   // Validasi
   if (
@@ -700,10 +667,12 @@ export async function createSetorSampah(
     };
   }
 
-  // Hitung poin berdasarkan harga aktif
-  const hargaAktif = await getHargaAktif(jenisSampah, tanggalSetor);
-  const pointPerKg = hargaAktif?.pointPerKg ?? 0;
-  const totalPoin = Math.floor(beratKg * pointPerKg);
+  // Hitung poin & kredit berdasarkan harga & poin aktif
+  const { totalPoin, totalKredit } = await calculateSetoranReward(
+    jenisSampah,
+    beratKg,
+    user.role,
+  );
 
   // Generate nomor setor: "Setoran [Nama User] – [Tanggal]"
   const tanggalFormatted = formatTanggalIndo(new Date(tanggalSetor));
@@ -747,6 +716,7 @@ export async function createSetorSampah(
   // Insert ke database sesuai peran user
   try {
     const isEkspedisi = metodeSetor === "ekspedisi";
+    const isPending = isEkspedisi || requestManualValidation;
     const baseValues = {
       nomorSetor,
       userId: user.id,
@@ -757,8 +727,8 @@ export async function createSetorSampah(
       fotoTimbangan: fotoTimbanganUrl,
       fotoBuktiTambahan: fotoBuktiUrls,
       catatan,
-      totalPoin: isEkspedisi ? 0 : totalPoin,
-      status: (isEkspedisi ? "pending" : "diterima") as
+      totalPoin: isPending ? 0 : totalPoin,
+      status: (isPending ? "pending" : "diterima") as
         | "pending"
         | "diverifikasi"
         | "diserahkan"
@@ -777,17 +747,11 @@ export async function createSetorSampah(
       await db.insert(setorSampahKonsumen).values(baseValues);
     }
 
-    if (!isEkspedisi) {
+    if (!isPending) {
       // Update nasabah balance
       const existingProfile = await db.query.nasabah.findFirst({
         where: eq(nasabah.userId, user.id),
       });
-
-      const isMoneyReward =
-        user.role === "warmiendo" || user.role === "bank-sampah";
-      const totalKredit = isMoneyReward
-        ? Math.floor(beratKg * (hargaAktif?.hargaPerKg ?? 0))
-        : 0;
 
       if (existingProfile) {
         await db
@@ -819,9 +783,5 @@ export async function createSetorSampah(
 }
 
 export async function getAllActiveEkspedisi() {
-  return db
-    .select()
-    .from(ekspedisi)
-    .where(eq(ekspedisi.status, "Aktif"))
-    .orderBy(asc(ekspedisi.namaVendor));
+  return getEkspedisiFn();
 }

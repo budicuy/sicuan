@@ -43,6 +43,10 @@ export interface MenuItem {
   icon: string;
 }
 
+export type SidebarItem =
+  | { type: "link"; href: string; label: string; icon: string }
+  | { type: "group"; label: string; icon: string; items: MenuItem[] };
+
 interface SidebarLayoutProps {
   children: React.ReactNode;
   user: {
@@ -57,6 +61,7 @@ interface SidebarLayoutProps {
     icon: string;
     items: MenuItem[];
   }[];
+  sidebarItems?: SidebarItem[];
 }
 
 export function SidebarLayout({
@@ -65,16 +70,20 @@ export function SidebarLayout({
   onLogout,
   menuItems,
   collapsibleSections = [],
+  sidebarItems,
 }: SidebarLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
   // Find active item
-  const activeMenuItem =
-    menuItems.find((item) => pathname === item.href) ||
-    collapsibleSections
-      .flatMap((sec) => sec.items)
-      .find((item) => pathname === item.href);
+  const activeMenuItem = sidebarItems
+    ? sidebarItems
+        .flatMap((item) => (item.type === "group" ? item.items : [item]))
+        .find((item) => pathname === item.href)
+    : menuItems.find((item) => pathname === item.href) ||
+      collapsibleSections
+        .flatMap((sec) => sec.items)
+        .find((item) => pathname === item.href);
 
   const activeTitle = activeMenuItem ? activeMenuItem.label : "Dashboard";
 
@@ -84,7 +93,22 @@ export function SidebarLayout({
   useEffect(() => {
     // Proactively open collapsible sections if one of their sub-items is active
     const initialOpenStates: Record<string, boolean> = {};
-    for (const sec of collapsibleSections) {
+    const sections = sidebarItems
+      ? sidebarItems
+          .filter(
+            (
+              item,
+            ): item is {
+              type: "group";
+              label: string;
+              icon: string;
+              items: MenuItem[];
+            } => item.type === "group",
+          )
+          .map((item) => ({ label: item.label, items: item.items }))
+      : collapsibleSections;
+
+    for (const sec of sections) {
       const isSubitemActive = sec.items.some((item) => pathname === item.href);
       if (isSubitemActive) {
         initialOpenStates[sec.label] = true;
@@ -99,7 +123,7 @@ export function SidebarLayout({
       }
       return prev;
     });
-  }, [pathname, collapsibleSections]);
+  }, [pathname, collapsibleSections, sidebarItems]);
 
   const toggleSection = (label: string) => {
     setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -111,6 +135,92 @@ export function SidebarLayout({
         setSidebarOpen(false);
       }
     };
+
+    if (sidebarItems) {
+      return (
+        <div className="space-y-1.5">
+          {sidebarItems.map((item) => {
+            if (item.type === "link") {
+              const isActive = pathname === item.href;
+              const Icon = getIcon(item.icon);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleLinkClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
+                    isActive
+                      ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100 shadow-xs"
+                      : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
+                  }`}
+                >
+                  <Icon
+                    className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                  />
+                  {item.label}
+                </Link>
+              );
+            }
+
+            const isSectionActive = item.items.some(
+              (sub) => pathname === sub.href,
+            );
+            const isOpen = !!openSections[item.label];
+            const SecIcon = getIcon(item.icon);
+
+            return (
+              <div key={item.label} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => toggleSection(item.label)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all border-0 cursor-pointer ${
+                    isSectionActive
+                      ? "bg-neutral-50/80 text-primary-700 font-semibold"
+                      : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <SecIcon
+                      className={`w-4.5 h-4.5 shrink-0 ${isSectionActive ? "text-primary-600" : "text-neutral-400"}`}
+                    />
+                    <span>{item.label}</span>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {isOpen && (
+                  <div className="pl-6 mt-1.5 space-y-1 border-l border-neutral-200 ml-6">
+                    {item.items.map((sub) => {
+                      const isActive = pathname === sub.href;
+                      const Icon = getIcon(sub.icon);
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          onClick={handleLinkClick}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all ${
+                            isActive
+                              ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100/50"
+                              : "text-neutral-500 hover:text-primary-600 hover:bg-primary-50/30"
+                          }`}
+                        >
+                          <Icon
+                            className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                          />
+                          {sub.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-1.5">
@@ -162,7 +272,7 @@ export function SidebarLayout({
                   <span>{sec.label}</span>
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                  className={`w-4.5 h-4.5 text-neutral-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                 />
               </button>
 

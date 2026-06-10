@@ -1,6 +1,18 @@
 "use server";
 
-import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  ilike,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { hargaSampah, insertHargaSampahSchema } from "@/db/schema";
@@ -29,12 +41,7 @@ export async function getHargaSampah(params?: {
   const whereConditions = [];
 
   if (search) {
-    whereConditions.push(
-      or(
-        ilike(hargaSampah.periode, `%${search}%`),
-        ilike(hargaSampah.jenisSampah, `%${search}%`),
-      ),
-    );
+    whereConditions.push(or(ilike(hargaSampah.jenisSampah, `%${search}%`)));
   }
 
   if (jenisSampah) {
@@ -54,31 +61,24 @@ export async function getHargaSampah(params?: {
   // Dynamic sorting
   let orderColumn =
     sortOrder === "desc" ? desc(hargaSampah.id) : asc(hargaSampah.id);
-  if (sortBy === "periode") {
-    orderColumn =
-      sortOrder === "desc"
-        ? desc(hargaSampah.periode)
-        : asc(hargaSampah.periode);
-  } else if (sortBy === "jenisSampah") {
+  if (sortBy === "jenisSampah") {
     orderColumn =
       sortOrder === "desc"
         ? desc(hargaSampah.jenisSampah)
         : asc(hargaSampah.jenisSampah);
-  } else if (sortBy === "hargaPerKg") {
+  } else if (sortBy === "minBerat") {
     orderColumn =
       sortOrder === "desc"
-        ? desc(hargaSampah.hargaPerKg)
-        : asc(hargaSampah.hargaPerKg);
-  } else if (sortBy === "pointPerKg") {
+        ? desc(hargaSampah.minBerat)
+        : asc(hargaSampah.minBerat);
+  } else if (sortBy === "maxBerat") {
     orderColumn =
       sortOrder === "desc"
-        ? desc(hargaSampah.pointPerKg)
-        : asc(hargaSampah.pointPerKg);
-  } else if (sortBy === "beratMin") {
+        ? desc(hargaSampah.maxBerat)
+        : asc(hargaSampah.maxBerat);
+  } else if (sortBy === "harga") {
     orderColumn =
-      sortOrder === "desc"
-        ? desc(hargaSampah.beratMin)
-        : asc(hargaSampah.beratMin);
+      sortOrder === "desc" ? desc(hargaSampah.harga) : asc(hargaSampah.harga);
   }
 
   // Get data
@@ -103,27 +103,71 @@ export async function createHargaSampah(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const periodeRaw = formData.get("periode") as string;
-  const periode = periodeRaw ? `${periodeRaw}-01` : "";
   const jenisSampah = formData.get("jenisSampah") as string;
-  const hargaPerKg = Number.parseInt(formData.get("hargaPerKg") as string, 10);
-  const pointPerKg = Number.parseInt(formData.get("pointPerKg") as string, 10);
-  const beratMin = Number.parseInt(formData.get("beratMin") as string, 10);
+  const minBerat = Number.parseFloat(formData.get("minBerat") as string);
+  const maxBeratRaw = formData.get("maxBerat") as string;
+  const maxBerat = maxBeratRaw ? Number.parseFloat(maxBeratRaw) : null;
+  const harga = Number.parseInt(formData.get("harga") as string, 10);
 
   const parsed = hargaFormSchema.safeParse({
-    periode,
     jenisSampah,
-    hargaPerKg,
-    pointPerKg,
-    beratMin,
+    minBerat,
+    maxBerat,
+    harga,
   });
 
   if (!parsed.success) {
     return { success: false, errors: parsed.error.flatten().fieldErrors };
   }
 
+  if (maxBerat !== null && minBerat >= maxBerat) {
+    return {
+      success: false,
+      errors: {
+        minBerat: ["Berat minimum harus kurang dari berat maksimum"],
+        maxBerat: ["Berat maksimum harus lebih dari berat minimum"],
+      },
+    };
+  }
+
+  const categories = ["Karton", "Etiket", "Paper Cup"];
+
   try {
-    await db.insert(hargaSampah).values(parsed.data);
+    for (const cat of categories) {
+      const overlaps = await db
+        .select()
+        .from(hargaSampah)
+        .where(
+          and(
+            eq(hargaSampah.jenisSampah, cat),
+            maxBerat !== null ? lt(hargaSampah.minBerat, maxBerat) : undefined,
+            or(
+              isNull(hargaSampah.maxBerat),
+              gt(hargaSampah.maxBerat, minBerat),
+            ),
+          ),
+        );
+
+      if (overlaps.length > 0) {
+        return {
+          success: false,
+          errors: {
+            _form: [
+              `Range berat bertubrukan (overlap) dengan range harga yang sudah ada untuk kategori "${cat}".`,
+            ],
+          },
+        };
+      }
+    }
+
+    const insertData = categories.map((cat) => ({
+      jenisSampah: cat,
+      minBerat,
+      maxBerat,
+      harga,
+    }));
+
+    await db.insert(hargaSampah).values(insertData);
   } catch (error) {
     console.error("Error creating harga sampah:", error);
     return { success: false, errors: { _form: ["Terjadi kesalahan server"] } };
@@ -138,26 +182,57 @@ export async function updateHargaSampah(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const periodeRaw = formData.get("periode") as string;
-  const periode = periodeRaw ? `${periodeRaw}-01` : "";
   const jenisSampah = formData.get("jenisSampah") as string;
-  const hargaPerKg = Number.parseInt(formData.get("hargaPerKg") as string, 10);
-  const pointPerKg = Number.parseInt(formData.get("pointPerKg") as string, 10);
-  const beratMin = Number.parseInt(formData.get("beratMin") as string, 10);
+  const minBerat = Number.parseFloat(formData.get("minBerat") as string);
+  const maxBeratRaw = formData.get("maxBerat") as string;
+  const maxBerat = maxBeratRaw ? Number.parseFloat(maxBeratRaw) : null;
+  const harga = Number.parseInt(formData.get("harga") as string, 10);
 
   const parsed = hargaFormSchema.safeParse({
-    periode,
     jenisSampah,
-    hargaPerKg,
-    pointPerKg,
-    beratMin,
+    minBerat,
+    maxBerat,
+    harga,
   });
 
   if (!parsed.success) {
     return { success: false, errors: parsed.error.flatten().fieldErrors };
   }
 
+  if (maxBerat !== null && minBerat >= maxBerat) {
+    return {
+      success: false,
+      errors: {
+        minBerat: ["Berat minimum harus kurang dari berat maksimum"],
+        maxBerat: ["Berat maksimum harus lebih dari berat minimum"],
+      },
+    };
+  }
+
   try {
+    const overlaps = await db
+      .select()
+      .from(hargaSampah)
+      .where(
+        and(
+          eq(hargaSampah.jenisSampah, jenisSampah),
+          ne(hargaSampah.id, id),
+          maxBerat !== null ? lt(hargaSampah.minBerat, maxBerat) : undefined,
+          or(isNull(hargaSampah.maxBerat), gt(hargaSampah.maxBerat, minBerat)),
+        ),
+      );
+
+    if (overlaps.length > 0) {
+      return {
+        success: false,
+        errors: {
+          _form: [
+            "Range berat bertubrukan (overlap) dengan range harga yang sudah ada untuk jenis sampah ini.",
+          ],
+        },
+      };
+    }
+
     await db
       .update(hargaSampah)
       .set({

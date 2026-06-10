@@ -10,7 +10,6 @@ This file defines the behavior, command usage, and project-specific constraints 
 - **Do NOT run `bun run build`**: Avoid triggering full builds using Bun.
 - **Use `tree`**: Always use the `tree` command to visualize the directory structure when exploring folders.
 - **Use `diff` concept / edits**: Use fine-grained file modification tools (`replace_file_content` / `multi_replace_file_content`) to apply edits rather than overwriting full files.
-- **Use `bun:migrate`**: For database schema changes, always use the `bun:migrate` command to generate and apply migrations instead of manual SQL edits.
 - **Use RTK (Rust Token Killer)**: For commands run on the system, make sure the `rtk` CLI prefix is utilized where appropriate or rely on the hook-based proxy configuration to optimize token consumption.
 
 

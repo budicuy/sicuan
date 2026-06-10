@@ -42,8 +42,8 @@ interface DataTableProps<T> {
   onSearchChange: (search: string) => void;
   searchPlaceholder?: string;
   filters?: TableFilter<T>[];
-  filterValues: Record<string, string>;
-  onFilterChange: (filterId: string, value: string) => void;
+  filterValues?: Record<string, string>;
+  onFilterChange?: (filterId: string, value: string) => void;
   onAdd?: () => void;
   addLabel?: string;
   onEdit?: (item: T) => void;
@@ -73,8 +73,8 @@ export function DataTable<T extends { id: number }>({
   onSearchChange,
   searchPlaceholder = "Cari data...",
   filters,
-  filterValues,
-  onFilterChange,
+  filterValues = {},
+  onFilterChange = () => {},
   onAdd,
   addLabel = "Tambah Data",
   onEdit,

@@ -1,37 +1,58 @@
 import { db } from "@/db";
-import { hargaSampah } from "@/db/schema";
+import { hargaSampah, poinSampah } from "@/db/schema";
 
 export async function seedHargaSampah() {
-  console.log("🌱 Seeding flat harga sampah for Karton, Etiket, Paper Cup...");
+  console.log("🌱 Seeding range harga sampah & master poin...");
 
-  const jenisTypes = ["Paper Cup", "Etiket", "Karton"];
-  const periods: string[] = [];
-  for (const year of [2024, 2025, 2026]) {
-    for (let m = 1; m <= 12; m++) {
-      periods.push(`${year}-${String(m).padStart(2, "0")}-01`);
-    }
-  }
+  // 1. Seed Master Poin
+  const poinData = [
+    { jenisSampah: "Paper Cup", pointPerKg: 30 },
+    { jenisSampah: "Etiket", pointPerKg: 25 },
+    { jenisSampah: "Karton", pointPerKg: 20 },
+  ];
 
-  const data = [];
-  for (const periode of periods) {
-    for (const jenis of jenisTypes) {
-      const hargaPerKg =
-        jenis === "Paper Cup" ? 3000 : jenis === "Etiket" ? 2500 : 2000;
-      const pointPerKg =
-        jenis === "Paper Cup" ? 30 : jenis === "Etiket" ? 25 : 20;
+  await db.delete(poinSampah);
+  await db.insert(poinSampah).values(poinData);
+  console.log("✅ Seeded poin_sampah successfully");
 
-      data.push({
-        periode,
-        jenisSampah: jenis,
-        hargaPerKg,
-        pointPerKg,
-        beratMin: 1,
-      });
-    }
-  }
+  // 2. Seed Harga Sampah (Range)
+  // Karton:
+  // - 1 s/d 5 kg: 20000
+  // - 5 s/d 10 kg: 45000
+  // - > 10 kg: 95000
+  // Etiket:
+  // - 1 s/d 5 kg: 22000
+  // - 5 s/d 10 kg: 48000
+  // - > 10 kg: 100000
+  // Paper Cup:
+  // - 1 s/d 5 kg: 25000
+  // - 5 s/d 10 kg: 50000
+  // - > 10 kg: 110000
+
+  const hargaData = [
+    // Karton
+    { jenisSampah: "Karton", minBerat: 0, maxBerat: 5, harga: 25000 },
+    { jenisSampah: "Karton", minBerat: 5, maxBerat: 10, harga: 50000 },
+    { jenisSampah: "Karton", minBerat: 10, maxBerat: 15, harga: 75000 },
+    { jenisSampah: "Karton", minBerat: 15, maxBerat: 20, harga: 100000 },
+    { jenisSampah: "Karton", minBerat: 20, maxBerat: null, harga: 125000 },
+
+    // Etiket
+    { jenisSampah: "Etiket", minBerat: 0, maxBerat: 5, harga: 25000 },
+    { jenisSampah: "Etiket", minBerat: 5, maxBerat: 10, harga: 50000 },
+    { jenisSampah: "Etiket", minBerat: 10, maxBerat: 15, harga: 75000 },
+    { jenisSampah: "Etiket", minBerat: 15, maxBerat: 20, harga: 100000 },
+    { jenisSampah: "Etiket", minBerat: 20, maxBerat: null, harga: 125000 },
+
+    // Paper Cup
+    { jenisSampah: "Paper Cup", minBerat: 0, maxBerat: 5, harga: 25000 },
+    { jenisSampah: "Paper Cup", minBerat: 5, maxBerat: 10, harga: 50000 },
+    { jenisSampah: "Paper Cup", minBerat: 10, maxBerat: 15, harga: 75000 },
+    { jenisSampah: "Paper Cup", minBerat: 15, maxBerat: 20, harga: 100000 },
+    { jenisSampah: "Paper Cup", minBerat: 20, maxBerat: null, harga: 125000 },
+  ];
 
   await db.delete(hargaSampah);
-  await db.insert(hargaSampah).values(data);
-
-  console.log(`✅ Seeded ${data.length} harga sampah records successfully`);
+  await db.insert(hargaSampah).values(hargaData);
+  console.log("✅ Seeded harga_sampah (range) successfully");
 }

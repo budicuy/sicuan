@@ -1,5 +1,5 @@
 import {
-  date,
+  doublePrecision,
   integer,
   pgTable,
   serial,
@@ -10,11 +10,10 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const hargaSampah = pgTable("harga_sampah", {
   id: serial("id").primaryKey(),
-  periode: date("periode").notNull(), // format: YYYY-MM-DD (simpan hari-1 tiap bulan)
-  jenisSampah: text("jenis_sampah").notNull(), // e.g. "Paper Cup", "Plastik", "Karton"
-  hargaPerKg: integer("harga_per_kg").notNull(),
-  pointPerKg: integer("point_per_kg").notNull(),
-  beratMin: integer("berat_min").notNull(),
+  jenisSampah: text("jenis_sampah").notNull(), // e.g. "Paper Cup", "Etiket", "Karton"
+  minBerat: doublePrecision("berat_min").notNull(),
+  maxBerat: doublePrecision("berat_max"), // null means no upper limit (e.g. > 10 kg)
+  harga: integer("harga").notNull(),
 
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
