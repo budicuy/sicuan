@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "tsc --noEmit && biome check --write --unsafe",
     "db:seed": "tsx db/seeds/seed.ts",
-    "db:push": "drizzle-kit push --force",
+    "db:push": "bunx drizzle-kit push --force",
+    "db:migrate": "drizzle-kit migrate", 
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

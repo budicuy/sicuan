@@ -1,0 +1,1103 @@
+{
+  "id": "3c150a6c-3914-47fc-84fb-34a313a29b3f",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.ekspedisi": {
+      "name": "ekspedisi",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nama_vendor": {
+          "name": "nama_vendor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "no_telepon": {
+          "name": "no_telepon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Aktif'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.harga_sampah": {
+      "name": "harga_sampah",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "jenis_sampah": {
+          "name": "jenis_sampah",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_min": {
+          "name": "berat_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_maks": {
+          "name": "berat_maks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "harga_total": {
+          "name": "harga_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.kupon": {
+      "name": "kupon",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nama": {
+          "name": "nama",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deskripsi": {
+          "name": "deskripsi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "poin": {
+          "name": "poin",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tier": {
+          "name": "tier",
+          "type": "kupon_tier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.master_poin": {
+      "name": "master_poin",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "jenis_sampah": {
+          "name": "jenis_sampah",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "poin_per_kg": {
+          "name": "poin_per_kg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "master_poin_jenis_sampah_unique": {
+          "name": "master_poin_jenis_sampah_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "jenis_sampah"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.nasabah": {
+      "name": "nasabah",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nik": {
+          "name": "nik",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tanggal_lahir": {
+          "name": "tanggal_lahir",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "no_telepon": {
+          "name": "no_telepon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alamat": {
+          "name": "alamat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jenis_bank": {
+          "name": "jenis_bank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "no_rekening": {
+          "name": "no_rekening",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poin": {
+          "name": "poin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "kredit": {
+          "name": "kredit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "nasabah_user_id_users_id_fk": {
+          "name": "nasabah_user_id_users_id_fk",
+          "tableFrom": "nasabah",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "nasabah_user_id_unique": {
+          "name": "nasabah_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pencairan_dana": {
+      "name": "pencairan_dana",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jumlah": {
+          "name": "jumlah",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jenis_bank": {
+          "name": "jenis_bank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "no_rekening": {
+          "name": "no_rekening",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "bukti_transfer": {
+          "name": "bukti_transfer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pencairan_dana_user_id_users_id_fk": {
+          "name": "pencairan_dana_user_id_users_id_fk",
+          "tableFrom": "pencairan_dana",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.penukaran_kupon": {
+      "name": "penukaran_kupon",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kupon_id": {
+          "name": "kupon_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kode_unik": {
+          "name": "kode_unik",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'aktif'"
+        },
+        "tanggal_gunakan": {
+          "name": "tanggal_gunakan",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "penukaran_kupon_user_id_users_id_fk": {
+          "name": "penukaran_kupon_user_id_users_id_fk",
+          "tableFrom": "penukaran_kupon",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "penukaran_kupon_kupon_id_kupon_id_fk": {
+          "name": "penukaran_kupon_kupon_id_kupon_id_fk",
+          "tableFrom": "penukaran_kupon",
+          "tableTo": "kupon",
+          "columnsFrom": [
+            "kupon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "penukaran_kupon_kode_unik_unique": {
+          "name": "penukaran_kupon_kode_unik_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "kode_unik"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.raw_material": {
+      "name": "raw_material",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "periode": {
+          "name": "periode",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kategori": {
+          "name": "kategori",
+          "type": "raw_material_kategori",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "klasifikasi": {
+          "name": "klasifikasi",
+          "type": "raw_material_klasifikasi",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_kg": {
+          "name": "berat_kg",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_gram": {
+          "name": "berat_gram",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.setoran_bank_sampah": {
+      "name": "setoran_bank_sampah",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nomor_setor": {
+          "name": "nomor_setor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jenis_sampah": {
+          "name": "jenis_sampah",
+          "type": "jenis_sampah",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_kg": {
+          "name": "berat_kg",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_ai_kg": {
+          "name": "berat_ai_kg",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tanggal_setor": {
+          "name": "tanggal_setor",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "foto_timbangan": {
+          "name": "foto_timbangan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "foto_bukti_tambahan": {
+          "name": "foto_bukti_tambahan",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "catatan": {
+          "name": "catatan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_poin": {
+          "name": "total_poin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "status_setor",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'diterima'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "setoran_bank_sampah_user_id_users_id_fk": {
+          "name": "setoran_bank_sampah_user_id_users_id_fk",
+          "tableFrom": "setoran_bank_sampah",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.setoran_konsumen": {
+      "name": "setoran_konsumen",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nomor_setor": {
+          "name": "nomor_setor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jenis_sampah": {
+          "name": "jenis_sampah",
+          "type": "jenis_sampah",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_kg": {
+          "name": "berat_kg",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_ai_kg": {
+          "name": "berat_ai_kg",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tanggal_setor": {
+          "name": "tanggal_setor",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "foto_timbangan": {
+          "name": "foto_timbangan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "foto_bukti_tambahan": {
+          "name": "foto_bukti_tambahan",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "catatan": {
+          "name": "catatan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_poin": {
+          "name": "total_poin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "status_setor",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'diterima'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "setoran_konsumen_user_id_users_id_fk": {
+          "name": "setoran_konsumen_user_id_users_id_fk",
+          "tableFrom": "setoran_konsumen",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.setoran_warmiendo": {
+      "name": "setoran_warmiendo",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nomor_setor": {
+          "name": "nomor_setor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jenis_sampah": {
+          "name": "jenis_sampah",
+          "type": "jenis_sampah",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_kg": {
+          "name": "berat_kg",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "berat_ai_kg": {
+          "name": "berat_ai_kg",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tanggal_setor": {
+          "name": "tanggal_setor",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "foto_timbangan": {
+          "name": "foto_timbangan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "foto_bukti_tambahan": {
+          "name": "foto_bukti_tambahan",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "catatan": {
+          "name": "catatan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_poin": {
+          "name": "total_poin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "status_setor",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'diterima'"
+        },
+        "metode_setor": {
+          "name": "metode_setor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ekspedisi'"
+        },
+        "ekspedisi_id": {
+          "name": "ekspedisi_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "setoran_warmiendo_user_id_users_id_fk": {
+          "name": "setoran_warmiendo_user_id_users_id_fk",
+          "tableFrom": "setoran_warmiendo",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "setoran_warmiendo_ekspedisi_id_ekspedisi_id_fk": {
+          "name": "setoran_warmiendo_ekspedisi_id_ekspedisi_id_fk",
+          "tableFrom": "setoran_warmiendo",
+          "tableTo": "ekspedisi",
+          "columnsFrom": [
+            "ekspedisi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Aktif'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.kupon_tier": {
+      "name": "kupon_tier",
+      "schema": "public",
+      "values": [
+        "silver",
+        "gold",
+        "diamond"
+      ]
+    },
+    "public.raw_material_kategori": {
+      "name": "raw_material_kategori",
+      "schema": "public",
+      "values": [
+        "Cup",
+        "Etiket",
+        "Karton"
+      ]
+    },
+    "public.raw_material_klasifikasi": {
+      "name": "raw_material_klasifikasi",
+      "schema": "public",
+      "values": [
+        "Cup Noodle (CN)",
+        "Glass Noodle (GN)",
+        "Normal Noodle (NN)"
+      ]
+    },
+    "public.jenis_sampah": {
+      "name": "jenis_sampah",
+      "schema": "public",
+      "values": [
+        "Karton",
+        "Etiket",
+        "Paper Cup"
+      ]
+    },
+    "public.status_setor": {
+      "name": "status_setor",
+      "schema": "public",
+      "values": [
+        "pending",
+        "diverifikasi",
+        "diserahkan",
+        "diterima",
+        "ditolak"
+      ]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": [
+        "superadmin",
+        "admin",
+        "konsumen",
+        "warmiendo",
+        "bank-sampah"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
