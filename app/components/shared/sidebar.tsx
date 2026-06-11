@@ -375,8 +375,8 @@ export function SidebarLayout({
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+            <div className="flex items-center justify-between mb-6 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white">
                   <Recycle className="w-5 h-5 animate-spin-slow" />
@@ -394,10 +394,12 @@ export function SidebarLayout({
               </button>
             </div>
 
-            <nav className="pt-4">{renderNavLinks(true)}</nav>
+            <nav className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+              {renderNavLinks(true)}
+            </nav>
           </div>
 
-          <div className="border-t border-neutral-100 pt-4 mt-6 space-y-3">
+          <div className="border-t border-neutral-100 pt-4 mt-6 space-y-3 shrink-0">
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/60">
               <div className="w-9 h-9 rounded-full bg-primary-600 text-white font-bold flex items-center justify-center shadow-xs shrink-0">
                 {user?.name?.slice(0, 2).toUpperCase() || "US"}
@@ -426,8 +428,8 @@ export function SidebarLayout({
 
       {/* DESKTOP PERMANENT SIDEBAR */}
       <aside className="hidden lg:flex flex-col justify-between w-64 bg-white text-neutral-800 p-6 shrink-0 fixed top-0 bottom-0 left-0 border-r border-neutral-200 shadow-xs">
-        <div className="space-y-8">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+          <div className="flex items-center gap-2 mb-8 shrink-0">
             <div className="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white shadow-md">
               <Recycle className="w-6 h-6 animate-spin-slow" />
             </div>
@@ -441,10 +443,12 @@ export function SidebarLayout({
             </div>
           </div>
 
-          <nav className="space-y-1.5">{renderNavLinks(false)}</nav>
+          <nav className="flex-1 overflow-y-auto space-y-1.5 pr-2 scrollbar-thin">
+            {renderNavLinks(false)}
+          </nav>
         </div>
 
-        <div className="border-t border-neutral-100 pt-4 mt-6 space-y-3">
+        <div className="border-t border-neutral-100 pt-4 mt-6 space-y-3 shrink-0">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200/60">
             <div className="w-9 h-9 rounded-full bg-primary-600 text-white font-bold flex items-center justify-center shadow-xs shrink-0">
               {user?.name?.slice(0, 2).toUpperCase() || "US"}
