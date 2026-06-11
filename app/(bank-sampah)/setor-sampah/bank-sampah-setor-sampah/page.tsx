@@ -521,14 +521,11 @@ export default function BankSampahSetorSampah() {
                   <input
                     id="tanggalSetor"
                     type="date"
-                    value={tanggalSetor}
-                    readOnly
-                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-500 cursor-not-allowed"
-                  />
-                  <input
-                    type="hidden"
                     name="tanggalSetor"
                     value={tanggalSetor}
+                    onChange={(e) => setTanggalSetor(e.target.value)}
+                    required
+                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
                   />
                 </div>
               </div>

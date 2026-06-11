@@ -329,7 +329,7 @@ export default function PencairanAdminPage() {
           )}
           {item.keterangan && (
             <div
-              className="text-[10px] text-neutral-400 mt-0.5 truncate max-w-[120px]"
+              className="text-[10px] text-neutral-400 mt-0.5 truncate max-w-30"
               title={item.keterangan}
             >
               {item.keterangan}

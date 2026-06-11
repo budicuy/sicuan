@@ -14,7 +14,6 @@ import {
   ExternalLink,
   Eye,
   FileText,
-  HelpCircle,
   Loader2,
   X,
 } from "lucide-react";
@@ -31,7 +30,9 @@ import {
   DataTable,
   type TableFilter,
 } from "@/app/components/shared/DataTable";
+import { DisbursementLetterPreview } from "@/app/components/shared/DisbursementLetterPreview";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { SyaratKetentuanCard } from "@/app/components/shared/SyaratKetentuanCard";
 
 interface DisbursementHistoryItem {
   id: number;
@@ -65,53 +66,6 @@ interface UserData {
   dataSampah?: { jenis: string; beratKg: number; terlampir: boolean }[];
   totalBeratKg?: number;
   user: { id: number; name: string; role: string };
-}
-
-function angkaTerbilang(n: number): string {
-  const satuan = [
-    "",
-    "Satu",
-    "Dua",
-    "Tiga",
-    "Empat",
-    "Lima",
-    "Enam",
-    "Tujuh",
-    "Delapan",
-    "Sembilan",
-    "Sepuluh",
-    "Sebelas",
-  ];
-
-  if (n < 12) return satuan[n];
-  if (n < 20) return `${satuan[n - 10]} Belas`;
-  if (n < 100) {
-    const tens = Math.floor(n / 10);
-    const rem = n % 10;
-    return `${satuan[tens]} Puluh${rem ? ` ${satuan[rem]}` : ""}`;
-  }
-  if (n < 200) return `Seratus${n > 100 ? ` ${angkaTerbilang(n - 100)}` : ""}`;
-  if (n < 1000) {
-    const h = Math.floor(n / 100);
-    return `${satuan[h]} Ratus${n % 100 ? ` ${angkaTerbilang(n % 100)}` : ""}`;
-  }
-  if (n < 2000)
-    return `Seribu${n > 1000 ? ` ${angkaTerbilang(n - 1000)}` : ""}`;
-  if (n < 1_000_000) {
-    const th = Math.floor(n / 1000);
-    return `${angkaTerbilang(th)} Ribu${n % 1000 ? ` ${angkaTerbilang(n % 1000)}` : ""}`;
-  }
-  if (n < 1_000_000_000) {
-    const jt = Math.floor(n / 1_000_000);
-    return `${angkaTerbilang(jt)} Juta${n % 1_000_000 ? ` ${angkaTerbilang(n % 1_000_000)}` : ""}`;
-  }
-  const ml = Math.floor(n / 1_000_000_000);
-  return `${angkaTerbilang(ml)} Miliar${n % 1_000_000_000 ? ` ${angkaTerbilang(n % 1_000_000_000)}` : ""}`;
-}
-
-function terbilang(amount: number): string {
-  if (amount === 0) return '"Nol Rupiah"';
-  return `"${angkaTerbilang(amount)} Rupiah"`;
 }
 
 type MetodePembayaran = "tunai" | "transfer";
@@ -452,35 +406,7 @@ export default function PencairanDanaPage() {
           </div>
         </div>
 
-        {/* Syarat & Ketentuan */}
-        <div className="bg-white rounded-2xl p-5 border border-neutral-200 shadow-sm">
-          <h4 className="font-bold text-xs text-neutral-800 flex items-center gap-1.5 pb-2 border-b border-neutral-100">
-            <HelpCircle className="w-4 h-4 text-primary-600" />
-            Syarat &amp; Ketentuan
-          </h4>
-          <ul className="mt-3 space-y-2 text-xs text-neutral-600">
-            <li className="flex gap-2">
-              <span className="text-primary-600 font-bold shrink-0">•</span>
-              <span>
-                Diproses dalam <strong>1-2 hari kerja</strong>.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-primary-600 font-bold shrink-0">•</span>
-              <span>
-                Minimal pencairan <strong>Rp 10.000</strong>.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-primary-600 font-bold shrink-0">•</span>
-              <span>Tanda tangan wajib diunggah.</span>
-            </li>
-            <li className="flex gap-2 text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-100">
-              <span className="text-amber-600 font-bold shrink-0">•</span>
-              <span>Tunai: dana diserahkan langsung. PDF dibuat admin.</span>
-            </li>
-          </ul>
-        </div>
+        <SyaratKetentuanCard />
       </div>
 
       {/* Row 2: Form + Pratinjau Surat side by side */}
@@ -694,327 +620,13 @@ export default function PencairanDanaPage() {
           </form>
         </div>
 
-        {/* Pratinjau Surat Bukti Pembayaran */}
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200 shadow-sm">
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-5">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4.5 h-4.5 text-primary-600" />
-              <h3 className="text-sm font-bold text-neutral-800">
-                Pratinjau Surat Bukti Pembayaran
-              </h3>
-            </div>
-            <span className="px-2.5 py-0.5 text-[10px] font-bold text-primary-600 bg-primary-50 rounded-full">
-              Live Draft
-            </span>
-          </div>
-
-          <div className="border border-neutral-200 rounded-xl p-4 sm:p-6 bg-neutral-50/50 font-serif text-[11px] text-neutral-800 space-y-4 overflow-x-auto">
-            {/* Kop Surat */}
-            <div className="text-center space-y-0.5">
-              <div className="border-t-2 border-neutral-800" />
-              <div className="border-t border-neutral-800" />
-              <h2 className="text-center text-xs font-black underline tracking-wide py-0.5">
-                BUKTI PEMBAYARAN &amp; JASA PENGELOLAAN SAMPAH
-              </h2>
-              <div className="border-t-2 border-neutral-800" />
-            </div>
-
-            {/* Info Dokumen */}
-            <div className="flex justify-between items-start pt-1 font-bold text-[10px] text-neutral-600 flex-wrap gap-1">
-              <div>No. Dokumen : (Draft - Otomatis Dibuat Admin)</div>
-              <div>
-                {new Date().toLocaleDateString("id-ID", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </div>
-            </div>
-
-            {/* I. Identitas */}
-            <div className="space-y-1">
-              <h4 className="font-bold border-b border-neutral-200 pb-0.5 text-neutral-700 text-[10px] uppercase">
-                I. Identitas Pelanggan
-              </h4>
-              <table className="w-full text-left">
-                <tbody>
-                  <tr>
-                    <td className="w-36 py-0.5 text-neutral-500">
-                      Nama Bank Sampah
-                    </td>
-                    <td className="w-3 py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 font-semibold text-neutral-800">
-                      {data?.user.role === "bank-sampah"
-                        ? "Bank Sampah"
-                        : "Warmiendo"}{" "}
-                      {data?.user.name}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-0.5 text-neutral-500">ID Pelanggan</td>
-                    <td className="py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 font-bold text-neutral-800">
-                      {data?.idPelanggan}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-0.5 text-neutral-500">Nama</td>
-                    <td className="py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 font-semibold text-neutral-800">
-                      {data?.user.name}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-0.5 text-neutral-500">Alamat</td>
-                    <td className="py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 text-neutral-800">
-                      {data?.alamat || "-"}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-0.5 text-neutral-500">No. Telepon/HP</td>
-                    <td className="py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 text-neutral-800">
-                      {data?.noTelepon || "-"}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* II. Periode */}
-            <div className="space-y-1">
-              <h4 className="font-bold border-b border-neutral-200 pb-0.5 text-neutral-700 text-[10px] uppercase">
-                II. Periode &amp; Detail Pengelolaan
-              </h4>
-              <table className="w-full text-left">
-                <tbody>
-                  <tr>
-                    <td className="w-36 py-0.5 text-neutral-500">
-                      Periode Layanan
-                    </td>
-                    <td className="w-3 py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 text-neutral-800">
-                      Bulan{" "}
-                      {new Date().toLocaleDateString("id-ID", {
-                        month: "long",
-                      })}{" "}
-                      {new Date().getFullYear()}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-0.5 text-neutral-500">Kategori Sumber</td>
-                    <td className="py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5">
-                      <div className="flex flex-wrap gap-3 text-neutral-700">
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            checked={data?.user.role === "bank-sampah"}
-                            readOnly
-                            className="rounded"
-                          />{" "}
-                          Bank Sampah Induk
-                        </label>
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            checked={data?.user.role === "warmiendo"}
-                            readOnly
-                            className="rounded"
-                          />{" "}
-                          TPS 3R
-                        </label>
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            checked={false}
-                            readOnly
-                            className="rounded"
-                          />{" "}
-                          Bank Sampah Unit
-                        </label>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* III. Data Berat */}
-            <div className="space-y-1">
-              <h4 className="font-bold border-b border-neutral-200 pb-0.5 text-neutral-700 text-[10px] uppercase">
-                III. Data Berat Sampah (Bulanan)
-              </h4>
-              {data?.dataSampah && data.dataSampah.length > 0 ? (
-                <div className="space-y-0.5 max-w-sm">
-                  {data.dataSampah.map((item, index) => (
-                    <div key={item.jenis} className="flex justify-between">
-                      <div className="w-5 text-neutral-400">{index + 1}.</div>
-                      <div className="flex-1 text-neutral-700">
-                        {item.jenis}
-                      </div>
-                      <div className="w-20 text-right text-neutral-800 font-mono">
-                        {item.beratKg.toFixed(2)} kg
-                      </div>
-                    </div>
-                  ))}
-                  <div className="border-t border-dashed border-neutral-400 pt-0.5 mt-0.5 flex justify-between font-bold">
-                    <div className="w-5" />
-                    <div className="flex-1 text-neutral-700">TOTAL BERAT</div>
-                    <div className="w-20 text-right text-neutral-800 font-mono">
-                      {(data.totalBeratKg || 0).toFixed(2)} kg
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-neutral-400 italic text-[10px]">
-                  Tidak ada data setoran sampah bulan ini.
-                </div>
-              )}
-            </div>
-
-            {/* IV. Lampiran */}
-            <div className="space-y-1">
-              <h4 className="font-bold border-b border-neutral-200 pb-0.5 text-neutral-700 text-[10px] uppercase">
-                IV. Lampiran Dokumen
-              </h4>
-              {data?.dataSampah && data.dataSampah.length > 0 ? (
-                data.dataSampah.map((item, index) => (
-                  <div
-                    key={item.jenis}
-                    className="flex items-center justify-between max-w-sm"
-                  >
-                    <div className="text-neutral-700">
-                      {index + 1}. Dok. foto timbangan {item.jenis}
-                    </div>
-                    <div className="font-bold text-[10px] text-emerald-600">
-                      ✓ Terlampir
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-neutral-400 italic text-[10px]">
-                  Tidak ada dokumentasi terlampir.
-                </div>
-              )}
-            </div>
-
-            {/* V. Rincian Pembayaran */}
-            <div className="space-y-1">
-              <h4 className="font-bold border-b border-neutral-200 pb-0.5 text-neutral-700 text-[10px] uppercase">
-                V. Rincian Pembayaran
-              </h4>
-              <table className="w-full text-left">
-                <tbody>
-                  <tr>
-                    <td className="w-36 py-0.5 text-neutral-500">
-                      Tarif Dasar Pengelolaan
-                    </td>
-                    <td className="w-3 py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 font-mono text-neutral-800">
-                      Rp {(Number(customAmount) || 0).toLocaleString("id-ID")}
-                      ,00
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-0.5 text-neutral-500">
-                      Biaya Tambahan Per Kg/Ton
-                    </td>
-                    <td className="py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 font-mono text-neutral-800">
-                      Rp 0,00
-                    </td>
-                  </tr>
-                  <tr className="border-t border-neutral-300 font-bold">
-                    <td className="py-1 text-neutral-700">TOTAL TAGIHAN</td>
-                    <td className="py-1 text-neutral-400">:</td>
-                    <td className="py-1 text-primary-700 font-mono">
-                      Rp {(Number(customAmount) || 0).toLocaleString("id-ID")}
-                      ,00
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-0.5 text-neutral-500">TERBILANG</td>
-                    <td className="py-0.5 text-neutral-400">:</td>
-                    <td className="py-0.5 font-bold italic text-neutral-600">
-                      {terbilang(Number(customAmount) || 0)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="flex flex-wrap items-center gap-4 pt-1 font-bold text-[10px] text-neutral-700">
-                <span>Metode :</span>
-                <label className="flex items-center gap-1 font-normal">
-                  <input
-                    type="checkbox"
-                    checked={metode === "tunai"}
-                    readOnly
-                    className="rounded"
-                  />{" "}
-                  Tunai
-                </label>
-                <label className="flex items-center gap-1 font-normal">
-                  <input
-                    type="checkbox"
-                    checked={metode === "transfer"}
-                    readOnly
-                    className="rounded"
-                  />{" "}
-                  Transfer Bank
-                </label>
-              </div>
-              <div className="pt-0.5 text-neutral-700 text-[10px]">
-                <span className="font-bold">Keterangan : </span>
-                <span className="italic">{keterangan || "-"}</span>
-              </div>
-            </div>
-
-            {/* Tanda Tangan */}
-            <div className="flex justify-between pt-3">
-              <div className="w-40 text-center space-y-1">
-                <p className="text-[10px] text-neutral-500">Diterima Oleh,</p>
-                <div className="h-14 flex items-center justify-center">
-                  {ttdBase64 ? (
-                    // biome-ignore lint/performance/noImgElement: TTD preview
-                    <img
-                      src={ttdBase64}
-                      alt="Tanda Tangan Pengaju"
-                      className="max-h-12 object-contain"
-                    />
-                  ) : (
-                    <div className="text-[9px] text-neutral-400 italic border border-dashed border-neutral-300 px-3 py-1 rounded-lg bg-neutral-50">
-                      Belum Diunggah
-                    </div>
-                  )}
-                </div>
-                <div className="border-b border-neutral-800 mx-auto w-32" />
-                <p className="font-bold underline text-[10px] text-neutral-800">
-                  ({data?.user.name})
-                </p>
-                <p className="text-[9px] text-neutral-500 leading-tight">
-                  Pimpinan Bank Sampah
-                </p>
-              </div>
-              <div className="w-40 text-center space-y-1">
-                <p className="text-[10px] text-neutral-500">Diserahkan Oleh,</p>
-                <div className="h-14 flex items-center justify-center">
-                  <div className="text-[9px] text-neutral-400 italic border border-dashed border-neutral-300 px-3 py-1 rounded-lg bg-neutral-50">
-                    Menunggu Approval
-                  </div>
-                </div>
-                <div className="border-b border-neutral-800 mx-auto w-32" />
-                <p className="font-bold text-[10px] text-neutral-800">
-                  PT. Indofood CBP Sukses Makmur Tbk,
-                </p>
-                <p className="text-[9px] text-neutral-500 italic font-bold leading-tight">
-                  [ Stempel Resmi ]
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DisbursementLetterPreview
+          data={data}
+          customAmount={customAmount}
+          metode={metode}
+          keterangan={keterangan}
+          ttdBase64={ttdBase64}
+        />
       </div>
 
       {/* Row 3: Dokumen PDF (jika ada) */}
