@@ -4,6 +4,10 @@
   scroll-behavior: smooth;
 }
 
+body {
+  @apply overflow-hidden;
+}
+
 @theme {
   /* === FONT === */
   --font-sans: "Inter", "Geist", ui-sans-serif, system-ui;
