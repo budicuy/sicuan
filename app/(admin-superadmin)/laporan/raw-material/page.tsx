@@ -285,20 +285,17 @@ export default function LaporanRawMaterialPage() {
               </label>
             )}
 
-            {/* Dropdown Tahun (Always show) */}
+            {/* Input Tahun (Always show) */}
             <label className="flex flex-col gap-0.5 min-w-18.75 text-[8px] font-bold text-neutral-400 uppercase tracking-wider">
               Tahun
-              <select
+              <input
+                type="number"
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="bg-neutral-50 border border-neutral-200 rounded-lg text-[11px] font-bold px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer text-neutral-800 normal-case"
-              >
-                {[2024, 2025, 2026, 2027, 2028].map((yr) => (
-                  <option key={yr} value={yr}>
-                    {yr}
-                  </option>
-                ))}
-              </select>
+                className="bg-neutral-50 border border-neutral-200 rounded-lg text-[11px] font-bold px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 text-neutral-800 w-20"
+                min={2000}
+                max={2100}
+              />
             </label>
           </div>
         </div>

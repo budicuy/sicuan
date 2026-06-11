@@ -65,6 +65,11 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
       icon: "Coins",
     },
     { href: "/profil/bank-sampah-profil", label: "Profil Saya", icon: "User" },
+    {
+      href: "/user-guide/bank-sampah-guide",
+      label: "Panduan",
+      icon: "BookOpen",
+    },
   ];
 
   return (

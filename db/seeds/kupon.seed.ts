@@ -10,20 +10,23 @@ export async function seedKupon() {
   // Define 3 kupons
   const kuponData = [
     {
-      nama: "Voucher Belanja Indomaret",
-      deskripsi: "Diskon belanja Rp10.000 di seluruh gerai Indomaret",
+      nama: "Voucher 25K",
+      deskripsi:
+        "Potongan Harga Rp. 25.000 untuk Belanja di Koperasi PT. Indofood",
       poin: 50,
       tier: "silver" as const,
     },
     {
-      nama: "Voucher Diskon BBM Pertamina",
-      deskripsi: "Potongan harga BBM Rp30.000 di SPBU Pertamina",
+      nama: "Voucher 75K",
+      deskripsi:
+        "Potongan Harga Rp. 75.000 untuk Belanja di Koperasi PT. Indofood",
       poin: 150,
       tier: "gold" as const,
     },
     {
-      nama: "E-Wallet OVO Saldo Rp100k",
-      deskripsi: "Top up saldo OVO gratis senilai Rp100.000",
+      nama: "Voucher 150K",
+      deskripsi:
+        "Potongan Harga Rp. 150.000 untuk Belanja di Koperasi PT. Indofood",
       poin: 300,
       tier: "diamond" as const,
     },

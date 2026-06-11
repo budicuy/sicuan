@@ -43,11 +43,24 @@ export interface MenuItem {
   href: string;
   label: string;
   icon: string;
+  badgeCount?: number;
 }
 
 export type SidebarItem =
-  | { type: "link"; href: string; label: string; icon: string }
-  | { type: "group"; label: string; icon: string; items: MenuItem[] };
+  | {
+      type: "link";
+      href: string;
+      label: string;
+      icon: string;
+      badgeCount?: number;
+    }
+  | {
+      type: "group";
+      label: string;
+      icon: string;
+      items: MenuItem[];
+      badgeCount?: number;
+    };
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -150,16 +163,23 @@ export function SidebarLayout({
                   key={item.href}
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
+                  className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all ${
                     isActive
                       ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100 shadow-xs"
                       : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
                   }`}
                 >
-                  <Icon
-                    className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
-                  />
-                  {item.label}
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                    />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badgeCount && item.badgeCount > 0 ? (
+                    <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0">
+                      {item.badgeCount}
+                    </span>
+                  ) : null}
                 </Link>
               );
             }
@@ -186,6 +206,11 @@ export function SidebarLayout({
                       className={`w-4.5 h-4.5 shrink-0 ${isSectionActive ? "text-primary-600" : "text-neutral-400"}`}
                     />
                     <span>{item.label}</span>
+                    {item.badgeCount && item.badgeCount > 0 ? (
+                      <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 animate-pulse">
+                        {item.badgeCount}
+                      </span>
+                    ) : null}
                   </div>
                   <ChevronDown
                     className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -202,16 +227,23 @@ export function SidebarLayout({
                           key={sub.href}
                           href={sub.href}
                           onClick={handleLinkClick}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all ${
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
                             isActive
                               ? "bg-primary-50 text-primary-700 font-semibold border border-primary-100/50"
                               : "text-neutral-500 hover:text-primary-600 hover:bg-primary-50/30"
                           }`}
                         >
-                          <Icon
-                            className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
-                          />
-                          {sub.label}
+                          <div className="flex items-center gap-3">
+                            <Icon
+                              className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                            />
+                            <span>{sub.label}</span>
+                          </div>
+                          {sub.badgeCount && sub.badgeCount > 0 ? (
+                            <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0">
+                              {sub.badgeCount}
+                            </span>
+                          ) : null}
                         </Link>
                       );
                     })}

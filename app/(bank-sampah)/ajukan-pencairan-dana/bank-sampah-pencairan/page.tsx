@@ -13,7 +13,6 @@ import {
   Download,
   ExternalLink,
   Eye,
-  FileText,
   Loader2,
   X,
 } from "lucide-react";
@@ -22,7 +21,6 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   getDisbursementData,
   getDisbursementHistory,
-  getUserBuktiPembayaran,
   requestDisbursement,
 } from "@/app/(bank-sampah)/ajukan-pencairan-dana/bank-sampah-pencairan/action";
 import {
@@ -44,16 +42,7 @@ interface DisbursementHistoryItem {
   metodePembayaran: string;
   buktiTransfer: string | null;
   createdAt: string | Date;
-}
-
-interface BuktiPembayaranItem {
-  id: number;
-  nomorDokumen: string;
-  totalTagihan: number;
-  periodeBulan: string;
-  periodeTahun: number;
-  status: string;
-  createdAt: string | Date;
+  buktiPembayaranId: number | null;
 }
 
 interface UserData {
@@ -73,7 +62,6 @@ type MetodePembayaran = "tunai" | "transfer";
 export default function PencairanDanaPage() {
   const [data, setData] = useState<UserData | null>(null);
   const [history, setHistory] = useState<DisbursementHistoryItem[]>([]);
-  const [dokumenList, setDokumenList] = useState<BuktiPembayaranItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [customAmount, setCustomAmount] = useState("");
   const [metode, setMetode] = useState<MetodePembayaran>("transfer");
@@ -111,24 +99,21 @@ export default function PencairanDanaPage() {
 
   const loadData = useCallback(() => {
     setLoading(true);
-    Promise.all([
-      getDisbursementData(),
-      getDisbursementHistory(),
-      getUserBuktiPembayaran(),
-    ]).then(([dataRes, historyRes, dokumenRes]) => {
-      if (dataRes.success && dataRes.data) {
-        setData(dataRes.data as UserData);
-      } else {
-        showFeedback(
-          "error",
-          "Gagal Memuat",
-          dataRes.message || "Gagal mengambil data saldo.",
-        );
-      }
-      setHistory(historyRes as DisbursementHistoryItem[]);
-      setDokumenList(dokumenRes as BuktiPembayaranItem[]);
-      setLoading(false);
-    });
+    Promise.all([getDisbursementData(), getDisbursementHistory()]).then(
+      ([dataRes, historyRes]) => {
+        if (dataRes.success && dataRes.data) {
+          setData(dataRes.data as UserData);
+        } else {
+          showFeedback(
+            "error",
+            "Gagal Memuat",
+            dataRes.message || "Gagal mengambil data saldo.",
+          );
+        }
+        setHistory(historyRes as DisbursementHistoryItem[]);
+        setLoading(false);
+      },
+    );
   }, [showFeedback]);
 
   useEffect(() => {
@@ -285,15 +270,30 @@ export default function PencairanDanaPage() {
           >
             {item.status}
           </span>
-          {item.status === "berhasil" && item.buktiTransfer && (
-            <button
-              type="button"
-              onClick={() => setViewProofUrl(item.buktiTransfer)}
-              className="text-[10px] text-primary-600 hover:text-primary-750 font-bold flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0 mt-0.5"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Lihat Bukti
-            </button>
+          {item.status === "berhasil" && (
+            <div className="flex flex-col gap-1 mt-1">
+              {item.buktiTransfer && (
+                <button
+                  type="button"
+                  onClick={() => setViewProofUrl(item.buktiTransfer)}
+                  className="text-[10px] text-primary-600 hover:text-primary-750 font-bold flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Lihat Bukti
+                </button>
+              )}
+              {item.buktiPembayaranId && (
+                <a
+                  href={`/api/bukti-pembayaran/${item.buktiPembayaranId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-emerald-600 hover:text-emerald-750 font-bold flex items-center gap-1 no-underline"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Unduh Surat
+                </a>
+              )}
+            </div>
           )}
         </div>
       ),
@@ -628,42 +628,6 @@ export default function PencairanDanaPage() {
           ttdBase64={ttdBase64}
         />
       </div>
-
-      {/* Row 3: Dokumen PDF (jika ada) */}
-      {dokumenList.length > 0 && (
-        <div className="bg-white rounded-2xl p-5 border border-neutral-200 shadow-sm">
-          <h4 className="font-bold text-sm text-neutral-800 flex items-center gap-1.5 pb-3 border-b border-neutral-100 mb-4">
-            <FileText className="w-4.5 h-4.5 text-primary-600" />
-            Dokumen Bukti Pembayaran
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {dokumenList.slice(0, 6).map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 border border-neutral-200"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-neutral-800 truncate">
-                    {doc.nomorDokumen}
-                  </p>
-                  <p className="text-[9px] text-neutral-400 mt-0.5">
-                    {doc.periodeBulan} {doc.periodeTahun}
-                  </p>
-                </div>
-                <a
-                  href={`/api/bukti-pembayaran/${doc.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-3 p-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 transition-all border-0 shrink-0"
-                  title="Download PDF"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Row 4: Riwayat Pencairan */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200 shadow-sm">

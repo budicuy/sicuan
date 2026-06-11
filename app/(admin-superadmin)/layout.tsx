@@ -1,7 +1,15 @@
+import { count, eq, or } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SidebarLayout } from "@/app/components/shared/sidebar";
+import { db } from "@/db";
+import {
+  pencairanDana,
+  setorSampahBankSampah,
+  setorSampahKonsumen,
+  setorSampahWarmiendo,
+} from "@/db/schema";
 
 async function logoutAction() {
   "use server";
@@ -43,6 +51,40 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
     }
   }
 
+  // Fetch pending setoran counts
+  const [pendingBankSampah] = await db
+    .select({ count: count() })
+    .from(setorSampahBankSampah)
+    .where(eq(setorSampahBankSampah.status, "pending"));
+
+  const [pendingWarmiendo] = await db
+    .select({ count: count() })
+    .from(setorSampahWarmiendo)
+    .where(
+      or(
+        eq(setorSampahWarmiendo.status, "pending"),
+        eq(setorSampahWarmiendo.status, "diserahkan"),
+      ),
+    );
+
+  const [pendingKonsumen] = await db
+    .select({ count: count() })
+    .from(setorSampahKonsumen)
+    .where(eq(setorSampahKonsumen.status, "pending"));
+
+  const countBankSampah = pendingBankSampah?.count ?? 0;
+  const countWarmiendo = pendingWarmiendo?.count ?? 0;
+  const countKonsumen = pendingKonsumen?.count ?? 0;
+  const totalPending = countBankSampah + countWarmiendo + countKonsumen;
+
+  // Fetch pending pencairan dana count
+  const [pendingPencairan] = await db
+    .select({ count: count() })
+    .from(pencairanDana)
+    .where(eq(pencairanDana.status, "pending"));
+
+  const countPencairan = pendingPencairan?.count ?? 0;
+
   const sidebarItems: import("@/app/components/shared/sidebar").SidebarItem[] =
     [
       {
@@ -70,26 +112,31 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         href: "/pencairan-dana",
         label: "Pencairan Dana",
         icon: "Coins",
+        badgeCount: countPencairan,
       },
       {
         type: "group",
         label: "Setoran Sampah",
         icon: "FileText",
+        badgeCount: totalPending,
         items: [
           {
             href: "/laporan/bank-sampah",
             label: "Setoran Bank Sampah",
             icon: "Coins",
+            badgeCount: countBankSampah,
           },
           {
             href: "/laporan/warmiendo",
             label: "Setoran Warmiendo",
             icon: "ShoppingBag",
+            badgeCount: countWarmiendo,
           },
           {
             href: "/laporan/konsumen",
             label: "Setoran Konsumen",
             icon: "User",
+            badgeCount: countKonsumen,
           },
         ],
       },

@@ -1,10 +1,3 @@
-setor sampah : veridikasi manual foto timbangan jika ai tidak bisa mendeteksi
-mekanisme row material sampah ambil dari data keseluruhan yang di keluarkan di indofood kemudian di bandingkan hasil sammpah yang di setorkan indofood
-misalnya indofood mengeluarkan sampah sebesar 10 kilo dan yang di setor bank sampah hanya 7 kilo berarti sudah 70% berkontribusi untuk sampah indofood
-
-ekpedisi gosen gojek, 
-
-surat percairan SPK.
 
 ## Installasion
 

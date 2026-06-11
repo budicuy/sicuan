@@ -65,6 +65,11 @@ export default async function WarmiendoLayout({ children }: LayoutProps) {
       icon: "Coins",
     },
     { href: "/profil/warmiendo-profil", label: "Profil Saya", icon: "User" },
+    {
+      href: "/user-guide/warmiendo-guide",
+      label: "Panduan",
+      icon: "BookOpen",
+    },
   ];
 
   return (

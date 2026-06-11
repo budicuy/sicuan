@@ -236,8 +236,25 @@ export async function getDisbursementHistory() {
   if (!user) return [];
 
   return db
-    .select()
+    .select({
+      id: pencairanDana.id,
+      userId: pencairanDana.userId,
+      jumlah: pencairanDana.jumlah,
+      jenisBank: pencairanDana.jenisBank,
+      noRekening: pencairanDana.noRekening,
+      status: pencairanDana.status,
+      metodePembayaran: pencairanDana.metodePembayaran,
+      keterangan: pencairanDana.keterangan,
+      ttdPenyerahUrl: pencairanDana.ttdPenyerahUrl,
+      buktiTransfer: pencairanDana.buktiTransfer,
+      createdAt: pencairanDana.createdAt,
+      buktiPembayaranId: buktiPembayaran.id,
+    })
     .from(pencairanDana)
+    .leftJoin(
+      buktiPembayaran,
+      eq(pencairanDana.id, buktiPembayaran.pencairanDanaId),
+    )
     .where(eq(pencairanDana.userId, user.id))
     .orderBy(desc(pencairanDana.createdAt));
 }
