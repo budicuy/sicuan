@@ -68,15 +68,15 @@ function HeroVisual() {
       initial={{ opacity: 0, scale: 0.95, y: 30, filter: "blur(10px)" }}
       animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.9, delay: 0.35, ease: "easeOut" }}
-      className="lg:col-span-5 relative mt-6 lg:mt-0"
+      className="lg:col-span-5 relative mt-6 lg:mt-0 overflow-hidden w-full"
     >
-      <div className="relative mx-auto max-w-110 lg:max-w-none h-145 overflow-hidden flex items-center justify-center">
+      <div className="relative mx-auto max-w-110 lg:max-w-none h-145 overflow-hidden flex items-center justify-center isolate">
         {/* Ambient glows */}
         <div className="absolute top-10 left-10 w-48 h-48 rounded-full bg-primary-600/5 blur-[80px] pointer-events-none" />
         <div className="absolute bottom-10 right-10 w-56 h-56 rounded-full bg-emerald-500/10 blur-[90px] pointer-events-none" />
 
         {/* 3D Perspective Grid */}
-        <div className="w-[125%] h-[125%] flex gap-4 perspective-[1000px] transform-3d justify-center items-center">
+        <div className="w-full lg:w-[125%] h-full lg:h-[125%] flex gap-4 perspective-[1000px] transform-3d justify-center items-center">
           <div className="grid grid-cols-3 gap-3 w-full max-w-140 transform-[rotateX(15deg)_rotateY(-18deg)_rotateZ(4deg)_scale(0.95)]">
             {/* Column 1 – Scroll Up */}
             <div className="h-150 relative flex flex-col gap-3 py-1 select-none">

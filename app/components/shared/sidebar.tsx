@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { usePageTransition } from "@/app/components/shared/PageTransitionProvider";
 
 const IconMap: Record<string, LucideIcon> = {
@@ -93,10 +93,12 @@ export function SidebarLayout({
   const { transitionTo } = usePageTransition();
 
   const handleLogoutClick = () => {
-    transitionTo("/login");
+    transitionTo("");
     setTimeout(() => {
-      onLogout();
-    }, 650);
+      startTransition(() => {
+        onLogout();
+      });
+    }, 1000);
   };
 
   // Find active item

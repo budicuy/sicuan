@@ -93,7 +93,7 @@ export default function PageTransitionProvider({
                 status === "in" ? "inset(0 0 0 0)" : "inset(0 0 0 100%)",
             }}
             exit={{ clipPath: "inset(0 0 0 100%)" }}
-            transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+            transition={{ duration: 1, ease: [0.76, 0, 0.24, 1] }}
             onAnimationComplete={() => {
               if (status === "in") {
                 if (pendingHref) {

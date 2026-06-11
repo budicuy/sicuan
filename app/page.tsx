@@ -70,7 +70,7 @@ export default function Home() {
       </AnimatePresence>
 
       {!showSplash && (
-        <div className="flex flex-col min-h-dvh bg-primary-50 text-neutral-900 font-sans selection:bg-primary-200 selection:text-primary-900 overflow-x-hidden bg-grid-pattern pt-20">
+        <div className="relative flex flex-col min-h-dvh bg-primary-50 text-neutral-900 font-sans selection:bg-primary-200 selection:text-primary-900 overflow-x-hidden bg-grid-pattern pt-20 w-full max-w-full">
           <ScrollProgress />
           {/* Background decorations */}
           <div className="absolute top-0 left-1/4 w-125 h-125 bg-primary-200/30 rounded-full blur-3xl pointer-events-none -z-10" />
