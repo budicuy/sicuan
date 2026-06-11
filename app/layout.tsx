@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ProgressBarProvider from "@/app/components/shared/ProgressBarProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SICUAN — Sistem Informasi Cerdas Ubah Anorganik Jadi Nilai",
-  description: "Kelola setoran sampah anorganik Anda bersama PT. Indofood CBP Sukses Makmur Tbk untuk mendapatkan poin reward menarik dan saldo kredit.",
+  description:
+    "Kelola setoran sampah anorganik Anda bersama PT. Indofood CBP Sukses Makmur Tbk untuk mendapatkan poin reward menarik dan saldo kredit.",
 };
 
 export default function RootLayout({
@@ -25,10 +27,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ProgressBarProvider>{children}</ProgressBarProvider>
+      </body>
     </html>
   );
 }

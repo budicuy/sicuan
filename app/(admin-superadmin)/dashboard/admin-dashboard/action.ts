@@ -1,6 +1,6 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -13,6 +13,7 @@ import {
   setorSampahBankSampah,
   setorSampahKonsumen,
   setorSampahWarmiendo,
+  users,
 } from "@/db/schema";
 
 async function getCurrentUser() {
@@ -52,84 +53,267 @@ export async function getDashboardData() {
 
   if (isMgmt) {
     // ADMIN / SUPERADMIN DASHBOARD DATA
-    const allUsers = await db.query.users.findMany();
-    const allNasabah = await db.query.nasabah.findMany();
 
-    const [konsumenSetoran, warmiendoSetoran, bankSampahSetoran] =
-      await Promise.all([
-        db.query.setorSampahKonsumen.findMany({ with: { user: true } }),
-        db.query.setorSampahWarmiendo.findMany({
-          with: { user: true, ekspedisi: true },
-        }),
-        db.query.setorSampahBankSampah.findMany({ with: { user: true } }),
-      ]);
+    // 1. Get total count of nasabah
+    const countNasabahRes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(nasabah);
+    const totalNasabahCount = Number(countNasabahRes[0]?.count ?? 0);
 
-    // Combine and sort by createdAt desc
-    const allSetoran = [
-      ...konsumenSetoran,
-      ...warmiendoSetoran,
-      ...bankSampahSetoran,
-    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // 2. Get total count of users with role in ['konsumen', 'warmiendo', 'bank-sampah']
+    const countUsersRes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(inArray(users.role, ["konsumen", "warmiendo", "bank-sampah"]));
+    const totalUsers = Number(countUsersRes[0]?.count ?? 0);
 
-    const _allPencairan = await db.query.pencairanDana.findMany();
+    // 3. Get total weights and counts of setoran (pending/diterima/ditolak) via aggregation
+    const [
+      resKonsumen,
+      resWarmiendo,
+      resBankSampah,
+      resTodayKonsumen,
+      resTodayWarmiendo,
+      resTodayBankSampah,
+      pendingKonsumen,
+      pendingWarmiendo,
+      pendingBankSampah,
+      ditolakKonsumen,
+      ditolakWarmiendo,
+      ditolakBankSampah,
+      compKonsumen,
+      compWarmiendo,
+      compBankSampah,
+      userKonsumen,
+      userWarmiendo,
+      userBankSampah,
+    ] = await Promise.all([
+      // Total weight received
+      db
+        .select({
+          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+        })
+        .from(setorSampahKonsumen)
+        .where(eq(setorSampahKonsumen.status, "diterima")),
+      db
+        .select({
+          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
+        })
+        .from(setorSampahWarmiendo)
+        .where(eq(setorSampahWarmiendo.status, "diterima")),
+      db
+        .select({
+          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
+        })
+        .from(setorSampahBankSampah)
+        .where(eq(setorSampahBankSampah.status, "diterima")),
 
-    // Metrics
-    const totalUsers = allUsers.filter(
-      (u) =>
-        u.role === "konsumen" ||
-        u.role === "warmiendo" ||
-        u.role === "bank-sampah",
-    ).length;
-    const totalSetoranKg = allSetoran
-      .filter((s) => s.status === "diterima")
-      .reduce((sum, s) => sum + s.beratKg, 0);
+      // Total weight today received
+      db
+        .select({
+          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+        })
+        .from(setorSampahKonsumen)
+        .where(
+          and(
+            eq(setorSampahKonsumen.status, "diterima"),
+            eq(
+              setorSampahKonsumen.tanggalSetor,
+              new Date().toISOString().split("T")[0],
+            ),
+          ),
+        ),
+      db
+        .select({
+          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
+        })
+        .from(setorSampahWarmiendo)
+        .where(
+          and(
+            eq(setorSampahWarmiendo.status, "diterima"),
+            eq(
+              setorSampahWarmiendo.tanggalSetor,
+              new Date().toISOString().split("T")[0],
+            ),
+          ),
+        ),
+      db
+        .select({
+          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
+        })
+        .from(setorSampahBankSampah)
+        .where(
+          and(
+            eq(setorSampahBankSampah.status, "diterima"),
+            eq(
+              setorSampahBankSampah.tanggalSetor,
+              new Date().toISOString().split("T")[0],
+            ),
+          ),
+        ),
 
-    const today = new Date().toISOString().split("T")[0];
-    const totalSetoranTodayKg = allSetoran
-      .filter((s) => s.status === "diterima" && s.tanggalSetor === today)
-      .reduce((sum, s) => sum + s.beratKg, 0);
+      // Total pending counts
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(setorSampahKonsumen)
+        .where(eq(setorSampahKonsumen.status, "pending")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(setorSampahWarmiendo)
+        .where(eq(setorSampahWarmiendo.status, "pending")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(setorSampahBankSampah)
+        .where(eq(setorSampahBankSampah.status, "pending")),
 
-    const totalPendingSetoran = allSetoran.filter(
-      (s) => s.status === "pending",
-    ).length;
-    const totalDitolakSetoran = allSetoran.filter(
-      (s) => s.status === "ditolak",
-    ).length;
+      // Total ditolak counts
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(setorSampahKonsumen)
+        .where(eq(setorSampahKonsumen.status, "ditolak")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(setorSampahWarmiendo)
+        .where(eq(setorSampahWarmiendo.status, "ditolak")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(setorSampahBankSampah)
+        .where(eq(setorSampahBankSampah.status, "ditolak")),
 
-    // Waste composition
+      // Waste composition group by
+      db
+        .select({
+          jenisSampah: setorSampahKonsumen.jenisSampah,
+          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+        })
+        .from(setorSampahKonsumen)
+        .where(eq(setorSampahKonsumen.status, "diterima"))
+        .groupBy(setorSampahKonsumen.jenisSampah),
+      db
+        .select({
+          jenisSampah: setorSampahWarmiendo.jenisSampah,
+          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
+        })
+        .from(setorSampahWarmiendo)
+        .where(eq(setorSampahWarmiendo.status, "diterima"))
+        .groupBy(setorSampahWarmiendo.jenisSampah),
+      db
+        .select({
+          jenisSampah: setorSampahBankSampah.jenisSampah,
+          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
+        })
+        .from(setorSampahBankSampah)
+        .where(eq(setorSampahBankSampah.status, "diterima"))
+        .groupBy(setorSampahBankSampah.jenisSampah),
+
+      // Top contributors sum of weights by user
+      db
+        .select({
+          userId: setorSampahKonsumen.userId,
+          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+        })
+        .from(setorSampahKonsumen)
+        .where(eq(setorSampahKonsumen.status, "diterima"))
+        .groupBy(setorSampahKonsumen.userId),
+      db
+        .select({
+          userId: setorSampahWarmiendo.userId,
+          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
+        })
+        .from(setorSampahWarmiendo)
+        .where(eq(setorSampahWarmiendo.status, "diterima"))
+        .groupBy(setorSampahWarmiendo.userId),
+      db
+        .select({
+          userId: setorSampahBankSampah.userId,
+          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
+        })
+        .from(setorSampahBankSampah)
+        .where(eq(setorSampahBankSampah.status, "diterima"))
+        .groupBy(setorSampahBankSampah.userId),
+    ]);
+
+    const totalSetoranKg =
+      Number(resKonsumen[0]?.totalWeight ?? 0) +
+      Number(resWarmiendo[0]?.totalWeight ?? 0) +
+      Number(resBankSampah[0]?.totalWeight ?? 0);
+
+    const totalSetoranTodayKg =
+      Number(resTodayKonsumen[0]?.totalWeight ?? 0) +
+      Number(resTodayWarmiendo[0]?.totalWeight ?? 0) +
+      Number(resTodayBankSampah[0]?.totalWeight ?? 0);
+
+    const totalPendingSetoran =
+      Number(pendingKonsumen[0]?.count ?? 0) +
+      Number(pendingWarmiendo[0]?.count ?? 0) +
+      Number(pendingBankSampah[0]?.count ?? 0);
+
+    const totalDitolakSetoran =
+      Number(ditolakKonsumen[0]?.count ?? 0) +
+      Number(ditolakWarmiendo[0]?.count ?? 0) +
+      Number(ditolakBankSampah[0]?.count ?? 0);
+
+    // Sum composition
     const composition = {
       Karton: 0,
       Etiket: 0,
       "Paper Cup": 0,
     };
-    for (const s of allSetoran) {
-      if (s.status === "diterima") {
-        const cat = s.jenisSampah as "Karton" | "Etiket" | "Paper Cup";
-        if (composition[cat] !== undefined) {
-          composition[cat] += s.beratKg;
-        }
+    const allCompositions = [
+      ...compKonsumen,
+      ...compWarmiendo,
+      ...compBankSampah,
+    ];
+    for (const c of allCompositions) {
+      const cat = c.jenisSampah as "Karton" | "Etiket" | "Paper Cup";
+      if (composition[cat] !== undefined) {
+        composition[cat] += Number(c.totalWeight ?? 0);
       }
     }
 
-    // Top contributors calculation
-    const userWeights: Record<
-      number,
-      { name: string; role: string; total: number }
-    > = {};
-    for (const u of allUsers) {
-      userWeights[u.id] = { name: u.name, role: u.role, total: 0 };
-    }
-    for (const s of allSetoran) {
-      if (s.status === "diterima" && userWeights[s.userId]) {
-        userWeights[s.userId].total += s.beratKg;
+    // Process top contributors
+    const userWeightsMap: Record<number, number> = {};
+    const addWeights = (list: { userId: number; totalWeight: number }[]) => {
+      for (const item of list) {
+        userWeightsMap[item.userId] =
+          (userWeightsMap[item.userId] || 0) + Number(item.totalWeight ?? 0);
       }
+    };
+    addWeights(userKonsumen);
+    addWeights(userWarmiendo);
+    addWeights(userBankSampah);
+
+    const sortedUserIdsWithWeights = Object.entries(userWeightsMap)
+      .map(([id, weight]) => ({ userId: Number(id), total: weight }))
+      .sort((a, b) => b.total - a.total);
+
+    const top15Candidates = sortedUserIdsWithWeights.slice(0, 15);
+    let topContributors: { name: string; role: string; total: number }[] = [];
+
+    if (top15Candidates.length > 0) {
+      const candidateIds = top15Candidates.map((c) => c.userId);
+      const candidatesUsers = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          role: users.role,
+        })
+        .from(users)
+        .where(inArray(users.id, candidateIds));
+
+      const mappedCandidates = top15Candidates
+        .map((c) => {
+          const u = candidatesUsers.find((user) => user.id === c.userId);
+          return {
+            name: u?.name ?? "Pengguna Tidak Dikenal",
+            role: u?.role ?? "konsumen",
+            total: c.total,
+          };
+        })
+        .filter((w) => w.role !== "admin" && w.role !== "superadmin");
+
+      topContributors = mappedCandidates.slice(0, 10);
     }
-    const topContributors = Object.values(userWeights)
-      .filter(
-        (w) => w.total > 0 && w.role !== "admin" && w.role !== "superadmin",
-      )
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
 
     const totalWeightContributors =
       topContributors.reduce((sum, c) => sum + c.total, 0) || 1;
@@ -158,7 +342,7 @@ export async function getDashboardData() {
       role: user.role,
       name: user.name,
       metrics: {
-        totalNasabahCount: allNasabah.length,
+        totalNasabahCount,
         totalUsers,
         totalSetoranKg: Math.round(totalSetoranKg * 10) / 10,
         totalSetoranTodayKg: Math.round(totalSetoranTodayKg * 10) / 10,
@@ -183,7 +367,7 @@ export async function getDashboardData() {
         },
       ],
       topContributors: formattedContributors,
-      allNasabahCount: allNasabah.length,
+      allNasabahCount: totalNasabahCount,
     };
   } else {
     // CLIENT SIDE (KONSUMEN / WARMIENDO / BANK SAMPAH)

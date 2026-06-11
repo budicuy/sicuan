@@ -11,6 +11,7 @@ import { HeroSection } from "@/app/components/landing-page/hero-section";
 import { LoginSection } from "@/app/components/landing-page/login-section";
 import { MitraSection } from "@/app/components/landing-page/mitra-section";
 import { Navbar } from "@/app/components/landing-page/navbar";
+import { ScrollProgress } from "@/app/components/landing-page/ScrollProgress";
 import { TRASH_TYPES } from "@/app/components/landing-page/shared-data";
 import { SplashScreen } from "@/app/components/landing-page/splash-screen";
 import { StatsBar } from "@/app/components/landing-page/stats-bar";
@@ -69,7 +70,8 @@ export default function Home() {
       </AnimatePresence>
 
       {!showSplash && (
-        <div className="flex flex-col min-h-dvh bg-primary-50 text-neutral-900 font-sans selection:bg-primary-200 selection:text-primary-900 overflow-x-hidden bg-grid-pattern">
+        <div className="flex flex-col min-h-dvh bg-primary-50 text-neutral-900 font-sans selection:bg-primary-200 selection:text-primary-900 overflow-x-hidden bg-grid-pattern pt-20">
+          <ScrollProgress />
           {/* Background decorations */}
           <div className="absolute top-0 left-1/4 w-125 h-125 bg-primary-200/30 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="absolute top-200 right-10 w-150 h-150 bg-secondary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />

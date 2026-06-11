@@ -2,6 +2,7 @@
 
 import { Menu, Recycle, X } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface NavbarProps {
   mobileMenuOpen: boolean;
@@ -17,6 +18,21 @@ const NAV_LINKS = [
 ];
 
 export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const scrollTo = (id: string) => {
     setMobileMenuOpen(false);
     document
@@ -25,7 +41,13 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
   };
 
   return (
-    <header className="relative z-50 w-full border-b border-neutral-200/50 glassmorphism transition-all duration-300">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-500 ${
+        scrolled || mobileMenuOpen
+          ? "border-neutral-200/50 glassmorphism shadow-md shadow-primary-950/5 py-0"
+          : "border-transparent bg-transparent shadow-none py-2"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
