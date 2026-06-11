@@ -20,6 +20,7 @@ import {
   approveDisbursementCash,
   getAllDisbursementsForAdmin,
   getBuktiPembayaranByPencairanId,
+  getBuktiPembayaranPdfBase64,
   rejectDisbursement,
 } from "@/app/(admin-superadmin)/pencairan-dana/action";
 import { BuktiPembayaranModal } from "@/app/(admin-superadmin)/pencairan-dana/BuktiPembayaranModal";
@@ -220,8 +221,33 @@ export default function PencairanAdminPage() {
     setBuktiPembayaranItem(item);
   };
 
+  const handleDownloadPdf = async (docId: number) => {
+    try {
+      const res = await getBuktiPembayaranPdfBase64(docId);
+      if (res.success && res.pdfBase64) {
+        const link = document.createElement("a");
+        link.href = `data:application/pdf;base64,${res.pdfBase64}`;
+        link.download = res.fileName || "Bukti-Pembayaran.pdf";
+        link.click();
+      } else {
+        showFeedback(
+          "error",
+          "Gagal Mengunduh",
+          res.message || "Gagal mengunduh dokumen PDF.",
+        );
+      }
+    } catch (error) {
+      console.error("Gagal mengunduh PDF:", error);
+      showFeedback(
+        "error",
+        "Gagal Mengunduh",
+        "Terjadi kesalahan saat mengunduh PDF.",
+      );
+    }
+  };
+
   const handleDownloadExistingDoc = (docId: number) => {
-    window.open(`/api/bukti-pembayaran/${docId}`, "_blank");
+    handleDownloadPdf(docId);
   };
 
   const formatTanggal = (dateVal: Date) => {
@@ -760,7 +786,7 @@ export default function PencairanAdminPage() {
             );
             // Trigger download
             setTimeout(() => {
-              window.open(`/api/bukti-pembayaran/${docId}`, "_blank");
+              handleDownloadPdf(docId);
             }, 500);
             loadData();
           }}

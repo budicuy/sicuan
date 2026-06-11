@@ -1,10 +1,14 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { renderToStream } from "@react-pdf/renderer";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import React from "react";
+import sharp from "sharp";
+import { BuktiPembayaranDocument } from "@/app/components/shared/BuktiPembayaranDocument";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
 import {
@@ -702,5 +706,104 @@ export async function getNasabahProfileAndMonthlyWaste(
       dataSampah,
       totalBeratKg: dataSampah.reduce((sum, s) => sum + s.beratKg, 0),
     },
+  };
+}
+
+async function convertWebPToPngBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const arrayBuffer = await res.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const pngBuffer = await sharp(buffer).png().toBuffer();
+
+    return `data:image/png;base64,${pngBuffer.toString("base64")}`;
+  } catch (err) {
+    console.error("Error converting WebP to PNG for PDF:", err);
+    return null;
+  }
+}
+
+export async function getBuktiPembayaranPdfBase64(docId: number) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  const doc = await db.query.buktiPembayaran.findFirst({
+    where: eq(buktiPembayaran.id, docId),
+  });
+
+  if (!doc) {
+    return { success: false, message: "Dokumen tidak ditemukan" };
+  }
+
+  // Access control: only the owner or admin/superadmin can access
+  const canAccess =
+    doc.userId === user.id ||
+    user.role === "admin" ||
+    user.role === "superadmin";
+
+  if (!canAccess) {
+    return { success: false, message: "Akses ditolak" };
+  }
+
+  // Convert WebP signature images from Cloudflare R2 to PNG base64 data URLs
+  // because @react-pdf/renderer does not support rendering WebP format out of the box.
+  let penyerahPng: string | null = null;
+  if (doc.ttdPenyerahUrl) {
+    penyerahPng = await convertWebPToPngBase64(doc.ttdPenyerahUrl);
+  }
+
+  let penerimaPng: string | null = null;
+  if (doc.ttdPenerimaUrl) {
+    penerimaPng = await convertWebPToPngBase64(doc.ttdPenerimaUrl);
+  }
+
+  const data = {
+    nomorDokumen: doc.nomorDokumen,
+    tanggal: doc.createdAt,
+    namaBankSampah: doc.namaBankSampah,
+    idPelanggan: doc.idPelanggan,
+    nama: doc.nama,
+    alamat: doc.alamat,
+    noTelepon: doc.noTelepon,
+    periodeBulan: doc.periodeBulan,
+    periodeTahun: doc.periodeTahun,
+    kategoriSumber: doc.kategoriSumber,
+    dataSampah: doc.dataSampah as DataSampahItem[],
+    totalBeratKg: doc.totalBeratKg,
+    tarifDasar: doc.tarifDasar,
+    biayaTambahan: doc.biayaTambahan,
+    totalTagihan: doc.totalTagihan,
+    metodePembayaran: doc.metodePembayaran,
+    keterangan: doc.keterangan,
+    ttdPenyerahUrl: penyerahPng || doc.ttdPenyerahUrl,
+    ttdPenerimaUrl: penerimaPng || doc.ttdPenerimaUrl,
+    namaPenyerah: doc.namaPenyerah,
+    jabatanPenyerah: doc.jabatanPenyerah,
+    namaPenerima: doc.namaPenerima,
+    jabatanPenerima: doc.jabatanPenerima,
+  };
+
+  const element = React.createElement(BuktiPembayaranDocument, { data });
+  // biome-ignore lint/suspicious/noExplicitAny: react-pdf renderToStream requires its own element type
+  const stream = await renderToStream(element as any);
+
+  const chunks: Uint8Array[] = [];
+  // biome-ignore lint/suspicious/noExplicitAny: node stream chunk type
+  for await (const chunk of stream as any) {
+    chunks.push(chunk);
+  }
+  const buffer = Buffer.concat(chunks);
+  const pdfBase64 = buffer.toString("base64");
+
+  const fileName = `Bukti-Pembayaran-${doc.nomorDokumen.replace(/\//g, "-")}.pdf`;
+
+  return {
+    success: true,
+    pdfBase64,
+    fileName,
   };
 }

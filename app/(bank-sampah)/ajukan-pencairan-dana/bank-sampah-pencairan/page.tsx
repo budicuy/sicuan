@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
+import { getBuktiPembayaranPdfBase64 } from "@/app/(admin-superadmin)/pencairan-dana/action";
 import {
   getDisbursementData,
   getDisbursementHistory,
@@ -96,6 +97,31 @@ export default function PencairanDanaPage() {
     },
     [],
   );
+
+  const handleDownloadPdf = async (docId: number) => {
+    try {
+      const res = await getBuktiPembayaranPdfBase64(docId);
+      if (res.success && res.pdfBase64) {
+        const link = document.createElement("a");
+        link.href = `data:application/pdf;base64,${res.pdfBase64}`;
+        link.download = res.fileName || "Bukti-Pembayaran.pdf";
+        link.click();
+      } else {
+        showFeedback(
+          "error",
+          "Gagal Mengunduh",
+          res.message || "Gagal mengunduh dokumen PDF.",
+        );
+      }
+    } catch (error) {
+      console.error("Gagal mengunduh PDF:", error);
+      showFeedback(
+        "error",
+        "Gagal Mengunduh",
+        "Terjadi kesalahan saat mengunduh PDF.",
+      );
+    }
+  };
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -283,15 +309,17 @@ export default function PencairanDanaPage() {
                 </button>
               )}
               {item.buktiPembayaranId && (
-                <a
-                  href={`/api/bukti-pembayaran/${item.buktiPembayaranId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-emerald-600 hover:text-emerald-750 font-bold flex items-center gap-1 no-underline"
+                <button
+                  type="button"
+                  onClick={() =>
+                    item.buktiPembayaranId &&
+                    handleDownloadPdf(item.buktiPembayaranId)
+                  }
+                  className="text-[10px] text-emerald-600 hover:text-emerald-750 font-bold flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Unduh Surat
-                </a>
+                </button>
               )}
             </div>
           )}
