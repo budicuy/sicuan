@@ -1,13 +1,19 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
-import { nasabah, pencairanDana, users } from "@/db/schema";
+import {
+  buktiPembayaran,
+  nasabah,
+  pencairanDana,
+  setorSampahBankSampah,
+  setorSampahWarmiendo,
+} from "@/db/schema";
 
 async function getCurrentUser() {
   try {
@@ -42,13 +48,68 @@ export async function getDisbursementData() {
     where: eq(nasabah.userId, user.id),
   });
 
+  // Calculate monthly waste data
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  let setoranList: { jenisSampah: string; beratKg: number }[] = [];
+  if (user.role === "bank-sampah") {
+    const records = await db.query.setorSampahBankSampah.findMany({
+      where: and(
+        eq(setorSampahBankSampah.userId, user.id),
+        eq(setorSampahBankSampah.status, "diterima"),
+        gte(setorSampahBankSampah.tanggalSetor, startOfMonthStr),
+        lte(setorSampahBankSampah.tanggalSetor, endOfMonthStr),
+      ),
+    });
+    setoranList = records.map((r) => ({
+      jenisSampah: r.jenisSampah,
+      beratKg: r.beratKg,
+    }));
+  } else if (user.role === "warmiendo") {
+    const records = await db.query.setorSampahWarmiendo.findMany({
+      where: and(
+        eq(setorSampahWarmiendo.userId, user.id),
+        eq(setorSampahWarmiendo.status, "diterima"),
+        gte(setorSampahWarmiendo.tanggalSetor, startOfMonthStr),
+        lte(setorSampahWarmiendo.tanggalSetor, endOfMonthStr),
+      ),
+    });
+    setoranList = records.map((r) => ({
+      jenisSampah: r.jenisSampah,
+      beratKg: r.beratKg,
+    }));
+  }
+
+  const wasteMap: Record<string, number> = {};
+  for (const item of setoranList) {
+    wasteMap[item.jenisSampah] =
+      (wasteMap[item.jenisSampah] || 0) + item.beratKg;
+  }
+
+  const dataSampah = Object.entries(wasteMap).map(([jenis, berat]) => ({
+    jenis,
+    beratKg: berat,
+    terlampir: true,
+  }));
+
   return {
     success: true,
     data: {
       kredit: profile?.kredit ?? 0,
       jenisBank: profile?.jenisBank || "",
       noRekening: profile?.noRekening || "",
+      alamat: profile?.alamat || "",
+      noTelepon: profile?.noTelepon || "",
+      idPelanggan: `SPK-${String(user.id).padStart(3, "0")}`,
+      dataSampah,
+      totalBeratKg: dataSampah.reduce((sum, item) => sum + item.beratKg, 0),
       user: {
+        id: user.id,
         name: user.name,
         role: user.role,
       },
@@ -67,6 +128,10 @@ export async function requestDisbursement(
 
   const jumlahStr = formData.get("jumlah") as string;
   const jumlah = Number.parseInt(jumlahStr, 10);
+  const metodePembayaran =
+    (formData.get("metodePembayaran") as string) || "transfer";
+  const keterangan = (formData.get("keterangan") as string) || "";
+  const ttdPenyerahBase64 = (formData.get("ttdPenyerah") as string) || "";
 
   if (Number.isNaN(jumlah) || jumlah <= 0) {
     return {
@@ -84,7 +149,14 @@ export async function requestDisbursement(
     };
   }
 
-  // Get nasabah profile
+  if (!ttdPenyerahBase64) {
+    return {
+      success: false,
+      message: "Validasi gagal",
+      errors: { ttdPenyerah: ["Tanda tangan wajib diunggah"] },
+    };
+  }
+
   const profile = await db.query.nasabah.findFirst({
     where: eq(nasabah.userId, user.id),
   });
@@ -97,15 +169,15 @@ export async function requestDisbursement(
     };
   }
 
-  if (!profile.jenisBank || !profile.noRekening) {
-    return {
-      success: false,
-      message:
-        "Informasi rekening bank belum diisi. Silakan lengkapi di menu Profil Saya.",
-      errors: {
-        _form: ["Informasi rekening bank tidak lengkap"],
-      },
-    };
+  if (metodePembayaran !== "tunai") {
+    if (!profile.jenisBank || !profile.noRekening) {
+      return {
+        success: false,
+        message:
+          "Informasi rekening bank belum diisi. Silakan lengkapi di menu Profil Saya.",
+        errors: { _form: ["Informasi rekening bank tidak lengkap"] },
+      };
+    }
   }
 
   if (profile.kredit < jumlah) {
@@ -117,28 +189,38 @@ export async function requestDisbursement(
   }
 
   try {
-    // 1. Deduct from nasabah credit
+    // 1. Upload mitra TTD to R2
+    const uuid = randomUUID();
+    const ttdPenyerahUrl = await uploadImageToR2(
+      ttdPenyerahBase64,
+      "ttd-penyerah",
+      `${user.id}-${uuid}`,
+    );
+
+    // 2. Deduct from nasabah credit
     await db
       .update(nasabah)
-      .set({
-        kredit: profile.kredit - jumlah,
-        updatedAt: new Date(),
-      })
+      .set({ kredit: profile.kredit - jumlah, updatedAt: new Date() })
       .where(eq(nasabah.userId, user.id));
 
-    // 2. Insert disbursement log (defaults to "pending")
+    // 3. Insert disbursement log
     await db.insert(pencairanDana).values({
       userId: user.id,
       jumlah,
-      jenisBank: profile.jenisBank,
-      noRekening: profile.noRekening,
+      jenisBank:
+        metodePembayaran !== "tunai" ? (profile.jenisBank ?? "") : null,
+      noRekening:
+        metodePembayaran !== "tunai" ? (profile.noRekening ?? "") : null,
       status: "pending",
+      metodePembayaran,
+      keterangan: keterangan || null,
+      ttdPenyerahUrl,
     });
 
     revalidatePath("/ajukan-pencairan-dana/warmiendo-pencairan");
     return {
       success: true,
-      message: `Pencairan dana sebesar Rp ${jumlah.toLocaleString("id-ID")} berhasil diajukan dan sedang menunggu verifikasi manual oleh admin.`,
+      message: `Pencairan dana sebesar Rp ${jumlah.toLocaleString("id-ID")} berhasil diajukan dan sedang menunggu verifikasi admin.`,
     };
   } catch (error) {
     console.error("Disbursement error:", error);
@@ -160,164 +242,13 @@ export async function getDisbursementHistory() {
     .orderBy(desc(pencairanDana.createdAt));
 }
 
-// ── ADMIN / SUPERADMIN OPERATIONS ───────────────────────────────────────────
-
-export async function getAllDisbursementsForAdmin() {
+export async function getUserBuktiPembayaran() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
-    throw new Error("Unauthorized");
-  }
+  if (!user) return [];
 
   return db
-    .select({
-      id: pencairanDana.id,
-      userId: pencairanDana.userId,
-      jumlah: pencairanDana.jumlah,
-      jenisBank: pencairanDana.jenisBank,
-      noRekening: pencairanDana.noRekening,
-      status: pencairanDana.status,
-      buktiTransfer: pencairanDana.buktiTransfer,
-      createdAt: pencairanDana.createdAt,
-      user: {
-        name: users.name,
-        username: users.username,
-        role: users.role,
-      },
-    })
-    .from(pencairanDana)
-    .innerJoin(users, eq(pencairanDana.userId, users.id))
-    .orderBy(desc(pencairanDana.createdAt));
-}
-
-export async function approveDisbursement(
-  id: number,
-  buktiTransferBase64: string,
-): Promise<{ success: boolean; message: string }> {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
-    return { success: false, message: "Akses ditolak" };
-  }
-
-  if (!buktiTransferBase64) {
-    return {
-      success: false,
-      message: "Bukti transfer berupa foto wajib diunggah",
-    };
-  }
-
-  try {
-    // 1. Fetch request
-    const request = await db.query.pencairanDana.findFirst({
-      where: eq(pencairanDana.id, id),
-    });
-
-    if (!request) {
-      return {
-        success: false,
-        message: "Permintaan pencairan tidak ditemukan",
-      };
-    }
-
-    if (request.status !== "pending") {
-      return {
-        success: false,
-        message: "Permintaan sudah diproses sebelumnya",
-      };
-    }
-
-    // 2. Upload proof to R2
-    const uuid = randomUUID();
-    const buktiUrl = await uploadImageToR2(
-      buktiTransferBase64,
-      "transfer",
-      `${request.userId}-${uuid}`,
-    );
-
-    // 3. Update status and save proof
-    await db
-      .update(pencairanDana)
-      .set({
-        status: "berhasil",
-        buktiTransfer: buktiUrl,
-      })
-      .where(eq(pencairanDana.id, id));
-
-    revalidatePath("/pencairan-dana");
-    return {
-      success: true,
-      message: "Permintaan pencairan dana berhasil disetujui.",
-    };
-  } catch (error) {
-    console.error("Error approving disbursement:", error);
-    return {
-      success: false,
-      message: "Terjadi kesalahan server saat menyetujui pencairan.",
-    };
-  }
-}
-
-export async function rejectDisbursement(
-  id: number,
-): Promise<{ success: boolean; message: string }> {
-  const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
-    return { success: false, message: "Akses ditolak" };
-  }
-
-  try {
-    // 1. Fetch request
-    const request = await db.query.pencairanDana.findFirst({
-      where: eq(pencairanDana.id, id),
-    });
-
-    if (!request) {
-      return {
-        success: false,
-        message: "Permintaan pencairan tidak ditemukan",
-      };
-    }
-
-    if (request.status !== "pending") {
-      return {
-        success: false,
-        message: "Permintaan sudah diproses sebelumnya",
-      };
-    }
-
-    // 2. Refund to nasabah
-    const profile = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, request.userId),
-    });
-
-    if (profile) {
-      await db
-        .update(nasabah)
-        .set({
-          kredit: profile.kredit + request.jumlah,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.userId, request.userId));
-    }
-
-    // 3. Update status to ditolak
-    await db
-      .update(pencairanDana)
-      .set({
-        status: "ditolak",
-      })
-      .where(eq(pencairanDana.id, id));
-
-    revalidatePath("/pencairan-dana");
-    return {
-      success: true,
-      message:
-        "Permintaan pencairan dana berhasil ditolak dan saldo dikembalikan.",
-    };
-  } catch (error) {
-    console.error("Error rejecting disbursement:", error);
-    return {
-      success: false,
-      message: "Terjadi kesalahan server saat menolak pencairan.",
-    };
-  }
+    .select()
+    .from(buktiPembayaran)
+    .where(eq(buktiPembayaran.userId, user.id))
+    .orderBy(desc(buktiPembayaran.createdAt));
 }

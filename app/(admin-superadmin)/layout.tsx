@@ -73,7 +73,7 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       },
       {
         type: "group",
-        label: "Setoran & Kontribusi",
+        label: "Setoran Sampah",
         icon: "FileText",
         items: [
           {
@@ -98,6 +98,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         href: "/laporan/raw-material",
         label: "Laporan Setoran",
         icon: "Recycle",
+      },
+      {
+        type: "link",
+        href: "/user-guide",
+        label: "User Guide",
+        icon: "BookOpen",
       },
     ];
 

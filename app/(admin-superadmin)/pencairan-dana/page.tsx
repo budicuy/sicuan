@@ -2,20 +2,27 @@
 
 import imageCompression from "browser-image-compression";
 import {
+  Banknote,
   Camera,
   CheckCircle2,
   CreditCard,
+  Download,
   Eye,
+  FileText,
   Loader2,
   User,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   approveDisbursement,
+  approveDisbursementCash,
   getAllDisbursementsForAdmin,
+  getBuktiPembayaranByPencairanId,
   rejectDisbursement,
 } from "@/app/(admin-superadmin)/pencairan-dana/action";
+import { BuktiPembayaranModal } from "@/app/(admin-superadmin)/pencairan-dana/BuktiPembayaranModal";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import {
   type Column,
@@ -28,9 +35,12 @@ interface DisbursementItem {
   id: number;
   userId: number;
   jumlah: number;
-  jenisBank: string;
-  noRekening: string;
+  jenisBank: string | null;
+  noRekening: string | null;
   status: string;
+  metodePembayaran: string;
+  keterangan: string | null;
+  ttdPenyerahUrl: string | null;
   buktiTransfer: string | null;
   createdAt: Date;
   user: {
@@ -38,6 +48,7 @@ interface DisbursementItem {
     username: string;
     role: string;
   };
+  buktiPembayaranId: number | null;
 }
 
 export default function PencairanAdminPage() {
@@ -52,6 +63,9 @@ export default function PencairanAdminPage() {
     null,
   );
   const [viewProofUrl, setViewProofUrl] = useState<string | null>(null);
+  const [buktiPembayaranItem, setBuktiPembayaranItem] =
+    useState<DisbursementItem | null>(null);
+  const [existingDocId, setExistingDocId] = useState<number | null>(null);
 
   // File upload state for approval
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -66,6 +80,7 @@ export default function PencairanAdminPage() {
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     status: "",
     role: "",
+    metode: "",
   });
 
   const [feedback, setFeedback] = useState<{
@@ -105,7 +120,6 @@ export default function PencairanAdminPage() {
     loadData();
   }, [loadData]);
 
-  // Handle image upload and convert to base64 with compression
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setImageError("");
@@ -119,7 +133,7 @@ export default function PencairanAdminPage() {
     setIsCompressing(true);
     try {
       const options = {
-        maxSizeMB: 0.1, // 100 KB
+        maxSizeMB: 0.1,
         maxWidthOrHeight: 1200,
         useWebWorker: true,
       };
@@ -134,16 +148,10 @@ export default function PencairanAdminPage() {
         setIsCompressing(false);
       };
       reader.readAsDataURL(compressedFile);
-    } catch (err) {
-      console.error("Gagal kompres gambar:", err);
-      // Fallback to reading original file as base64
+    } catch {
       const reader = new FileReader();
       reader.onload = () => {
         setUploadedImage(reader.result as string);
-        setIsCompressing(false);
-      };
-      reader.onerror = () => {
-        setImageError("Gagal membaca file.");
         setIsCompressing(false);
       };
       reader.readAsDataURL(file);
@@ -152,6 +160,22 @@ export default function PencairanAdminPage() {
 
   const handleApprove = () => {
     if (!verifyRequest) return;
+
+    // Cash: approve without photo
+    if (verifyRequest.metodePembayaran === "tunai") {
+      startTransition(async () => {
+        const res = await approveDisbursementCash(verifyRequest.id);
+        if (res.success) {
+          showFeedback("success", "Pencairan Disetujui", res.message);
+          setVerifyRequest(null);
+          loadData();
+        } else {
+          showFeedback("error", "Persetujuan Gagal", res.message);
+        }
+      });
+      return;
+    }
+
     if (!uploadedImage) {
       setImageError("Bukti foto pencairan transfer wajib diunggah.");
       return;
@@ -183,6 +207,21 @@ export default function PencairanAdminPage() {
         showFeedback("error", "Penolakan Gagal", res.message);
       }
     });
+  };
+
+  const handleOpenBuktiPembayaran = async (item: DisbursementItem) => {
+    // Check if document already exists
+    const existing = await getBuktiPembayaranByPencairanId(item.id);
+    if (existing) {
+      setExistingDocId(existing.id);
+    } else {
+      setExistingDocId(null);
+    }
+    setBuktiPembayaranItem(item);
+  };
+
+  const handleDownloadExistingDoc = (docId: number) => {
+    window.open(`/api/bukti-pembayaran/${docId}`, "_blank");
   };
 
   const formatTanggal = (dateVal: Date) => {
@@ -218,6 +257,26 @@ export default function PencairanAdminPage() {
     }
   };
 
+  const getMetodeBadge = (metode: string) => {
+    switch (metode) {
+      case "tunai":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 uppercase tracking-wider">
+            <Banknote className="w-2.5 h-2.5" />
+            Tunai
+          </span>
+        );
+
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold rounded-full border bg-blue-50 text-blue-700 border-blue-200 uppercase tracking-wider">
+            <CreditCard className="w-2.5 h-2.5" />
+            Transfer
+          </span>
+        );
+    }
+  };
+
   const formatRoleName = (role?: string) => {
     if (!role) return "Mitra";
     if (role === "bank-sampah") return "Bank Sampah";
@@ -225,7 +284,6 @@ export default function PencairanAdminPage() {
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
-  // DataTable columns definition
   const columns: Column<DisbursementItem>[] = [
     {
       header: "Nama Mitra",
@@ -248,13 +306,35 @@ export default function PencairanAdminPage() {
       ),
     },
     {
-      header: "Rekening Tujuan",
+      header: "Metode",
+      render: (item) => getMetodeBadge(item.metodePembayaran),
+    },
+    {
+      header: "Rekening / Ket.",
       render: (item) => (
         <div>
-          <div className="font-bold text-neutral-800">{item.jenisBank}</div>
-          <div className="text-[10px] text-neutral-400 font-mono mt-0.5">
-            {item.noRekening}
-          </div>
+          {item.metodePembayaran !== "tunai" ? (
+            <>
+              <div className="font-bold text-neutral-800">
+                {item.jenisBank ?? "-"}
+              </div>
+              <div className="text-[10px] text-neutral-400 font-mono mt-0.5">
+                {item.noRekening ?? "-"}
+              </div>
+            </>
+          ) : (
+            <span className="text-[10px] text-neutral-500 italic">
+              Pencairan Tunai
+            </span>
+          )}
+          {item.keterangan && (
+            <div
+              className="text-[10px] text-neutral-400 mt-0.5 truncate max-w-[120px]"
+              title={item.keterangan}
+            >
+              {item.keterangan}
+            </div>
+          )}
         </div>
       ),
     },
@@ -267,7 +347,7 @@ export default function PencairanAdminPage() {
       ),
     },
     {
-      header: "Tanggal Pengajuan",
+      header: "Tanggal",
       render: (item) => formatTanggal(item.createdAt),
     },
     {
@@ -281,44 +361,69 @@ export default function PencairanAdminPage() {
       ),
     },
     {
-      header: "Aksi / Bukti",
+      header: "Aksi / Dokumen",
       render: (item) => (
-        <div className="flex justify-center items-center gap-2">
+        <div className="flex flex-wrap justify-center items-center gap-1.5">
           {item.status === "pending" ? (
             <>
-              <button
-                type="button"
-                onClick={() => setVerifyRequest(item)}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer"
-              >
-                Verifikasi
-              </button>
+              {item.buktiPembayaranId ? (
+                <button
+                  type="button"
+                  onClick={() => setVerifyRequest(item)}
+                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
+                >
+                  <CreditCard className="w-3 h-3" />
+                  {item.metodePembayaran === "tunai"
+                    ? "Setujui"
+                    : "Upload Bukti"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleOpenBuktiPembayaran(item)}
+                  className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  Buat Dokumen
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setRejectRequest(item)}
-                className="px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer"
+                className="px-2.5 py-1.5 bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer"
               >
                 Tolak
               </button>
             </>
-          ) : item.buktiTransfer ? (
-            <button
-              type="button"
-              onClick={() => setViewProofUrl(item.buktiTransfer)}
-              className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Bukti Transfer
-            </button>
+          ) : item.status === "berhasil" ? (
+            <>
+              {item.buktiTransfer && (
+                <button
+                  type="button"
+                  onClick={() => setViewProofUrl(item.buktiTransfer)}
+                  className="px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Eye className="w-3 h-3" />
+                  Bukti
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => handleOpenBuktiPembayaran(item)}
+                className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border-0"
+              >
+                <FileText className="w-3 h-3" />
+                Dokumen
+              </button>
+            </>
           ) : (
-            <span className="text-neutral-400 italic text-[11px]">-</span>
+            <span className="text-neutral-400 italic text-[11px]">Ditolak</span>
           )}
         </div>
       ),
     },
   ];
 
-  // DataTable filters
   const filters: TableFilter<DisbursementItem>[] = [
     {
       id: "status",
@@ -339,22 +444,32 @@ export default function PencairanAdminPage() {
         { label: "Bank Sampah", value: "bank-sampah" },
       ],
     },
+    {
+      id: "metode",
+      label: "Metode",
+      options: [
+        { label: "Semua Metode", value: "" },
+        { label: "Tunai", value: "tunai" },
+        { label: "Transfer", value: "transfer" },
+      ],
+    },
   ];
 
-  // Client-side filtering & pagination
   const filteredItems = items.filter((item) => {
     const matchesSearch =
       item.user.name.toLowerCase().includes(search.toLowerCase()) ||
       item.user.username.toLowerCase().includes(search.toLowerCase()) ||
-      item.jenisBank.toLowerCase().includes(search.toLowerCase()) ||
-      item.noRekening.includes(search);
+      (item.jenisBank ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (item.noRekening ?? "").includes(search);
 
     const matchesStatus =
       !filterValues.status || item.status === filterValues.status;
     const matchesRole =
       !filterValues.role || item.user.role === filterValues.role;
+    const matchesMetode =
+      !filterValues.metode || item.metodePembayaran === filterValues.metode;
 
-    return matchesSearch && matchesStatus && matchesRole;
+    return matchesSearch && matchesStatus && matchesRole && matchesMetode;
   });
 
   const paginatedItems = filteredItems.slice(
@@ -381,12 +496,13 @@ export default function PencairanAdminPage() {
           Verifikasi Pencairan Dana
         </h1>
         <p className="text-xs text-neutral-500">
-          Proses pencairan dana manual dari mitra Warmiendo dan Bank Sampah.
-          Bukti foto transfer wajib dilampirkan.
+          Proses pencairan dana dari mitra Warmiendo dan Bank Sampah. Bukti foto
+          transfer wajib dilampirkan untuk metode transfer. Untuk tunai, cukup
+          setujui dan buat dokumen bukti pembayaran.
         </p>
       </div>
 
-      {/* Main Table using Shared DataTable */}
+      {/* Main Table */}
       <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden p-6">
         <DataTable
           data={paginatedItems}
@@ -414,7 +530,7 @@ export default function PencairanAdminPage() {
         />
       </div>
 
-      {/* Verification Modal (Uploader) */}
+      {/* Verification Modal */}
       {verifyRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-neutral-100 overflow-hidden p-6 relative animate-in zoom-in-95 duration-200 space-y-5">
@@ -446,11 +562,17 @@ export default function PencairanAdminPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Tujuan Transfer:</span>
-                <span className="font-bold text-neutral-800">
-                  {verifyRequest.jenisBank} — {verifyRequest.noRekening}
-                </span>
+                <span>Metode:</span>
+                {getMetodeBadge(verifyRequest.metodePembayaran)}
               </div>
+              {verifyRequest.metodePembayaran !== "tunai" && (
+                <div className="flex justify-between">
+                  <span>Tujuan Transfer:</span>
+                  <span className="font-bold text-neutral-800">
+                    {verifyRequest.jenisBank} — {verifyRequest.noRekening}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-neutral-200/60 pt-1.5 mt-1">
                 <span>Jumlah Pencairan:</span>
                 <span className="font-extrabold text-primary-600 text-sm">
@@ -459,67 +581,77 @@ export default function PencairanAdminPage() {
               </div>
             </div>
 
-            {/* Photo upload field */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
-                Unggah Bukti Transfer (Wajib)
-              </span>
-
-              {isCompressing ? (
-                <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50/50 h-50 flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-                  <p className="text-xs font-semibold text-neutral-500">
-                    Mengompresi gambar...
+            {/* Conditional: cash = no photo required */}
+            {verifyRequest.metodePembayaran === "tunai" ? (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
+                <Banknote className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="space-y-1 text-emerald-800 text-xs">
+                  <span className="font-bold">Pencairan Tunai</span>
+                  <p>
+                    Tidak perlu upload bukti transfer. Setujui pencairan ini dan
+                    buat dokumen Bukti Pembayaran sebagai arsip resmi.
                   </p>
                 </div>
-              ) : uploadedImage ? (
-                <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-50 flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {/* biome-ignore lint/performance/noImgElement: Base64 data url preview is used */}
-                  <img
-                    src={uploadedImage}
-                    alt="Bukti Transfer"
-                    className="max-h-50 object-contain"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setUploadedImage(null)}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-all border-0 cursor-pointer"
-                    title="Hapus foto"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="relative rounded-2xl border-2 border-dashed border-neutral-300 hover:border-primary-500/50 transition-all p-6 text-center bg-neutral-50/50">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <div className="space-y-2 text-neutral-500">
-                    <div className="p-3 bg-white rounded-full w-fit mx-auto shadow-xs border border-neutral-100">
-                      <Camera className="w-6 h-6 text-neutral-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-neutral-700">
-                        Pilih Foto Bukti Transfer
-                      </p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">
-                        Maksimal ukuran file 5MB (akan dikompresi otomatis)
-                      </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
+                  Unggah Bukti Transfer (Wajib)
+                </span>
+                {isCompressing ? (
+                  <div className="relative rounded-2xl border border-neutral-200 bg-neutral-50/50 h-50 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                    <p className="text-xs font-semibold text-neutral-500">
+                      Mengompresi gambar...
+                    </p>
+                  </div>
+                ) : uploadedImage ? (
+                  <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-50 flex items-center justify-center">
+                    <Image
+                      src={uploadedImage}
+                      alt="Bukti Transfer"
+                      width={400}
+                      height={400}
+                      className="max-h-50 object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setUploadedImage(null)}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-all border-0 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative rounded-2xl border-2 border-dashed border-neutral-300 hover:border-primary-500/50 transition-all p-6 text-center bg-neutral-50/50">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="space-y-2 text-neutral-500">
+                      <div className="p-3 bg-white rounded-full w-fit mx-auto shadow-xs border border-neutral-100">
+                        <Camera className="w-6 h-6 text-neutral-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-neutral-700">
+                          Pilih Foto Bukti Transfer
+                        </p>
+                        <p className="text-[10px] text-neutral-400 mt-0.5">
+                          Maksimal ukuran file 5MB (akan dikompresi otomatis)
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {imageError && (
-                <p className="text-[11px] font-semibold text-red-600">
-                  {imageError}
-                </p>
-              )}
-            </div>
+                )}
+                {imageError && (
+                  <p className="text-[11px] font-semibold text-red-600">
+                    {imageError}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-2">
@@ -537,7 +669,11 @@ export default function PencairanAdminPage() {
               <button
                 type="button"
                 onClick={handleApprove}
-                disabled={isPending || isCompressing || !uploadedImage}
+                disabled={
+                  isPending ||
+                  isCompressing ||
+                  (verifyRequest.metodePembayaran !== "tunai" && !uploadedImage)
+                }
                 className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1 border-0 cursor-pointer"
               >
                 {isPending ? (
@@ -545,11 +681,90 @@ export default function PencairanAdminPage() {
                 ) : (
                   <CheckCircle2 className="w-4 h-4" />
                 )}
-                <span>Setujui &amp; Kirim</span>
+                <span>
+                  {verifyRequest.metodePembayaran === "tunai"
+                    ? "Setujui Pencairan"
+                    : "Setujui & Kirim"}
+                </span>
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Existing document quick-download prompt */}
+      {buktiPembayaranItem && existingDocId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-6 relative animate-in zoom-in-95 duration-200 space-y-5">
+            <button
+              type="button"
+              onClick={() => {
+                setBuktiPembayaranItem(null);
+                setExistingDocId(null);
+              }}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all border-0 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2.5 pb-2 border-b border-neutral-100">
+              <FileText className="w-5 h-5 text-primary-600" />
+              <h3 className="text-base font-bold text-neutral-800">
+                Dokumen Sudah Ada
+              </h3>
+            </div>
+            <p className="text-xs text-neutral-600">
+              Dokumen bukti pembayaran untuk pencairan ini sudah dibuat
+              sebelumnya. Download dokumen yang ada atau buat ulang.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setBuktiPembayaranItem(null);
+                  setExistingDocId(null);
+                  setBuktiPembayaranItem(buktiPembayaranItem);
+                  setExistingDocId(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-600 hover:bg-neutral-50 cursor-pointer bg-white"
+              >
+                Buat Ulang
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleDownloadExistingDoc(existingDocId);
+                  setBuktiPembayaranItem(null);
+                  setExistingDocId(null);
+                }}
+                className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 border-0 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bukti Pembayaran Modal (create new) */}
+      {buktiPembayaranItem && existingDocId === null && (
+        <BuktiPembayaranModal
+          item={buktiPembayaranItem}
+          onClose={() => setBuktiPembayaranItem(null)}
+          onSuccess={(docId) => {
+            setBuktiPembayaranItem(null);
+            showFeedback(
+              "success",
+              "Dokumen Dibuat",
+              "Dokumen berhasil disimpan. Mengunduh PDF...",
+            );
+            // Trigger download
+            setTimeout(() => {
+              window.open(`/api/bukti-pembayaran/${docId}`, "_blank");
+            }, 500);
+            loadData();
+          }}
+        />
       )}
 
       {/* Reject Confirmation Modal */}
@@ -572,22 +787,19 @@ export default function PencairanAdminPage() {
             >
               <X className="w-4 h-4" />
             </button>
-
             <h3 className="text-base font-bold text-neutral-800 pb-2 border-b border-neutral-150 flex items-center gap-2">
               <Eye className="w-5 h-5 text-primary-600" />
               Bukti Foto Transfer Pencairan
             </h3>
-
             <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-100 flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {/* biome-ignore lint/performance/noImgElement: R2 remote proof image preview is used */}
-              <img
+              <Image
                 src={viewProofUrl}
                 alt="Bukti Transfer"
                 className="max-h-100 object-contain w-full"
+                width={400}
+                height={400}
               />
             </div>
-
             <div className="flex justify-end">
               <button
                 type="button"

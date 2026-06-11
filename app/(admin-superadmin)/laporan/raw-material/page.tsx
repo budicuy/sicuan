@@ -215,30 +215,33 @@ export default function LaporanRawMaterialPage() {
             <button
               type="button"
               onClick={() => setActiveTab("weekly")}
-              className={`px-4 py-2 rounded-lg text-xs font-black transition-all border-0 cursor-pointer ${activeTab === "weekly"
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all border-0 cursor-pointer ${
+                activeTab === "weekly"
                   ? "bg-white text-primary-700 shadow-sm"
                   : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-200/50"
-                }`}
+              }`}
             >
               Mingguan
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("monthly")}
-              className={`px-4 py-2 rounded-lg text-xs font-black transition-all border-0 cursor-pointer ${activeTab === "monthly"
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all border-0 cursor-pointer ${
+                activeTab === "monthly"
                   ? "bg-white text-primary-700 shadow-sm"
                   : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-200/50"
-                }`}
+              }`}
             >
               Bulanan
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("yearly")}
-              className={`px-4 py-2 rounded-lg text-xs font-black transition-all border-0 cursor-pointer ${activeTab === "yearly"
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all border-0 cursor-pointer ${
+                activeTab === "yearly"
                   ? "bg-white text-primary-700 shadow-sm"
                   : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-200/50"
-                }`}
+              }`}
             >
               Tahunan
             </button>

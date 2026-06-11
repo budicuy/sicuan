@@ -1,7 +1,9 @@
 import { relations } from "drizzle-orm";
+import { buktiPembayaran } from "@/db/schema/bukti-pembayaran";
 import { ekspedisi } from "@/db/schema/ekspedisi";
 import { kupon } from "@/db/schema/kupon";
 import { nasabah } from "@/db/schema/nasabah";
+import { pencairanDana } from "@/db/schema/pencairan-dana";
 import { penukaranKupon } from "@/db/schema/penukaran-kupon";
 import { setorSampahBankSampah } from "@/db/schema/setoran_bank_sampah";
 import { setorSampahKonsumen } from "@/db/schema/setoran_konsumen";
@@ -74,3 +76,28 @@ export const penukaranKuponRelations = relations(penukaranKupon, ({ one }) => ({
     references: [kupon.id],
   }),
 }));
+
+export const pencairanDanaRelations = relations(pencairanDana, ({ one }) => ({
+  user: one(users, {
+    fields: [pencairanDana.userId],
+    references: [users.id],
+  }),
+  buktiPembayaran: one(buktiPembayaran, {
+    fields: [pencairanDana.id],
+    references: [buktiPembayaran.pencairanDanaId],
+  }),
+}));
+
+export const buktiPembayaranRelations = relations(
+  buktiPembayaran,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [buktiPembayaran.userId],
+      references: [users.id],
+    }),
+    pencairanDana: one(pencairanDana, {
+      fields: [buktiPembayaran.pencairanDanaId],
+      references: [pencairanDana.id],
+    }),
+  }),
+);

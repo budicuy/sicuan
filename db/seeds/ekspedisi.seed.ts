@@ -6,17 +6,17 @@ export async function seedEkspedisi() {
 
   const data = [
     {
-      namaVendor: "JNE Express",
+      namaVendor: "Gojek",
       noTelepon: "02129278888",
       status: "Aktif",
     },
     {
-      namaVendor: "J&T Express",
+      namaVendor: "Grab",
       noTelepon: "02180661888",
       status: "Aktif",
     },
     {
-      namaVendor: "SiCepat Ekspres",
+      namaVendor: "Gosend",
       noTelepon: "02150200050",
       status: "Aktif",
     },

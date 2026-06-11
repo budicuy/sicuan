@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  BookOpen,
   ChevronDown,
   Coins,
   FileText,
@@ -31,6 +32,7 @@ const IconMap: Record<string, LucideIcon> = {
   Settings,
   Recycle,
   Star,
+  BookOpen,
 };
 
 function getIcon(name: string): LucideIcon {

@@ -56,8 +56,9 @@ export async function calculateSetoranReward(
   berat: number,
   role: string,
 ): Promise<{ totalPoin: number; totalKredit: number }> {
-  const pointPerKg = await getPoinPerKg(jenis);
-  const totalPoin = Math.floor(berat * pointPerKg);
+  const isWarmiendo = role === "warmiendo";
+  const pointPerKg = isWarmiendo ? 0 : await getPoinPerKg(jenis);
+  const totalPoin = isWarmiendo ? 0 : Math.floor(berat * pointPerKg);
 
   const isMoneyReward = role === "warmiendo" || role === "bank-sampah";
   const totalKredit = isMoneyReward ? await getHargaRange(jenis, berat) : 0;
