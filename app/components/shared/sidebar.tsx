@@ -98,7 +98,7 @@ export function SidebarLayout({
       startTransition(() => {
         onLogout();
       });
-    }, 1000);
+    }, 300);
   };
 
   // Find active item

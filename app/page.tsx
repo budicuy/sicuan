@@ -23,8 +23,15 @@ export default function Home() {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 2200);
-    return () => clearTimeout(timer);
+    const lastShown = localStorage.getItem("sicuan_splash_last_shown");
+    const today = new Date().toDateString();
+    if (lastShown === today) {
+      setShowSplash(false);
+    } else {
+      localStorage.setItem("sicuan_splash_last_shown", today);
+      const timer = setTimeout(() => setShowSplash(false), 2200);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // Calculator state
