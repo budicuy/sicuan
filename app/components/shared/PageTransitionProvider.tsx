@@ -104,7 +104,7 @@ export default function PageTransitionProvider({
                 setPendingHref(null);
               }
             }}
-            className="fixed inset-0 bg-primary-900 z-[99999] flex items-center justify-center pointer-events-auto"
+            className="fixed inset-0 bg-primary-900 z-99999 flex items-center justify-center pointer-events-auto"
           >
             <div className="flex items-center gap-4 text-left select-none">
               {/* Logo Icon */}

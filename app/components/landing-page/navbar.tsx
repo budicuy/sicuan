@@ -61,7 +61,7 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
                 Official
               </span>
             </span>
-            <p className="text-[9px] text-neutral-500 font-medium tracking-wider uppercase leading-none mt-0.5">
+            <p className="hidden md:block text-[9px] text-neutral-500 font-medium tracking-wider uppercase leading-none mt-0.5">
               Daur Ulang Sampah Jadi Nilai Ekonomi
             </p>
           </div>
