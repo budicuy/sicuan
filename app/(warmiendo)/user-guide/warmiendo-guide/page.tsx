@@ -145,7 +145,7 @@ export default function WarmiendoGuidePage() {
         </div>
 
         {/* Right Content */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm min-h-[500px] flex flex-col justify-between">
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm min-h-125 flex flex-col justify-between">
           <div className="space-y-6">
             {/* 1. PENDAHULUAN */}
             {activeSection === "intro" && (
