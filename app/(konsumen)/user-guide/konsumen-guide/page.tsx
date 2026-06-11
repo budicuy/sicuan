@@ -111,7 +111,7 @@ export default function KonsumenGuidePage() {
                     className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                       isActive
                         ? "bg-white text-blue-600 shadow-xs"
-                        : "bg-neutral-100 text-neutral-50"
+                        : "bg-neutral-100 text-neutral-500"
                     }`}
                   >
                     <IconComp className="w-5 h-5" />
