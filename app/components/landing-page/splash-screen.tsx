@@ -31,6 +31,14 @@ export function SplashScreen() {
     return () => clearTimeout(delayTimer);
   }, []);
 
+  // Prevent scroll shifting and horizontal scrollbar bounce on mobile during splash screen
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {

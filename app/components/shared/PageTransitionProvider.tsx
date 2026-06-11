@@ -45,6 +45,18 @@ export default function PageTransitionProvider({
     setPageReady(true);
   }, []);
 
+  // Prevent scroll shifting and horizontal scrollbar bounce on mobile during transition
+  useEffect(() => {
+    if (status !== "idle") {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [status]);
+
   // When both the curtain has closed ("in") and the new page is ready ("pageReady"), slide out
   useEffect(() => {
     if (status === "in" && pageReady) {
