@@ -65,43 +65,39 @@ export default function Home() {
 
   return (
     <>
-      <AnimatePresence mode="wait">
-        {showSplash && <SplashScreen />}
-      </AnimatePresence>
+      <div className="flex flex-col min-h-dvh bg-primary-50 text-neutral-900 font-sans selection:bg-primary-200 selection:text-primary-900 overflow-x-hidden bg-grid-pattern pt-20">
+        <ScrollProgress />
+        {/* Background decorations */}
+        <div className="absolute top-0 left-1/4 w-125 h-125 bg-primary-200/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="absolute top-200 right-10 w-150 h-150 bg-secondary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {!showSplash && (
-        <div className="flex flex-col min-h-dvh bg-primary-50 text-neutral-900 font-sans selection:bg-primary-200 selection:text-primary-900 overflow-x-hidden bg-grid-pattern pt-20">
-          <ScrollProgress />
-          {/* Background decorations */}
-          <div className="absolute top-0 left-1/4 w-125 h-125 bg-primary-200/30 rounded-full blur-3xl pointer-events-none -z-10" />
-          <div className="absolute top-200 right-10 w-150 h-150 bg-secondary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <Navbar
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
+        <HeroSection />
+        <StatsBar stats={stats} />
+        <FeaturesSection />
+        <MitraSection
+          activeRoleTab={activeRoleTab}
+          setActiveRoleTab={setActiveRoleTab}
+        />
+        <CalculatorSection
+          calcRole={calcRole}
+          setCalcRole={setCalcRole}
+          calcTrash={calcTrash}
+          setCalcTrash={setCalcTrash}
+          calcWeight={calcWeight}
+          setCalcWeight={setCalcWeight}
+          calcResult={calcResult}
+        />
+        <AlurSection />
+        <LoginSection />
+        <FaqSection faqOpen={faqOpen} setFaqOpen={setFaqOpen} />
+        <Footer />
+      </div>
 
-          <Navbar
-            mobileMenuOpen={mobileMenuOpen}
-            setMobileMenuOpen={setMobileMenuOpen}
-          />
-          <HeroSection />
-          <StatsBar stats={stats} />
-          <FeaturesSection />
-          <MitraSection
-            activeRoleTab={activeRoleTab}
-            setActiveRoleTab={setActiveRoleTab}
-          />
-          <CalculatorSection
-            calcRole={calcRole}
-            setCalcRole={setCalcRole}
-            calcTrash={calcTrash}
-            setCalcTrash={setCalcTrash}
-            calcWeight={calcWeight}
-            setCalcWeight={setCalcWeight}
-            calcResult={calcResult}
-          />
-          <AlurSection />
-          <LoginSection />
-          <FaqSection faqOpen={faqOpen} setFaqOpen={setFaqOpen} />
-          <Footer />
-        </div>
-      )}
+      <AnimatePresence>{showSplash && <SplashScreen />}</AnimatePresence>
     </>
   );
 }

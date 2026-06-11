@@ -87,9 +87,9 @@ export default function PageTransitionProvider({
         {status === "in" && (
           <motion.div
             key="transition-curtain-in"
-            initial={{ x: "-100%" }}
-            animate={{ x: "0%" }}
-            exit={{ x: "100%" }}
+            initial={{ clipPath: "inset(0% 100% 0% 0%)" }}
+            animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
+            exit={{ clipPath: "inset(0% 0% 0% 100%)" }}
             transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
             onAnimationComplete={() => {
               if (pendingHref) {
@@ -123,8 +123,8 @@ export default function PageTransitionProvider({
         {status === "out" && (
           <motion.div
             key="transition-curtain-out"
-            initial={{ x: "0%" }}
-            animate={{ x: "100%" }}
+            initial={{ clipPath: "inset(0% 0% 0% 0%)" }}
+            animate={{ clipPath: "inset(0% 0% 0% 100%)" }}
             transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
             onAnimationComplete={() => {
               setStatus("idle");

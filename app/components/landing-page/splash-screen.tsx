@@ -65,17 +65,19 @@ export function SplashScreen() {
       key="splash"
       className="fixed inset-0 z-100 flex items-center justify-center select-none overflow-hidden"
     >
-      {/* Top Panel (Slides Up on exit) */}
+      {/* Top Panel (Slides Up on exit using clipPath) */}
       <motion.div
         className="absolute top-0 left-0 right-0 h-1/2 bg-[#030e06] z-0"
-        exit={{ y: "-100%" }}
+        initial={{ clipPath: "inset(0% 0% 0% 0%)" }}
+        exit={{ clipPath: "inset(0% 0% 100% 0%)" }}
         transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
       />
 
-      {/* Bottom Panel (Slides Down on exit) */}
+      {/* Bottom Panel (Slides Down on exit using clipPath) */}
       <motion.div
         className="absolute bottom-0 left-0 right-0 h-1/2 bg-[#030e06] z-0"
-        exit={{ y: "100%" }}
+        initial={{ clipPath: "inset(0% 0% 0% 0%)" }}
+        exit={{ clipPath: "inset(100% 0% 0% 0%)" }}
         transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
       />
 
