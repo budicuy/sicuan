@@ -19,6 +19,7 @@ import {
   getMySetoran,
   updateSetorSampahStatus,
 } from "@/app/(admin-superadmin)/laporan/warmiendo/action";
+import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 import { DataTable } from "@/app/components/shared/DataTable";
 
 interface SetorSampahItem {
@@ -537,7 +538,7 @@ export default function LaporanWarmiendoPage() {
             Total Setoran
           </div>
           <div className="text-3xl font-extrabold text-neutral-900">
-            {totalItems}
+            <AnimatedCounter value={totalItems} />
             <span className="text-sm font-semibold text-neutral-400 ml-1">
               kali
             </span>
@@ -549,7 +550,7 @@ export default function LaporanWarmiendoPage() {
             Total Berat Sampah
           </div>
           <div className="text-3xl font-extrabold text-primary-600">
-            {totalBerat.toFixed(2)}
+            <AnimatedCounter value={totalBerat} decimals={2} />
             <span className="text-sm font-semibold text-primary-400 ml-1">
               kg
             </span>
@@ -561,7 +562,7 @@ export default function LaporanWarmiendoPage() {
             Total Kredit Diperoleh
           </div>
           <div className="text-3xl font-extrabold text-emerald-600">
-            Rp {totalKredit.toLocaleString("id-ID")}
+            Rp <AnimatedCounter value={totalKredit} />
           </div>
         </div>
       </div>

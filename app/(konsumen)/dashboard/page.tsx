@@ -3,7 +3,6 @@
 import {
   CheckCircle2,
   Clock,
-  Loader2,
   Recycle,
   Scale,
   ShoppingBag,
@@ -24,6 +23,7 @@ import {
   YAxis,
 } from "recharts";
 import { getDashboardData } from "@/app/(konsumen)/dashboard/action";
+import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 
 interface DashboardData {
   success: boolean;
@@ -58,9 +58,9 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const [mounted, setMounted] = useState(false);
+  const [_mounted, setMounted] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -77,20 +77,11 @@ export default function DashboardPage() {
     loadData();
   }, [loadData]);
 
-  if (loading || !mounted || !data) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
-        <p className="text-sm font-semibold text-neutral-500">
-          Memuat dashboard Anda...
-        </p>
-      </div>
-    );
-  }
-
-  const name = data.name;
-  const hasCompositionData = data.composition?.some((c) => c.value > 0);
-  const hasHistoryData = data.setoranHistory && data.setoranHistory.length > 0;
+  const name = data?.name ?? "-";
+  const hasCompositionData =
+    data?.composition?.some((c) => c.value > 0) ?? false;
+  const hasHistoryData =
+    (data?.setoranHistory && data.setoranHistory.length > 0) ?? false;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
@@ -122,7 +113,10 @@ export default function DashboardPage() {
           </span>
           <div className="flex justify-between items-center mt-3">
             <h2 className="text-3xl font-black tracking-tight">
-              {data.profile?.poin?.toLocaleString("id-ID") ?? 0} Poin
+              <AnimatedCounter
+                value={data?.profile?.poin ?? 0}
+                suffix=" Poin"
+              />
             </h2>
             <Star className="w-8 h-8 text-emerald-100/80 fill-emerald-100/20" />
           </div>
@@ -134,7 +128,10 @@ export default function DashboardPage() {
               Total Berat Setor
             </span>
             <h2 className="text-2xl font-black text-neutral-800 tracking-tight mt-1.5">
-              {data.metrics?.totalSetoranKg ?? 0} Kg
+              <AnimatedCounter
+                value={data?.metrics?.totalSetoranKg ?? 0}
+                suffix=" Kg"
+              />
             </h2>
           </div>
           <div className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-200/50 flex items-center justify-center text-neutral-500 shrink-0">
@@ -148,7 +145,10 @@ export default function DashboardPage() {
               Setoran Diterima
             </span>
             <h2 className="text-2xl font-black text-neutral-800 tracking-tight mt-1.5">
-              {data.metrics?.totalSetoranDiterima ?? 0} Kali
+              <AnimatedCounter
+                value={data?.metrics?.totalSetoranDiterima ?? 0}
+                suffix=" Kali"
+              />
             </h2>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
@@ -162,7 +162,10 @@ export default function DashboardPage() {
               Kupon Ditukar
             </span>
             <h2 className="text-2xl font-black text-neutral-800 tracking-tight mt-1.5">
-              {data.metrics?.totalKuponDitukar ?? 0} Kupon
+              <AnimatedCounter
+                value={data?.metrics?.totalKuponDitukar ?? 0}
+                suffix=" Kupon"
+              />
             </h2>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
@@ -183,7 +186,7 @@ export default function DashboardPage() {
             <div className="flex-1 w-full h-full">
               <ResponsiveContainer width="100%" height={240} minWidth={0}>
                 <AreaChart
-                  data={data.setoranHistory}
+                  data={data?.setoranHistory}
                   margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
                 >
                   <defs>
@@ -245,7 +248,7 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height={170} minWidth={0}>
                   <PieChart>
                     <Pie
-                      data={data.composition}
+                      data={data?.composition}
                       cx="50%"
                       cy="50%"
                       innerRadius={40}
@@ -253,7 +256,7 @@ export default function DashboardPage() {
                       paddingAngle={4}
                       dataKey="value"
                     >
-                      {data.composition?.map((entry) => (
+                      {data?.composition?.map((entry) => (
                         <Cell key={`donut-${entry.name}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -263,7 +266,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="mt-2 pt-3 border-t border-neutral-100 grid grid-cols-3 gap-2 text-center text-xs w-full">
-                {data.composition?.map((entry) => (
+                {data?.composition?.map((entry) => (
                   <div key={entry.name} className="space-y-1">
                     <div className="flex items-center justify-center gap-1 text-[10px] text-neutral-500 font-medium">
                       <span
@@ -273,7 +276,7 @@ export default function DashboardPage() {
                       <span className="truncate max-w-20">{entry.name}</span>
                     </div>
                     <p className="font-extrabold text-neutral-800">
-                      {entry.value} Kg
+                      <AnimatedCounter value={entry.value} suffix=" Kg" />
                     </p>
                   </div>
                 ))}
@@ -308,7 +311,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {data.recentSetoran && data.recentSetoran.length > 0 ? (
+              {data?.recentSetoran && data.recentSetoran.length > 0 ? (
                 data.recentSetoran.map((s) => (
                   <tr key={s.id} className="hover:bg-neutral-50/50">
                     <td className="px-4 py-3 font-semibold text-neutral-800">

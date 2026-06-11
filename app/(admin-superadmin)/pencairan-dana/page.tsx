@@ -503,17 +503,6 @@ export default function PencairanAdminPage() {
     currentPage * pageSize,
   );
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
-        <p className="text-sm font-semibold text-neutral-500">
-          Memuat data verifikasi pencairan...
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       {/* Header Title */}
@@ -530,30 +519,39 @@ export default function PencairanAdminPage() {
 
       {/* Main Table */}
       <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden p-6">
-        <DataTable
-          data={paginatedItems}
-          columns={columns}
-          totalItems={filteredItems.length}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={(e) => {
-            setPageSize(Number(e.target.value));
-            setCurrentPage(1);
-          }}
-          search={search}
-          onSearchChange={(val) => {
-            setSearch(val);
-            setCurrentPage(1);
-          }}
-          searchPlaceholder="Cari nama, bank, atau rekening..."
-          filters={filters}
-          filterValues={filterValues}
-          onFilterChange={(filterId, value) => {
-            setFilterValues({ ...filterValues, [filterId]: value });
-            setCurrentPage(1);
-          }}
-        />
+        {loading ? (
+          <div className="py-24 text-center bg-white rounded-2xl">
+            <Loader2 className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-3" />
+            <p className="text-neutral-500 text-sm">
+              Memuat data verifikasi pencairan...
+            </p>
+          </div>
+        ) : (
+          <DataTable
+            data={paginatedItems}
+            columns={columns}
+            totalItems={filteredItems.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            search={search}
+            onSearchChange={(val) => {
+              setSearch(val);
+              setCurrentPage(1);
+            }}
+            searchPlaceholder="Cari nama, bank, atau rekening..."
+            filters={filters}
+            filterValues={filterValues}
+            onFilterChange={(filterId, value) => {
+              setFilterValues({ ...filterValues, [filterId]: value });
+              setCurrentPage(1);
+            }}
+          />
+        )}
       </div>
 
       {/* Verification Modal */}

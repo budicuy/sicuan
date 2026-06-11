@@ -21,6 +21,7 @@ import {
   YAxis,
 } from "recharts";
 import { getRawMaterialReport } from "@/app/(admin-superadmin)/laporan/raw-material/action";
+import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 
 interface ChartDataPoint {
   weekLabel?: string;
@@ -132,32 +133,33 @@ export default function LaporanRawMaterialPage() {
     };
   }, [selectedYear, selectedMonth, selectedWeek]);
 
-  if (loading || !data) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
-        <p className="text-sm font-semibold text-neutral-500">
-          Membuat laporan...
-        </p>
-      </div>
-    );
-  }
-
   // Resolve active report segment based on the global filter tab
-  const activeSegment =
-    activeTab === "weekly"
+  const activeSegment = data
+    ? activeTab === "weekly"
       ? data.weekly
       : activeTab === "monthly"
         ? data.monthly
-        : data.yearly;
+        : data.yearly
+    : {
+        overall: {
+          totalRawWeight: 0,
+          totalDepositedWeight: 0,
+          overallPercentage: 0,
+        },
+        byCategory: [],
+        byRole: [],
+        topCategories: [],
+        rankings: { Konsumen: [], Warmiendo: [], "Bank Sampah": [] },
+      };
 
   // Get active chart data
-  const chartData =
-    activeTab === "weekly"
+  const chartData = data
+    ? activeTab === "weekly"
       ? data.weeklyData
       : activeTab === "monthly"
         ? data.monthlyData
-        : data.yearlyData;
+        : data.yearlyData
+    : [];
 
   const activeRankings = activeSegment.rankings;
 
@@ -198,8 +200,11 @@ export default function LaporanRawMaterialPage() {
             <Recycle className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight flex items-center gap-2">
               Laporan Kontribusi Setoran Sampah
+              {loading && (
+                <Loader2 className="w-5 h-5 text-primary-600 animate-spin shrink-0" />
+              )}
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
               Perbandingan data raw material yang dikeluarkan Indofood dengan
@@ -309,7 +314,11 @@ export default function LaporanRawMaterialPage() {
               Total Raw Material Indofood
             </span>
             <h2 className="text-2xl font-black text-neutral-800 tracking-tight">
-              {activeSegment.overall.totalRawWeight.toFixed(2)} Kg
+              <AnimatedCounter
+                value={activeSegment.overall.totalRawWeight}
+                decimals={2}
+                suffix=" Kg"
+              />
             </h2>
             <span className="text-[10px] text-neutral-500 block">
               {getPeriodLabel()} (Master Data)
@@ -326,7 +335,11 @@ export default function LaporanRawMaterialPage() {
               Total Sampah Disetorkan
             </span>
             <h2 className="text-2xl font-black text-neutral-800 tracking-tight">
-              {activeSegment.overall.totalDepositedWeight.toFixed(2)} Kg
+              <AnimatedCounter
+                value={activeSegment.overall.totalDepositedWeight}
+                decimals={2}
+                suffix=" Kg"
+              />
             </h2>
             <span className="text-[10px] text-neutral-500 block">
               Seluruh Aktor ({getPeriodLabel()})
@@ -343,7 +356,11 @@ export default function LaporanRawMaterialPage() {
               Kontribusi Daur Ulang
             </span>
             <h2 className="text-2xl font-black text-neutral-800 tracking-tight flex items-baseline gap-1">
-              {activeSegment.overall.overallPercentage.toFixed(1)}%
+              <AnimatedCounter
+                value={activeSegment.overall.overallPercentage}
+                decimals={1}
+                suffix="%"
+              />
               <span className="text-xs font-semibold text-neutral-500">
                 tercapai
               </span>
@@ -446,8 +463,12 @@ export default function LaporanRawMaterialPage() {
                       {item.category}
                     </span>
                     <span className="text-neutral-500 font-mono text-[11px]">
-                      {item.depositedWeight.toFixed(1)} /{" "}
-                      {item.rawWeight.toFixed(1)} Kg
+                      <AnimatedCounter
+                        value={item.depositedWeight}
+                        decimals={1}
+                      />{" "}
+                      / <AnimatedCounter value={item.rawWeight} decimals={1} />{" "}
+                      Kg
                     </span>
                   </div>
                   <div className="relative pt-1">
@@ -456,7 +477,11 @@ export default function LaporanRawMaterialPage() {
                         <span
                           className={`text-[9px] font-bold inline-block py-0.5 px-2 uppercase rounded-full border ${getPercentageColor(item.percentage)}`}
                         >
-                          {item.percentage.toFixed(1)}% Kontribusi
+                          <AnimatedCounter
+                            value={item.percentage}
+                            decimals={1}
+                            suffix="% Kontribusi"
+                          />
                         </span>
                       </div>
                     </div>
@@ -508,7 +533,11 @@ export default function LaporanRawMaterialPage() {
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getPercentageColor(cat.percentage)}`}
                 >
-                  {cat.percentage.toFixed(1)}%
+                  <AnimatedCounter
+                    value={cat.percentage}
+                    decimals={1}
+                    suffix="%"
+                  />
                 </span>
               </div>
 
@@ -527,7 +556,11 @@ export default function LaporanRawMaterialPage() {
                     Total Raw
                   </p>
                   <p className="font-bold text-neutral-800 mt-0.5">
-                    {cat.rawWeight.toFixed(1)} Kg
+                    <AnimatedCounter
+                      value={cat.rawWeight}
+                      decimals={1}
+                      suffix=" Kg"
+                    />
                   </p>
                 </div>
                 <div>
@@ -535,7 +568,11 @@ export default function LaporanRawMaterialPage() {
                     Total Setor
                   </p>
                   <p className="font-bold text-emerald-600 mt-0.5">
-                    {cat.depositedWeight.toFixed(1)} Kg
+                    <AnimatedCounter
+                      value={cat.depositedWeight}
+                      decimals={1}
+                      suffix=" Kg"
+                    />
                   </p>
                 </div>
               </div>
@@ -553,7 +590,11 @@ export default function LaporanRawMaterialPage() {
                     >
                       <span>{cls.name}</span>
                       <span className="font-semibold text-neutral-900">
-                        {cls.weight.toFixed(1)} Kg
+                        <AnimatedCounter
+                          value={cls.weight}
+                          decimals={1}
+                          suffix=" Kg"
+                        />
                       </span>
                     </div>
                   ))}
@@ -592,7 +633,11 @@ export default function LaporanRawMaterialPage() {
                   </p>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100">
-                  {roleData.sharePercentage.toFixed(1)}% Share
+                  <AnimatedCounter
+                    value={roleData.sharePercentage}
+                    decimals={1}
+                    suffix="% Share"
+                  />
                 </span>
               </div>
 
@@ -603,7 +648,11 @@ export default function LaporanRawMaterialPage() {
                     Total Disetor
                   </p>
                   <p className="font-bold text-neutral-800 mt-0.5">
-                    {roleData.totalWeight.toFixed(1)} Kg
+                    <AnimatedCounter
+                      value={roleData.totalWeight}
+                      decimals={1}
+                      suffix=" Kg"
+                    />
                   </p>
                 </div>
                 <div>
@@ -611,7 +660,11 @@ export default function LaporanRawMaterialPage() {
                     Vs Raw Indofood
                   </p>
                   <p className="font-bold text-primary-600 mt-0.5">
-                    {roleData.rawContributionPercentage.toFixed(1)}%
+                    <AnimatedCounter
+                      value={roleData.rawContributionPercentage}
+                      decimals={1}
+                      suffix="%"
+                    />
                   </p>
                 </div>
               </div>
@@ -620,7 +673,13 @@ export default function LaporanRawMaterialPage() {
               <div className="space-y-1">
                 <div className="flex justify-between text-[10px] font-semibold text-neutral-500">
                   <span>Kontribusi Sirkular</span>
-                  <span>{roleData.rawContributionPercentage.toFixed(1)}%</span>
+                  <span>
+                    <AnimatedCounter
+                      value={roleData.rawContributionPercentage}
+                      decimals={1}
+                      suffix="%"
+                    />
+                  </span>
                 </div>
                 <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                   <div
@@ -645,7 +704,11 @@ export default function LaporanRawMaterialPage() {
                     >
                       <span>{cat.category}</span>
                       <span className="font-semibold text-neutral-900">
-                        {cat.weight.toFixed(1)} Kg
+                        <AnimatedCounter
+                          value={cat.weight}
+                          decimals={1}
+                          suffix=" Kg"
+                        />
                       </span>
                     </div>
                   ))}
@@ -729,7 +792,11 @@ export default function LaporanRawMaterialPage() {
                               </span>
                             </div>
                             <span className="text-xs font-black text-primary-600 shrink-0 font-mono">
-                              {rank.totalWeight.toFixed(1)} Kg
+                              <AnimatedCounter
+                                value={rank.totalWeight}
+                                decimals={1}
+                                suffix=" Kg"
+                              />
                             </span>
                           </div>
                         );

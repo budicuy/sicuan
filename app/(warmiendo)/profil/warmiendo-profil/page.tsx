@@ -25,7 +25,7 @@ interface ProfileData {
 
 export default function ProfilPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
   // Transition hooks for server actions
@@ -169,17 +169,6 @@ export default function ProfilPage() {
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
-        <p className="text-sm font-semibold text-neutral-500">
-          Memuat profil pengguna...
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Header Info Card */}
@@ -187,21 +176,23 @@ export default function ProfilPage() {
         <div className="absolute top-[-30%] right-[-10%] w-[45%] h-[150%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
           <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white font-extrabold text-3xl shadow-lg border border-white/10 shrink-0">
-            {profile?.name?.slice(0, 2).toUpperCase() || "US"}
+            {profile ? profile.name?.slice(0, 2).toUpperCase() || "US" : "-"}
           </div>
           <div className="text-center sm:text-left space-y-1">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              {profile?.name}
+              {profile?.name ?? "-"}
             </h1>
-            <p className="text-primary-200 text-sm">@{profile?.username}</p>
+            <p className="text-primary-200 text-sm">
+              @{profile?.username ?? "-"}
+            </p>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1.5">
               <span
                 className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${getRoleBadgeColor(profile?.role)}`}
               >
-                {formatRoleName(profile?.role)}
+                {profile ? formatRoleName(profile.role) : "-"}
               </span>
               <span className="text-[10px] font-semibold bg-white/10 text-white px-2.5 py-0.5 rounded-full border border-white/10">
-                Status: {profile?.status || "Aktif"}
+                Status: {profile ? profile.status || "Aktif" : "-"}
               </span>
             </div>
           </div>
@@ -239,6 +230,7 @@ export default function ProfilPage() {
       {/* Tab Contents */}
       {activeTab === "profile" ? (
         <form
+          key={profile ? "loaded" : "loading"}
           onSubmit={handleProfileSubmit}
           className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-200/60 space-y-6"
         >
