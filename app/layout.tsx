@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import PageTransitionProvider from "@/app/components/shared/PageTransitionProvider";
 import ProgressBarProvider from "@/app/components/shared/ProgressBarProvider";
 
 const geistSans = Geist({
@@ -27,10 +28,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}
     >
       <body className="min-h-full flex flex-col">
-        <ProgressBarProvider>{children}</ProgressBarProvider>
+        <ProgressBarProvider>
+          <PageTransitionProvider>{children}</PageTransitionProvider>
+        </ProgressBarProvider>
       </body>
     </html>
   );

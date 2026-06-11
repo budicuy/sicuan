@@ -14,9 +14,12 @@ import {
   User,
 } from "lucide-react";
 import { motion } from "motion/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useEffect, useState } from "react";
+import {
+  TransitionLink,
+  usePageTransition,
+} from "@/app/components/shared/PageTransitionProvider";
 import { loginAction } from "@/app/login/action";
 
 export default function LoginPage() {
@@ -24,7 +27,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
+  const _router = useRouter();
+  const { transitionTo } = usePageTransition();
 
   // Use React 19 useActionState to bind the server action
   const [state, formAction, isPending] = useActionState(loginAction, null);
@@ -32,9 +36,9 @@ export default function LoginPage() {
   // Redirect directly to dashboard when server action returns success
   useEffect(() => {
     if (state?.success) {
-      router.push("/dashboard");
+      transitionTo("/dashboard");
     }
-  }, [state, router]);
+  }, [state, transitionTo]);
 
   const handleUseDemo = (demoUsername: string, demoPassword: string) => {
     setUsername(demoUsername);
@@ -60,7 +64,7 @@ export default function LoginPage() {
 
         {/* Top Header */}
         <div className="relative z-10 flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3 group">
+          <TransitionLink href="/" className="flex items-center gap-3 group">
             <div className="w-11 h-11 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-600/30 group-hover:scale-105 transition-transform duration-300">
               <Recycle className="w-6 h-6 animate-spin-slow" />
             </div>
@@ -75,7 +79,7 @@ export default function LoginPage() {
                 PT. Indofood CBP Sukses Makmur Tbk
               </p>
             </div>
-          </Link>
+          </TransitionLink>
         </div>
 
         {/* Center Illustration & Dynamic Info Card */}
@@ -140,13 +144,13 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 relative overflow-y-auto">
         {/* Top bar with back to home link */}
         <div className="flex justify-between items-center w-full mb-8 lg:mb-0">
-          <Link
+          <TransitionLink
             href="/"
             className="flex items-center gap-2 text-xs font-semibold text-neutral-500 hover:text-primary-600 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Kembali ke Beranda
-          </Link>
+          </TransitionLink>
           <div className="lg:hidden w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white shadow-md">
             <Recycle className="w-5 h-5 animate-spin-slow" />
           </div>

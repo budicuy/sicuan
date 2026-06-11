@@ -1,8 +1,8 @@
 "use client";
 
 import { Menu, Recycle, X } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { TransitionLink } from "@/app/components/shared/PageTransitionProvider";
 
 interface NavbarProps {
   mobileMenuOpen: boolean;
@@ -83,20 +83,20 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
+          <TransitionLink
             id="nav-login-btn"
             href="/login"
             className="text-sm font-semibold text-primary-700 hover:text-primary-800 px-4 py-2 transition-colors rounded-lg hover:bg-primary-100/50"
           >
             Masuk
-          </Link>
-          <Link
+          </TransitionLink>
+          <TransitionLink
             id="nav-register-btn"
             href="/login"
             className="text-sm font-semibold bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg shadow-sm shadow-primary-600/10 hover:shadow-primary-600/20 transition-all duration-200"
           >
             Mulai Setor
-          </Link>
+          </TransitionLink>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -131,20 +131,20 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
           </nav>
           <div className="h-px bg-neutral-200 w-full my-4" />
           <div className="flex flex-col gap-2">
-            <Link
+            <TransitionLink
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2.5 rounded-lg border border-neutral-200 font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors block"
             >
               Masuk
-            </Link>
-            <Link
+            </TransitionLink>
+            <TransitionLink
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2.5 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-sm transition-colors block"
             >
               Mulai Setor
-            </Link>
+            </TransitionLink>
           </div>
         </div>
       )}

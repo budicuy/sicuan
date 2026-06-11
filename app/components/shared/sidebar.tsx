@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { usePageTransition } from "@/app/components/shared/PageTransitionProvider";
 
 const IconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -89,6 +90,14 @@ export function SidebarLayout({
 }: SidebarLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const { transitionTo } = usePageTransition();
+
+  const handleLogoutClick = () => {
+    transitionTo("/login");
+    setTimeout(() => {
+      onLogout();
+    }, 450);
+  };
 
   // Find active item
   const activeMenuItem = sidebarItems
@@ -403,7 +412,7 @@ export function SidebarLayout({
 
             <button
               type="button"
-              onClick={onLogout}
+              onClick={handleLogoutClick}
               className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-all font-semibold cursor-pointer border-0 w-full text-left"
             >
               <LogOut className="w-4 h-4 shrink-0 text-red-500" />
@@ -450,7 +459,7 @@ export function SidebarLayout({
 
           <button
             type="button"
-            onClick={onLogout}
+            onClick={handleLogoutClick}
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-all font-semibold cursor-pointer border-0 w-full text-left"
           >
             <LogOut className="w-4.5 h-4.5 shrink-0 text-red-500" />
