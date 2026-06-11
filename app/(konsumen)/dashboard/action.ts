@@ -40,24 +40,23 @@ export async function getDashboardData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
-  });
-
-  const mySetoran = await db.query.setorSampahKonsumen.findMany({
-    where: eq(setorSampahKonsumen.userId, user.id),
-    orderBy: [desc(setorSampahKonsumen.createdAt)],
-  });
-
-  const myPencairan = await db.query.pencairanDana.findMany({
-    where: eq(pencairanDana.userId, user.id),
-    orderBy: [desc(pencairanDana.createdAt)],
-  });
-
-  const myKupon = await db.query.penukaranKupon.findMany({
-    where: eq(penukaranKupon.userId, user.id),
-    orderBy: [desc(penukaranKupon.createdAt)],
-  });
+  const [profile, mySetoran, myPencairan, myKupon] = await Promise.all([
+    db.query.nasabah.findFirst({
+      where: eq(nasabah.userId, user.id),
+    }),
+    db.query.setorSampahKonsumen.findMany({
+      where: eq(setorSampahKonsumen.userId, user.id),
+      orderBy: [desc(setorSampahKonsumen.createdAt)],
+    }),
+    db.query.pencairanDana.findMany({
+      where: eq(pencairanDana.userId, user.id),
+      orderBy: [desc(pencairanDana.createdAt)],
+    }),
+    db.query.penukaranKupon.findMany({
+      where: eq(penukaranKupon.userId, user.id),
+      orderBy: [desc(penukaranKupon.createdAt)],
+    }),
+  ]);
 
   const totalSetoranKg = mySetoran
     .filter((s) => s.status === "diterima")

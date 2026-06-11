@@ -35,19 +35,19 @@ export async function getDashboardData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
-  });
-
-  const mySetoran = await db.query.setorSampahWarmiendo.findMany({
-    where: eq(setorSampahWarmiendo.userId, user.id),
-    orderBy: [desc(setorSampahWarmiendo.createdAt)],
-  });
-
-  const myPencairan = await db.query.pencairanDana.findMany({
-    where: eq(pencairanDana.userId, user.id),
-    orderBy: [desc(pencairanDana.createdAt)],
-  });
+  const [profile, mySetoran, myPencairan] = await Promise.all([
+    db.query.nasabah.findFirst({
+      where: eq(nasabah.userId, user.id),
+    }),
+    db.query.setorSampahWarmiendo.findMany({
+      where: eq(setorSampahWarmiendo.userId, user.id),
+      orderBy: [desc(setorSampahWarmiendo.createdAt)],
+    }),
+    db.query.pencairanDana.findMany({
+      where: eq(pencairanDana.userId, user.id),
+      orderBy: [desc(pencairanDana.createdAt)],
+    }),
+  ]);
 
   // Calculate metrics
   const totalSetoranKg = mySetoran

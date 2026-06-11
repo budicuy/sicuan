@@ -88,19 +88,21 @@ export async function getProfileData() {
   try {
     const userId = await getAuthenticatedUserId();
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
+    const [user, existingProfile] = await Promise.all([
+      db.query.users.findFirst({
+        where: eq(users.id, userId),
+      }),
+      db.query.nasabah.findFirst({
+        where: eq(nasabah.userId, userId),
+      }),
+    ]);
 
     if (!user) {
       throw new Error("User tidak ditemukan");
     }
 
-    let profile = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, userId),
-    });
-
     // If profile doesn't exist, create an empty one
+    let profile = existingProfile;
     if (!profile) {
       const inserted = await db
         .insert(nasabah)
@@ -163,19 +165,21 @@ export async function updateProfileData(
       };
     }
 
-    // 1. Update user name
-    await db
-      .update(users)
-      .set({
-        name: parsed.data.name,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
+    // 1. Update user name + check existing profile in parallel
+    const [, existingProfile] = await Promise.all([
+      db
+        .update(users)
+        .set({
+          name: parsed.data.name,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId)),
+      db.query.nasabah.findFirst({
+        where: eq(nasabah.userId, userId),
+      }),
+    ]);
 
     // 2. Update/Insert nasabah profile
-    const existingProfile = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, userId),
-    });
 
     if (existingProfile) {
       await db
