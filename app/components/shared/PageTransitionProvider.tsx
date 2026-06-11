@@ -64,12 +64,12 @@ export default function PageTransitionProvider({
     }
   }, [status, pageReady]);
 
-  // Fallback safety timeout (1.5 seconds) to prevent getting stuck if notifyPageMounted is not called
+  // Fallback safety timeout (4 seconds) to prevent getting stuck if notifyPageMounted is not called
   useEffect(() => {
     if (status === "in" && !pageReady) {
       const timer = setTimeout(() => {
         setPageReady(true);
-      }, 1500);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [status, pageReady]);
@@ -93,7 +93,7 @@ export default function PageTransitionProvider({
                 status === "in" ? "inset(0 0 0 0)" : "inset(0 0 0 100%)",
             }}
             exit={{ clipPath: "inset(0 0 0 100%)" }}
-            transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
+            transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
             onAnimationComplete={() => {
               if (status === "in") {
                 if (pendingHref) {
@@ -104,7 +104,7 @@ export default function PageTransitionProvider({
                 setPendingHref(null);
               }
             }}
-            className="fixed inset-0 bg-primary-900 z-99999 flex items-center justify-center pointer-events-auto"
+            className="fixed inset-0 bg-primary-900 z-[99999] flex items-center justify-center pointer-events-auto"
           >
             <div className="flex items-center gap-4 text-left select-none">
               {/* Logo Icon */}
