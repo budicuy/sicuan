@@ -14,6 +14,7 @@ This file defines the behavior, command usage, and project-specific constraints 
 
 
 
+
 ## Next.js (Modern / Breaking Changes)
 
 - This project uses a version of Next.js with breaking changes (APIs, conventions, and file structures may differ from standard training data).
