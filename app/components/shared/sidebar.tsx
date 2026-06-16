@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   type LucideIcon,
+  Map as MapIcon,
   Menu,
   Recycle,
   Settings,
@@ -34,6 +35,7 @@ const IconMap: Record<string, LucideIcon> = {
   Recycle,
   Star,
   BookOpen,
+  Map: MapIcon,
 };
 
 function getIcon(name: string): LucideIcon {

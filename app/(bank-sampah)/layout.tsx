@@ -66,6 +66,11 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
     },
     { href: "/profil/bank-sampah-profil", label: "Profil Saya", icon: "User" },
     {
+      href: "/peta-jalan-sampah/bank-sampah",
+      label: "Peta Jalan Sampah",
+      icon: "Map",
+    },
+    {
       href: "/user-guide/bank-sampah-guide",
       label: "Panduan",
       icon: "BookOpen",
