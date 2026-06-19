@@ -785,3 +785,211 @@ export async function createSetorSampah(
 export async function getAllActiveEkspedisi() {
   return getEkspedisiFn();
 }
+
+// ── BANK SAMPAH: Verifikasi setoran Warmiendo & tugaskan ekspedisi ────────────
+
+export async function bankSampahVerifySetoran(
+  id: number,
+  ekspedisiId: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "bank-sampah") {
+    return {
+      success: false,
+      message:
+        "Akses ditolak. Hanya Bank Sampah yang dapat memverifikasi setoran Warmiendo.",
+    };
+  }
+
+  try {
+    const item = await db.query.setorSampahWarmiendo.findFirst({
+      where: eq(setorSampahWarmiendo.id, id),
+    });
+
+    if (!item) {
+      return { success: false, message: "Data setoran tidak ditemukan." };
+    }
+
+    if (item.status !== "pending") {
+      return {
+        success: false,
+        message: "Setoran ini tidak dalam status pending untuk diverifikasi.",
+      };
+    }
+
+    if (!ekspedisiId) {
+      return {
+        success: false,
+        message: "Vendor ekspedisi penjemput wajib dipilih.",
+      };
+    }
+
+    await db
+      .update(setorSampahWarmiendo)
+      .set({ status: "diverifikasi", ekspedisiId, updatedAt: new Date() })
+      .where(eq(setorSampahWarmiendo.id, id));
+
+    revalidatePath("/setor-sampah");
+    revalidatePath("/laporan/warmiendo");
+    revalidatePath("/laporan/bank-sampah");
+    return {
+      success: true,
+      message:
+        "Setoran berhasil diverifikasi dan ekspedisi penjemput telah ditugaskan.",
+    };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: `Gagal memverifikasi setoran: ${errorMsg}`,
+    };
+  }
+}
+
+// ── BANK SAMPAH: Terima dan finalisasi setoran Warmiendo ─────────────────────
+
+export async function bankSampahTerimaSetoran(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "bank-sampah") {
+    return {
+      success: false,
+      message:
+        "Akses ditolak. Hanya Bank Sampah yang dapat menerima setoran Warmiendo.",
+    };
+  }
+
+  try {
+    const item = await db.query.setorSampahWarmiendo.findFirst({
+      where: eq(setorSampahWarmiendo.id, id),
+    });
+
+    if (!item) {
+      return { success: false, message: "Data setoran tidak ditemukan." };
+    }
+
+    if (item.status !== "diserahkan") {
+      return {
+        success: false,
+        message:
+          "Setoran ini belum dalam status diserahkan — tunggu konfirmasi penyerahan dari Warmiendo.",
+      };
+    }
+
+    // Hitung reward berdasarkan berat & jenis sampah
+    const depositor = await db.query.users.findFirst({
+      where: eq(users.id, item.userId),
+    });
+
+    const { totalPoin, totalKredit } = await calculateSetoranReward(
+      item.jenisSampah,
+      item.beratKg,
+      depositor?.role ?? "warmiendo",
+    );
+
+    // Update saldo nasabah Warmiendo
+    const existingProfile = await db.query.nasabah.findFirst({
+      where: eq(nasabah.userId, item.userId),
+    });
+
+    if (existingProfile) {
+      await db
+        .update(nasabah)
+        .set({
+          poin: existingProfile.poin + totalPoin,
+          kredit: existingProfile.kredit + totalKredit,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.userId, item.userId));
+    } else {
+      await db.insert(nasabah).values({
+        userId: item.userId,
+        poin: totalPoin,
+        kredit: totalKredit,
+      });
+    }
+
+    // Update status setoran ke diterima
+    await db
+      .update(setorSampahWarmiendo)
+      .set({ status: "diterima", totalPoin, updatedAt: new Date() })
+      .where(eq(setorSampahWarmiendo.id, id));
+
+    revalidatePath("/setor-sampah");
+    revalidatePath("/laporan/warmiendo");
+    revalidatePath("/laporan/bank-sampah");
+    return {
+      success: true,
+      message:
+        "Setoran Warmiendo berhasil diterima dan insentif telah dikreditkan ke akun nasabah.",
+    };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: `Gagal menerima setoran: ${errorMsg}`,
+    };
+  }
+}
+
+// ── BANK SAMPAH: Ambil daftar setoran Warmiendo yang perlu dikelola ──────────
+
+export async function getSetoranWarmiendoForBankSampah({
+  page = 1,
+  limit = 20,
+  status = "",
+}: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}): Promise<{
+  data: SetoranType[];
+  total: number;
+}> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "bank-sampah") {
+    return { data: [], total: 0 };
+  }
+
+  const offset = (page - 1) * limit;
+  const filters: SQL[] = [];
+
+  if (status && status !== "Semua") {
+    filters.push(
+      eq(
+        setorSampahWarmiendo.status,
+        status as
+          | "pending"
+          | "diverifikasi"
+          | "diserahkan"
+          | "diterima"
+          | "ditolak",
+      ),
+    );
+  }
+
+  const combinedWhere = filters.length > 0 ? and(...filters) : undefined;
+
+  const [data, countResult] = await Promise.all([
+    db.query.setorSampahWarmiendo.findMany({
+      where: combinedWhere,
+      with: {
+        user: true,
+        ekspedisi: true,
+      },
+      orderBy: [desc(setorSampahWarmiendo.id)],
+      limit,
+      offset,
+    }),
+    db
+      .select({ id: setorSampahWarmiendo.id })
+      .from(setorSampahWarmiendo)
+      .where(combinedWhere),
+  ]);
+
+  return {
+    data: data as SetoranType[],
+    total: countResult.length,
+  };
+}

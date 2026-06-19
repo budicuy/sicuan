@@ -23,7 +23,7 @@ import {
 import { useState } from "react";
 
 interface PetaJalanSampahContentProps {
-  role: "admin" | "superadmin" | "bank-sampah" | "konsumen" | "warmiendo";
+  role?: "admin" | "superadmin" | "bank-sampah" | "konsumen" | "warmiendo";
 }
 
 // Node types
@@ -32,7 +32,9 @@ type KelolaType = "perusahaan" | "bank_sampah" | "bank_sampah_induk" | "tps_3r";
 type PengelolaanType = "pilah_timbang" | "pilah" | "timbang_olah";
 type TujuanType = "produk_olahan" | "tpa";
 
-export function PetaJalanSampahContent({ role }: PetaJalanSampahContentProps) {
+export function PetaJalanSampahContent({
+  role = "admin",
+}: PetaJalanSampahContentProps) {
   // Selections state
   const [sumber, setSumber] = useState<SumberType>(() => {
     if (role === "konsumen") return "rumah_tangga";

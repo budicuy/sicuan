@@ -785,3 +785,10 @@ export async function createSetorSampah(
 export async function getAllActiveEkspedisi() {
   return getEkspedisiFn();
 }
+
+// ── Re-ekspor fungsi Bank Sampah untuk kelola setoran Warmiendo ──────────────
+export {
+  bankSampahTerimaSetoran,
+  bankSampahVerifySetoran,
+  getSetoranWarmiendoForBankSampah,
+} from "@/app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";

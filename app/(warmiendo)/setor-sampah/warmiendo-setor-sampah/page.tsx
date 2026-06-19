@@ -495,7 +495,8 @@ export default function WarmiendoSetorSampah() {
                         Pengajuan Setoran
                       </p>
                       <p className="text-neutral-500 mt-0.5">
-                        Menunggu verifikasi admin untuk penjemputan sampah.
+                        Menunggu verifikasi bank sampah untuk penjemputan
+                        sampah.
                       </p>
                       <p className="text-[10px] text-neutral-400 mt-1">
                         Diajukan:{" "}
@@ -525,7 +526,7 @@ export default function WarmiendoSetorSampah() {
                       </p>
                       <p className="text-neutral-500 mt-0.5">
                         {activeEkspedisiSetoran.status === "pending"
-                          ? "Menunggu penunjukan kurir oleh admin."
+                          ? "Menunggu penunjukan kurir oleh bank sampah."
                           : `Kurir ditunjuk: ${activeEkspedisiSetoran.ekspedisi?.namaVendor || "Ekspedisi"} (${activeEkspedisiSetoran.ekspedisi?.noTelepon || ""})`}
                       </p>
                       {activeEkspedisiSetoran.status === "diverifikasi" && (
