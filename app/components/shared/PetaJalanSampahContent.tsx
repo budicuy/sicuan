@@ -370,7 +370,7 @@ export function PetaJalanSampahContent({
 
               {/* Base background line - serpentine */}
               <path
-                d="M 150,80 L 700,80 A 50,50 0 0,1 750,130 L 750,190 A 50,50 0 0,1 700,240 L 450,240"
+                d="M 150,80 L 750,80 A 50,50 0 0,1 800,130 L 800,190 A 50,50 0 0,1 750,240 L 450,240"
                 fill="none"
                 stroke="#f1f5f9"
                 strokeWidth="6"
@@ -379,7 +379,7 @@ export function PetaJalanSampahContent({
 
               {/* Active flow connection line */}
               <path
-                d="M 150,80 L 700,80 A 50,50 0 0,1 750,130 L 750,190 A 50,50 0 0,1 700,240 L 450,240"
+                d="M 150,80 L 750,80 A 50,50 0 0,1 800,130 L 800,190 A 50,50 0 0,1 750,240 L 450,240"
                 fill="none"
                 stroke="url(#flowGrad)"
                 strokeWidth="5"
@@ -389,7 +389,7 @@ export function PetaJalanSampahContent({
 
               {/* Animated glowing moving dashes */}
               <path
-                d="M 150,80 L 700,80 A 50,50 0 0,1 750,130 L 750,190 A 50,50 0 0,1 700,240 L 450,240"
+                d="M 150,80 L 750,80 A 50,50 0 0,1 800,130 L 800,190 A 50,50 0 0,1 750,240 L 450,240"
                 fill="none"
                 stroke="#3b82f6"
                 strokeWidth="5.5"
