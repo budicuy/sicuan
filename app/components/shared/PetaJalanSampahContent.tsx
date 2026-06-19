@@ -217,16 +217,15 @@ export function PetaJalanSampahContent({
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-              Peta Jalan{" "}
-              <span className="text-primary-600">Sampah Anorganik</span>
+              Peta Jalan <span className="text-blue-600">Sampah Anorganik</span>
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5 max-w-2xl font-medium">
               {getWelcomeText()}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 rounded-xl text-primary-700 text-xs font-bold border border-primary-100 shrink-0 self-stretch md:self-auto justify-center">
-          <Sparkles className="w-4 h-4 text-primary-600" />
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-xl text-blue-700 text-xs font-bold border border-blue-100 shrink-0 self-stretch md:self-auto justify-center">
+          <Sparkles className="w-4 h-4 text-blue-600" />
           <span>Interactive Simulator</span>
         </div>
       </div>
@@ -237,7 +236,7 @@ export function PetaJalanSampahContent({
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-sm font-bold text-neutral-850 flex items-center gap-2 text-neutral-850">
-              <TrendingUp className="w-4.5 h-4.5 text-primary-600" />
+              <TrendingUp className="w-4.5 h-4.5 text-blue-600" />
               Alur Perjalanan Sampah Aktif
             </h2>
             <span className="text-[10px] px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded-md font-medium">
@@ -248,7 +247,7 @@ export function PetaJalanSampahContent({
           {/* Quick Preset Selector */}
           <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200 mb-6 space-y-2.5">
             <div className="flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-primary-600" />
+              <Layers className="w-4 h-4 text-blue-600" />
               <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
                 Pilih Preset Alur
               </span>
@@ -267,7 +266,7 @@ export function PetaJalanSampahContent({
                   kelola === "bank_sampah" &&
                   pengelolaan === "pilah_timbang" &&
                   tujuan === "produk_olahan"
-                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    ? "bg-blue-600 text-white border-primary-600 shadow-sm"
                     : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
                 }`}
               >
@@ -286,7 +285,7 @@ export function PetaJalanSampahContent({
                   kelola === "perusahaan" &&
                   pengelolaan === "timbang_olah" &&
                   tujuan === "produk_olahan"
-                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    ? "bg-blue-600 text-white border-primary-600 shadow-sm"
                     : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
                 }`}
               >
@@ -305,7 +304,7 @@ export function PetaJalanSampahContent({
                   kelola === "bank_sampah" &&
                   pengelolaan === "pilah_timbang" &&
                   tujuan === "produk_olahan"
-                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    ? "bg-blue-600 text-white border-primary-600 shadow-sm"
                     : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
                 }`}
               >
@@ -324,7 +323,7 @@ export function PetaJalanSampahContent({
                   kelola === "tps_3r" &&
                   pengelolaan === "timbang_olah" &&
                   tujuan === "produk_olahan"
-                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    ? "bg-blue-600 text-white border-primary-600 shadow-sm"
                     : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
                 }`}
               >
@@ -334,13 +333,14 @@ export function PetaJalanSampahContent({
           </div>
 
           {/* Desktop SVG Visual Flow Map */}
-          <div className="hidden md:block relative w-full h-44 mb-8">
-            {/* Dotted Connection Lines */}
+          <div className="hidden md:block relative w-full h-[320px] mb-12 bg-white rounded-2xl border border-neutral-100 p-6 shadow-2xs overflow-hidden">
+            {/* Dotted/Serpentine Connection Lines */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none"
+              viewBox="0 0 900 320"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <title>Dotted Connection Lines</title>
+              <title>Serpentine Connection Lines</title>
               <style>{`
                 @keyframes flow-dash {
                   to {
@@ -348,202 +348,314 @@ export function PetaJalanSampahContent({
                   }
                 }
                 .animate-flow-dash {
-                  animation: flow-dash 1.5s linear infinite;
+                  animation: flow-dash 1.8s linear infinite;
                 }
               `}</style>
               <defs>
                 <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                  <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#059669" stopOpacity="0.3" />
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                  <stop offset="50%" stopColor="#2563eb" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.3" />
                 </linearGradient>
                 <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
                   <feDropShadow
                     dx="0"
                     dy="0"
-                    stdDeviation="3"
-                    floodColor="#10b981"
-                    floodOpacity="0.6"
+                    stdDeviation="4"
+                    floodColor="#3b82f6"
+                    floodOpacity="0.5"
                   />
                 </filter>
               </defs>
 
-              {/* Base background line - stretches from 5% to 95% of width */}
-              <line
-                x1="5%"
-                y1="50%"
-                x2="95%"
-                y2="50%"
-                stroke="#e2e8f0"
-                strokeWidth="4"
+              {/* Base background line - serpentine */}
+              <path
+                d="M 150,80 L 700,80 A 50,50 0 0,1 750,130 L 750,190 A 50,50 0 0,1 700,240 L 450,240"
+                fill="none"
+                stroke="#f1f5f9"
+                strokeWidth="6"
                 strokeLinecap="round"
               />
 
               {/* Active flow connection line */}
-              <line
-                x1="5%"
-                y1="50%"
-                x2="95%"
-                y2="50%"
+              <path
+                d="M 150,80 L 700,80 A 50,50 0 0,1 750,130 L 750,190 A 50,50 0 0,1 700,240 L 450,240"
+                fill="none"
                 stroke="url(#flowGrad)"
-                strokeWidth="4.5"
+                strokeWidth="5"
                 strokeLinecap="round"
                 filter="url(#glow)"
               />
 
               {/* Animated glowing moving dashes */}
-              <line
-                x1="5%"
-                y1="50%"
-                x2="95%"
-                y2="50%"
-                stroke="#34d399"
-                strokeWidth="5"
+              <path
+                d="M 150,80 L 700,80 A 50,50 0 0,1 750,130 L 750,190 A 50,50 0 0,1 700,240 L 450,240"
+                fill="none"
+                stroke="#3b82f6"
+                strokeWidth="5.5"
                 strokeLinecap="round"
-                strokeDasharray="10 25"
+                strokeDasharray="12 24"
                 className="animate-flow-dash"
                 filter="url(#glow)"
               />
+
+              {/* Faded feedback connection to the Info Card */}
+              <line
+                x1="450"
+                y1="240"
+                x2="150"
+                y2="240"
+                fill="none"
+                stroke="#94a3b8"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray="4 6"
+                opacity="0.5"
+              />
             </svg>
 
-            {/* Node Placements */}
-            <div className="absolute inset-0 flex justify-between items-center px-4">
+            {/* Node placements & summary card */}
+            <div className="absolute inset-0 relative w-full h-full">
               {/* Node 1: Sumber */}
-              <button
-                type="button"
-                onClick={() => setActiveStep(1)}
-                className={`relative z-10 w-16 h-16 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
-                  activeStep === 1
-                    ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-110 ring-4 ring-primary-100"
-                    : "bg-white text-neutral-600 border border-neutral-200 hover:border-primary-400"
-                }`}
+              <div
+                className="absolute"
+                style={{
+                  left: "16.67%",
+                  top: "25%",
+                  transform: "translate(-50%, -50%)",
+                }}
               >
-                <curSumber.icon className="w-6 h-6" />
-                <span className="text-[9px] font-bold mt-1 text-center truncate max-w-full px-1">
-                  Sumber
-                </span>
-                {activeStep === 1 && (
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[8px] font-bold py-0.5 px-1.5 rounded-md whitespace-nowrap shadow-xs">
+                <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Step 1: Sumber
+                  </span>
+                  <span
+                    className={`text-[11px] font-black mt-0.5 ${activeStep === 1 ? "text-blue-600" : "text-neutral-700"}`}
+                  >
                     {curSumber.label}
                   </span>
-                )}
-              </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(1)}
+                  className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                    activeStep === 1
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110 ring-4 ring-blue-100 border-2 border-blue-400"
+                      : "bg-white text-neutral-600 border-2 border-neutral-200 hover:border-blue-400 hover:text-blue-600"
+                  }`}
+                >
+                  <curSumber.icon className="w-6 h-6" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-[9px] shadow-sm border border-white">
+                    1
+                  </span>
+                </button>
+              </div>
 
               {/* Node 2: Dikelola */}
-              <button
-                type="button"
-                onClick={() => setActiveStep(2)}
-                className={`relative z-10 w-16 h-16 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
-                  activeStep === 2
-                    ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-110 ring-4 ring-primary-100"
-                    : "bg-white text-neutral-600 border border-neutral-200 hover:border-primary-400"
-                }`}
+              <div
+                className="absolute"
+                style={{
+                  left: "50%",
+                  top: "25%",
+                  transform: "translate(-50%, -50%)",
+                }}
               >
-                <curKelola.icon className="w-6 h-6" />
-                <span className="text-[9px] font-bold mt-1 text-center truncate max-w-full px-1">
-                  Dikelola
-                </span>
-                {activeStep === 2 && (
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[8px] font-bold py-0.5 px-1.5 rounded-md whitespace-nowrap shadow-xs">
+                <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Step 2: Pengelola
+                  </span>
+                  <span
+                    className={`text-[11px] font-black mt-0.5 ${activeStep === 2 ? "text-blue-600" : "text-neutral-700"}`}
+                  >
                     {curKelola.label}
                   </span>
-                )}
-              </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(2)}
+                  className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                    activeStep === 2
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110 ring-4 ring-blue-100 border-2 border-blue-400"
+                      : "bg-white text-neutral-600 border-2 border-neutral-200 hover:border-blue-400 hover:text-blue-600"
+                  }`}
+                >
+                  <curKelola.icon className="w-6 h-6" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-[9px] shadow-sm border border-white">
+                    2
+                  </span>
+                </button>
+              </div>
 
-              {/* Node 3: Cara Pengelolaan */}
-              <button
-                type="button"
-                onClick={() => setActiveStep(3)}
-                className={`relative z-10 w-16 h-16 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
-                  activeStep === 3
-                    ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-110 ring-4 ring-primary-100"
-                    : "bg-white text-neutral-600 border border-neutral-200 hover:border-primary-400"
-                }`}
+              {/* Node 3: Metode Pengolahan */}
+              <div
+                className="absolute"
+                style={{
+                  left: "83.33%",
+                  top: "25%",
+                  transform: "translate(-50%, -50%)",
+                }}
               >
-                <curPengelolaan.icon className="w-6 h-6" />
-                <span className="text-[9px] font-bold mt-1 text-center truncate max-w-full px-1">
-                  Metode
-                </span>
-                {activeStep === 3 && (
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[8px] font-bold py-0.5 px-1.5 rounded-md whitespace-nowrap shadow-xs">
+                <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Step 3: Metode
+                  </span>
+                  <span
+                    className={`text-[11px] font-black mt-0.5 ${activeStep === 3 ? "text-blue-600" : "text-neutral-700"}`}
+                  >
                     {curPengelolaan.label}
                   </span>
-                )}
-              </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(3)}
+                  className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                    activeStep === 3
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110 ring-4 ring-blue-100 border-2 border-blue-400"
+                      : "bg-white text-neutral-600 border-2 border-neutral-200 hover:border-blue-400 hover:text-blue-600"
+                  }`}
+                >
+                  <curPengelolaan.icon className="w-6 h-6" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-[9px] shadow-sm border border-white">
+                    3
+                  </span>
+                </button>
+              </div>
 
               {/* Node 4: Tujuan */}
-              <button
-                type="button"
-                onClick={() => setActiveStep(4)}
-                className={`relative z-10 w-16 h-16 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
-                  activeStep === 4
-                    ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-110 ring-4 ring-primary-100"
-                    : "bg-white text-neutral-600 border border-neutral-200 hover:border-primary-400"
-                }`}
+              <div
+                className="absolute"
+                style={{
+                  left: "83.33%",
+                  top: "75%",
+                  transform: "translate(-50%, -50%)",
+                }}
               >
-                <curTujuan.icon className="w-6 h-6" />
-                <span className="text-[9px] font-bold mt-1 text-center truncate max-w-full px-1">
-                  Tujuan
-                </span>
-                {activeStep === 4 && (
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[8px] font-bold py-0.5 px-1.5 rounded-md whitespace-nowrap shadow-xs">
+                <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Step 4: Tujuan
+                  </span>
+                  <span
+                    className={`text-[11px] font-black mt-0.5 ${activeStep === 4 ? "text-blue-600" : "text-neutral-700"}`}
+                  >
                     {curTujuan.label}
                   </span>
-                )}
-              </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(4)}
+                  className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                    activeStep === 4
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110 ring-4 ring-blue-100 border-2 border-blue-400"
+                      : "bg-white text-neutral-600 border-2 border-neutral-200 hover:border-blue-400 hover:text-blue-600"
+                  }`}
+                >
+                  <curTujuan.icon className="w-6 h-6" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-[9px] shadow-sm border border-white">
+                    4
+                  </span>
+                </button>
+              </div>
 
               {/* Node 5: Proses Akhir */}
-              <button
-                type="button"
-                onClick={() => setActiveStep(5)}
-                className={`relative z-10 w-16 h-16 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
-                  activeStep === 5
-                    ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-110 ring-4 ring-primary-100"
-                    : "bg-white text-neutral-600 border border-neutral-200 hover:border-primary-400"
-                }`}
+              <div
+                className="absolute"
+                style={{
+                  left: "50%",
+                  top: "75%",
+                  transform: "translate(-50%, -50%)",
+                }}
               >
-                {tujuan === "produk_olahan" ? (
-                  <Recycle className="w-6 h-6 text-emerald-600" />
-                ) : (
-                  <Trash2 className="w-6 h-6 text-red-500" />
-                )}
-                <span className="text-[9px] font-bold mt-1 text-center truncate max-w-full px-1">
-                  Akhir
-                </span>
-                {activeStep === 5 && (
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[8px] font-bold py-0.5 px-1.5 rounded-md whitespace-nowrap shadow-xs">
+                <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Step 5: Dampak Akhir
+                  </span>
+                  <span
+                    className={`text-[11px] font-black mt-0.5 ${activeStep === 5 ? "text-blue-600" : "text-neutral-700"}`}
+                  >
                     {tujuan === "produk_olahan"
                       ? "Ekonomi Sirkular"
                       : "Residu TPA"}
                   </span>
-                )}
-              </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(5)}
+                  className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                    activeStep === 5
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110 ring-4 ring-blue-100 border-2 border-blue-400"
+                      : "bg-white text-neutral-600 border-2 border-neutral-200 hover:border-blue-400 hover:text-blue-600"
+                  }`}
+                >
+                  {tujuan === "produk_olahan" ? (
+                    <Recycle className="w-6 h-6 text-emerald-600 animate-spin-slow" />
+                  ) : (
+                    <Trash2 className="w-6 h-6 text-red-500" />
+                  )}
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-[9px] shadow-sm border border-white">
+                    5
+                  </span>
+                </button>
+              </div>
+
+              {/* Col 1, Row 2: Info/Summary Card */}
+              <div
+                className="absolute"
+                style={{
+                  left: "16.67%",
+                  top: "75%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <div className="w-48 h-[88px] bg-neutral-50 border border-neutral-200 rounded-2xl p-3 shadow-xs flex flex-col justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">
+                      Dampak Alur
+                    </span>
+                    <span
+                      className={`text-[10px] font-black mt-1 self-start inline-block px-1.5 py-0.5 rounded-md border ${
+                        tujuan === "produk_olahan"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-250 animate-pulse"
+                          : "bg-red-50 text-red-700 border-red-250"
+                      }`}
+                    >
+                      {tujuan === "produk_olahan"
+                        ? "Ekonomi Sirkular"
+                        : "Residu TPA"}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-neutral-500 font-medium leading-tight">
+                    {tujuan === "produk_olahan"
+                      ? "Bahan disalurkan ke rantai upcycling."
+                      : "Bahan dibuang dan menumpuk di TPA."}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Mobile Vertical Flow Map (Visible only on small screens) */}
-          <div className="md:hidden space-y-4 mb-6 relative pl-6 border-l-2 border-dashed border-primary-200 py-2">
+          <div className="md:hidden space-y-4 mb-6 relative pl-6 border-l-2 border-dashed border-blue-200 py-2">
             {/* Mobile Step 1 */}
             <button
               type="button"
               onClick={() => setActiveStep(1)}
               className={`w-full text-left font-normal relative flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                 activeStep === 1
-                  ? "bg-primary-50/50 border-primary-300 font-bold"
+                  ? "bg-blue-50/50 border-blue-300 font-bold shadow-2xs"
                   : "bg-white border-neutral-200"
               }`}
             >
               <div
                 className={`absolute -left-[35px] w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
                   activeStep === 1
-                    ? "bg-primary-600 text-white"
-                    : "bg-white border border-primary-300 text-primary-600"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-blue-300 text-blue-600"
                 }`}
               >
                 1
               </div>
               <curSumber.icon
-                className={`w-5 h-5 ${activeStep === 1 ? "text-primary-650" : "text-neutral-500"}`}
+                className={`w-5 h-5 ${activeStep === 1 ? "text-blue-600" : "text-neutral-500"}`}
               />
               <div>
                 <span className="text-[10px] text-neutral-400 uppercase block font-semibold">
@@ -561,21 +673,21 @@ export function PetaJalanSampahContent({
               onClick={() => setActiveStep(2)}
               className={`w-full text-left font-normal relative flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                 activeStep === 2
-                  ? "bg-primary-50/50 border-primary-300 font-bold"
+                  ? "bg-blue-50/50 border-blue-300 font-bold shadow-2xs"
                   : "bg-white border-neutral-200"
               }`}
             >
               <div
                 className={`absolute -left-[35px] w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
                   activeStep === 2
-                    ? "bg-primary-600 text-white"
-                    : "bg-white border border-primary-300 text-primary-600"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-blue-300 text-blue-600"
                 }`}
               >
                 2
               </div>
               <curKelola.icon
-                className={`w-5 h-5 ${activeStep === 2 ? "text-primary-650" : "text-neutral-500"}`}
+                className={`w-5 h-5 ${activeStep === 2 ? "text-blue-600" : "text-neutral-500"}`}
               />
               <div>
                 <span className="text-[10px] text-neutral-400 uppercase block font-semibold">
@@ -593,21 +705,21 @@ export function PetaJalanSampahContent({
               onClick={() => setActiveStep(3)}
               className={`w-full text-left font-normal relative flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                 activeStep === 3
-                  ? "bg-primary-50/50 border-primary-300 font-bold"
+                  ? "bg-blue-50/50 border-blue-300 font-bold shadow-2xs"
                   : "bg-white border-neutral-200"
               }`}
             >
               <div
                 className={`absolute -left-[35px] w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
                   activeStep === 3
-                    ? "bg-primary-600 text-white"
-                    : "bg-white border border-primary-300 text-primary-600"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-blue-300 text-blue-600"
                 }`}
               >
                 3
               </div>
               <curPengelolaan.icon
-                className={`w-5 h-5 ${activeStep === 3 ? "text-primary-650" : "text-neutral-500"}`}
+                className={`w-5 h-5 ${activeStep === 3 ? "text-blue-600" : "text-neutral-500"}`}
               />
               <div>
                 <span className="text-[10px] text-neutral-400 uppercase block font-semibold">
@@ -625,21 +737,21 @@ export function PetaJalanSampahContent({
               onClick={() => setActiveStep(4)}
               className={`w-full text-left font-normal relative flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                 activeStep === 4
-                  ? "bg-primary-50/50 border-primary-300 font-bold"
+                  ? "bg-blue-50/50 border-blue-300 font-bold shadow-2xs"
                   : "bg-white border-neutral-200"
               }`}
             >
               <div
                 className={`absolute -left-[35px] w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
                   activeStep === 4
-                    ? "bg-primary-600 text-white"
-                    : "bg-white border border-primary-300 text-primary-600"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-blue-300 text-blue-600"
                 }`}
               >
                 4
               </div>
               <curTujuan.icon
-                className={`w-5 h-5 ${activeStep === 4 ? "text-primary-650" : "text-neutral-500"}`}
+                className={`w-5 h-5 ${activeStep === 4 ? "text-blue-600" : "text-neutral-500"}`}
               />
               <div>
                 <span className="text-[10px] text-neutral-400 uppercase block font-semibold">
@@ -657,15 +769,15 @@ export function PetaJalanSampahContent({
               onClick={() => setActiveStep(5)}
               className={`w-full text-left font-normal relative flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                 activeStep === 5
-                  ? "bg-primary-50/50 border-primary-300 font-bold"
+                  ? "bg-blue-50/50 border-blue-300 font-bold shadow-2xs"
                   : "bg-white border-neutral-200"
               }`}
             >
               <div
                 className={`absolute -left-[35px] w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
                   activeStep === 5
-                    ? "bg-primary-600 text-white"
-                    : "bg-white border border-primary-300 text-primary-600"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-blue-300 text-blue-600"
                 }`}
               >
                 5
@@ -712,7 +824,7 @@ export function PetaJalanSampahContent({
               {activeStep === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-bold text-primary-600 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                       Langkah 1 dari 5
                     </span>
                     <h3 className="text-lg font-black text-neutral-900 mt-1">
@@ -747,14 +859,14 @@ export function PetaJalanSampahContent({
                             onClick={() => handleSumberChange(key)}
                             className={`text-left font-normal group flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                               isSelected
-                                ? "bg-primary-50/40 border-primary-500 ring-2 ring-primary-50"
+                                ? "bg-blue-50/40 border-blue-500 ring-2 ring-blue-50"
                                 : "bg-white border-neutral-200 hover:bg-neutral-50/50 hover:border-neutral-300"
                             }`}
                           >
                             <div
                               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected
-                                  ? "bg-primary-600 text-white"
+                                  ? "bg-blue-600 text-white"
                                   : "bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200"
                               }`}
                             >
@@ -763,7 +875,7 @@ export function PetaJalanSampahContent({
                             <div className="space-y-0.5 flex-1">
                               <div className="flex items-center justify-between">
                                 <span
-                                  className={`text-xs font-bold ${isSelected ? "text-primary-700" : "text-neutral-800"}`}
+                                  className={`text-xs font-bold ${isSelected ? "text-blue-700" : "text-neutral-800"}`}
                                 >
                                   {opt.label}
                                 </span>
@@ -786,7 +898,7 @@ export function PetaJalanSampahContent({
               {activeStep === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-bold text-primary-600 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                       Langkah 2 dari 5
                     </span>
                     <h3 className="text-lg font-black text-neutral-900 mt-1">
@@ -822,14 +934,14 @@ export function PetaJalanSampahContent({
                             onClick={() => setKelola(key)}
                             className={`text-left font-normal group flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                               isSelected
-                                ? "bg-primary-50/40 border-primary-500 ring-2 ring-primary-50"
+                                ? "bg-blue-50/40 border-blue-500 ring-2 ring-blue-50"
                                 : "bg-white border-neutral-200 hover:bg-neutral-50/50 hover:border-neutral-300"
                             }`}
                           >
                             <div
                               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected
-                                  ? "bg-primary-600 text-white"
+                                  ? "bg-blue-600 text-white"
                                   : "bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200"
                               }`}
                             >
@@ -837,7 +949,7 @@ export function PetaJalanSampahContent({
                             </div>
                             <div className="space-y-0.5 flex-1">
                               <span
-                                className={`text-xs font-bold ${isSelected ? "text-primary-700" : "text-neutral-800"} block`}
+                                className={`text-xs font-bold ${isSelected ? "text-blue-700" : "text-neutral-800"} block`}
                               >
                                 {opt.label}
                               </span>
@@ -856,7 +968,7 @@ export function PetaJalanSampahContent({
               {activeStep === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-bold text-primary-600 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                       Langkah 3 dari 5
                     </span>
                     <h3 className="text-lg font-black text-neutral-900 mt-1">
@@ -892,14 +1004,14 @@ export function PetaJalanSampahContent({
                             onClick={() => setPengelolaan(key)}
                             className={`text-left font-normal group flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                               isSelected
-                                ? "bg-primary-50/40 border-primary-500 ring-2 ring-primary-50"
+                                ? "bg-blue-50/40 border-blue-500 ring-2 ring-blue-50"
                                 : "bg-white border-neutral-200 hover:bg-neutral-50/50 hover:border-neutral-300"
                             }`}
                           >
                             <div
                               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected
-                                  ? "bg-primary-600 text-white"
+                                  ? "bg-blue-600 text-white"
                                   : "bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200"
                               }`}
                             >
@@ -907,7 +1019,7 @@ export function PetaJalanSampahContent({
                             </div>
                             <div className="space-y-0.5 flex-1">
                               <span
-                                className={`text-xs font-bold ${isSelected ? "text-primary-700" : "text-neutral-800"} block`}
+                                className={`text-xs font-bold ${isSelected ? "text-blue-700" : "text-neutral-800"} block`}
                               >
                                 {opt.label}
                               </span>
@@ -926,7 +1038,7 @@ export function PetaJalanSampahContent({
               {activeStep === 4 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-bold text-primary-600 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                       Langkah 4 dari 5
                     </span>
                     <h3 className="text-lg font-black text-neutral-900 mt-1">
@@ -962,14 +1074,14 @@ export function PetaJalanSampahContent({
                             onClick={() => setTujuan(key)}
                             className={`text-left font-normal group flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                               isSelected
-                                ? "bg-primary-50/40 border-primary-500 ring-2 ring-primary-50"
+                                ? "bg-blue-50/40 border-blue-500 ring-2 ring-blue-50"
                                 : "bg-white border-neutral-200 hover:bg-neutral-50/50 hover:border-neutral-300"
                             }`}
                           >
                             <div
                               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected
-                                  ? "bg-primary-600 text-white"
+                                  ? "bg-blue-600 text-white"
                                   : "bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200"
                               }`}
                             >
@@ -977,7 +1089,7 @@ export function PetaJalanSampahContent({
                             </div>
                             <div className="space-y-0.5 flex-1">
                               <span
-                                className={`text-xs font-bold ${isSelected ? "text-primary-700" : "text-neutral-800"} block`}
+                                className={`text-xs font-bold ${isSelected ? "text-blue-700" : "text-neutral-800"} block`}
                               >
                                 {opt.label}
                               </span>
@@ -996,7 +1108,7 @@ export function PetaJalanSampahContent({
               {activeStep === 5 && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-bold text-primary-600 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                       Tahap Akhir
                     </span>
                     <h3 className="text-lg font-black text-neutral-900 mt-1">
@@ -1092,7 +1204,7 @@ export function PetaJalanSampahContent({
                       key={step}
                       className={`w-1.5 h-1.5 rounded-full transition-all ${
                         activeStep === step
-                          ? "w-3 bg-primary-600"
+                          ? "w-3 bg-blue-600"
                           : "bg-neutral-300"
                       }`}
                     />
@@ -1116,7 +1228,7 @@ export function PetaJalanSampahContent({
                           prev !== null ? Math.min(5, prev + 1) : null,
                         )
                       }
-                      className="px-3.5 py-2 rounded-lg text-xs font-bold bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-1 border-0 cursor-pointer shadow-sm"
+                      className="px-3.5 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-primary-700 text-white flex items-center gap-1 border-0 cursor-pointer shadow-sm"
                     >
                       Lanjut
                       <ChevronRight className="w-3.5 h-3.5" />
