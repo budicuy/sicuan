@@ -7,6 +7,11 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
 import {
+  bankSampahTerimaSetoran as _bankSampahTerimaSetoran,
+  bankSampahVerifySetoran as _bankSampahVerifySetoran,
+  getSetoranWarmiendoForBankSampah as _getSetoranWarmiendoForBankSampah,
+} from "@/app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";
+import {
   readWeightFromImage,
   validateBeratTolerance,
 } from "@/app/lib/gemini-weight-reader";
@@ -786,9 +791,34 @@ export async function getAllActiveEkspedisi() {
   return getEkspedisiFn();
 }
 
-// ── Re-ekspor fungsi Bank Sampah untuk kelola setoran Warmiendo ──────────────
-export {
-  bankSampahTerimaSetoran,
-  bankSampahVerifySetoran,
-  getSetoranWarmiendoForBankSampah,
-} from "@/app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";
+// ── Fungsi Bank Sampah untuk kelola setoran Warmiendo ────────────────────────
+// Catatan: "use server" hanya mendukung direct async function exports,
+// sehingga fungsi di bawah ini adalah wrapper dari warmiendo action.
+
+export async function bankSampahVerifySetoran(
+  id: number,
+  ekspedisiId: number,
+): Promise<{ success: boolean; message: string }> {
+  return _bankSampahVerifySetoran(id, ekspedisiId);
+}
+
+export async function bankSampahTerimaSetoran(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  return _bankSampahTerimaSetoran(id);
+}
+
+export async function getSetoranWarmiendoForBankSampah({
+  page = 1,
+  limit = 20,
+  status = "",
+}: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}): Promise<{
+  data: SetoranType[];
+  total: number;
+}> {
+  return _getSetoranWarmiendoForBankSampah({ page, limit, status });
+}

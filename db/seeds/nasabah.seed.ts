@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { notInArray } from "drizzle-orm";
 import { db } from "@/db";
 import { nasabah, users } from "@/db/schema";
@@ -14,8 +16,8 @@ export async function seedNasabah() {
     where: notInArray(users.role, ["admin", "superadmin"]),
   });
 
-  const banks = ["BCA", "BRI", "Mandiri", "BNI", "BSI", "BTN"];
-  const addresses = [
+  const _banks = ["BCA", "BRI", "Mandiri", "BNI", "BSI", "BTN"];
+  const _addresses = [
     "Jl. Ahmad Yani KM 1, Banjarmasin",
     "Jl. Hasan Basry No. 42, Banjarmasin",
     "Jl. Pramuka Raya No. 12, Banjarmasin",
@@ -23,12 +25,37 @@ export async function seedNasabah() {
     "Jl. Sultan Adam No. 5, Banjarmasin",
   ];
 
+  // Parse CSV users for birthdates
+  const csvUsersMap = new Map<string, string>();
+  try {
+    const csvPath = path.join(process.cwd(), "db/csv/datauser.csv");
+    const csvContent = fs.readFileSync(csvPath, "utf-8");
+    const lines = csvContent.split("\n");
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const parts = line.split(",");
+      if (parts.length < 3) continue;
+      const nik = parts[0].trim();
+      const birthdate = parts[2].trim();
+
+      // Normalize birthdate from MM/DD/YYYY to YYYY-MM-DD
+      const dateParts = birthdate.split("/");
+      if (dateParts.length === 3) {
+        const normalized = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
+        csvUsersMap.set(nik, normalized);
+      }
+    }
+  } catch (error) {
+    console.error(
+      "⚠️ Error reading or parsing users CSV in nasabah seed:",
+      error,
+    );
+  }
+
   const data = [];
   for (let i = 0; i < listUsers.length; i++) {
     const user = listUsers[i];
-    const bank = banks[i % banks.length];
-    const address = addresses[i % addresses.length];
-    const birthDate = `19${75 + (i % 25)}-08-17`;
 
     let poin = 0;
     let kredit = 0;
@@ -45,14 +72,33 @@ export async function seedNasabah() {
       kredit = 40000; // 90000 earned - 50000 (40k + 10k) withdrawn
     }
 
+    // Determine NIK and Tanggal Lahir
+    let nik = "";
+    let tanggalLahir = "";
+
+    if (user.username === "budi.santoso") {
+      nik = "637101000000000";
+      tanggalLahir = "1995-08-17";
+    } else if (user.username === "warmiendo.demo") {
+      nik = "637102000000000";
+      tanggalLahir = "1990-08-17";
+    } else if (user.username === "banksampah.demo") {
+      nik = "637103000000000";
+      tanggalLahir = "1985-08-17";
+    } else {
+      // It's a CSV user, username is their NIK
+      nik = user.username;
+      tanggalLahir = csvUsersMap.get(user.username) || "1990-01-01";
+    }
+
     data.push({
       userId: user.id,
-      nik: `63710${1000000000 + i}`,
-      tanggalLahir: birthDate,
-      noTelepon: `081234567${String(100 + i)}`,
-      alamat: address,
-      jenisBank: bank,
-      noRekening: `1002003${String(1000 + i)}`,
+      nik,
+      tanggalLahir,
+      noTelepon: null, // Emptied/nullable as requested
+      alamat: null, // Emptied/nullable as requested
+      jenisBank: null, // Emptied/nullable as requested
+      noRekening: null, // Emptied/nullable as requested
       poin,
       kredit,
     });

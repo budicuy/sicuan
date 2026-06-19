@@ -165,7 +165,8 @@ export default function LoginPage() {
                 Masuk ke Akun
               </h2>
               <p className="text-xs text-neutral-500">
-                Masukkan username dan kata sandi Anda untuk mengakses layanan.
+                Masukkan NIK &amp; tanggal lahir (atau username &amp; kata
+                sandi) Anda untuk mengakses layanan.
               </p>
             </div>
 
@@ -268,6 +269,28 @@ export default function LoginPage() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span>•</span>
                       <span className="font-semibold text-neutral-800">
+                        200032 (Martin)
+                      </span>
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase border border-emerald-200">
+                        Nasabah CSV
+                      </span>
+                      <span className="text-neutral-500 font-mono text-[9px]">
+                        (Lahir: 24/03/1968)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUseDemo("200032", "24/03/1968")}
+                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
+                    >
+                      Gunakan ini
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>•</span>
+                      <span className="font-semibold text-neutral-800">
                         warmiendo.demo
                       </span>
                       <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase border border-amber-200">
@@ -320,7 +343,7 @@ export default function LoginPage() {
                   htmlFor="username"
                   className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
                 >
-                  Username / ID Pengguna
+                  NIK / Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
@@ -334,7 +357,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
-                    placeholder="Masukkan username Anda"
+                    placeholder="Masukkan NIK atau username Anda"
                   />
                 </div>
               </div>
@@ -346,7 +369,7 @@ export default function LoginPage() {
                     htmlFor="password"
                     className="text-xs font-bold text-neutral-700 uppercase tracking-wider"
                   >
-                    Kata Sandi
+                    Tanggal Lahir / Kata Sandi
                   </label>
                   <button
                     type="button"
@@ -368,7 +391,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
-                    placeholder="Masukkan kata sandi Anda"
+                    placeholder="Contoh: 24/03/1968 atau password"
                   />
                   <button
                     type="button"

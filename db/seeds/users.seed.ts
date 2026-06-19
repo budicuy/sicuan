@@ -1,9 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
 import argon2 from "argon2";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 
 export async function seedUsers() {
-  console.log("🌱 Seeding 55 users (5 mandatory + 50 random)...");
+  console.log("🌱 Seeding users from CSV and mandatory users...");
 
   // Hashing passwords for mandatory users
   const hashSuperadmin = await argon2.hash("PasswordSuper123");
@@ -49,90 +51,35 @@ export async function seedUsers() {
     },
   ];
 
-  const firstNames = [
-    "Andi",
-    "Siti",
-    "Dewi",
-    "Eko",
-    "Joko",
-    "Rudi",
-    "Slamet",
-    "Agus",
-    "Heri",
-    "Rina",
-    "Santi",
-    "Mega",
-    "Lina",
-    "Dian",
-    "Ari",
-    "Dani",
-    "Hadi",
-    "Indra",
-    "Taufik",
-    "Ahmad",
-    "Muhammad",
-    "Ali",
-    "Hasan",
-    "Husin",
-    "Umar",
-    "Abu",
-    "Anas",
-    "Yusuf",
-    "Ibrahim",
-    "Dewo",
-  ];
+  // Parse CSV users
+  try {
+    const csvPath = path.join(process.cwd(), "db/csv/datauser.csv");
+    const csvContent = fs.readFileSync(csvPath, "utf-8");
+    const lines = csvContent.split("\n");
 
-  const lastNames = [
-    "Wijaya",
-    "Susanto",
-    "Saputra",
-    "Pratama",
-    "Hidayat",
-    "Kurniawan",
-    "Setyawan",
-    "Budiman",
-    "Gunawan",
-    "Sari",
-    "Lestari",
-    "Wulandari",
-    "Rahayu",
-    "Utami",
-    "Putri",
-    "Kartika",
-    "Fitriani",
-    "Ningsih",
-    "Amalia",
-    "Siregar",
-    "Nasution",
-    "Ginting",
-    "Harahap",
-    "Lubis",
-  ];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
 
-  // Generate 50 random users
-  for (let i = 1; i <= 50; i++) {
-    const firstName = firstNames[i % firstNames.length];
-    const lastName = lastNames[(i * 3) % lastNames.length];
-    const name = `${firstName} ${lastName}`;
-    const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${i}`;
+      const parts = line.split(",");
+      if (parts.length < 3) continue;
 
-    // Random role distribution among non-admin/superadmin roles
-    let role: "konsumen" | "warmiendo" | "bank-sampah" = "konsumen";
-    if (i % 3 === 0) {
-      role = "konsumen";
-    } else if (i % 3 === 1) {
-      role = "warmiendo";
-    } else {
-      role = "bank-sampah";
+      const nik = parts[0].trim();
+      const name = parts[1].trim();
+      const birthdate = parts[2].trim();
+
+      if (!nik || !name || !birthdate) continue;
+
+      data.push({
+        name,
+        username: nik,
+        password: hashDefault, // Use hashDefault to optimize speed (Argon2 is slow)
+        role: "konsumen" as const,
+        status: "Aktif",
+      });
     }
-
-    data.push({
-      name,
-      username,
-      password: hashDefault,
-      role,
-      status: "Aktif",
-    });
+  } catch (error) {
+    console.error("⚠️ Error reading or parsing users CSV:", error);
   }
 
   // Clear existing users before seeding to ensure complete consistency

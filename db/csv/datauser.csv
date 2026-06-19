@@ -1,0 +1,808 @@
+NIK             , Nama User                         , Birthdate
+  200032, Martin Hardja                     , 03/24/1968
+ 1200056, Sudarto                           , 01/30/1972
+ 1200060, Heppy Ariyanto                    , 11/05/1972
+ 1200061, Endang Wahyuningsih               , 07/16/1973
+ 1200115, Darsani                           , 09/28/1971
+ 1200122, Abdul Rahim                       , 09/22/1971
+ 1200149, Totok Triatmoko                   , 09/29/1973
+ 1200150, Abdi Rama                         , 11/22/1973
+ 1200159, Titin Jumiati                     , 08/31/1972
+ 1200184, Taslimah                          , 04/22/1972
+ 1200186, Halidah                           , 07/08/1973
+ 1200191, Jainah                            , 03/04/1973
+ 1200192, Sri Hartini                       , 05/19/1972
+ 1200222, Suharto                           , 10/01/1972
+ 1200226, Masriono                          , 08/15/1971
+ 1200228, Jamainsyah                        , 12/03/1973
+ 1200239, Bambang Hariyatin                 , 08/01/1971
+ 1200241, Muhammad Akhbari                  , 11/15/1971
+ 1200263, Muhammad Ikhsan                   , 01/08/1974
+ 1200266, Agus Jaya Nurhadi                 , 08/14/1971
+ 1200268, Mega Triyani                      , 03/05/1972
+ 1200286, Asmiah                            , 12/25/1971
+ 1200290, Endang Sulastri                   , 01/03/1974
+ 1200312, Siti Nurningsih                   , 12/08/1972
+ 1200320, Fitriah                           , 11/29/1971
+ 1200321, Jasmawati                         , 04/08/1974
+ 1200326, Mastawiyah                        , 08/21/1971
+ 1200329, Rahmawati                         , 03/13/1972
+ 1200335, Ora Et Labora                     , 03/16/1972
+ 1200337, Suparjo                           , 09/11/1973
+ 1200338, Putut Handoko                     , 02/19/1973
+ 1200341, Mamik Winarti                     , 04/24/1972
+ 1200390, Hasnah                            , 03/25/1973
+ 1200395, Ramli Saleh                       , 05/06/1973
+ 1200399, Usnatun Hasanah                   , 12/02/1974
+ 1200403, Ruciani                           , 06/08/1972
+ 1200406, Endro Sugito                      , 05/05/1975
+ 1200407, Triyanto                          , 09/10/1971
+ 1200408, Suyadi                            , 02/07/1972
+ 1200410, Budiyono                          , 05/17/1972
+ 1200411, Mardani                           , 05/27/1974
+ 1200417, Sutarso                           , 09/15/1972
+ 1200426, Suyatno                           , 07/13/1975
+ 1200429, Nazaruddin                        , 05/10/1974
+ 1200434, Primanto                          , 12/22/1971
+ 1200441, Elly Rahmah                       , 06/11/1973
+ 1200442, Siti Rabiatul                     , 01/02/1974
+ 1200446, Chalisah                          , 06/18/1971
+ 1200457, Rusdiansyah                       , 05/05/1973
+ 1200465, Supriyono                         , 07/15/1973
+ 1200477, Wahyuni                           , 05/11/1975
+ 1200492, Tuti Budi Lestari                 , 02/09/1975
+ 1200518, Suparno                           , 07/03/1975
+ 1200541, Sri Widodo                        , 11/27/1975
+ 1200545, Muhammad Ihsan                    , 08/23/1972
+ 1200548, Aris Maryatno                     , 04/17/1975
+ 1200570, M.Sawabi                          , 10/07/1976
+ 1200578, Mujiyanta                         , 11/25/1971
+ 1200610, Umi Hani                          , 11/13/1972
+ 1200613, Ernawati                          , 03/02/1973
+ 1200616, Muhyanti                          , 05/05/1973
+ 1200618, Siti Aisyah                       , 10/03/1973
+ 1200619, Rasyidah                          , 12/20/1971
+ 1200632, Gt. Sekar Sri Wulan               , 09/10/1973
+ 1200634, Rumini                            , 10/30/1975
+ 1200639, Munirah                           , 01/27/1973
+ 1200673, Siti Aminah                       , 04/07/1974
+ 1200674, Heldawati                         , 07/01/1972
+ 1200682, Hartini                           , 07/12/1973
+ 1200708, Susilawati. B                     , 10/20/1971
+ 1200730, Mastaharah                        , 05/15/1974
+ 1200757, Sri Widiastuti                    , 09/22/1971
+ 1200758, Manawiah                          , 02/15/1976
+ 1200792, Waskito                           , 08/11/1975
+ 1200810, Sulianto                          , 04/26/1973
+ 1200812, Suwito                            , 04/20/1974
+ 1200815, Bainah Eryani                     , 11/11/1971
+ 1200885, Syubehan                          , 08/25/1971
+ 1200887, Masrians Noor                     , 11/16/1971
+ 1200889, Didik Purwanto                    , 12/13/1971
+ 1200892, Purwanto A                        , 05/11/1972
+ 1200901, Thaberani                         , 06/14/1973
+ 1200911, Aspar                             , 01/01/1973
+ 1200913, Selamat Riady                     , 01/06/1974
+ 1200917, Rohman                            , 11/20/1972
+ 1200928, Miftahul Rahmi                    , 05/03/1973
+ 1200933, Aidil Ferri Yandi                 , 02/12/1974
+ 1200963, Halimah A.                        , 11/07/1972
+ 1201004, Siti Wardah                       , 03/07/1976
+ 1201025, Nurhaina                          , 10/01/1976
+ 1201026, Suriyati                          , 09/26/1976
+ 1201031, Rachim Effendy                    , 10/03/1974
+ 1201034, Muhammad Baihaki                  , 10/17/1977
+ 1201039, Ummu Kulsum                       , 01/11/1977
+ 1201043, Arif Samsuharko                   , 07/26/1976
+ 1201044, Faridah                           , 05/12/1977
+ 1201051, Riyada Ramaidah                   , 07/29/1976
+ 1201062, Sarkiah                           , 08/17/1974
+ 1201068, Lina Herliana                     , 08/04/1977
+ 1201081, Abdul Rahman                      , 11/09/1972
+ 1201092, Sugimin                           , 05/01/1975
+ 1201097, Zuli Astutik                      , 06/26/1978
+ 1201104, Sukarti                           , 03/23/1978
+ 1201107, Suparno                           , 07/22/1972
+ 1201112, Agus Susilawati                   , 08/26/1975
+ 1201128, Rahmah                            , 08/30/1977
+ 1201129, Nor'Ainah                         , 03/27/1979
+ 1201143, Fajar Rofiz                       , 08/10/1978
+ 1201157, Tutik Heru Suwanti                , 05/30/1973
+ 1201162, Sugeng                            , 08/29/1974
+ 1201164, Abdul Basit                       , 12/25/1975
+ 1201172, Paridah                           , 08/10/1977
+ 1201174, Siti Lawamah                      , 02/03/1980
+ 1201189, Sri Herlina                       , 12/14/1981
+ 1201190, Muryanto                          , 11/27/1978
+ 1201191, Kusasi                            , 03/03/1978
+ 1201200, Wahyu Gunawan                     , 10/01/1977
+ 1201201, Emy Suyani                        , 07/12/1978
+ 1201205, Maimunah S.                       , 09/14/1980
+ 1201206, Siti Rahmah Aliansyah             , 08/12/1981
+ 1201207, Muhamad Yusuf                     , 10/17/1981
+ 1201216, Hamdani                           , 06/10/1980
+ 1201218, Salmah                            , 06/12/1981
+ 1201225, Rahman Ruswoyo                    , 05/21/1980
+ 1201226, Fahrudin                          , 08/11/1975
+ 1201231, Siti Aisyah AM.                   , 12/26/1979
+ 1201233, Fitriani                          , 08/11/1980
+ 1201235, Tina Rafika Widha Sari            , 03/10/1980
+ 1201237, Kristina                          , 02/26/1978
+ 1201239, Nita Hermawati                    , 08/02/1978
+ 1201240, Masran                            , 04/11/1972
+ 1201243, Lahmudin                          , 07/03/1980
+ 1201244, Ruhama Ismi                       , 04/22/1979
+ 1201248, Nani                              , 01/18/1980
+ 1201249, Ilham                             , 08/15/1977
+ 1201251, Lukman Hakim                      , 12/05/1974
+ 1201267, Rusmilawati                       , 03/24/1976
+ 1201273, Karmila Juwanti                   , 02/23/1982
+ 1201283, Mulyana                           , 05/14/1982
+ 1201296, Yekti Handiyamah                  , 10/28/1980
+ 1201301, Moh. Taupik                       , 03/23/1981
+ 1201304, Mintarsih                         , 06/08/1978
+ 1201305, Murdiyah                          , 08/05/1981
+ 1201306, Hernani                           , 07/26/1977
+ 1201307, Fathur Rahman                     , 02/12/1982
+ 1201310, Rosita Wati                       , 12/07/1983
+ 1201311, Idawati                           , 07/28/1982
+ 1201321, Nurlianti                         , 08/05/1976
+ 1201322, Achmad Yani                       , 09/07/1981
+ 1201327, Jumberi                           , 02/12/1981
+ 1201332, Sarini Hurni                      , 07/10/1982
+ 1201344, Khairudin                         , 01/08/1976
+ 1201345, Endang Sriwigati                  , 06/04/1980
+ 1201347, Mulyati D.                        , 03/02/1974
+ 1201348, Winarsih                          , 05/17/1982
+ 1201356, Achmad Sajali                     , 05/02/1976
+ 1201359, Nanang Supriyatna                 , 07/02/1972
+ 1201369, Norhasanah                        , 08/14/1972
+ 1201370, Sarini Nurlaila                   , 08/01/1980
+ 1201386, Adi Prasetyo                      , 08/19/1973
+ 1201387, Santoso T.                        , 03/09/1981
+ 1201388, Budi Irawan S                     , 09/09/1978
+ 1201389, Mulkani Rahmi                     , 04/14/1976
+ 1201403, Nurul Azmi                        , 02/24/1978
+50000294, Ponidi                            , 04/01/1978
+50000385, Eko Setiawan                      , 10/05/1975
+50000544, Fauziansyah                       , 03/19/1975
+50000546, Yulita                            , 07/12/1982
+50000629, Rasmiyanti                        , 10/10/1975
+50000636, Rumiah                            , 04/12/1977
+50000639, Budi Mulyawan                     , 01/13/1973
+50000640, Susilawati S.                     , 08/06/1982
+50000644, Muhammad Rum                      , 04/01/1983
+50000645, Tulus Wahyudi                     , 01/10/1979
+50000648, Rusmadi                           , 03/09/1979
+50000946, Yazid Bustani                     , 06/05/1980
+50000950, Dina Erliana                      , 03/21/1982
+50001137, Ahmad Suriyadi                    , 08/04/1973
+50001140, Mochamad Basuki                   , 11/05/1973
+50001141, Jainudin                          , 05/20/1981
+50001143, Selamat Sugiharto                 , 03/22/1981
+50001146, Fahriani                          , 07/10/1976
+50001148, Arifin                            , 01/01/1978
+50001425, Paturrahman M.                    , 10/12/1976
+50001604, Slamet Dwi Sasono                 , 04/15/1979
+50001697, Haryanto                          , 03/01/1982
+50001724, Hepy Dyah Astuti                  , 01/25/1982
+50002009, Abdul Halil                       , 05/10/1979
+50002237, Nanang Suhendra                   , 09/03/1977
+50002293, Iqbal Husaen                      , 03/09/1979
+50002295, Mediyawati                        , 09/25/1980
+50002309, Hermansyah                        , 09/01/1983
+50002317, Basran                            , 03/21/1981
+50002319, Jum'awati                         , 02/27/1980
+50002409, Ahmad Aliansyah                   , 11/18/1980
+50002412, Yohanes Bosco Deni Setiawan       , 07/28/1977
+50002776, Nur'aini                          , 04/04/1978
+50002777, Budi Harianto                     , 06/03/1982
+50002780, Farida Mustika                    , 03/31/1983
+50002842, Ani Sukmaningsih                  , 07/04/1983
+50003245, Indratno                          , 05/29/1976
+50003526, Dian Prahendra Putra Kusuma       , 06/19/1983
+50004091, Ratnawati S.                      , 06/04/1981
+50004288, Maret Hartini                     , 03/05/1980
+50004824, Suntoro                           , 09/10/1982
+50004826, Yusef Antonios                    , 11/23/1982
+50004828, Muhammad Rifani                   , 04/06/1977
+50004829, Robby                             , 11/14/1981
+50005634, Hendry                            , 12/03/1983
+50006855, Norjanah J.                       , 01/24/1980
+50006928, Muhaimin                          , 07/11/1985
+50007037, Jum'atullah Hidayat               , 05/13/1977
+50007619, Dwi Purwanti                      , 04/17/1983
+50007700, Liana Kurniawati                  , 07/23/1990
+50007707, Adi Sriraharjo                    , 08/19/1987
+50007711, Dwi Prasojo                       , 06/04/1984
+50007713, Lilik Sunarti Widya Astuti        , 08/14/1990
+50007745, Wiwin Indah Ariani Wibowo         , 01/15/1990
+50007796, Iwan Idoma                        , 09/26/1988
+50007839, Rabiatul Hidayah                  , 09/22/1990
+50007880, Syamsuri Yusuf                    , 07/11/1987
+50007921, Utami Wulan Sari                  , 07/23/1989
+50007926, Agung Firdaus                     , 10/13/1985
+50007997, Rudie Setiadi                     , 08/14/1986
+50008079, Bahtiar Ferry Himawan             , 11/02/1984
+50008080, Alexander Eko Susanto             , 05/23/1984
+50008932, Riza Firdaus                      , 12/22/1991
+50009074, Muhammad Rachmadani               , 06/12/1985
+50009256, Bambang Wicaksono                 , 02/10/1972
+50009491, Nana Norliyana                    , 08/18/1988
+50009840, Tri Anggono                       , 06/15/1987
+50009853, Yunita Sari                       , 06/10/1991
+50009866, Tri Widodo                        , 06/18/1983
+50010089, Fitriani U                        , 04/16/1991
+50010098, M. Syarwani Abdan                 , 11/04/1988
+50010134, Siti Masrusroh                    , 05/09/1989
+50010135, Yeni Nurhambzah                   , 08/01/1989
+50010145, Fitri Yunianti                    , 06/13/1986
+50010192, Yuly Setyo Wibowo                 , 07/05/1986
+50010241, Syafrizal Suid                    , 10/26/1991
+50010243, Retno Irawan                      , 04/20/1982
+50010405, Adistia Fitriana                  , 04/12/1991
+50010841, M. Ridho Dwi Cahyo                , 11/11/1990
+50011028, Adiwena Agustinus Indrawan        , 08/08/1988
+50011192, Yudi Ariyandi                     , 11/02/1984
+50011208, Syahrifinnor                      , 03/27/1986
+50011689, Edi Muliyono                      , 10/09/1981
+50011702, Norlaila Santi                    , 06/11/1984
+50011938, Ramlan                            , 04/01/1990
+50012079, Rukayah                           , 06/01/1982
+50012286, Mulyadi                           , 05/10/1992
+50012472, Denny Sebtia Rahman               , 12/09/1988
+50012473, Hani Maya Sari                    , 02/10/1986
+50012488, Stephani Octaviani DS             , 10/04/1987
+50012823, Maurice Chris Laurence            , 03/01/1989
+50012930, Noerhadi Wiyono                   , 02/26/1988
+50012992, Evi Ariani                        , 11/14/1992
+50012994, Fahrin Munawar                    , 07/07/1979
+50013140, Rizky Fajarani                    , 12/17/1985
+50013537, Rachmat Waskita Kusuma            , 11/17/1986
+50013639, Asnan                             , 01/09/1988
+50013644, Rusdiana                          , 02/22/1987
+50013647, Norbainah                         , 06/03/1989
+50014069, Aulia                             , 08/24/1991
+50014247, Sugiati                           , 03/05/1988
+50014249, Risnawati                         , 02/11/1991
+50014612, Parlindungan Adhi Nugroho         , 03/07/1987
+50014613, Susanto                           , 11/03/1991
+50014616, Anggi Mariani                     , 12/08/1988
+50014617, Nor Astri Jamilah                 , 04/28/1989
+50014975, Eka Aprilyawati                   , 04/23/1994
+50015540, Bahrah                            , 05/07/1990
+50016197, Sugianto                          , 05/17/1987
+50016718, Nurul Hidayah                     , 01/26/1992
+50017026, Sarifah Syahidah                  , 09/17/1989
+50017028, Juwarni Purwahyuningsih           , 02/19/1986
+50017032, Risna Yuli Astuti                 , 06/11/1994
+50017555, Norma                             , 01/10/1990
+50017562, Diana                             , 12/07/1990
+50018367, Angga Rusadi                      , 09/03/1989
+50018368, Tasri                             , 12/12/1983
+50018372, Fajrin Anwari                     , 07/11/1988
+50018862, Yenni Fitri Iriani                , 06/20/1993
+50022356, Taufikkurahman                    , 01/05/1990
+50022359, Taufik Rahman                     , 09/03/1990
+50022362, Ahmad Amirudin                    , 09/02/1992
+50022363, Ariyadi                           , 03/05/1991
+50022364, Fahruzzein Amrullah               , 06/07/1981
+50022365, Saubari                           , 01/12/1991
+50022366, Abdul Halim                       , 08/07/1989
+50022369, Abdul Rahim                       , 05/17/1986
+50022371, Mochamad                          , 04/02/1984
+50022375, Tino Hariyanto                    , 02/23/1985
+50022379, Junaidi                           , 03/24/1989
+50022436, Riza Suriadi                      , 11/24/1992
+50022437, Haderianor                        , 05/09/1988
+50022438, Maslaini                          , 03/23/1979
+50022670, Herliana                          , 11/01/1990
+50023040, Saman Hudi                        , 02/01/1992
+50023152, Rosiana Dwi Hastuti               , 06/18/1988
+50023501, Muhammad Fitriyadi                , 04/24/1994
+50024303, Hadiannoor                        , 04/17/1994
+50024306, Hafsah                            , 11/01/1991
+50024307, Lilik Handayani                   , 08/07/1992
+50024308, Benedictus Rizki Yudanto          , 07/09/1987
+50024637, Hendra Budiman                    , 11/25/1989
+50024641, Muhammad Zainuddin                , 04/08/1993
+50025928, Atmadi                            , 08/05/1987
+50026985, Ima Firstlyani                    , 10/20/1991
+50027244, M. Noordin                        , 04/06/1993
+50027261, Dahlia                            , 02/20/1995
+50027385, Astuti                            , 07/24/1995
+50027401, Hikmah                            , 06/12/1995
+50027440, Ahmad Fauzi                       , 09/30/1992
+50027836, Masrani                           , 01/17/1990
+50027840, Abdurrahman                       , 01/10/1991
+50027843, M. Mawardi                        , 08/17/1994
+50027844, Eswanto                           , 01/12/1986
+50027846, Deddy Istanto                     , 10/17/1990
+50027847, M. Soparto Rahman                 , 11/11/1994
+50027851, Nor Aliansyah                     , 02/08/1995
+50027852, Mirza Aliyani                     , 04/04/1992
+50027854, Norman Sayuti                     , 05/10/1992
+50027883, Chairul Fitrianto                 , 03/01/1995
+50027887, Hendra                            , 01/11/1991
+50027889, Muliyono                          , 03/10/1994
+50027893, Hery Irawan                       , 06/12/1992
+50027898, Nor Ekawati                       , 11/29/1994
+50027902, M. Al Khoiri                      , 08/09/1994
+50027922, Taufik Rahman                     , 01/01/1994
+50027925, Dian Hidayanti Utari              , 06/06/1991
+50027926, Andra Aditha Natalaut             , 07/19/1987
+50027929, Hendy Meinatha                    , 05/19/1989
+50028451, Zainuddin                         , 02/20/1981
+50034356, Sugianto                          , 12/12/1989
+50034713, Muhammad Amin                     , 09/24/1988
+50035691, Riza Riadi                        , 04/30/1987
+50036208, Fauzan Azhima                     , 03/26/1992
+50036213, Roby Martoni                      , 05/21/1988
+50037994, Nucky Nugraha                     , 12/25/1991
+50038700, Ade Nur Hutari                    , 08/17/1995
+50039975, Muhammad Rizqy Hidayat            , 12/03/1995
+50043098, Sayuti                            , 05/12/1991
+50044527, Jasran                            , 02/13/1995
+50046075, Rahmadhaniansyah                  , 02/02/1995
+50046078, Muhammad Rifa'i                   , 06/06/1995
+50046079, Ahmad Tarmizi                     , 10/15/1994
+50046791, Syamsul Anwar                     , 12/07/1989
+50046793, Husnul Mabrur                     , 04/14/1994
+50046795, Fathir Dwi Saputra MS             , 09/18/1992
+50047154, Donor Martiansyah                 , 08/30/1976
+50047158, Milda Mindrawati                  , 05/02/1992
+50047163, Sri Wahyuningsih                  , 01/11/1992
+50047931, Gusti Mirna Mustika               , 10/10/1994
+50047941, Nurhidayah                        , 12/18/1994
+50047948, Tuti Novita Sari                  , 11/22/1994
+50047951, Masriah                           , 09/13/1995
+50048370, Iin Muri Kurniawati               , 08/01/1995
+50049235, Aji Santoso                       , 06/14/1997
+50049240, Rahmadi Maulana                   , 01/24/1996
+50049276, Sahrul Gunawan                    , 09/25/1997
+50049363, Nor Izzatil Hasanah               , 06/03/1995
+50049364, Erni Fitriani                     , 02/20/1995
+50049530, Siti Khadijah                     , 06/02/1992
+50049946, Riyadh Adnani                     , 12/10/1992
+50052090, M. Hernadi                        , 07/18/1996
+50052092, Reswan Anderiani                  , 03/27/1993
+50052093, Yandi Aprianur                    , 04/27/1994
+50087100, Dwi Norliani                      , 09/04/1997
+50087113, Ribut Hari Sandi                  , 10/06/1995
+50087118, Laila Hayati                      , 08/31/1997
+50087122, Heriansyah                        , 12/01/1996
+50087126, Emelia Melin                      , 06/25/1998
+50087127, Noormayanti                       , 02/03/1997
+50087130, Winda Nurjanah                    , 01/20/1996
+50087133, Muhammad Fadli                    , 06/14/1989
+50088110, Venny Noor Ramadhani              , 01/23/1997
+50088112, Azizatul Aulia                    , 09/26/1997
+50088298, Iqbal Tawakal                     , 09/06/1993
+50088637, Marzuki                           , 07/09/1983
+50088638, Faisal                            , 02/18/1992
+50101564, Duwi Nur Hafifah                  , 04/23/1993
+50103663, Tihamah                           , 10/17/1998
+50103668, Nur Halifah                       , 07/01/1997
+50105387, Riska                             , 05/25/1997
+50106337, Megawati                          , 08/27/1998
+50106609, Husin As'ari                      , 11/14/1988
+50107384, Hernandi Bayu Pratomo             , 07/07/1986
+50107988, Agung Prabowo                     , 04/02/1993
+50112836, Mohammad Abidin                   , 02/09/1990
+50113650, Muhammad Adrian Noor              , 09/23/1989
+50113654, Muhammad Surya Pratama            , 01/01/2000
+50113706, Henry Syukur Purwanto             , 06/28/1993
+50113721, Randitya Angga Widiardimas        , 12/10/1993
+50114463, Noormadiawati                     , 02/18/1991
+50115392, Noor Hikmah                       , 11/05/1999
+50115398, Rahmat Hidayatullah               , 12/11/1992
+50117169, Muhammad Hipni Naqli              , 01/12/1997
+50117773, Muhammad Maulana Hakiki           , 08/08/1996
+50117776, M. Akbar                          , 10/28/1992
+50122923, Muhammad Hidayat                  , 02/25/1997
+50132050, Sukirno                           , 01/01/1962
+50134279, Eriko Januardi                    , 01/03/1996
+50135052, Muhammad Ihsan                    , 07/13/1995
+50135342, Ani Saputri                       , 10/28/1997
+50136049, Rizky Maulidin                    , 06/08/2000
+50136052, Muhammad Yusuf                    , 03/27/1997
+50136055, Rizka                             , 01/12/1998
+50136620, Syerly Norlianti                  , 08/06/1999
+50137923, Hariyadi                          , 07/08/1995
+50137928, Syahdi Hidayat                    , 03/22/1993
+50138993, Satrio Andhika Suryo Arisanto     , 12/24/1998
+50141512, Achmad Saofi                      , 04/16/1997
+50142780, Moh. Dwi Pratomo                  , 11/29/1996
+50145535, Muhammad Ausham                   , 10/06/1994
+50145654, Muhammad Siddik Fhatoni           , 05/07/1999
+50146143, Muhammad Ridho                    , 08/17/1998
+50146510, Muhammad Rofi Haka                , 04/22/1997
+50146518, Ikbal Januar                      , 01/07/1998
+50146521, Dwi Noor Pramieyanto. S           , 05/12/1993
+50146525, Muhammad Nur Wahyudarma           , 07/10/1997
+50146526, Muhammad Nabhan Musthofa          , 10/21/1998
+50146527, Hilyati Putri                     , 07/30/1999
+50146865, M. Aulia Noor                     , 09/25/1996
+50146887, Nor Helmi                         , 10/23/2001
+50147143, Danni Ernando                     , 10/28/1994
+50147157, Elsa Amanda Ratu                  , 07/08/2002
+50147160, Hariyanti                         , 12/22/1998
+50147164, M. Ihsan                          , 03/22/1997
+50147512, Intan Agung Kusuma                , 05/14/1992
+50147999, Muhammad Riza Noor                , 06/10/1998
+50148626, Selamat Hariadi                   , 02/22/1987
+50149384, Dadang Setiawan                   , 01/02/1999
+50150019, Ramadha Dwie Kurniawan            , 04/05/1997
+50150566, Nafisha Ulfah                     , 12/28/2002
+50150572, Muhammad Khairul Lutfi            , 11/11/2001
+50150588, Mahrizal                          , 12/10/1990
+50152234, Muhammad Fathan                   , 06/10/2003
+50152237, Olivia Paullina Kristy            , 04/23/2003
+50152268, Aura Nazaretha Nurani             , 04/17/2000
+50152923, Shella Nor Safitri                , 11/29/2003
+50155447, Oktavianus Ranggasiwi Nugroho     , 10/12/1996
+50156395, M. Fajar Noorrudin                , 09/18/1996
+50157474, Risnandar                         , 01/23/2002
+50157482, Marsya Ayu Putri                  , 09/20/2004
+50158080, Muhammad Riki Ramadhani           , 08/27/1995
+50159717, Mahyuni                           , 06/07/1989
+50160567, Hesty Aulia                       , 09/05/2005
+50161081, Rinna Agustina                    , 08/09/1998
+50161245, M. Yudistya Wibisono              , 07/18/2001
+50161387, M. Nizar Alfarazi                 , 05/07/2003
+50161392, Winda Utari Cahyani               , 07/15/1998
+50162282, Nur Rohman Aji                    , 10/30/1994
+50162289, Julyandi Vilden Lindenbet         , 07/11/1994
+50162908, Ersa Ayu Nur Syahputri            , 12/25/1999
+50162912, Muhammad Imadit Zangki Ramadhan   , 12/08/2001
+50162914, Risma Anjelena                    , 08/16/2004
+50162917, Muhammad Noor Arifin              , 04/02/1999
+50162922, Rif'ah Saufiah                    , 07/05/2005
+50162926, Rahmatika                         , 01/28/2002
+50162928, Muhammad Kholil                   , 01/31/2000
+50162930, Alim Wisnu Satria                 , 06/17/2002
+50162932, Risda Emelia                      , 03/29/2000
+50163254, Muhammad Irham                    , 10/07/1995
+50163793, Wanda Kurnia Savitri              , 06/01/2003
+50164390, Muhammad Noor Ikhsan              , 06/08/2000
+50164399, Uswatun Khasanah                  , 06/10/2000
+50164465, Muhammad Rizki                    , 09/04/2003
+50164474, Ambar Prastiwi                    , 09/01/2005
+50164476, Aulia Cahya Tirta Sari            , 05/13/2006
+50164929, Andri Setiawan                    , 07/27/1991
+50164933, Yurida Rahmadayani                , 03/19/1991
+50164937, Nur Irpansah                      , 11/25/1996
+50165456, Nor Hafizah                       , 05/23/2001
+50165459, Seri Wulandari                    , 04/13/2005
+50165463, Ririn Amelia                      , 04/15/2006
+50165467, Fuji Rianti                       , 11/20/2005
+50165478, Nur Nina                          , 03/05/2000
+50165488, Rita Rahim                        , 10/07/2001
+50165490, Muhammad Rizal Fahriannoor        , 11/06/2004
+50165494, Asikil Anwar                      , 09/10/2001
+50165497, Muhammad Rifhan                   , 04/06/2006
+50165501, Norhalimah                        , 06/29/2006
+50165503, Shinta Rizki Tia Sari             , 07/18/2001
+50165504, Mutia                             , 07/18/2006
+50165506, Nurvina Ramadhita                 , 10/27/2003
+50165511, Maina Salsabilla Syifa            , 05/19/2006
+50165512, Muhamad Ihsanudin                 , 10/06/2001
+50165514, Andry Brahmanto Saputra           , 10/12/1993
+50165517, Muhammad Rasyid Al'Amin           , 06/09/2006
+50165518, Catur Sutriadi                    , 09/04/2005
+50165521, Muhammad Khairil Fajar Aulia Latif, 05/20/2006
+50165522, Amin                              , 04/15/1999
+50165524, Alfian                            , 07/01/2004
+50165527, Septi Noviana                     , 09/05/2005
+50165530, Annisa Della                      , 12/23/2002
+50165533, Fitria                            , 11/20/2005
+50165997, Ahyani                            , 12/21/1997
+50166001, Muhammad Rizhal                   , 08/13/2001
+50166195, Julaiha                           , 08/15/2006
+50166205, Eka Dewi Yanti                    , 05/15/2005
+50166206, Ahmad Habibi                      , 05/05/2005
+50166207, Ratih Setya Rini                  , 07/05/2006
+50166210, Akhmad Faisal                     , 05/02/2002
+50166213, Ahmad Rifai                       , 02/02/2000
+50166214, Muhammad Nawarani                 , 01/04/2006
+50166217, Tina Amelia                       , 05/11/2003
+50166223, Adel Felisia Saragih              , 11/03/2005
+50166742, Talia Sapitri                     , 01/25/2004
+50167326, Sri Utami                         , 01/14/2005
+50167768, Nabila Quwwata Aqra               , 04/02/2001
+50167769, Carles Aji Mintoro                , 06/15/2006
+50167770, Musyarifah                        , 03/09/2000
+50168469, Siti Nur Emelda                   , 07/18/2001
+50168470, Zahwa Jian Parera Syubi           , 07/05/2002
+50168475, Melisa                            , 04/03/2006
+50168480, Suryadi Pranata                   , 07/05/1996
+50168484, Mega Mendawai Putri Utami         , 06/01/1999
+50168487, Nurul Ichzan Adsmar               , 12/15/1996
+50168491, Widya Astuti                      , 01/30/2005
+50168495, Dinda Kurnilam                    , 07/30/2001
+50168498, Riyo                              , 04/12/2004
+50168500, Akhmad Fikri                      , 06/07/2002
+50169195, Saripansah                        , 01/26/1999
+50169198, Mirda                             , 02/05/1992
+50169209, Setyo Pambudi                     , 06/14/2002
+50169213, Marliana                          , 04/12/2006
+50169214, Muhammad Adi Royan Pratama        , 08/17/2005
+50169370, M.Rizqia Luthfi                   , 03/26/2001
+50169372, Handika Juliansyah                , 07/23/1999
+50170120, Muhammad Fitriani HDD             , 12/10/1986
+50170123, Fany Shintia Hermayanti           , 03/11/2006
+50170124, Audri Aurelia Irsya Nabila        , 03/24/2005
+50170343, Rifky Hermawan                    , 04/06/2004
+50170344, Alvin Hudaya                      , 02/20/1998
+50170347, Salma Larisa                      , 09/17/2005
+50170351, Selvia Anggraini                  , 09/10/2005
+50170353, Maulida                           , 01/12/2004
+50170356, Dinda Kenedy                      , 05/14/1998
+50170533, Maulidah Anazmi                   , 05/21/2006
+50170534, Nur Amalia                        , 03/05/2006
+50170535, Farida Ariani                     , 04/15/2003
+50170536, Misna Maulida                     , 05/04/2004
+50170537, Solehah                           , 03/02/2006
+50170538, Noor Halimah                      , 12/12/2004
+50170539, Imam Bukoiri                      , 05/05/1995
+50170541, M. Fahrizal Ari Setiawan          , 11/18/1995
+50170547, Kevin Pri Riandi                  , 06/28/1990
+50170608, M. Sedayu Mardatillah             , 05/20/1988
+50170611, M. Diyo Adji Prayoga Pangestu     , 01/28/2001
+50170646, Sari Patria                       , 08/23/1997
+50171141, Vicky Ardiansyah                  , 11/24/2000
+50171350, Muhammad Rehan Fahreza            , 06/19/2001
+50171804, Noor Amela Aisyah                 , 02/13/1999
+50171959, Subhan                            , 02/12/1992
+50171977, M. Fikri                          , 03/04/2006
+50171978, Kholisah                          , 11/04/2004
+50171979, Siti Maimunah                     , 09/09/2001
+50171982, Muhammad Deni Darmawan            , 07/16/1997
+50171984, Muhammad Rizky Wahyudi            , 11/11/2000
+50172096, Nurul Mawaddah                    , 07/31/2001
+50172097, Arbayah                           , 11/07/2001
+50172102, Rangga Reganansa                  , 08/12/1997
+50172104, Adam Azhari                       , 12/18/1998
+50172761, Rinadi                            , 04/03/1999
+50172840, Muhammad Yusran                   , 02/17/1994
+50172841, Adinda Putri Anggraini            , 03/31/2003
+50172842, Syaidatul Aisyah                  , 10/30/2000
+50173241, M. K. Ronggo Warsito              , 04/14/1998
+50173242, Muhammad Dinor                    , 12/18/1996
+50173469, Putra Nur Wira Utama              , 04/02/1997
+50173470, Ahmad Yazidi                      , 03/31/2005
+50173471, Bintang Reza Perdana              , 09/12/1996
+50173472, Hendriansyah                      , 04/20/2002
+50173473, Muhammad Rahmi                    , 06/29/2001
+50173474, Muhammad Anton                    , 01/15/2007
+50173594, Imam Ahdy Saga                    , 02/24/1995
+50173595, Milkan Rubayani                   , 05/05/2001
+50173596, Gusti Ahmad Rafly Aghna           , 02/08/2003
+50173602, A Marry Handewi Pratiwi           , 09/24/2002
+50173880, Muhammad Aprian Khairul Adha      , 04/05/1998
+50173881, Matthew Benito Salim              , 08/17/2000
+50173882, Anita Sari                        , 05/14/2002
+50174019, Dimas Kapela                      , 12/31/1996
+50174020, Muhammad Alvie                    , 08/06/2001
+50174021, Haderan                           , 07/05/1992
+50174022, Khafidzin                         , 01/03/1993
+50174023, Fahriannor                        , 09/21/2003
+50174024, Muhammad Zaki                     , 07/12/2002
+50174025, Nurul Azizah                      , 11/12/2004
+50174026, Wahyu Hari Setiawan               , 09/02/2003
+50174202, Muhammad Arif Hidayat             , 06/14/1998
+50174203, Helmalia Fitri                    , 02/10/2006
+50174205, I Made Putra Adnyana              , 02/01/2005
+50174206, Muhammad Adri Darmawan            , 02/28/2004
+50174208, Zainal Akli                       , 07/20/1993
+50174209, Nurul Hasanah                     , 01/22/2006
+50174841, Danang Reza Ulama                 , 11/23/1993
+50174847, Rhegan Istas Dwiyanto             , 09/19/2001
+50174860, Hamirullah                        , 04/04/1996
+50174861, Alfiatul Hasanah                  , 03/19/2005
+50174862, Siti Hadijah                      , 10/22/2000
+50174863, Supian Hadi                       , 09/15/1998
+50174869, M Randi Syaifullah                , 12/04/2006
+50174871, Achmad Kurniawan Saputra          , 06/04/2005
+50174872, Nayla Baryah                      , 04/10/2007
+50174876, Fatimah Azzahra                   , 04/18/2005
+50174880, Antika Julianti                   , 07/22/2006
+50174883, Muhammad Rahman                   , 02/16/2004
+50174890, Ghina Hidayanah                   , 10/12/2002
+50174891, Aditiya Saputra                   , 09/29/2001
+50175491, Muhammad Hendarto                 , 05/13/1997
+50175492, Tricahyono                        , 06/14/2003
+50175499, Oong Setiawan                     , 10/05/1996
+50175502, Muhamad Rifai                     , 07/06/2004
+50175503, Muhammad Daffa Ilhamsyah          , 07/17/2004
+50175517, Boneta Eka Rahayu                 , 03/25/2004
+50176038, Sandi Nayoan Tundan               , 01/13/1999
+50176042, M. Rahmadani                      , 06/21/1997
+50176127, Cholid Fahrul Rozi                , 01/19/2003
+50176130, Widda Tazkiya                     , 03/30/2005
+50176132, Matilda Fallo                     , 03/01/1997
+50176886, Doni Irawan                       , 03/02/2001
+50176887, Ahmad Raihan                      , 10/08/2006
+50176889, Muhammad Waldi                    , 03/01/1995
+50176891, Reza                              , 09/17/2001
+50176922, Ahmad Mawahib                     , 04/03/2000
+50176926, Muhammad Dony Maulana             , 07/16/1999
+50176927, Rizal                             , 09/17/2004
+50176930, Muhammad Fiqri Haikal             , 02/22/2004
+50176933, Mona                              , 02/01/2006
+50176938, Eka Hatamah                       , 02/07/2001
+50176941, Nordlysdianto                     , 12/16/1994
+50177849, Nadia Salsa Joya                  , 01/19/2006
+50177853, Akbar                             , 09/23/2000
+50177854, Suparman                          , 08/23/1998
+50177855, M. Zidane Farisha                 , 08/29/2003
+50178423, Muhammad Fairuz Abdillah          , 05/30/2003
+50178424, Taufik Noor                       , 03/08/1997
+50178426, Muhammad Irfan Sujarin            , 06/07/2003
+50178430, Ahmad Haufi                       , 12/04/1998
+50178439, Wahyu Erianto                     , 01/22/1997
+50178442, Ramadani Saputra                  , 01/11/1997
+50178679, Aditya Kurniadi                   , 05/20/1996
+50178995, Nayla Salsabella                  , 01/09/2007
+50178996, Dina Amelia                       , 11/25/2006
+50178997, Nor Asiah                         , 05/03/2005
+50178999, Muhammad Ridha                    , 06/23/2002
+50179001, Rahmah Isnaeni                    , 10/26/1998
+50179626, Aminah                            , 04/12/2006
+50179628, Lisya Ernika                      , 04/04/2003
+50179629, Titi Herlina                      , 07/25/2003
+50179631, Nor Hidayatul Aulia               , 01/30/2007
+50179633, Risky Marisa Nur Adifa            , 03/12/2005
+50179634, Hendri                            , 02/14/2004
+50179635, Muhammad Adji Maulana Putera      , 10/19/2001
+50179636, Muhammad Iqbal Perdana            , 05/13/2002
+80007007, Faisal Didi Haryadi               , 07/09/1995
+80007039, Janie                             , 10/21/1979
+80007041, Joni                              , 09/02/1972
+80007042, Muhammad Aini                     , 01/16/1984
+80007043, Surya Rahim                       , 12/15/1985
+80007045, Mujairimi                         , 06/18/1995
+80007048, Supriyadi                         , 05/09/1973
+80007049, Roni Iswahyudi                    , 03/05/1980
+80007052, Miswadi                           , 06/29/1979
+80007053, Fajar                             , 09/09/1993
+80007057, Amberi                            , 05/25/1977
+80007058, Hairani                           , 11/13/1972
+80007070, Muhamad Riduan                    , 04/02/1990
+80007073, Sugiannor                         , 01/13/1992
+80008114, Riswandi                          , 09/07/1995
+80008116, Agus Riyadi                       , 08/02/1981
+80008135, Hendra Setiawan                   , 08/22/1987
+80008139, Abdul Solihin                     , 05/02/1989
+80008140, Rani                              , 04/17/1992
+80008142, Rahman                            , 06/12/1979
+80008143, Sabdi                             , 02/09/1990
+80008153, Jumriani                          , 05/06/1991
+80008171, Rahmani                           , 01/23/1986
+80019256, Suhaimi                           , 07/03/1991
+80027016, Muhammad Jerry Noval Ramadhan     , 11/17/2002
+80030438, Ardiya Martayuda                  , 05/14/2000
+80030440, Sudiyan                           , 10/26/1997
+80030460, Muhammad Rasyid Sidik             , 11/16/2002
+80037358, M Tantowi                         , 07/25/2003
+80042518, Ideham Khalid                     , 11/13/1993
+80045704, Prastiyo Triwardoyo Wicaksono     , 10/24/2000
+80045719, Abdul Azis                        , 05/13/2003
+80045720, Dicky Rahmatillah                 , 03/14/2004
+80045741, Muhammad Surya Badali             , 10/18/2002
+80045742, Muhammad Yusuf Pradana            , 09/19/2003
+80046215, Muhammad Irwaji                   , 02/05/2004
+80046216, M. Pahrurrazi                     , 04/19/2003
+80046906, Muhammad Pahri                    , 01/11/2004
+80048148, Muhammad Baharudinnur             , 07/30/2004
+80048518, Riad Noor                         , 06/08/2000
+80048798, Muhammad Reski                    , 08/06/1993
+80049036, Daisy Maya Puspitasari            , 01/07/1994
+80049496, Ahmad Fiqri Almadani              , 06/16/2001
+80049635, Muhammad Noorafriansyah           , 04/17/1993
+80050580, Muhammad Rizky Yudha Pratama      , 12/08/1997
+80050581, Muhammad Sidik                    , 06/20/2002
+80050582, Muhammad Rasyid                   , 12/18/1997
+80050583, Fiqri Aditya Al-Fahmi             , 03/25/1995
+80050584, Aulia Rahman                      , 07/12/2005
+80050606, Dzaki Fuad Hafidzi                , 04/23/2004
+80051460, Nur Aulia                         , 05/07/2004
+80051462, Riyana                            , 03/02/2002
+80051463, Nafisatul Hayati                  , 05/14/2004
+80051464, Syendi Putra Rabbani              , 04/10/2005
+80051465, Ahmad Rifa'i                      , 04/25/1995
+80051466, Muhammad Rezky                    , 12/27/2003
+80052023, Dani                              , 02/10/2006
+80052261, Muhammad Ridho                    , 04/20/1999
+80052262, Aydina Fitri                      , 12/07/2002
+80052272, Tedi Hermawan                     , 07/17/2001
+80053247, Muhamad Alwi                      , 11/10/2000
+80053355, Muhammad Rafli                    , 11/07/2005
+80053356, Nuril Aulia Ningrum               , 08/20/2001
+80053357, Mahmud Arifin Ilham               , 08/07/2005
+80054227, Indra Adriyani                    , 06/22/2005
+80054228, Muhammad Hidayatullah             , 07/11/2002
+80054261, Rani Feriansyah                   , 02/02/1988
+80054263, Muhammad Rifqi Hidayat            , 12/12/2004
+80054264, Alifinozva Gigih Mustika          , 08/03/2004
+80054265, Arris Surahmadi Ahmad             , 06/11/1994
+80054266, Bagus Kurniawan                   , 09/22/1987
+80054267, Bowo Kurnianto                    , 01/11/1989
+80054269, Mulyadi                           , 09/25/1985
+80054270, Ardiansyah                        , 05/01/1990
+80054647, Muhammad Zainal Arifin            , 12/03/2005
+80054648, Muhammad Andre                    , 03/29/2003
+80054649, Asyrafi Al Khair                  , 08/23/2001
+80054650, Muhammad Rifani                   , 11/29/2000
+80054652, Akhmad Zidan Rifa'I               , 05/16/2000
+80054653, Muhammad Hilman Firdaus           , 06/16/2005
+80054706, Andrie Roesdianto                 , 07/08/1989
+80054707, Rahmadani                         , 07/25/1988
+80054711, Fahmi Yusuf                       , 10/23/1994
+80054712, Kholilurrahman                    , 09/30/1987
+80054713, Noor Ipansyah                     , 08/03/1989
+80054714, Ferry Fadely                      , 11/20/1991
+80054715, Rusdiansyah                       , 01/08/1998
+80054716, Rifani                            , 07/08/1993
+80054717, Fahmi Amrullah                    , 11/19/1989
+80054718, Muhammad Habibi                   , 08/20/1994
+80054721, Yandi Kurniawan                   , 02/07/1989
+80054722, Muhammad Kevin Setiadi            , 10/06/1996
+80054723, Aris Budianto Wibowo              , 07/31/1995
+80054724, Rohani                            , 05/03/1993
+80054725, Muhammad Aldi                     , 11/24/2003
+80054726, Muhammad Ferdi                    , 07/19/2005
+80054727, Muhammad Ramadhan                 , 08/10/2005
+80054728, Sania Lutfiansyah                 , 05/07/2005
+80054729, Muhammad Zaini                    , 07/01/2002
+80055212, Abdul Hadi                        , 08/07/1989
+80055213, Paitu Rahman                      , 11/12/1993
+80055214, Masnawi                           , 02/14/1982
+80055510, Kastalani                         , 10/10/1997
+80055800, Ellien Marlina                    , 03/21/1986
+80055801, Didi Suryadi                      , 07/08/1989
+80055802, Endah Budiati                     , 11/25/1973
+80055803, Siti Yunita Andhini               , 06/28/1975
+80056325, Farid Wajidi                      , 03/26/1991
+80056343, M. Zainal A                       , 12/22/2003
+80056344, Muhammad Alfiranoor Akbar         , 09/19/2000
+80057001, Muhammad Hadani                   , 08/06/2006
+80057002, Rika Damayanti                    , 05/23/2005
+80057003, Hasbi Ridoni                      , 10/20/2003
+80057004, M. Zaenal Muttaqin                , 05/04/2006
+80057278, Heri Anwar Gamal                  , 04/07/2003
+80058986, Muhammad Rehan                    , 08/28/2003
+80059654, Muhammad Abdi Alpiannor           , 09/10/2002
+80059655, Ahmad Rudini                      , 09/29/2000
+80059656, Muhammad Riski Yannor             , 09/07/2002
+80059657, Zolani                            , 03/15/1999
+80059677, Riyan Saputra                     , 11/09/1999
+80059679, Jumaidi                           , 04/13/2002
+80059680, Mizan Sufi                        , 11/15/1999
+80060472, Ridho Azmi                        , 04/29/1997
+80061272, Khairian Ikbal                    , 01/25/1997
+80062563, Muhammad Idham Halid              , 07/03/1990
+80062960, Akhmad Rizaldy Ariskysisam        , 09/02/2003
+80062961, Muhammad Mugni Marwa              , 08/12/2006
+80062962, Radi Aditiya                      , 06/14/2003
+80062963, Robby Maulana                     , 01/01/1984
+80062964, Muhammad Hipzi Anwari             , 07/15/2001
+80062965, M. Abdul Faqeh                    , 04/12/1995
+80062966, Ahmad Ridani Rizki                , 01/24/2006
+80062967, Valentino Pramudya                , 05/14/2006
+80063825, Muhammad Rizky Faddila            , 08/06/2002
+80064679, Fendy Firdaus                     , 02/03/1998
+80065068, Akhmad Rijalul Ghani              , 06/03/2003
+80065342, Siti Bulqis                       , 05/19/2006
+80065358, Didiyanor                         , 03/04/1994
+80065697, Yolanda Aprilia Dina              , 04/06/1999
+80065829, Jauhari                           , 02/19/2006
+80067195, Gusti Sopian Sori                 , 10/11/1998
+80069126, Muhammad Aidi Rahman              , 01/03/2006
+80069721, Elvasza Risza Iskandari           , 05/27/2007
+80069722, Muhammad Reyhan Firdaus           , 06/07/2007
+80069724, Muhammad Syafii                   , 07/07/1997
+80069725, Ahmad Suhada                      , 05/02/2001
+80070134, Muniroh                           , 08/10/1996
+80070214, Rizky Permana Sukma               , 02/18/1998
+80073727, M. Ridho  Al Pasha                , 05/21/1998

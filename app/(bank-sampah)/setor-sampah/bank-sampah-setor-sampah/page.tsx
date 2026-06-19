@@ -252,7 +252,7 @@ export default function BankSampahSetorSampah() {
   const [warmiendoSetoran, setWarmiendoSetoran] = useState<
     WarmiendoSetoranItem[]
   >([]);
-  const [warmiendoFilterStatus, setWarmiendoFilterStatus] = useState("pending");
+  const [warmiendoFilterStatus, setWarmiendoFilterStatus] = useState("Semua");
   const [ekspedisiList, setEkspedisiList] = useState<EkspedisiItem[]>([]);
   const [selectedEkspedisi, setSelectedEkspedisi] = useState<
     Record<number, number>

@@ -6,7 +6,7 @@ import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { nasabah, users } from "@/db/schema";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -38,6 +38,48 @@ export type ActionState = {
   };
 };
 
+function dateMatches(input: string, stored: string): boolean {
+  const cleanedInput = input.trim().replace(/-/g, "/");
+  const cleanedStored = stored.trim().replace(/-/g, "/");
+
+  if (cleanedInput === cleanedStored) return true;
+
+  const storedParts = cleanedStored.split("/");
+  if (storedParts.length !== 3) return false;
+
+  // stored is YYYY/MM/DD
+  const storedYear = parseInt(storedParts[0], 10);
+  const storedMonth = parseInt(storedParts[1], 10);
+  const storedDay = parseInt(storedParts[2], 10);
+
+  const inputParts = cleanedInput.split("/");
+  if (inputParts.length !== 3) return false;
+
+  const p0 = parseInt(inputParts[0], 10);
+  const p1 = parseInt(inputParts[1], 10);
+  const p2 = parseInt(inputParts[2], 10);
+
+  if (Number.isNaN(p0) || Number.isNaN(p1) || Number.isNaN(p2)) return false;
+
+  // check Format A: DD/MM/YYYY or MM/DD/YYYY
+  if (p2 > 1000) {
+    if (p0 === storedDay && p1 === storedMonth && p2 === storedYear)
+      return true;
+    if (p0 === storedMonth && p1 === storedDay && p2 === storedYear)
+      return true;
+  }
+
+  // check Format B: YYYY/MM/DD
+  if (p0 > 1000) {
+    if (p0 === storedYear && p1 === storedMonth && p2 === storedDay)
+      return true;
+    if (p0 === storedYear && p1 === storedDay && p2 === storedMonth)
+      return true;
+  }
+
+  return false;
+}
+
 export async function loginAction(
   _prevState: ActionState | null,
   formData: FormData,
@@ -59,36 +101,66 @@ export async function loginAction(
   const { username, password } = validation.data;
 
   try {
-    // 1. Fetch user from database
-    const userRecords = await db
+    let user = null;
+    let isNasabahAuth = false;
+
+    // 1. Check if username is a NIK in nasabah table
+    const nasabahRecords = await db
       .select()
-      .from(users)
-      .where(eq(users.username, username.trim()))
+      .from(nasabah)
+      .where(eq(nasabah.nik, username.trim()))
       .limit(1);
 
-    if (userRecords.length === 0) {
+    if (nasabahRecords.length > 0) {
+      const nasabahProfile = nasabahRecords[0];
+      const userRecords = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, nasabahProfile.userId))
+        .limit(1);
+
+      if (userRecords.length > 0) {
+        const potentialUser = userRecords[0];
+        const storedBirthdate = nasabahProfile.tanggalLahir;
+        if (storedBirthdate && dateMatches(password, storedBirthdate)) {
+          user = potentialUser;
+          isNasabahAuth = true;
+        }
+      }
+    }
+
+    // 2. Fallback: standard username + password login
+    if (!isNasabahAuth) {
+      const userRecords = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username.trim()))
+        .limit(1);
+
+      if (userRecords.length > 0) {
+        const potentialUser = userRecords[0];
+        const passwordMatch = await argon2.verify(
+          potentialUser.password,
+          password,
+        );
+        if (passwordMatch) {
+          user = potentialUser;
+        }
+      }
+    }
+
+    if (!user) {
       return {
         success: false,
-        error: "Username atau password salah",
+        error: "NIK/Username atau Tanggal Lahir/Password salah",
       };
     }
 
-    const user = userRecords[0];
-
-    // 2. Check if user is active
+    // 3. Check if user is active
     if (user.status !== "Aktif") {
       return {
         success: false,
         error: "Akun Anda dinonaktifkan. Silakan hubungi admin.",
-      };
-    }
-
-    // 3. Verify password using argon2
-    const passwordMatch = await argon2.verify(user.password, password);
-    if (!passwordMatch) {
-      return {
-        success: false,
-        error: "Username atau password salah",
       };
     }
 
