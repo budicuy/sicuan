@@ -200,239 +200,6 @@ export function PetaJalanSampahContent({
     }
   };
 
-  const isInteractive = userRole === "admin" || userRole === "superadmin";
-
-  if (!isInteractive) {
-    return (
-      <div className="space-y-6 pb-8 animate-in fade-in duration-350">
-        {/* Welcome Banner */}
-        <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-48 h-48 bg-primary-100/35 rounded-full blur-3xl pointer-events-none -z-10" />
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
-              <Image
-                src="/logo.png"
-                alt="SICUAN Logo"
-                width={24}
-                height={24}
-                className="object-contain"
-              />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-                Peta Jalan <span className="text-primary-600">Sampah Anda</span>
-              </h1>
-              <p className="text-xs text-neutral-500 mt-0.5 max-w-2xl font-medium">
-                {getWelcomeText()}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-xl text-emerald-700 text-xs font-bold border border-emerald-100 shrink-0 self-stretch md:self-auto justify-center">
-            <Recycle className="w-4 h-4 text-emerald-600" />
-            <span>Siklus Aktif</span>
-          </div>
-        </div>
-
-        {/* Visual Roadmap Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Timeline Cards (Left Side - 2 cols) */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-xs">
-              <h2 className="text-base font-black text-neutral-900 mb-6 flex items-center gap-2">
-                <Network className="w-5 h-5 text-primary-600" />
-                Tahapan Perjalanan Sampah
-              </h2>
-
-              <div className="relative pl-8 border-l-2 border-primary-100 space-y-8 ml-4 py-2">
-                {/* Step 1 */}
-                <div className="relative">
-                  <div className="absolute -left-[45px] top-0 w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm shadow-sm ring-4 ring-primary-50">
-                    1
-                  </div>
-                  <div className="bg-neutral-50/50 border border-neutral-200 rounded-xl p-5 hover:border-primary-300 transition-all">
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
-                        <curSumber.icon className="w-4.5 h-4.5" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-[10px] text-neutral-400 uppercase font-semibold tracking-wider block">
-                          Sumber Awal
-                        </span>
-                        <h3 className="text-sm font-bold text-neutral-800">
-                          {curSumber.label}
-                        </h3>
-                      </div>
-                      <span className="text-[10px] bg-primary-50 text-primary-700 font-bold px-2 py-0.5 rounded-md border border-primary-100">
-                        {curSumber.badge}
-                      </span>
-                    </div>
-                    <p className="text-xs text-neutral-500 leading-relaxed font-normal">
-                      {curSumber.desc}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="relative">
-                  <div className="absolute -left-[45px] top-0 w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm shadow-sm ring-4 ring-primary-50">
-                    2
-                  </div>
-                  <div className="bg-neutral-50/50 border border-neutral-200 rounded-xl p-5 hover:border-primary-300 transition-all">
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
-                        <curKelola.icon className="w-4.5 h-4.5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-400 uppercase font-semibold tracking-wider block">
-                          Tata Kelola
-                        </span>
-                        <h3 className="text-sm font-bold text-neutral-800">
-                          {curKelola.label}
-                        </h3>
-                      </div>
-                    </div>
-                    <p className="text-xs text-neutral-500 leading-relaxed font-normal">
-                      {curKelola.desc}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div className="relative">
-                  <div className="absolute -left-[45px] top-0 w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm shadow-sm ring-4 ring-primary-50">
-                    3
-                  </div>
-                  <div className="bg-neutral-50/50 border border-neutral-200 rounded-xl p-5 hover:border-primary-300 transition-all">
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
-                        <curPengelolaan.icon className="w-4.5 h-4.5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-400 uppercase font-semibold tracking-wider block">
-                          Metode Pengolahan
-                        </span>
-                        <h3 className="text-sm font-bold text-neutral-800">
-                          {curPengelolaan.label}
-                        </h3>
-                      </div>
-                    </div>
-                    <p className="text-xs text-neutral-500 leading-relaxed font-normal">
-                      {curPengelolaan.desc}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 4 */}
-                <div className="relative">
-                  <div className="absolute -left-[45px] top-0 w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm shadow-sm ring-4 ring-primary-50">
-                    4
-                  </div>
-                  <div className="bg-neutral-50/50 border border-neutral-200 rounded-xl p-5 hover:border-primary-300 transition-all">
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
-                        <curTujuan.icon className="w-4.5 h-4.5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-400 uppercase font-semibold tracking-wider block">
-                          Aliran Tujuan
-                        </span>
-                        <h3 className="text-sm font-bold text-neutral-800">
-                          {curTujuan.label}
-                        </h3>
-                      </div>
-                    </div>
-                    <p className="text-xs text-neutral-500 leading-relaxed font-normal">
-                      {curTujuan.desc}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Impact/Summary Card (Right Side - 1 col) */}
-          <div className="space-y-6">
-            {/* Impact Box */}
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-xs flex flex-col h-full justify-between">
-              <div>
-                <h2 className="text-base font-black text-neutral-900 mb-6 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-emerald-600 animate-pulse" />
-                  Dampak Akhir Alur
-                </h2>
-
-                {tujuan === "produk_olahan" ? (
-                  <div className="rounded-xl border border-emerald-250 bg-emerald-50/15 p-5 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-md">
-                        <Recycle className="w-5.5 h-5.5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-emerald-950">
-                          Ekonomi Sirkular
-                        </h4>
-                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-md border border-emerald-200">
-                          ZERO WASTE POSSIBLE
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-emerald-900/90 leading-relaxed font-normal">
-                      Dengan memilih jalur daur ulang dan upcycling, Anda
-                      mendukung penuh terciptanya Ekonomi Sirkular (Circular
-                      Economy) yang berkelanjutan di tingkat lokal dan nasional.
-                      Model ini memutus secara radikal rantai ekonomi linier
-                      tradisional &quot;ambil-buat-buang&quot; yang sangat
-                      merusak.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-red-250 bg-red-50/15 p-5 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white shadow-md">
-                        <Trash2 className="w-5.5 h-5.5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-red-950">
-                          Beban Residu di TPA
-                        </h4>
-                        <span className="text-[9px] bg-red-100 text-red-800 font-black px-2 py-0.5 rounded-md border border-red-200">
-                          LANDFILL DEPOSITION
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-red-900/90 leading-relaxed font-normal">
-                      Membiarkan sisa konsumsi anorganik berakhir begitu saja di
-                      TPA memicu dampak kerusakan lingkungan yang
-                      berkepanjangan, mahal, dan sistemik. Tumpukan sampah ini
-                      akan merembes menjadi racun air tanah dan menghasilkan gas
-                      metana berbahaya.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Tips */}
-              <div className="bg-amber-50/20 border border-amber-200 rounded-xl p-4 mt-6">
-                <div className="flex gap-2.5">
-                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
-                      Rekomendasi Aksi
-                    </span>
-                    <p className="text-[11px] text-neutral-600 leading-relaxed font-medium mt-1">
-                      {tujuan === "produk_olahan"
-                        ? "Pertahankan konsistensi Anda dalam memilah sampah di tingkat hulu. Ajak keluarga dan tetangga sekitar untuk mulai menabung sampah anorganik berkualitas mereka di Bank Sampah terdekat."
-                        : "Hentikan pembuangan langsung sampah tercampur ke wadah umum. Segera mulailah melakukan pemilahan sampah anorganik bernilai (kertas, kardus, botol plastik) dari rumah Anda."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 pb-4 animate-in fade-in duration-350">
       {/* Welcome Banner */}
@@ -479,94 +246,92 @@ export function PetaJalanSampahContent({
           </div>
 
           {/* Quick Preset Selector */}
-          {(userRole === "admin" || userRole === "superadmin") && (
-            <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200 mb-6 space-y-2.5">
-              <div className="flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-primary-600" />
-                <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
-                  Pilih Preset Alur
-                </span>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSumber("rumah_tangga");
-                    setKelola("bank_sampah");
-                    setPengelolaan("pilah_timbang");
-                    setTujuan("produk_olahan");
-                  }}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
-                    sumber === "rumah_tangga" &&
-                    kelola === "bank_sampah" &&
-                    pengelolaan === "pilah_timbang" &&
-                    tujuan === "produk_olahan"
-                      ? "bg-primary-600 text-white border-primary-600 shadow-sm"
-                      : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
-                  }`}
-                >
-                  Alur Konsumen
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSumber("warmindo");
-                    setKelola("perusahaan");
-                    setPengelolaan("timbang_olah");
-                    setTujuan("produk_olahan");
-                  }}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
-                    sumber === "warmindo" &&
-                    kelola === "perusahaan" &&
-                    pengelolaan === "timbang_olah" &&
-                    tujuan === "produk_olahan"
-                      ? "bg-primary-600 text-white border-primary-600 shadow-sm"
-                      : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
-                  }`}
-                >
-                  Alur Warmiendo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSumber("nasabah_bank");
-                    setKelola("bank_sampah");
-                    setPengelolaan("pilah_timbang");
-                    setTujuan("produk_olahan");
-                  }}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
-                    sumber === "nasabah_bank" &&
-                    kelola === "bank_sampah" &&
-                    pengelolaan === "pilah_timbang" &&
-                    tujuan === "produk_olahan"
-                      ? "bg-primary-600 text-white border-primary-600 shadow-sm"
-                      : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
-                  }`}
-                >
-                  Alur Bank Sampah
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSumber("nasabah_tps");
-                    setKelola("tps_3r");
-                    setPengelolaan("timbang_olah");
-                    setTujuan("produk_olahan");
-                  }}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
-                    sumber === "nasabah_tps" &&
-                    kelola === "tps_3r" &&
-                    pengelolaan === "timbang_olah" &&
-                    tujuan === "produk_olahan"
-                      ? "bg-primary-600 text-white border-primary-600 shadow-sm"
-                      : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
-                  }`}
-                >
-                  Alur TPS 3R
-                </button>
-              </div>
+          <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200 mb-6 space-y-2.5">
+            <div className="flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-primary-600" />
+              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Pilih Preset Alur
+              </span>
             </div>
-          )}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSumber("rumah_tangga");
+                  setKelola("bank_sampah");
+                  setPengelolaan("pilah_timbang");
+                  setTujuan("produk_olahan");
+                }}
+                className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
+                  sumber === "rumah_tangga" &&
+                  kelola === "bank_sampah" &&
+                  pengelolaan === "pilah_timbang" &&
+                  tujuan === "produk_olahan"
+                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                }`}
+              >
+                Alur Konsumen
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSumber("warmindo");
+                  setKelola("perusahaan");
+                  setPengelolaan("timbang_olah");
+                  setTujuan("produk_olahan");
+                }}
+                className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
+                  sumber === "warmindo" &&
+                  kelola === "perusahaan" &&
+                  pengelolaan === "timbang_olah" &&
+                  tujuan === "produk_olahan"
+                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                }`}
+              >
+                Alur Warmiendo
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSumber("nasabah_bank");
+                  setKelola("bank_sampah");
+                  setPengelolaan("pilah_timbang");
+                  setTujuan("produk_olahan");
+                }}
+                className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
+                  sumber === "nasabah_bank" &&
+                  kelola === "bank_sampah" &&
+                  pengelolaan === "pilah_timbang" &&
+                  tujuan === "produk_olahan"
+                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                }`}
+              >
+                Alur Bank Sampah
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSumber("nasabah_tps");
+                  setKelola("tps_3r");
+                  setPengelolaan("timbang_olah");
+                  setTujuan("produk_olahan");
+                }}
+                className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
+                  sumber === "nasabah_tps" &&
+                  kelola === "tps_3r" &&
+                  pengelolaan === "timbang_olah" &&
+                  tujuan === "produk_olahan"
+                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                    : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                }`}
+              >
+                Alur TPS 3R
+              </button>
+            </div>
+          </div>
 
           {/* Desktop SVG Visual Flow Map */}
           <div className="hidden md:block relative w-full h-44 mb-8">
