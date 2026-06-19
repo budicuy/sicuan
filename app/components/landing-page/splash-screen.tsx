@@ -1,7 +1,7 @@
 "use client";
 
-import { Recycle } from "lucide-react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export function SplashScreen() {
@@ -104,9 +104,15 @@ export function SplashScreen() {
             initial={{ scale: 0.6, opacity: 0, rotate: -180 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="relative w-22 h-22 rounded-2xl bg-linear-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white shadow-2xl shadow-primary-600/30 z-10 border border-primary-400/20"
+            className="relative w-22 h-22 rounded-2xl bg-white flex items-center justify-center shadow-2xl shadow-neutral-200/50 z-10 border border-neutral-100"
           >
-            <Recycle className="w-12 h-12 animate-spin-slow" />
+            <Image
+              src="/logo.png"
+              alt="SICUAN Logo"
+              width={48}
+              height={48}
+              className="object-contain"
+            />
           </motion.div>
         </div>
 

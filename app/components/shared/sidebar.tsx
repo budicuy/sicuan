@@ -19,6 +19,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
@@ -380,8 +381,14 @@ export function SidebarLayout({
           <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
             <div className="flex items-center justify-between mb-6 shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white">
-                  <Recycle className="w-5 h-5 animate-spin-slow" />
+                <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center">
+                  <Image
+                    src="/logo.png"
+                    alt="SICUAN Logo"
+                    width={20}
+                    height={20}
+                    className="object-contain"
+                  />
                 </div>
                 <span className="text-lg font-bold tracking-tight text-neutral-900">
                   SICUAN
@@ -432,8 +439,14 @@ export function SidebarLayout({
       <aside className="hidden lg:flex flex-col justify-between w-64 bg-white text-neutral-800 p-6 shrink-0 fixed top-0 bottom-0 left-0 border-r border-neutral-200 shadow-xs">
         <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
           <div className="flex items-center gap-2 mb-8 shrink-0">
-            <div className="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center text-white shadow-md">
-              <Recycle className="w-6 h-6 animate-spin-slow" />
+            <div className="w-10 h-10 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shadow-xs">
+              <Image
+                src="/logo.png"
+                alt="SICUAN Logo"
+                width={24}
+                height={24}
+                className="object-contain"
+              />
             </div>
             <div>
               <span className="text-xl font-bold tracking-tight text-neutral-900">

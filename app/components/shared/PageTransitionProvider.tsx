@@ -1,7 +1,7 @@
 "use client";
 
-import { Recycle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import Link, { type LinkProps } from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
@@ -108,8 +108,14 @@ export default function PageTransitionProvider({
           >
             <div className="flex items-center gap-4 text-left select-none">
               {/* Logo Icon */}
-              <div className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-600/30">
-                <Recycle className="w-8 h-8 animate-spin-slow" />
+              <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-lg">
+                <Image
+                  src="/logo.png"
+                  alt="SICUAN Logo"
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                />
               </div>
               {/* Text Group */}
               <div className="flex flex-col items-start justify-center">

@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import {
   Area,
@@ -118,8 +119,14 @@ export default function DashboardPage() {
         <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
           <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
-              <Recycle className="w-6 h-6 animate-spin-slow" />
+            <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
+              <Image
+                src="/logo.png"
+                alt="SICUAN Logo"
+                width={24}
+                height={24}
+                className="object-contain"
+              />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight flex flex-wrap items-center gap-1.5">

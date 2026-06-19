@@ -7,13 +7,13 @@ import {
   EyeOff,
   Leaf,
   Lock,
-  Recycle,
   Shield,
   ShieldAlert,
   TrendingUp,
   User,
 } from "lucide-react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useEffect, useState } from "react";
 import {
@@ -65,8 +65,14 @@ export default function LoginPage() {
         {/* Top Header */}
         <div className="relative z-10 flex items-center gap-3">
           <TransitionLink href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-600/30 group-hover:scale-105 transition-transform duration-300">
-              <Recycle className="w-6 h-6 animate-spin-slow" />
+            <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300">
+              <Image
+                src="/logo.png"
+                alt="SICUAN Logo"
+                width={24}
+                height={24}
+                className="object-contain"
+              />
             </div>
             <div>
               <span className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
@@ -151,8 +157,14 @@ export default function LoginPage() {
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Kembali ke Beranda
           </TransitionLink>
-          <div className="lg:hidden w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white shadow-md">
-            <Recycle className="w-5 h-5 animate-spin-slow" />
+          <div className="lg:hidden w-8 h-8 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shadow-xs">
+            <Image
+              src="/logo.png"
+              alt="SICUAN Logo"
+              width={18}
+              height={18}
+              className="object-contain"
+            />
           </div>
         </div>
 

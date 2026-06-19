@@ -1,6 +1,7 @@
 "use client";
 
-import { Menu, Recycle, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { TransitionLink } from "@/app/components/shared/PageTransitionProvider";
 
@@ -51,8 +52,14 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-md shadow-primary-600/30">
-            <Recycle className="w-6 h-6 animate-spin-slow" />
+          <div className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center shadow-xs">
+            <Image
+              src="/logo.png"
+              alt="SICUAN Logo"
+              width={24}
+              height={24}
+              className="object-contain"
+            />
           </div>
           <div>
             <span className="text-xl font-bold tracking-tight text-primary-950 flex items-center gap-1.5">

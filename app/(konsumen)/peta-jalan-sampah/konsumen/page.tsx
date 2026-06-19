@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function PetaJalanSampahKonsumenPage() {
-  return <PetaJalanSampahContent />;
+  return <PetaJalanSampahContent userRole="konsumen" />;
 }
