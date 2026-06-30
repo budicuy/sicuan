@@ -142,13 +142,15 @@ export function PetaSampahAdminContent({
     });
   }, [month, year, isMounted]);
 
-  // Client-side filtering based on role checkboxes
-  const filteredSetoran = setoranList.filter((s) => {
-    if (s.senderType === "warmiendo" && !showWarmiendo) return false;
-    if (s.senderType === "konsumen" && !showKonsumen) return false;
-    if (s.senderType === "bank-sampah" && !showBankSampah) return false;
-    return true;
-  });
+  // Client-side filtering based on role checkboxes - wrapped in useMemo to prevent reference changes on render
+  const filteredSetoran = useMemo(() => {
+    return setoranList.filter((s) => {
+      if (s.senderType === "warmiendo" && !showWarmiendo) return false;
+      if (s.senderType === "konsumen" && !showKonsumen) return false;
+      if (s.senderType === "bank-sampah" && !showBankSampah) return false;
+      return true;
+    });
+  }, [setoranList, showWarmiendo, showKonsumen, showBankSampah]);
 
   const selectedSetoran =
     filteredSetoran.find((s) => s.id === selectedSetorId) ||
