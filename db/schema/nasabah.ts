@@ -1,4 +1,11 @@
-import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  doublePrecision,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { users } from "@/db/schema/users";
 
@@ -16,6 +23,8 @@ export const nasabah = pgTable("nasabah", {
   noRekening: text("no_rekening"),
   poin: integer("poin").notNull().default(0),
   kredit: integer("kredit").notNull().default(0),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
 
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

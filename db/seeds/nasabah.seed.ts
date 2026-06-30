@@ -75,16 +75,24 @@ export async function seedNasabah() {
     // Determine NIK and Tanggal Lahir
     let nik = "";
     let tanggalLahir = "";
+    let latitude: number | null = null;
+    let longitude: number | null = null;
 
     if (user.username === "budi.santoso") {
       nik = "637101000000000";
       tanggalLahir = "1995-08-17";
+      latitude = -3.32;
+      longitude = 114.593;
     } else if (user.username === "warmiendo.demo") {
       nik = "637102000000000";
       tanggalLahir = "1990-08-17";
+      latitude = -3.32426;
+      longitude = 114.59102;
     } else if (user.username === "banksampah.demo") {
       nik = "637103000000000";
       tanggalLahir = "1985-08-17";
+      latitude = -3.29826;
+      longitude = 114.58602;
     } else {
       // It's a CSV user, username is their NIK
       nik = user.username;
@@ -101,6 +109,8 @@ export async function seedNasabah() {
       noRekening: null, // Emptied/nullable as requested
       poin,
       kredit,
+      latitude,
+      longitude,
     });
   }
 

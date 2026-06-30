@@ -137,3 +137,10 @@
   background-size: 200% auto;
   animation: rainbow-shift 3s linear infinite;
 }
+
+/* Hide Leaflet zoom controls on mobile devices */
+@media (max-width: 767px) {
+  .leaflet-control-zoom {
+    display: none;
+  }
+}

@@ -146,7 +146,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         label: "Laporan Setoran",
         icon: "Recycle",
       },
-
+      {
+        type: "link",
+        href: "/peta-sampah",
+        label: "Peta Sampah",
+        icon: "Map",
+      },
       {
         type: "link",
         href: "/user-guide",
