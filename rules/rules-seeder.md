@@ -150,21 +150,3 @@ import argon2 from "argon2";
 const password = await argon2.hash("secret123");
 const data = [{ email: "admin@example.com", password }];
 ```
-
----
-
-## package.json Scripts
-
-Selalu tambahkan scripts ini:
-
-```json
-{
-  "scripts": {
-    "db:seed": "tsx src/db/seeds/seed.ts",
-    "db:migrate:seed": "npm run db:migrate && npm run db:seed"
-  }
-}
-```
-
----
-
