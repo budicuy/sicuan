@@ -5,6 +5,7 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   useMultiFileAuthState,
 } from "@whiskeysockets/baileys";
+import { eq, ne } from "drizzle-orm";
 import pino from "pino";
 import qrcode from "qrcode";
 import { db } from "@/db";
@@ -46,28 +47,39 @@ async function loadSessionFromDb(dir: string) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const files = await db.select().from(whatsappSessionTable);
+  // Clean up any bloated non-creds files from previous versions in the database
+  try {
+    await db
+      .delete(whatsappSessionTable)
+      .where(ne(whatsappSessionTable.fileName, "creds.json"));
+  } catch (e) {
+    console.error("Error cleaning up bloated database rows:", e);
+  }
+
+  // Only load the main credentials file
+  const files = await db
+    .select()
+    .from(whatsappSessionTable)
+    .where(eq(whatsappSessionTable.fileName, "creds.json"));
+
   for (const f of files) {
     const filePath = path.join(dir, f.fileName);
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, Buffer.from(f.fileContent, "base64"));
   }
-  console.log(`Restored ${files.length} WhatsApp session files from Neon DB.`);
+  console.log(`Restored core WhatsApp credentials (creds.json) from Neon DB.`);
 }
 
 // Database Session Save
 async function saveSessionToDb(dir: string) {
-  if (!fs.existsSync(dir)) return;
-  const files = fs.readdirSync(dir);
-  for (const file of files) {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat.isFile()) {
+  const filePath = path.join(dir, "creds.json");
+  if (fs.existsSync(filePath)) {
+    try {
       const content = fs.readFileSync(filePath).toString("base64");
       await db
         .insert(whatsappSessionTable)
         .values({
-          fileName: file,
+          fileName: "creds.json",
           fileContent: content,
           updatedAt: new Date(),
         })
@@ -78,9 +90,11 @@ async function saveSessionToDb(dir: string) {
             updatedAt: new Date(),
           },
         });
+      console.log("Synchronized WhatsApp creds.json to Neon DB.");
+    } catch (error) {
+      console.error("Error saving creds.json to database:", error);
     }
   }
-  console.log("Synchronized WhatsApp session files to Neon DB.");
 }
 
 // Database Session Clear
@@ -103,7 +117,7 @@ export async function initWhatsApp() {
   whatsappSession.errorMsg = null;
 
   try {
-    // 1. Restore session from database
+    // 1. Restore core session from database
     await loadSessionFromDb(authDir);
 
     // 2. Load Multi-File Auth
@@ -151,7 +165,7 @@ export async function initWhatsApp() {
         whatsappSession.qrCode = null;
         whatsappSession.errorMsg = null;
         console.log("WhatsApp Connection successfully opened!");
-        await saveSessionToDb(authDir); // Sync opened state session keys to DB
+        await saveSessionToDb(authDir); // Sync credentials to DB
       }
 
       if (connection === "close") {
