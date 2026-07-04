@@ -66,6 +66,16 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
             label: "Setor Sampah Nasabah",
             icon: "ShoppingBag",
           },
+          {
+            href: "/nasabah/bank-sampah-laporan",
+            label: "Laporan Setoran Nasabah",
+            icon: "FileText",
+          },
+          {
+            href: "/nasabah/bank-sampah-laporan-detail",
+            label: "Laporan Nasabah",
+            icon: "FileText",
+          },
         ],
       },
       {
