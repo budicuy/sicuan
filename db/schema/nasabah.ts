@@ -18,6 +18,7 @@ export const nasabah = pgTable("nasabah", {
   nik: text("nik"),
   tanggalLahir: text("tanggal_lahir"),
   noTelepon: text("no_telepon"),
+  email: text("email"),
   alamat: text("alamat"),
   jenisBank: text("jenis_bank"),
   noRekening: text("no_rekening"),

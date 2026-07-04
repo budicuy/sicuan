@@ -87,6 +87,7 @@ export async function getNasabah(params?: {
       alamat: nasabah.alamat,
       jenisBank: nasabah.jenisBank,
       noRekening: nasabah.noRekening,
+      email: nasabah.email,
       user: {
         name: users.name,
         username: users.username,
@@ -121,6 +122,7 @@ export async function createNasabah(
   const alamat = formData.get("alamat") as string;
   const jenisBank = formData.get("jenisBank") as string;
   const noRekening = formData.get("noRekening") as string;
+  const email = formData.get("email") as string;
 
   if (!name || name.trim().length < 2) {
     return {
@@ -136,6 +138,7 @@ export async function createNasabah(
     alamat: alamat || null,
     jenisBank: jenisBank || null,
     noRekening: noRekening || null,
+    email: email || null,
   });
 
   if (!parsed.success) {
@@ -198,6 +201,7 @@ export async function updateNasabah(
   const alamat = formData.get("alamat") as string;
   const jenisBank = formData.get("jenisBank") as string;
   const noRekening = formData.get("noRekening") as string;
+  const email = formData.get("email") as string;
 
   if (!name || name.trim().length < 2) {
     return {
@@ -213,6 +217,7 @@ export async function updateNasabah(
     alamat: alamat || null,
     jenisBank: jenisBank || null,
     noRekening: noRekening || null,
+    email: email || null,
   });
 
   if (!parsed.success) {

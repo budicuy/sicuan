@@ -23,6 +23,7 @@ interface Nasabah {
   nik: string | null;
   tanggalLahir: string | null;
   noTelepon: string | null;
+  email: string | null;
   alamat: string | null;
   jenisBank: string | null;
   noRekening: string | null;
@@ -205,6 +206,15 @@ export default function BankSampahNasabahPage() {
       sortKey: "noTelepon",
       render: (n) => (
         <span className="text-neutral-600">{n.noTelepon || "-"}</span>
+      ),
+    },
+    {
+      header: "Email",
+      sortKey: "email",
+      render: (n) => (
+        <span className="text-neutral-600 font-mono text-xs">
+          {n.email || "-"}
+        </span>
       ),
     },
     {
@@ -411,26 +421,48 @@ export default function BankSampahNasabahPage() {
           </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="noTelepon-input"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Nomor Telepon
-          </label>
-          <input
-            id="noTelepon-input"
-            type="text"
-            name="noTelepon"
-            defaultValue={editingNasabah?.noTelepon || ""}
-            placeholder="e.g. 081234567890"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-850"
-          />
-          {formErrors.noTelepon && (
-            <p className="text-red-600 text-xs mt-1">
-              {formErrors.noTelepon[0]}
-            </p>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor="noTelepon-input"
+              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+            >
+              Nomor Telepon
+            </label>
+            <input
+              id="noTelepon-input"
+              type="text"
+              name="noTelepon"
+              defaultValue={editingNasabah?.noTelepon || ""}
+              placeholder="e.g. 081234567890"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-850"
+            />
+            {formErrors.noTelepon && (
+              <p className="text-red-600 text-xs mt-1">
+                {formErrors.noTelepon[0]}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="email-input"
+              className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1"
+            >
+              Alamat Email (Untuk Laporan PDF)
+            </label>
+            <input
+              id="email-input"
+              type="email"
+              name="email"
+              defaultValue={editingNasabah?.email || ""}
+              placeholder="e.g. nasabah@gmail.com"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-850"
+            />
+            {formErrors.email && (
+              <p className="text-red-600 text-xs mt-1">{formErrors.email[0]}</p>
+            )}
+          </div>
         </div>
 
         <div>

@@ -4,11 +4,7 @@ import { renderToStream } from "@react-pdf/renderer";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import React from "react";
 import { LaporanNasabahDocument } from "@/app/components/shared/LaporanNasabahDocument";
-import {
-  disconnectWhatsApp,
-  initWhatsApp,
-  whatsappSession,
-} from "@/app/lib/whatsapp";
+import { sendEmail } from "@/app/lib/email";
 import { db } from "@/db";
 import {
   nasabah,
@@ -32,25 +28,14 @@ export async function getNasabahListWithSummaries(params?: {
   }
 
   try {
-    // Database-level one-time patch: update incorrect/empty phone numbers to '082152676658'
-    await db
-      .update(nasabah)
-      .set({ noTelepon: "082152676658" })
-      .where(
-        or(
-          sql`no_telepon is null`,
-          sql`no_telepon = ''`,
-          eq(nasabah.noTelepon, "0877-2374-9524"),
-        ),
-      );
-
-    // 1. Fetch filtered nasabah profiles list
+    // 1. Fetch filtered nasabah profiles list (including email)
     const nasabahList = await db
       .select({
         id: nasabah.id,
         userId: nasabah.userId,
         nik: nasabah.nik,
         noTelepon: nasabah.noTelepon,
+        email: nasabah.email,
         alamat: nasabah.alamat,
         poin: nasabah.poin,
         kredit: nasabah.kredit,
@@ -137,6 +122,7 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
         userId: nasabah.userId,
         nik: nasabah.nik,
         noTelepon: nasabah.noTelepon,
+        email: nasabah.email,
         alamat: nasabah.alamat,
         poin: nasabah.poin,
         kredit: nasabah.kredit,
@@ -222,71 +208,13 @@ export async function generateNasabahPdfAction(nasabahId: number) {
   }
 }
 
-// --- WhatsApp API integrations ---
-
-export async function getWhatsAppStatus() {
-  return {
-    status: whatsappSession.status,
-    qrCode: whatsappSession.qrCode,
-    errorMsg: whatsappSession.errorMsg,
-  };
-}
-
-export async function connectWhatsAppAction() {
-  await initWhatsApp();
-  return {
-    status: whatsappSession.status,
-    qrCode: whatsappSession.qrCode,
-    errorMsg: whatsappSession.errorMsg,
-  };
-}
-
-export async function logoutWhatsAppAction() {
-  await disconnectWhatsApp();
-  return {
-    status: whatsappSession.status,
-    qrCode: whatsappSession.qrCode,
-  };
-}
-
-// Helper to wait until Baileys WebSocket opens (timeout 12s)
-async function waitForWhatsAppReady(timeoutMs = 12000): Promise<boolean> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if (whatsappSession.status === "ready" && whatsappSession.sock) {
-      return true;
-    }
-    if (whatsappSession.status === "disconnected") {
-      return false;
-    }
-    // Sleep for 200ms
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-  return false;
-}
-
-export async function sendPdfToWhatsAppAction(
+export async function sendPdfToEmailAction(
   nasabahId: number,
-  phone: string,
+  emailAddress: string,
   totalBerat: number,
   totalKredit: number,
   totalTransaksi: number,
 ) {
-  // If not connected, initialize the connection dynamically (Serverless wakeup)
-  if (!whatsappSession.sock) {
-    await initWhatsApp();
-  }
-
-  // Block and wait until socket connects to WhatsApp servers
-  const isReady = await waitForWhatsAppReady();
-  if (!isReady || !whatsappSession.sock) {
-    return {
-      success: false,
-      message:
-        "Gagal mengkoneksikan ke WhatsApp Web. Pastikan WhatsApp Anda aktif atau scan ulang QR Code.",
-    };
-  }
-
   try {
     const data = await getNasabahDetailAndSetoran(nasabahId);
     if (!data) {
@@ -301,39 +229,41 @@ export async function sendPdfToWhatsAppAction(
       };
     }
 
-    // Format WA JID (Baileys uses JID format: number@s.whatsapp.net)
-    let cleaned = phone.replace(/\D/g, "");
-    if (cleaned.startsWith("0")) {
-      cleaned = `62${cleaned.slice(1)}`;
-    }
-    if (!cleaned.startsWith("62") && cleaned.length > 0) {
-      cleaned = `62${cleaned}`;
-    }
-    const recipientJid = `${cleaned}@s.whatsapp.net`;
+    const messageText = `Halo ${data.profile.user.name},
 
-    const messageText = `Halo *${data.profile.user.name}*, berikut adalah Laporan Detail Setoran Sampah Anda di Bank Sampah Indofood:
+Berikut adalah Laporan Detail Setoran Sampah Anda di Bank Sampah Indofood:
 
-- *Total Transaksi*: ${totalTransaksi} Setoran
-- *Total Berat Sampah*: ${totalBerat.toLocaleString("id-ID")} kg
-- *Total Saldo Uang*: Rp ${totalKredit.toLocaleString("id-ID")}
+- Total Transaksi: ${totalTransaksi} Setoran
+- Total Berat Sampah: ${totalBerat.toLocaleString("id-ID")} kg
+- Total Saldo Uang: Rp ${totalKredit.toLocaleString("id-ID")}
 
-Terima kasih atas partisipasi aktif Anda dalam menjaga kelestarian lingkungan!`;
+Terima kasih atas partisipasi aktif Anda dalam menjaga kelestarian lingkungan! Berkas PDF laporan lengkap Anda terlampir pada email ini.
 
-    // Send PDF document via Baileys API
+Salam hangat,
+Bank Sampah Indofood`;
+
+    // Convert base64 PDF to Buffer for Nodemailer
     const pdfBuffer = Buffer.from(res.pdfBase64, "base64");
-    await whatsappSession.sock.sendMessage(recipientJid, {
-      document: pdfBuffer,
-      mimetype: "application/pdf",
-      fileName: res.fileName,
-      caption: messageText,
+
+    await sendEmail({
+      to: emailAddress,
+      subject: `Laporan Setoran Sampah - ${data.profile.user.name}`,
+      text: messageText,
+      attachments: [
+        {
+          filename: res.fileName,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
     });
 
     return { success: true };
   } catch (error) {
-    console.error("Error sending PDF via Baileys:", error);
+    console.error("Error sending PDF via Email:", error);
     return {
       success: false,
-      message: `Gagal mengirim pesan: ${String(error)}`,
+      message: `Gagal mengirim email: ${String(error)}`,
     };
   }
 }

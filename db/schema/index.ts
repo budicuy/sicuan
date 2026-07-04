@@ -12,4 +12,3 @@ export * from "@/db/schema/setoran_bank_sampah";
 export * from "@/db/schema/setoran_konsumen";
 export * from "@/db/schema/setoran_warmiendo";
 export * from "@/db/schema/users";
-export * from "@/db/schema/whatsapp-session";
