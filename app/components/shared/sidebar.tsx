@@ -17,6 +17,7 @@ import {
   ShoppingBag,
   Star,
   User,
+  Users,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -31,6 +32,7 @@ const IconMap: Record<string, LucideIcon> = {
   FileText,
   ShoppingBag,
   User,
+  Users,
   Folder,
   Settings,
   Recycle,
