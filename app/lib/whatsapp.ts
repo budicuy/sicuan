@@ -1,8 +1,18 @@
+import fs from "node:fs";
+import path from "node:path";
+import makeWASocket, {
+  DisconnectReason,
+  fetchLatestBaileysVersion,
+  useMultiFileAuthState,
+} from "@whiskeysockets/baileys";
+import pino from "pino";
 import qrcode from "qrcode";
-import { Client, LocalAuth } from "whatsapp-web.js";
+import { db } from "@/db";
+import { whatsappSessionTable } from "@/db/schema";
 
 export interface WhatsAppSession {
-  client: Client | null;
+  // biome-ignore lint/suspicious/noExplicitAny: baileys socket object
+  sock: any | null;
   qrCode: string | null;
   status:
     | "disconnected"
@@ -13,14 +23,14 @@ export interface WhatsAppSession {
   errorMsg: string | null;
 }
 
-// Attach the session to the Node global object to survive Next.js hot-reloads
+// Global singleton to survive Next.js hot-reloads
 const globalForWhatsApp = global as unknown as {
   whatsappSession?: WhatsAppSession;
 };
 
 if (!globalForWhatsApp.whatsappSession) {
   globalForWhatsApp.whatsappSession = {
-    client: null,
+    sock: null,
     qrCode: null,
     status: "disconnected",
     errorMsg: null,
@@ -28,104 +38,169 @@ if (!globalForWhatsApp.whatsappSession) {
 }
 
 export const whatsappSession = globalForWhatsApp.whatsappSession;
+const authDir = "/tmp/baileys_auth";
+
+// Database Session Load
+async function loadSessionFromDb(dir: string) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const files = await db.select().from(whatsappSessionTable);
+  for (const f of files) {
+    const filePath = path.join(dir, f.fileName);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, Buffer.from(f.fileContent, "base64"));
+  }
+  console.log(`Restored ${files.length} WhatsApp session files from Neon DB.`);
+}
+
+// Database Session Save
+async function saveSessionToDb(dir: string) {
+  if (!fs.existsSync(dir)) return;
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    if (stat.isFile()) {
+      const content = fs.readFileSync(filePath).toString("base64");
+      await db
+        .insert(whatsappSessionTable)
+        .values({
+          fileName: file,
+          fileContent: content,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: whatsappSessionTable.fileName,
+          set: {
+            fileContent: content,
+            updatedAt: new Date(),
+          },
+        });
+    }
+  }
+  console.log("Synchronized WhatsApp session files to Neon DB.");
+}
+
+// Database Session Clear
+async function clearSessionDb(dir: string) {
+  await db.delete(whatsappSessionTable);
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  console.log("Cleared WhatsApp session from Neon DB and local disk.");
+}
 
 export async function initWhatsApp() {
-  if (whatsappSession.client) {
+  if (whatsappSession.sock) {
     return whatsappSession;
   }
 
-  console.log("Starting WhatsApp Client using system Chrome...");
+  console.log("Initializing Baileys WhatsApp Client...");
   whatsappSession.status = "connecting";
   whatsappSession.qrCode = null;
   whatsappSession.errorMsg = null;
 
   try {
-    const client = new Client({
-      authStrategy: new LocalAuth({
-        dataPath: "./.wwebjs_auth",
-      }),
-      puppeteer: {
-        headless: true,
-        executablePath: "/usr/bin/google-chrome-stable", // Use system Chrome directly
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-        ],
-      },
+    // 1. Restore session from database
+    await loadSessionFromDb(authDir);
+
+    // 2. Load Multi-File Auth
+    // biome-ignore lint/correctness/useHookAtTopLevel: useMultiFileAuthState is a backend Baileys authentication builder, not a React Hook
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
+    const { version } = await fetchLatestBaileysVersion();
+
+    // 3. Initialize Baileys
+    const sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      // biome-ignore lint/suspicious/noExplicitAny: pino logger typecast
+      logger: pino({ level: "silent" }) as any,
+      browser: ["Sicuan Bank Sampah", "Chrome", "1.0.0"],
     });
 
-    client.on("qr", async (qr) => {
-      try {
-        whatsappSession.qrCode = await qrcode.toDataURL(qr);
-        whatsappSession.status = "qr_ready";
+    // 4. Handle creds update
+    sock.ev.on("creds.update", async () => {
+      await saveCreds();
+      await saveSessionToDb(authDir);
+    });
+
+    // 5. Handle connection updates
+    sock.ev.on("connection.update", async (update) => {
+      const { connection, qr, lastDisconnect } = update;
+
+      if (qr) {
+        try {
+          whatsappSession.qrCode = await qrcode.toDataURL(qr);
+          whatsappSession.status = "qr_ready";
+          whatsappSession.errorMsg = null;
+          console.log("New WhatsApp QR Code generated.");
+        } catch (err) {
+          console.error("Failed to generate QR base64:", err);
+        }
+      }
+
+      if (connection === "connecting") {
+        whatsappSession.status = "connecting";
+      }
+
+      if (connection === "open") {
+        whatsappSession.status = "ready";
+        whatsappSession.qrCode = null;
         whatsappSession.errorMsg = null;
-        console.log("WhatsApp QR Code generated and converted to base64.");
-      } catch (err) {
-        console.error("Error generating QR code base64:", err);
+        console.log("WhatsApp Connection successfully opened!");
+        await saveSessionToDb(authDir); // Sync opened state session keys to DB
+      }
+
+      if (connection === "close") {
+        // biome-ignore lint/suspicious/noExplicitAny: lastDisconnect error typecast
+        const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+
+        console.log(
+          `Connection closed. StatusCode: ${statusCode}. Reconnecting: ${shouldReconnect}`,
+        );
+
+        whatsappSession.sock = null;
+        whatsappSession.qrCode = null;
+
+        if (shouldReconnect) {
+          whatsappSession.status = "connecting";
+          // Reconnect dynamically
+          setTimeout(initWhatsApp, 2000);
+        } else {
+          whatsappSession.status = "disconnected";
+          whatsappSession.errorMsg = "Logged out from WhatsApp device.";
+          await clearSessionDb(authDir);
+        }
       }
     });
 
-    client.on("authenticated", () => {
-      whatsappSession.qrCode = null;
-      whatsappSession.status = "authenticated";
-      whatsappSession.errorMsg = null;
-      console.log("WhatsApp Authenticated!");
-    });
-
-    client.on("ready", () => {
-      whatsappSession.qrCode = null;
-      whatsappSession.status = "ready";
-      whatsappSession.errorMsg = null;
-      console.log("WhatsApp Client Ready!");
-    });
-
-    client.on("auth_failure", (msg) => {
-      whatsappSession.qrCode = null;
-      whatsappSession.status = "disconnected";
-      whatsappSession.errorMsg = `Otentikasi gagal: ${msg}`;
-      whatsappSession.client = null;
-      console.error("WhatsApp Auth Failure:", msg);
-    });
-
-    client.on("disconnected", (reason) => {
-      whatsappSession.qrCode = null;
-      whatsappSession.status = "disconnected";
-      whatsappSession.errorMsg = `Terputus: ${reason}`;
-      whatsappSession.client = null;
-      console.log("WhatsApp Client disconnected:", reason);
-    });
-
-    client.initialize().catch((err) => {
-      console.error("Error initializing client inside promise:", err);
-      whatsappSession.status = "disconnected";
-      whatsappSession.errorMsg = String(err);
-      whatsappSession.client = null;
-    });
-
-    whatsappSession.client = client;
+    whatsappSession.sock = sock;
   } catch (error) {
-    console.error("Error starting WhatsApp client:", error);
+    console.error("Error starting Baileys client:", error);
     whatsappSession.status = "disconnected";
     whatsappSession.errorMsg = String(error);
-    whatsappSession.client = null;
+    whatsappSession.sock = null;
   }
 
   return whatsappSession;
 }
 
 export async function disconnectWhatsApp() {
-  if (whatsappSession.client) {
+  if (whatsappSession.sock) {
     try {
-      await whatsappSession.client.destroy();
+      await whatsappSession.sock.logout();
     } catch (e) {
-      console.error("Error destroying client:", e);
+      console.error("Error logging out Baileys:", e);
     }
-    whatsappSession.client = null;
-    whatsappSession.qrCode = null;
+    whatsappSession.sock = null;
+    await clearSessionDb(authDir);
     whatsappSession.status = "disconnected";
+    whatsappSession.qrCode = null;
     whatsappSession.errorMsg = null;
-    console.log("WhatsApp Client destroyed.");
+    console.log("WhatsApp Session cleared.");
   }
 }

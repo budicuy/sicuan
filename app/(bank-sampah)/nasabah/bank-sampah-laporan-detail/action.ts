@@ -3,7 +3,6 @@
 import { renderToStream } from "@react-pdf/renderer";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import React from "react";
-import { MessageMedia } from "whatsapp-web.js";
 import { LaporanNasabahDocument } from "@/app/components/shared/LaporanNasabahDocument";
 import {
   disconnectWhatsApp,
@@ -250,6 +249,22 @@ export async function logoutWhatsAppAction() {
   };
 }
 
+// Helper to wait until Baileys WebSocket opens (timeout 12s)
+async function waitForWhatsAppReady(timeoutMs = 12000): Promise<boolean> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (whatsappSession.status === "ready" && whatsappSession.sock) {
+      return true;
+    }
+    if (whatsappSession.status === "disconnected") {
+      return false;
+    }
+    // Sleep for 200ms
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  return false;
+}
+
 export async function sendPdfToWhatsAppAction(
   nasabahId: number,
   phone: string,
@@ -257,11 +272,18 @@ export async function sendPdfToWhatsAppAction(
   totalKredit: number,
   totalTransaksi: number,
 ) {
-  if (whatsappSession.status !== "ready" || !whatsappSession.client) {
+  // If not connected, initialize the connection dynamically (Serverless wakeup)
+  if (!whatsappSession.sock) {
+    await initWhatsApp();
+  }
+
+  // Block and wait until socket connects to WhatsApp servers
+  const isReady = await waitForWhatsAppReady();
+  if (!isReady || !whatsappSession.sock) {
     return {
       success: false,
       message:
-        "WhatsApp belum terhubung. Harap hubungkan melalui QR code terlebih dahulu.",
+        "Gagal mengkoneksikan ke WhatsApp Web. Pastikan WhatsApp Anda aktif atau scan ulang QR Code.",
     };
   }
 
@@ -279,7 +301,7 @@ export async function sendPdfToWhatsAppAction(
       };
     }
 
-    // Format JID
+    // Format WA JID (Baileys uses JID format: number@s.whatsapp.net)
     let cleaned = phone.replace(/\D/g, "");
     if (cleaned.startsWith("0")) {
       cleaned = `62${cleaned.slice(1)}`;
@@ -287,14 +309,7 @@ export async function sendPdfToWhatsAppAction(
     if (!cleaned.startsWith("62") && cleaned.length > 0) {
       cleaned = `62${cleaned}`;
     }
-    const recipientJid = `${cleaned}@c.us`;
-
-    // Instantiate MessageMedia for the PDF
-    const media = new MessageMedia(
-      "application/pdf",
-      res.pdfBase64,
-      res.fileName,
-    );
+    const recipientJid = `${cleaned}@s.whatsapp.net`;
 
     const messageText = `Halo *${data.profile.user.name}*, berikut adalah Laporan Detail Setoran Sampah Anda di Bank Sampah Indofood:
 
@@ -304,14 +319,18 @@ export async function sendPdfToWhatsAppAction(
 
 Terima kasih atas partisipasi aktif Anda dalam menjaga kelestarian lingkungan!`;
 
-    // Dispatch the media message with the text as caption directly
-    await whatsappSession.client.sendMessage(recipientJid, media, {
+    // Send PDF document via Baileys API
+    const pdfBuffer = Buffer.from(res.pdfBase64, "base64");
+    await whatsappSession.sock.sendMessage(recipientJid, {
+      document: pdfBuffer,
+      mimetype: "application/pdf",
+      fileName: res.fileName,
       caption: messageText,
     });
 
     return { success: true };
   } catch (error) {
-    console.error("Error sending PDF via whatsapp-web.js:", error);
+    console.error("Error sending PDF via Baileys:", error);
     return {
       success: false,
       message: `Gagal mengirim pesan: ${String(error)}`,
