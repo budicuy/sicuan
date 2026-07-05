@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   FileText,
   Loader2,
-  Plus,
   Trash2,
   X,
 } from "lucide-react";
@@ -14,17 +13,13 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   type CreateBuktiPembayaranInput,
   createBuktiPembayaran,
+  getAdminName,
   getNasabahProfileAndMonthlyWaste,
 } from "@/app/(admin-superadmin)/pencairan-dana/action";
+import { DisbursementLetterPreview } from "@/app/components/shared/DisbursementLetterPreview";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import type { DataSampahItem } from "@/db/schema/bukti-pembayaran";
 
-const JENIS_SAMPAH_OPTIONS = [
-  "Karton",
-  "Paper Cup",
-  "Etiket",
-  "Plastik Kemasan",
-];
 const BULAN_OPTIONS = [
   "Januari",
   "Februari",
@@ -38,11 +33,6 @@ const BULAN_OPTIONS = [
   "Oktober",
   "November",
   "Desember",
-];
-const KATEGORI_OPTIONS = [
-  { value: "bank_sampah_induk", label: "Bank Sampah Induk" },
-  { value: "tps_3r", label: "TPS 3R" },
-  { value: "bank_sampah_unit", label: "Bank Sampah Unit" },
 ];
 
 interface DisbursementItem {
@@ -77,10 +67,10 @@ export function BuktiPembayaranModal({
   onClose,
   onSuccess,
 }: Props) {
-  const thisYear = new Date().getFullYear();
-  const thisMonth = BULAN_OPTIONS[new Date().getMonth()];
+  const thisYear = new Date(item.createdAt).getFullYear();
+  const thisMonth = BULAN_OPTIONS[new Date(item.createdAt).getMonth()];
 
-  // Form state
+  // Form state (managed automatically, no manual inputs shown)
   const [namaBankSampah, setNamaBankSampah] = useState(
     nasabahData?.namaBankSampah ?? item.user.name,
   );
@@ -89,22 +79,26 @@ export function BuktiPembayaranModal({
   );
   const [alamat, setAlamat] = useState(nasabahData?.alamat ?? "");
   const [noTelepon, setNoTelepon] = useState(nasabahData?.noTelepon ?? "");
-  const [periodeBulan, setPeriodeBulan] = useState(thisMonth);
-  const [periodeTahun, setPeriodeTahun] = useState(thisYear);
-  const [kategoriSumber, setKategoriSumber] = useState("bank_sampah_induk");
+  const [periodeBulan, _setPeriodeBulan] = useState(thisMonth);
+  const [periodeTahun, _setPeriodeTahun] = useState(thisYear);
+  const [kategoriSumber, _setKategoriSumber] = useState(
+    item.user.role === "warmiendo" ? "tps-3r" : "bank-sampah-induk",
+  );
   const [dataSampah, setDataSampah] = useState<DataSampahItem[]>([
     { jenis: "Karton", beratKg: 0, terlampir: true },
   ]);
-  const [tarifDasar, setTarifDasar] = useState(item.jumlah);
-  const [biayaTambahan, setBiayaTambahan] = useState(0);
-  const [keterangan, setKeterangan] = useState(item.keterangan ?? "");
-  const [namaPenyerah, setNamaPenyerah] = useState(item.user.name);
-  const [jabatanPenyerah, setJabatanPenyerah] = useState(
-    "PT. Indofood CBP Sukses Makmur Tbk,",
+  const [tarifDasar, _setTarifDasar] = useState(item.jumlah);
+  const [biayaTambahan, _setBiayaTambahan] = useState(0);
+  const [keterangan, _setKeterangan] = useState(item.keterangan ?? "");
+  const [namaPenyerah, _setNamaPenyerah] = useState(item.user.name);
+  const [jabatanPenyerah, _setJabatanPenyerah] = useState(
+    item.user.role === "warmiendo"
+      ? "Pengelola Warmiendo"
+      : "Pimpinan Bank Sampah",
   );
-  const [namaPenerima, setNamaPenerima] = useState("");
-  const [jabatanPenerima, setJabatanPenerima] = useState(
-    "Direktur Bank Sampah Bjb / TPS 3R",
+  const [namaPenerima, setNamaPenerima] = useState("Admin");
+  const [jabatanPenerima, _setJabatanPenerima] = useState(
+    "PT. Indofood CBP Sukses Makmur Tbk,",
   );
 
   // Admin TTD upload
@@ -112,8 +106,21 @@ export function BuktiPembayaranModal({
   const [ttdError, setTtdError] = useState("");
   const [isCompressingTtd, setIsCompressingTtd] = useState(false);
 
+  // Transfer proof upload (required for pending transfer)
+  const [buktiTransferBase64, setBuktiTransferBase64] = useState<string | null>(
+    null,
+  );
+  const [buktiTransferError, setBuktiTransferError] = useState("");
+  const [isCompressingBukti, setIsCompressingBukti] = useState(false);
+
+  // Fetch data on mount
   useEffect(() => {
-    // Automatically pre-populate profile (address, phone, customer ID) and monthly waste data
+    // Get Admin Name
+    getAdminName().then((name) => {
+      setNamaPenerima(name);
+    });
+
+    // Automatically pre-populate profile & monthly waste
     getNasabahProfileAndMonthlyWaste(
       item.userId,
       periodeTahun,
@@ -186,31 +193,55 @@ export function BuktiPembayaranModal({
     }
   };
 
-  const addSampahRow = () => {
-    setDataSampah([
-      ...dataSampah,
-      { jenis: "Karton", beratKg: 0, terlampir: true },
-    ]);
-  };
-
-  const removeSampahRow = (i: number) => {
-    setDataSampah(dataSampah.filter((_, idx) => idx !== i));
-  };
-
-  const updateSampah = (
-    i: number,
-    field: keyof DataSampahItem,
-    value: string | number | boolean,
+  const handleBuktiTransferUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const updated = [...dataSampah];
-    // biome-ignore lint/suspicious/noExplicitAny: dynamic field update
-    (updated[i] as any)[field] = value;
-    setDataSampah(updated);
+    const file = e.target.files?.[0];
+    setBuktiTransferError("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setBuktiTransferError("File harus berupa gambar (JPG, PNG, WEBP).");
+      return;
+    }
+    setIsCompressingBukti(true);
+    try {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 0.1,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      });
+      const reader = new FileReader();
+      reader.onload = () => {
+        setBuktiTransferBase64(reader.result as string);
+        setIsCompressingBukti(false);
+      };
+      reader.onerror = () => {
+        setBuktiTransferError("Gagal membaca file.");
+        setIsCompressingBukti(false);
+      };
+      reader.readAsDataURL(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setBuktiTransferBase64(reader.result as string);
+        setIsCompressingBukti(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = () => {
     if (!ttdAdminBase64) {
       setTtdError("Tanda tangan admin wajib diunggah sebelum membuat dokumen.");
+      return;
+    }
+
+    const needsBuktiTransfer =
+      item.metodePembayaran !== "tunai" && item.status === "pending";
+    if (needsBuktiTransfer && !buktiTransferBase64) {
+      setBuktiTransferError(
+        "Bukti foto transfer wajib diunggah untuk pencairan transfer.",
+      );
       return;
     }
 
@@ -224,7 +255,13 @@ export function BuktiPembayaranModal({
       noTelepon,
       periodeBulan,
       periodeTahun,
-      kategoriSumber,
+      // Map kategori to db notation
+      kategoriSumber:
+        kategoriSumber === "tps-3r"
+          ? "tps_3r"
+          : kategoriSumber === "bank-sampah-unit"
+            ? "bank_sampah_unit"
+            : "bank_sampah_induk",
       dataSampah,
       totalBeratKg,
       tarifDasar,
@@ -237,6 +274,7 @@ export function BuktiPembayaranModal({
       jabatanPenyerah,
       namaPenerima,
       jabatanPenerima,
+      buktiTransferBase64: buktiTransferBase64 || undefined,
     };
 
     startTransition(async () => {
@@ -249,6 +287,15 @@ export function BuktiPembayaranModal({
       }
     });
   };
+
+  // Convert categories back for the preview prop type check
+  const letterKategori = (
+    kategoriSumber === "tps-3r"
+      ? "tps-3r"
+      : kategoriSumber === "bank-sampah-unit"
+        ? "bank-sampah-unit"
+        : "bank-sampah-induk"
+  ) as "bank-sampah-induk" | "tps-3r" | "bank-sampah-unit";
 
   return (
     <>
@@ -263,8 +310,10 @@ export function BuktiPembayaranModal({
                   Buat Dokumen Bukti Pembayaran
                 </h3>
                 <p className="text-[10px] text-neutral-500 mt-0.5">
-                  Untuk: {item.user.name} — Rp{" "}
-                  {item.jumlah.toLocaleString("id-ID")}
+                  Untuk: {item.user.name} —{" "}
+                  {item.metodePembayaran === "tunai"
+                    ? "Tunai"
+                    : "Transfer Bank"}
                 </p>
               </div>
             </div>
@@ -278,394 +327,193 @@ export function BuktiPembayaranModal({
           </div>
 
           {/* Scrollable Body */}
-          <div className="overflow-y-auto flex-1 p-6 space-y-6">
-            {/* I. Identitas */}
-            <section className="space-y-3">
-              <h4 className="text-xs font-bold text-neutral-700 uppercase tracking-wider border-b border-neutral-100 pb-2">
-                I. Identitas Pelanggan
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    Nama Bank Sampah
-                  </span>
-                  <input
-                    type="text"
-                    value={namaBankSampah}
-                    onChange={(e) => setNamaBankSampah(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    ID Pelanggan
-                  </span>
-                  <input
-                    type="text"
-                    value={idPelanggan}
-                    onChange={(e) => setIdPelanggan(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    Alamat
-                  </span>
-                  <input
-                    type="text"
-                    value={alamat}
-                    onChange={(e) => setAlamat(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                    placeholder="Alamat lengkap"
-                  />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    No. Telepon
-                  </span>
-                  <input
-                    type="text"
-                    value={noTelepon}
-                    onChange={(e) => setNoTelepon(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                    placeholder="08xx-xxxx-xxxx"
-                  />
-                </div>
-              </div>
-            </section>
+          <div className="overflow-y-auto flex-1 p-6 space-y-5">
+            {/* TTD Admin Upload — ONLY input required */}
+            <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-5 space-y-4">
+              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
+                Unggah Tanda Tangan Admin{" "}
+                <span className="text-red-500">*</span>
+              </span>
 
-            {/* II. Periode */}
-            <section className="space-y-3">
-              <h4 className="text-xs font-bold text-neutral-700 uppercase tracking-wider border-b border-neutral-100 pb-2">
-                II. Periode & Kategori
-              </h4>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    Bulan
+              {isCompressingTtd ? (
+                <div className="h-28 rounded-xl border-2 border-dashed border-neutral-300 flex items-center justify-center gap-2 bg-white">
+                  <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+                  <span className="text-xs text-neutral-500">
+                    Mengompresi gambar...
                   </span>
-                  <select
-                    value={periodeBulan}
-                    onChange={(e) => setPeriodeBulan(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  >
-                    {BULAN_OPTIONS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
                 </div>
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    Tahun
-                  </span>
-                  <input
-                    type="number"
-                    value={periodeTahun}
-                    onChange={(e) => setPeriodeTahun(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    Kategori Sumber
-                  </span>
-                  <select
-                    value={kategoriSumber}
-                    onChange={(e) => setKategoriSumber(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  >
-                    {KATEGORI_OPTIONS.map((k) => (
-                      <option key={k.value} value={k.value}>
-                        {k.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </section>
-
-            {/* III. Data Berat Sampah */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
-                <h4 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
-                  III. Data Berat Sampah
-                </h4>
-                <button
-                  type="button"
-                  onClick={addSampahRow}
-                  className="flex items-center gap-1 text-[10px] font-bold text-primary-600 hover:text-primary-700 border-0 bg-transparent cursor-pointer px-2 py-1 rounded-lg hover:bg-primary-50 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Tambah Jenis
-                </button>
-              </div>
-
-              {dataSampah.map((s, i) => (
-                <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: dynamic form rows
-                  key={`sampah-row-${i}`}
-                  className="flex items-center gap-2"
-                >
-                  <select
-                    value={s.jenis}
-                    onChange={(e) => updateSampah(i, "jenis", e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  >
-                    {JENIS_SAMPAH_OPTIONS.map((j) => (
-                      <option key={j} value={j}>
-                        {j}
-                      </option>
-                    ))}
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
-                  <div className="relative w-28">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={s.beratKg}
-                      onChange={(e) =>
-                        updateSampah(
-                          i,
-                          "beratKg",
-                          Number.parseFloat(e.target.value) || 0,
-                        )
-                      }
-                      className="w-full pl-3 pr-8 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                      placeholder="0.00"
-                    />
-                    <span className="absolute right-2.5 inset-y-0 flex items-center text-[10px] text-neutral-400 font-bold">
-                      kg
-                    </span>
-                  </div>
-                  <label className="flex items-center gap-1.5 text-[10px] text-neutral-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={s.terlampir}
-                      onChange={(e) =>
-                        updateSampah(i, "terlampir", e.target.checked)
-                      }
-                      className="rounded"
-                    />
-                    Terlampir
-                  </label>
-                  {dataSampah.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeSampahRow(i)}
-                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border-0 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-700">
-                  Total Berat
-                </span>
-                <span className="text-sm font-black text-primary-600">
-                  {totalBeratKg.toFixed(2)} kg
-                </span>
-              </div>
-            </section>
-
-            {/* V. Rincian Pembayaran */}
-            <section className="space-y-3">
-              <h4 className="text-xs font-bold text-neutral-700 uppercase tracking-wider border-b border-neutral-100 pb-2">
-                V. Rincian Pembayaran
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    Tarif Dasar (Rp)
-                  </span>
-                  <input
-                    type="number"
-                    value={tarifDasar}
-                    onChange={(e) => setTarifDasar(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                    Biaya Tambahan (Rp)
-                  </span>
-                  <input
-                    type="number"
-                    value={biayaTambahan}
-                    onChange={(e) => setBiayaTambahan(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  />
-                </div>
-              </div>
-              <div className="p-3 bg-primary-50 rounded-xl border border-primary-200 flex items-center justify-between">
-                <span className="text-xs font-bold text-primary-700">
-                  Total Tagihan
-                </span>
-                <span className="text-sm font-black text-primary-700">
-                  Rp {totalTagihan.toLocaleString("id-ID")}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                  Metode Pembayaran
-                </span>
-                <div className="px-3 py-2 rounded-xl bg-neutral-100 border border-neutral-200 text-xs font-bold text-neutral-700 capitalize">
-                  {item.metodePembayaran === "tunai"
-                    ? "✓ Tunai"
-                    : "✓ Transfer Bank"}
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block mb-1">
-                  Keterangan / Catatan
-                </span>
-                <input
-                  type="text"
-                  value={keterangan}
-                  onChange={(e) => setKeterangan(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                  placeholder="Catatan tambahan..."
-                />
-              </div>
-            </section>
-
-            {/* TTD */}
-            <section className="space-y-4">
-              <h4 className="text-xs font-bold text-neutral-700 uppercase tracking-wider border-b border-neutral-100 pb-2">
-                Tanda Tangan
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                {/* TTD Mitra (already uploaded) */}
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider block">
-                    TTD Mitra (Diserahkan Oleh)
-                  </span>
-                  <div className="grid grid-cols-1 gap-2">
-                    <input
-                      type="text"
-                      value={namaPenyerah}
-                      onChange={(e) => setNamaPenyerah(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                      placeholder="Nama penyerah"
-                    />
-                    <input
-                      type="text"
-                      value={jabatanPenyerah}
-                      onChange={(e) => setJabatanPenyerah(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                      placeholder="Jabatan"
-                    />
-                  </div>
-                  {item.ttdPenyerahUrl ? (
-                    <div className="rounded-xl overflow-hidden border border-emerald-200 bg-emerald-50 h-20 flex items-center justify-center">
-                      {/* biome-ignore lint/performance/noImgElement: TTD preview */}
-                      <img
-                        src={item.ttdPenyerahUrl}
-                        alt="TTD Mitra"
-                        className="max-h-20 object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 h-20 flex items-center justify-center">
-                      <p className="text-[10px] text-amber-600 font-semibold text-center px-3">
-                        TTD mitra belum diunggah
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* TTD Admin */}
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">
-                    TTD Admin (Diterima Oleh) *
-                  </span>
-                  <div className="grid grid-cols-1 gap-2">
-                    <input
-                      type="text"
-                      value={namaPenerima}
-                      onChange={(e) => setNamaPenerima(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                      placeholder="Nama penerima/direktur"
-                    />
-                    <input
-                      type="text"
-                      value={jabatanPenerima}
-                      onChange={(e) => setJabatanPenerima(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                      placeholder="Jabatan"
-                    />
-                  </div>
-
-                  {isCompressingTtd ? (
-                    <div className="rounded-xl border border-neutral-200 bg-neutral-50 h-20 flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
-                      <span className="text-[10px] text-neutral-500">
-                        Mengompresi...
-                      </span>
-                    </div>
-                  ) : ttdAdminBase64 ? (
-                    <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 h-20 flex items-center justify-center">
+              ) : ttdAdminBase64 ? (
+                <div className="flex items-center justify-between gap-4 bg-white p-3 border border-neutral-200 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="h-16 w-28 rounded-lg border border-neutral-100 bg-neutral-50 flex items-center justify-center overflow-hidden shrink-0">
                       {/* biome-ignore lint/performance/noImgElement: TTD preview */}
                       <img
                         src={ttdAdminBase64}
-                        alt="TTD Admin"
-                        className="max-h-20 object-contain"
+                        alt="Tanda Tangan"
+                        className="max-h-full object-contain"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setTtdAdminBase64(null)}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-black/50 hover:bg-black/70 text-white border-0 cursor-pointer"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
                     </div>
-                  ) : (
-                    <div className="relative rounded-xl border-2 border-dashed border-red-300 hover:border-primary-500/50 transition-all bg-red-50/30">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleTtdUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <div className="p-4 text-center space-y-1">
-                        <Camera className="w-5 h-5 text-red-400 mx-auto" />
-                        <p className="text-[10px] font-bold text-red-500">
-                          Upload TTD Admin (Wajib)
+                    <div>
+                      <p className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                        ✓ TTD Admin Terpasang
+                      </p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Tanda tangan akan langsung masuk ke surat pratinjau di
+                        bawah.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTtdAdminBase64(null)}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all border-0 cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="relative h-28 rounded-xl border-2 border-dashed border-neutral-300 hover:border-primary-400 transition-colors flex flex-col items-center justify-center gap-1.5 bg-white cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleTtdUpload}
+                    className="sr-only"
+                  />
+                  <Camera className="w-6 h-6 text-neutral-400" />
+                  <p className="text-xs font-semibold text-neutral-600">
+                    Klik untuk upload foto tanda tangan admin
+                  </p>
+                  <p className="text-[10px] text-neutral-400">
+                    Tanda tangan diperlukan untuk mengesahkan bukti pembayaran
+                  </p>
+                </label>
+              )}
+              {ttdError && (
+                <p className="text-xs font-semibold text-red-500">{ttdError}</p>
+              )}
+            </div>
+
+            {/* Bukti Transfer Upload — Only shown for pending transfer requests */}
+            {item.metodePembayaran !== "tunai" && item.status === "pending" && (
+              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-5 space-y-4">
+                <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
+                  Unggah Bukti Transfer <span className="text-red-500">*</span>
+                </span>
+
+                {isCompressingBukti ? (
+                  <div className="h-28 rounded-xl border-2 border-dashed border-neutral-300 flex items-center justify-center gap-2 bg-white">
+                    <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+                    <span className="text-xs text-neutral-500">
+                      Mengompresi gambar...
+                    </span>
+                  </div>
+                ) : buktiTransferBase64 ? (
+                  <div className="flex items-center justify-between gap-4 bg-white p-3 border border-neutral-200 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="h-16 w-28 rounded-lg border border-neutral-100 bg-neutral-50 flex items-center justify-center overflow-hidden shrink-0">
+                        {/* biome-ignore lint/performance/noImgElement: Bukti Transfer preview */}
+                        <img
+                          src={buktiTransferBase64}
+                          alt="Bukti Transfer"
+                          className="max-h-full object-contain"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                          ✓ Bukti Transfer Terunggah
+                        </p>
+                        <p className="text-[10px] text-neutral-400 mt-0.5">
+                          Bukti transfer berhasil dipilih.
                         </p>
                       </div>
                     </div>
-                  )}
-                  {ttdError && (
-                    <p className="text-[11px] font-semibold text-red-600">
-                      {ttdError}
+                    <button
+                      type="button"
+                      onClick={() => setBuktiTransferBase64(null)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all border-0 cursor-pointer shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="relative h-28 rounded-xl border-2 border-dashed border-neutral-300 hover:border-primary-400 transition-colors flex flex-col items-center justify-center gap-1.5 bg-white cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBuktiTransferUpload}
+                      className="sr-only"
+                    />
+                    <Camera className="w-6 h-6 text-neutral-400" />
+                    <p className="text-xs font-semibold text-neutral-600">
+                      Klik untuk upload foto bukti transfer bank
                     </p>
-                  )}
-                </div>
+                    <p className="text-[10px] text-neutral-400">
+                      Bukti transfer wajib dilampirkan sebelum menyetujui
+                    </p>
+                  </label>
+                )}
+                {buktiTransferError && (
+                  <p className="text-xs font-semibold text-red-500">
+                    {buktiTransferError}
+                  </p>
+                )}
               </div>
-            </section>
+            )}
+
+            {/* Live Letter Preview */}
+            <div className="space-y-2.5">
+              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
+                Pratinjau Dokumen Bukti Pembayaran
+              </span>
+              <div className="border border-neutral-200 rounded-3xl overflow-hidden shadow-xs">
+                <DisbursementLetterPreview
+                  data={{
+                    user: {
+                      name: item.user.name,
+                      role: item.user.role,
+                    },
+                    idPelanggan,
+                    alamat,
+                    noTelepon,
+                    dataSampah: dataSampah.map((d) => ({
+                      jenis: d.jenis,
+                      beratKg: d.beratKg,
+                    })),
+                    totalBeratKg,
+                  }}
+                  customAmount={tarifDasar.toString()}
+                  metode={item.metodePembayaran}
+                  keterangan={keterangan}
+                  ttdBase64={item.ttdPenyerahUrl}
+                  kategoriSumber={letterKategori}
+                  ttdAdminBase64={ttdAdminBase64}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="p-6 border-t border-neutral-100 flex gap-3 shrink-0">
+          <div className="p-6 border-t border-neutral-100 flex gap-3 shrink-0 bg-neutral-50/70">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-600 hover:bg-neutral-50 cursor-pointer bg-white"
+              className="flex-1 py-3 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-600 hover:bg-neutral-100 cursor-pointer bg-white transition-colors"
             >
               Batal
             </button>
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={isPending || isCompressingTtd || !ttdAdminBase64}
-              className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 border-0 cursor-pointer"
+              disabled={
+                isPending ||
+                isCompressingTtd ||
+                isCompressingBukti ||
+                !ttdAdminBase64 ||
+                (item.metodePembayaran !== "tunai" &&
+                  item.status === "pending" &&
+                  !buktiTransferBase64)
+              }
+              className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-1.5 border-0 cursor-pointer transition-colors"
             >
               {isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

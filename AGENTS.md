@@ -45,27 +45,27 @@ Tujuan dari project ini adalah untuk mempermudah pengelolaan sampah yang dihasil
    ```
 
 ### Command Git
-- git status                                          # Compact status
-- git log -n 10                                      # One-line commits
-- git diff                                               #  Condensed diff
-- git add                                                 # -> "ok"
-- git commit -m "msg"                       # -> "ok abc1234"
-- git push                                               # -> "ok main"
-- git pull                                               # -> "ok 3 files +10 -2"
+- git status                 -> Compact status
+- git log -n 10              -> One-line commits
+- git diff                   -> Condensed diff
+- git add                    -> "ok"
+- git commit -m "msg"        -> "ok abc1234"
+- git push                   -> "ok main"
+- git pull                   -> "ok 3 files +10 -2"
 
 ### Files 
-- ls .                                                          # Token-optimized directory tree
-- read file.rs                                       # Smart file reading
-- read file.rs -l aggressive        # Signatures only (strips bodies)
-- find "*.rs" .                                      # Compact find results
-- grep "pattern" .                               # Grouped search results
-- diff file1 file2                               # Condensed diff (exit 1 if files differ)
+- ls .                       -> Token-optimized directory tree
+- read file.rs               -> Smart file reading
+- read file.rs -l aggressive -> Signatures only (strips bodies)
+- find "*.rs" .              -> Compact find results
+- grep "pattern" .           -> Grouped search results
+- diff file1 file2           -> Condensed diff (exit 1 if files differ)
 
 ### lint / build                        
-- bun  lint biome                                  # Supports other linters
-- bun run build                                      # Build project
-- bun run db:seed                                  # Seed database using Drizzle ORM
-- bun run db:push                                   # Push database changes using Drizzle ORM
+- bun lint lint              -> Biome linters
+- bun run build              -> Build project
+- bun run db:seed            -> Seed database using Drizzle ORM
+- bun run db:push            -> Push database changes using Drizzle ORM
 
 # Best  Practices
 1. Gunakan Teknik Clean Code dalam penulisan kode agar kode lebih mudah dibaca dan dipahami.

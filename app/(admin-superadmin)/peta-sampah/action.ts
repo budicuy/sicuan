@@ -5,11 +5,7 @@ import type { PgColumn } from "drizzle-orm/pg-core";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import {
-  setorSampahBankSampah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-} from "@/db/schema";
+import { setorSampah } from "@/db/schema";
 
 async function getCurrentUser() {
   try {
@@ -33,12 +29,9 @@ export async function getAdminPetaSampahData(month?: number, year?: number) {
     return { success: false, message: "Akses ditolak" };
   }
 
-  // 1. Ambil semua users dan nasabah untuk memetakan koordinat pengirim
-  const allUsers = await db.query.users.findMany();
-  const allNasabah = await db.query.nasabah.findMany();
-
+  // 1. Ambil semua nasabah untuk memetakan koordinat pengirim
+  const allUsers = await db.query.nasabah.findMany();
   const userMap = new Map(allUsers.map((u) => [u.id, u]));
-  const nasabahMap = new Map(allNasabah.map((n) => [n.userId, n]));
 
   // Setup default filter to current month and year if undefined
   const now = new Date();
@@ -60,102 +53,65 @@ export async function getAdminPetaSampahData(month?: number, year?: number) {
   };
 
   // 2. Ambil data setoran dari ketiga kategori dengan filter efisien di DB
-  const [setoranWarmiendo, setoranKonsumen, setoranBankSampah] =
-    await Promise.all([
-      db.query.setorSampahWarmiendo.findMany({
-        where: getFilterConditions(setorSampahWarmiendo),
-        orderBy: [desc(setorSampahWarmiendo.createdAt)],
-      }),
-      db.query.setorSampahKonsumen.findMany({
-        where: getFilterConditions(setorSampahKonsumen),
-        orderBy: [desc(setorSampahKonsumen.createdAt)],
-      }),
-      db.query.setorSampahBankSampah.findMany({
-        where: getFilterConditions(setorSampahBankSampah),
-        orderBy: [desc(setorSampahBankSampah.createdAt)],
-      }),
-    ]);
+  const allSetoran = await db.query.setorSampah.findMany({
+    where: getFilterConditions(setorSampah),
+    orderBy: [desc(setorSampah.createdAt)],
+  });
 
   // Temukan bank sampah default untuk rute
   const bankSampahUser = allUsers.find((u) => u.role === "bank-sampah");
-  const bankSampahNasabah = bankSampahUser
-    ? nasabahMap.get(bankSampahUser.id)
-    : null;
   const bankSampahInfo = bankSampahUser
     ? {
         id: bankSampahUser.id,
         name: bankSampahUser.name,
-        latitude: bankSampahNasabah?.latitude ?? -3.29826,
-        longitude: bankSampahNasabah?.longitude ?? 114.58602,
-        alamat: bankSampahNasabah?.alamat ?? "Jl. Hasan Basry, Banjarmasin",
+        latitude: bankSampahUser.latitude ?? -3.29826,
+        longitude: bankSampahUser.longitude ?? 114.58602,
+        alamat: bankSampahUser.alamat ?? "Jl. Hasan Basry, Banjarmasin",
       }
     : null;
 
   // Gabungkan semua setoran
-  const combinedSetoran = [
-    ...setoranWarmiendo.map((s) => {
-      const u = userMap.get(s.userId);
-      const n = nasabahMap.get(s.userId);
-      return {
-        id: `warmiendo-${s.id}`,
-        nomorSetor: s.nomorSetor,
-        jenisSampah: s.jenisSampah,
-        beratKg: s.beratKg,
-        tanggalSetor: s.tanggalSetor,
-        status: s.status,
-        senderType: "warmiendo" as const,
-        senderName: u?.name ?? "Mitra Warmiendo",
-        senderCoords: [n?.latitude ?? -3.32426, n?.longitude ?? 114.59102] as [
-          number,
-          number,
-        ],
-        senderAlamat: n?.alamat ?? "Jl. Sultan Adam, Banjarmasin",
-        createdAt: s.createdAt,
-      };
-    }),
-    ...setoranKonsumen.map((s) => {
-      const u = userMap.get(s.userId);
-      const n = nasabahMap.get(s.userId);
-      return {
-        id: `konsumen-${s.id}`,
-        nomorSetor: s.nomorSetor,
-        jenisSampah: s.jenisSampah,
-        beratKg: s.beratKg,
-        tanggalSetor: s.tanggalSetor,
-        status: s.status,
-        senderType: "konsumen" as const,
-        senderName: u?.name ?? "Nasabah Konsumen",
-        senderCoords: [n?.latitude ?? -3.32, n?.longitude ?? 114.593] as [
-          number,
-          number,
-        ],
-        senderAlamat: n?.alamat ?? "Jl. Ahmad Yani, Banjarmasin",
-        createdAt: s.createdAt,
-      };
-    }),
-    ...setoranBankSampah.map((s) => {
-      const u = userMap.get(s.userId);
-      const n = nasabahMap.get(s.userId);
-      return {
-        id: `banksampah-${s.id}`,
-        nomorSetor: s.nomorSetor,
-        jenisSampah: s.jenisSampah,
-        beratKg: s.beratKg,
-        tanggalSetor: s.tanggalSetor,
-        status: s.status,
-        senderType: "bank-sampah" as const,
-        senderName: u?.name ?? "Mitra Bank Sampah",
-        senderCoords: [n?.latitude ?? -3.29826, n?.longitude ?? 114.58602] as [
-          number,
-          number,
-        ],
-        senderAlamat: n?.alamat ?? "Jl. Hasan Basry, Banjarmasin",
-        createdAt: s.createdAt,
-      };
-    }),
-  ].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  const combinedSetoran = allSetoran.map((s) => {
+    const u = userMap.get(s.userId);
+    const defaultCoords: Record<string, [number, number]> = {
+      warmiendo: [u?.latitude ?? -3.32426, u?.longitude ?? 114.59102],
+      konsumen: [u?.latitude ?? -3.32, u?.longitude ?? 114.593],
+      "bank-sampah": [u?.latitude ?? -3.29826, u?.longitude ?? 114.58602],
+    };
+    const defaultAlamat: Record<string, string> = {
+      warmiendo: u?.alamat ?? "Jl. Sultan Adam, Banjarmasin",
+      konsumen: u?.alamat ?? "Jl. Ahmad Yani, Banjarmasin",
+      "bank-sampah": u?.alamat ?? "Jl. Hasan Basry, Banjarmasin",
+    };
+    const senderType = s.kategoriNasabah as
+      | "konsumen"
+      | "warmiendo"
+      | "bank-sampah";
+    const senderName =
+      u?.name ??
+      (senderType === "warmiendo"
+        ? "Mitra Warmiendo"
+        : senderType === "bank-sampah"
+          ? "Mitra Bank Sampah"
+          : "Nasabah Konsumen");
+
+    return {
+      id: `${s.kategoriNasabah}-${s.id}`,
+      nomorSetor: s.nomorSetor,
+      jenisSampah: s.jenisSampah,
+      beratKg: s.beratKg,
+      tanggalSetor: s.tanggalSetor,
+      status: s.status,
+      senderType,
+      senderName,
+      senderCoords: defaultCoords[senderType] || [
+        u?.latitude ?? -3.32,
+        u?.longitude ?? 114.593,
+      ],
+      senderAlamat: defaultAlamat[senderType] || (u?.alamat ?? "Banjarmasin"),
+      createdAt: s.createdAt,
+    };
+  });
 
   return {
     success: true,

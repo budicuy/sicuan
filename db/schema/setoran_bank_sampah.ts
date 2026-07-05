@@ -8,8 +8,8 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { users } from "@/db/schema/nasabah";
 import { jenisSampahEnum, statusSetorEnum } from "@/db/schema/setoran_konsumen";
-import { users } from "@/db/schema/users";
 
 export const setorSampahBankSampah = pgTable("setoran_bank_sampah", {
   id: serial("id").primaryKey(),
@@ -38,6 +38,7 @@ export const setorSampahBankSampah = pgTable("setoran_bank_sampah", {
 export const insertSetorSampahBankSampahSchema = createInsertSchema(
   setorSampahBankSampah,
 );
+
 export const selectSetorSampahBankSampahSchema = createSelectSchema(
   setorSampahBankSampah,
 );

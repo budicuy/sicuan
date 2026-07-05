@@ -1,18 +1,18 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { getHargaRange } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
 import {
   buktiPembayaran,
   nasabah,
   pencairanDana,
-  setorSampahBankSampah,
-  setorSampahWarmiendo,
+  setorSampah,
 } from "@/db/schema";
 
 async function getCurrentUser() {
@@ -38,6 +38,59 @@ export type ActionState = {
   errors?: Record<string, string[]>;
 };
 
+async function getBankSampahMonthlyCredit(userId: number): Promise<number> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  const records = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, userId),
+      eq(setorSampah.kategoriNasabah, "bank-sampah"),
+      eq(setorSampah.status, "diterima"),
+      gte(setorSampah.tanggalSetor, startOfMonthStr),
+      lte(setorSampah.tanggalSetor, endOfMonthStr),
+    ),
+  });
+
+  const setoranList = records.map((r) => ({
+    jenisSampah: r.jenisSampah,
+    beratKg: r.beratKg,
+  }));
+
+  const wasteMap: Record<string, number> = {};
+  for (const item of setoranList) {
+    wasteMap[item.jenisSampah] =
+      (wasteMap[item.jenisSampah] || 0) + item.beratKg;
+  }
+
+  let dynamicKredit = 0;
+  for (const [jenis, berat] of Object.entries(wasteMap)) {
+    const harga = await getHargaRange(jenis, berat);
+    dynamicKredit += harga;
+  }
+
+  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
+  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+  const myDisbursements = await db.query.pencairanDana.findMany({
+    where: and(
+      eq(pencairanDana.userId, userId),
+      gte(pencairanDana.createdAt, startOfMonthDate),
+      lte(pencairanDana.createdAt, endOfMonthDate),
+    ),
+  });
+
+  const totalWithdrawn = myDisbursements
+    .filter((p) => p.status === "berhasil" || p.status === "pending")
+    .reduce((sum, p) => sum + p.jumlah, 0);
+
+  return Math.max(0, dynamicKredit - totalWithdrawn);
+}
+
 export async function getDisbursementData() {
   const user = await getCurrentUser();
   if (!user || (user.role !== "warmiendo" && user.role !== "bank-sampah")) {
@@ -45,7 +98,7 @@ export async function getDisbursementData() {
   }
 
   const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
+    where: eq(nasabah.id, user.id),
   });
 
   // Calculate monthly waste data
@@ -56,34 +109,20 @@ export async function getDisbursementData() {
   const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
   const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
-  let setoranList: { jenisSampah: string; beratKg: number }[] = [];
-  if (user.role === "bank-sampah") {
-    const records = await db.query.setorSampahBankSampah.findMany({
-      where: and(
-        eq(setorSampahBankSampah.userId, user.id),
-        eq(setorSampahBankSampah.status, "diterima"),
-        gte(setorSampahBankSampah.tanggalSetor, startOfMonthStr),
-        lte(setorSampahBankSampah.tanggalSetor, endOfMonthStr),
-      ),
-    });
-    setoranList = records.map((r) => ({
-      jenisSampah: r.jenisSampah,
-      beratKg: r.beratKg,
-    }));
-  } else if (user.role === "warmiendo") {
-    const records = await db.query.setorSampahWarmiendo.findMany({
-      where: and(
-        eq(setorSampahWarmiendo.userId, user.id),
-        eq(setorSampahWarmiendo.status, "diterima"),
-        gte(setorSampahWarmiendo.tanggalSetor, startOfMonthStr),
-        lte(setorSampahWarmiendo.tanggalSetor, endOfMonthStr),
-      ),
-    });
-    setoranList = records.map((r) => ({
-      jenisSampah: r.jenisSampah,
-      beratKg: r.beratKg,
-    }));
-  }
+  const records = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, user.id),
+      eq(setorSampah.kategoriNasabah, user.role),
+      eq(setorSampah.status, "diterima"),
+      gte(setorSampah.tanggalSetor, startOfMonthStr),
+      lte(setorSampah.tanggalSetor, endOfMonthStr),
+    ),
+  });
+
+  const setoranList = records.map((r) => ({
+    jenisSampah: r.jenisSampah,
+    beratKg: r.beratKg,
+  }));
 
   const wasteMap: Record<string, number> = {};
   for (const item of setoranList) {
@@ -97,10 +136,15 @@ export async function getDisbursementData() {
     terlampir: true,
   }));
 
+  let credit = profile?.kredit ?? 0;
+  if (user.role === "bank-sampah") {
+    credit = await getBankSampahMonthlyCredit(user.id);
+  }
+
   return {
     success: true,
     data: {
-      kredit: profile?.kredit ?? 0,
+      kredit: credit,
       jenisBank: profile?.jenisBank || "",
       noRekening: profile?.noRekening || "",
       alamat: profile?.alamat || "",
@@ -158,7 +202,7 @@ export async function requestDisbursement(
   }
 
   const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
+    where: eq(nasabah.id, user.id),
   });
 
   if (!profile) {
@@ -180,10 +224,15 @@ export async function requestDisbursement(
     }
   }
 
-  if (profile.kredit < jumlah) {
+  let credit = profile.kredit;
+  if (user.role === "bank-sampah") {
+    credit = await getBankSampahMonthlyCredit(user.id);
+  }
+
+  if (credit < jumlah) {
     return {
       success: false,
-      message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${profile.kredit.toLocaleString("id-ID")}`,
+      message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${credit.toLocaleString("id-ID")}`,
       errors: { jumlah: ["Saldo kredit tidak mencukupi"] },
     };
   }
@@ -197,11 +246,16 @@ export async function requestDisbursement(
       `${user.id}-${uuid}`,
     );
 
-    // 2. Deduct from nasabah credit
-    await db
-      .update(nasabah)
-      .set({ kredit: profile.kredit - jumlah, updatedAt: new Date() })
-      .where(eq(nasabah.userId, user.id));
+    // 2. Deduct from user credit (skip for bank-sampah role)
+    if (user.role !== "bank-sampah") {
+      await db
+        .update(nasabah)
+        .set({
+          kredit: sql`${nasabah.kredit} - ${jumlah}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, user.id));
+    }
 
     // 3. Insert disbursement log
     await db.insert(pencairanDana).values({

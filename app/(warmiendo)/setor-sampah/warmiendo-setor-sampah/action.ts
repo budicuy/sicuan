@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -13,15 +13,7 @@ import {
 import { calculateSetoranReward } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
-import {
-  hargaSampah,
-  nasabah,
-  poinSampah,
-  setorSampahBankSampah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-  users,
-} from "@/db/schema";
+import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
 
 export interface SetoranType {
   id: number;
@@ -36,11 +28,12 @@ export interface SetoranType {
   catatan?: string | null;
   totalPoin: number;
   status: "pending" | "diverifikasi" | "diserahkan" | "diterima" | "ditolak";
-  metodeSetor?: string;
+  metodeSetor?: string | null;
   ekspedisiId?: number | null;
   ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
   user?: { id: number; name: string; username: string; role: string } | null;
   totalKredit?: number;
+  kategoriNasabah: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,7 +71,7 @@ async function getCurrentUser(): Promise<{
 export async function updateSetorSampahStatus(
   id: number,
   status: "pending" | "diverifikasi" | "diserahkan" | "diterima" | "ditolak",
-  ekspedisiId?: number,
+  _ekspedisiId?: number,
   roleTarget: "konsumen" | "warmiendo" | "bank-sampah" = "konsumen",
 ): Promise<{ success: boolean; message: string }> {
   const user = await getCurrentUser();
@@ -91,128 +84,708 @@ export async function updateSetorSampahStatus(
   }
 
   try {
-    let item: SetoranType | undefined;
-    if (roleTarget === "warmiendo") {
-      item = await db.query.setorSampahWarmiendo.findFirst({
-        where: eq(setorSampahWarmiendo.id, id),
-      });
-    } else if (roleTarget === "bank-sampah") {
-      item = await db.query.setorSampahBankSampah.findFirst({
-        where: eq(setorSampahBankSampah.id, id),
-      });
-    } else {
-      item = await db.query.setorSampahKonsumen.findFirst({
-        where: eq(setorSampahKonsumen.id, id),
-      });
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
+    });
+
+    if (!item) {
+      return {
+        success: false,
+        message: "Data setoran tidak ditemukan.",
+      };
     }
+
+    if (item.status === "diterima") {
+      return {
+        success: false,
+        message: "Setoran ini sudah diterima sebelumnya.",
+      };
+    }
+
+    // Hitung poin & kredit berdasarkan berat & tanggal setor
+    const depositor = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, item.userId),
+    });
+
+    const { totalPoin, totalKredit } = await calculateSetoranReward(
+      item.jenisSampah,
+      item.beratKg,
+      depositor?.role ?? "konsumen",
+    );
+
+    // Update nasabah balance directly
+    await db
+      .update(nasabah)
+      .set({
+        poin: sql`${nasabah.poin} + ${totalPoin}`,
+        kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(nasabah.id, item.userId));
+
+    // Update status setoran ke diterima
+    await db
+      .update(setorSampah)
+      .set({
+        status,
+        totalPoin: totalPoin,
+        updatedAt: new Date(),
+      })
+      .where(eq(setorSampah.id, id));
+
+    revalidatePath(`/laporan/${roleTarget}`);
+    return { success: true, message: "Status setoran berhasil diperbarui." };
+  } catch (error) {
+    console.error("Gagal memperbarui status setoran:", error);
+    return { success: false, message: "Terjadi kesalahan server." };
+  }
+}
+
+export async function assignEkspedisiToSetoran(
+  id: number,
+  ekspedisiId: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return { success: false, message: "Akses ditolak." };
+  }
+
+  try {
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
+    });
 
     if (!item) {
       return { success: false, message: "Data setoran tidak ditemukan." };
     }
 
-    if (status === "diverifikasi") {
-      if (roleTarget !== "warmiendo") {
-        return {
-          success: false,
-          message: "Aksi tidak didukung untuk tipe setoran ini.",
-        };
-      }
-      if (!ekspedisiId) {
-        return {
-          success: false,
-          message: "Vendor ekspedisi penjemput wajib dipilih.",
-        };
-      }
-      await db
-        .update(setorSampahWarmiendo)
-        .set({ status, ekspedisiId, updatedAt: new Date() })
-        .where(eq(setorSampahWarmiendo.id, id));
-    } else if (status === "diterima") {
-      if (item.status === "diterima") {
-        return {
-          success: false,
-          message: "Setoran ini sudah diterima sebelumnya.",
-        };
-      }
+    await db
+      .update(setorSampah)
+      .set({
+        ekspedisiId,
+        status: "pending",
+        updatedAt: new Date(),
+      })
+      .where(eq(setorSampah.id, id));
 
-      // Hitung poin & kredit berdasarkan berat & tanggal setor
-      const depositor = await db.query.users.findFirst({
-        where: eq(users.id, item.userId),
-      });
+    revalidatePath("/laporan/warmiendo");
+    return { success: true, message: "Ekspedisi berhasil dipetakan." };
+  } catch (error) {
+    console.error("Gagal memetakan ekspedisi:", error);
+    return { success: false, message: "Terjadi kesalahan server." };
+  }
+}
 
-      const { totalPoin, totalKredit } = await calculateSetoranReward(
-        item.jenisSampah,
-        item.beratKg,
-        depositor?.role ?? "konsumen",
-      );
+export async function readWeightAndVerify(
+  id: number,
+  base64Photo: string,
+  roleTarget: "konsumen" | "warmiendo" | "bank-sampah" = "konsumen",
+): Promise<{
+  success: boolean;
+  message: string;
+  weightFromAi?: number;
+  isMatch?: boolean;
+}> {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return { success: false, message: "Akses ditolak" };
+  }
 
-      // Update nasabah balance
-      const existingProfile = await db.query.nasabah.findFirst({
-        where: eq(nasabah.userId, item.userId),
-      });
+  try {
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
+    });
 
-      if (existingProfile) {
-        await db
-          .update(nasabah)
-          .set({
-            poin: existingProfile.poin + totalPoin,
-            kredit: existingProfile.kredit + totalKredit,
-            updatedAt: new Date(),
-          })
-          .where(eq(nasabah.userId, item.userId));
-      } else {
-        await db.insert(nasabah).values({
-          userId: item.userId,
-          poin: totalPoin,
-          kredit: totalKredit,
-        });
-      }
+    if (!item) {
+      return { success: false, message: "Setoran tidak ditemukan." };
+    }
 
-      if (roleTarget === "warmiendo") {
-        await db
-          .update(setorSampahWarmiendo)
-          .set({ status, totalPoin, updatedAt: new Date() })
-          .where(eq(setorSampahWarmiendo.id, id));
-      } else if (roleTarget === "bank-sampah") {
-        await db
-          .update(setorSampahBankSampah)
-          .set({ status, totalPoin, updatedAt: new Date() })
-          .where(eq(setorSampahBankSampah.id, id));
-      } else {
-        await db
-          .update(setorSampahKonsumen)
-          .set({ status, totalPoin, updatedAt: new Date() })
-          .where(eq(setorSampahKonsumen.id, id));
-      }
-    } else {
-      if (roleTarget === "warmiendo") {
-        await db
-          .update(setorSampahWarmiendo)
-          .set({ status, updatedAt: new Date() })
-          .where(eq(setorSampahWarmiendo.id, id));
-      } else if (roleTarget === "bank-sampah") {
-        await db
-          .update(setorSampahBankSampah)
-          .set({ status, updatedAt: new Date() })
-          .where(eq(setorSampahBankSampah.id, id));
-      } else {
-        await db
-          .update(setorSampahKonsumen)
-          .set({ status, updatedAt: new Date() })
-          .where(eq(setorSampahKonsumen.id, id));
+    const aiWeightResult = await readWeightFromImage(base64Photo);
+    if (!aiWeightResult.success) {
+      return {
+        success: false,
+        message:
+          aiWeightResult.message ||
+          "AI gagal membaca angka timbangan dari gambar.",
+      };
+    }
+
+    const aiWeight = aiWeightResult.berat;
+    const isMatch = await validateBeratTolerance(item.beratKg, aiWeight);
+
+    const updatePayload: Partial<typeof setorSampah.$inferInsert> = {
+      beratAiKg: aiWeight,
+      updatedAt: new Date(),
+    };
+
+    if (isMatch) {
+      updatePayload.status = "diverifikasi";
+    }
+
+    await db
+      .update(setorSampah)
+      .set(updatePayload)
+      .where(eq(setorSampah.id, id));
+
+    revalidatePath(`/laporan/${roleTarget}`);
+
+    return {
+      success: true,
+      message: isMatch
+        ? "Verifikasi AI sukses. Hasil timbangan cocok."
+        : "Verifikasi AI sukses, tetapi timbangan melebihi toleransi.",
+      weightFromAi: aiWeight,
+      isMatch,
+    };
+  } catch (err) {
+    console.error("AI verification failed:", err);
+    return {
+      success: false,
+      message: `Terjadi kesalahan saat memproses gambar: ${String(err)}`,
+    };
+  }
+}
+
+export async function getMySetoran(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  jenisSampah?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  roleTarget?: "konsumen" | "warmiendo" | "bank-sampah";
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { data: [], total: 0, totalBerat: 0, totalPoin: 0, totalKredit: 0 };
+  }
+
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 50;
+  const offset = (page - 1) * limit;
+  const search = params?.search ?? "";
+  const jenisSampah = params?.jenisSampah ?? "";
+  const status = params?.status ?? "";
+  const sortBy = params?.sortBy ?? "id";
+  const sortOrder = params?.sortOrder ?? "desc";
+  const roleTarget =
+    params?.roleTarget ??
+    (user.role as "konsumen" | "warmiendo" | "bank-sampah");
+
+  const isAdmin = user.role === "admin" || user.role === "superadmin";
+
+  const filters: SQL[] = [eq(setorSampah.kategoriNasabah, roleTarget)];
+
+  if (!isAdmin) {
+    filters.push(eq(setorSampah.userId, user.id));
+  }
+
+  if (jenisSampah && jenisSampah !== "Semua") {
+    filters.push(
+      eq(
+        setorSampah.jenisSampah,
+        jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+      ),
+    );
+  }
+
+  if (status && status !== "Semua") {
+    filters.push(
+      eq(
+        setorSampah.status,
+        status as
+          | "pending"
+          | "diverifikasi"
+          | "diserahkan"
+          | "diterima"
+          | "ditolak",
+      ),
+    );
+  }
+
+  let searchFilter: SQL | undefined;
+  if (search) {
+    searchFilter = or(
+      ilike(setorSampah.nomorSetor, `%${search}%`),
+      ilike(setorSampah.catatan, `%${search}%`),
+    );
+  }
+
+  const combinedWhere =
+    filters.length > 0
+      ? searchFilter
+        ? and(...filters, searchFilter)
+        : and(...filters)
+      : searchFilter
+        ? searchFilter
+        : undefined;
+
+  let orderColumn: SQL = desc(setorSampah.id);
+  if (sortBy === "beratKg") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.beratKg)
+        : desc(setorSampah.beratKg);
+  } else if (sortBy === "totalPoin") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.totalPoin)
+        : desc(setorSampah.totalPoin);
+  } else if (sortBy === "tanggalSetor") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.tanggalSetor)
+        : desc(setorSampah.tanggalSetor);
+  } else if (sortBy === "status") {
+    orderColumn =
+      sortOrder === "asc" ? asc(setorSampah.status) : desc(setorSampah.status);
+  } else if (sortBy === "jenisSampah") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.jenisSampah)
+        : desc(setorSampah.jenisSampah);
+  } else if (sortBy === "nomorSetor") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.nomorSetor)
+        : desc(setorSampah.nomorSetor);
+  }
+
+  const [fetchedData, fetchedCount] = await Promise.all([
+    db.query.setorSampah.findMany({
+      where: combinedWhere,
+      with: {
+        user: true,
+        ekspedisi: true,
+      },
+      orderBy: [orderColumn],
+      limit,
+      offset,
+    }),
+    db
+      .select({
+        id: setorSampah.id,
+        beratKg: setorSampah.beratKg,
+        totalPoin: setorSampah.totalPoin,
+        jenisSampah: setorSampah.jenisSampah,
+        tanggalSetor: setorSampah.tanggalSetor,
+        userId: setorSampah.userId,
+      })
+      .from(setorSampah)
+      .where(combinedWhere),
+  ]);
+
+  const allRanges = await db.select().from(hargaSampah);
+
+  const mappedData = fetchedData.map((s) => {
+    const range = allRanges.find(
+      (r) =>
+        r.jenisSampah === s.jenisSampah &&
+        s.beratKg >= r.minBerat &&
+        (r.maxBerat === null || s.beratKg <= r.maxBerat),
+    );
+    const isMoneyReward =
+      roleTarget === "warmiendo" || roleTarget === "bank-sampah";
+    const kreditVal = isMoneyReward ? (range?.harga ?? 0) : 0;
+
+    return {
+      id: s.id,
+      nomorSetor: s.nomorSetor,
+      userId: s.userId,
+      jenisSampah: s.jenisSampah,
+      beratKg: s.beratKg,
+      beratAiKg: s.beratAiKg,
+      tanggalSetor: s.tanggalSetor,
+      fotoTimbangan: s.fotoTimbangan,
+      fotoBuktiTambahan: s.fotoBuktiTambahan,
+      catatan: s.catatan,
+      totalPoin: s.totalPoin,
+      status: s.status,
+      metodeSetor: s.metodeSetor,
+      ekspedisiId: s.ekspedisiId,
+      ekspedisi: s.ekspedisi,
+      user: s.user
+        ? {
+            id: s.user.id,
+            name: s.user.name,
+            username: s.user.username,
+            role: s.user.role,
+          }
+        : null,
+      totalKredit: kreditVal,
+      kategoriNasabah: s.kategoriNasabah,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    };
+  });
+
+  // Calculate aggregates of the full filtered list (fetchedCount) for correct summary
+  let sumBerat = 0;
+  let sumPoin = 0;
+  let sumKredit = 0;
+
+  for (const s of fetchedCount) {
+    const range = allRanges.find(
+      (r) =>
+        r.jenisSampah === s.jenisSampah &&
+        s.beratKg >= r.minBerat &&
+        (r.maxBerat === null || s.beratKg <= r.maxBerat),
+    );
+    const isMoneyReward =
+      roleTarget === "warmiendo" || roleTarget === "bank-sampah";
+    const kreditVal = isMoneyReward ? (range?.harga ?? 0) : 0;
+
+    sumBerat += s.beratKg;
+    sumPoin += s.totalPoin;
+    sumKredit += kreditVal;
+  }
+
+  return {
+    data: mappedData,
+    total: fetchedCount.length,
+    totalBerat: sumBerat,
+    totalPoin: sumPoin,
+    totalKredit: sumKredit,
+  };
+}
+
+export async function submitSetorSampah(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, errors: { _form: ["Sesi tidak valid."] } };
+  }
+
+  const jenisSampah = formData.get("jenisSampah") as string;
+  const beratKgRaw = formData.get("beratKg") as string;
+  const beratAiKgRaw = formData.get("beratAiKg") as string;
+  const tanggalSetor = formData.get("tanggalSetor") as string;
+  const fotoTimbanganBase64 = formData.get("fotoTimbangan") as string;
+  const fotoBuktiTambahanBase64 = formData.getAll(
+    "fotoBuktiTambahan",
+  ) as string[];
+  const catatan = (formData.get("catatan") as string) || null;
+  const metodeSetor = (formData.get("metodeSetor") as string) || "langsung";
+
+  if (!jenisSampah || !beratKgRaw || !tanggalSetor || !fotoTimbanganBase64) {
+    return {
+      success: false,
+      errors: {
+        _form: ["Semua data input timbangan dan tanggal wajib diisi."],
+      },
+    };
+  }
+
+  const beratKg = Number.parseFloat(beratKgRaw);
+  if (Number.isNaN(beratKg) || beratKg <= 0) {
+    return {
+      success: false,
+      errors: { beratKg: ["Berat sampah harus berupa angka positif."] },
+    };
+  }
+
+  try {
+    const uuid = randomUUID();
+    const fotoTimbanganUrl = await uploadImageToR2(
+      fotoTimbanganBase64,
+      "setoran-timbangan",
+      `${user.id}-${uuid}`,
+    );
+
+    const fotoBuktiUrls: string[] = [];
+    let count = 1;
+    for (const base64 of fotoBuktiTambahanBase64) {
+      if (base64 && base64.trim() !== "") {
+        const url = await uploadImageToR2(
+          base64,
+          "setoran-bukti-tambahan",
+          `${user.id}-${uuid}-${count}`,
+        );
+        fotoBuktiUrls.push(url);
+        count++;
       }
     }
 
-    revalidatePath("/laporan/konsumen");
+    const { totalPoin, totalKredit } = await calculateSetoranReward(
+      jenisSampah,
+      beratKg,
+      user.role,
+    );
+
+    const isPending = user.role === "konsumen" || user.role === "warmiendo";
+
+    // Query next sequence value for auto-increment ID
+    const nextValResult = await db.execute<{ nextval: string }>(
+      sql`SELECT nextval('setor_sampah_id_seq')`,
+    );
+    const nextId = nextValResult.rows[0]?.nextval
+      ? Number.parseInt(nextValResult.rows[0].nextval as string, 10)
+      : 1;
+
+    const dateParts = tanggalSetor.split("-");
+    const tahun = dateParts[0] || "2026";
+    const bulan = dateParts[1] || "01";
+    const tanggal = dateParts[2] || "01";
+
+    const roleToCode: Record<string, string> = {
+      "bank-sampah": "K",
+      warmiendo: "W",
+      konsumen: "B",
+    };
+    const code = roleToCode[user.role] || "B";
+    const nomorSetorFormatted = `${nextId}/${code}/NDL/BJM/${tanggal}/${bulan}/${tahun}`;
+
+    const baseValues = {
+      id: nextId,
+      nomorSetor: nomorSetorFormatted,
+      userId: user.id,
+      jenisSampah: jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+      beratKg,
+      beratAiKg: beratAiKgRaw ? Number.parseFloat(beratAiKgRaw) : null,
+      tanggalSetor,
+      fotoTimbangan: fotoTimbanganUrl,
+      fotoBuktiTambahan: fotoBuktiUrls,
+      catatan,
+      totalPoin: isPending ? 0 : totalPoin,
+      status: (isPending ? "pending" : "diterima") as
+        | "pending"
+        | "diverifikasi"
+        | "diserahkan"
+        | "diterima"
+        | "ditolak",
+      kategoriNasabah: user.role as "konsumen" | "warmiendo" | "bank-sampah",
+      metodeSetor:
+        user.role === "warmiendo"
+          ? (metodeSetor as "langsung" | "ekspedisi")
+          : null,
+    };
+
+    await db.insert(setorSampah).values(baseValues);
+
+    if (!isPending) {
+      // Update nasabah balance directly
+      await db
+        .update(nasabah)
+        .set({
+          poin: sql`${nasabah.poin} + ${totalPoin}`,
+          kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, user.id));
+    }
+  } catch (err) {
+    console.error("Insert setor sampah atau update nasabah gagal:", err);
+    return {
+      success: false,
+      errors: { _form: ["Terjadi kesalahan server. Coba lagi."] },
+    };
+  }
+
+  revalidatePath("/setor-sampah");
+  return { success: true };
+}
+
+export async function getAllActiveEkspedisi() {
+  return getEkspedisiFn();
+}
+
+// ── BANK SAMPAH: Verifikasi setoran Warmiendo & tugaskan ekspedisi ────────────
+
+export async function bankSampahVerifySetoran(
+  id: number,
+  ekspedisiId: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "bank-sampah") {
+    return {
+      success: false,
+      message:
+        "Akses ditolak. Hanya Bank Sampah yang dapat memverifikasi setoran Warmiendo.",
+    };
+  }
+
+  try {
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
+    });
+
+    if (!item) {
+      return { success: false, message: "Data setoran tidak ditemukan." };
+    }
+
+    if (item.status !== "pending") {
+      return {
+        success: false,
+        message: "Setoran ini tidak dalam status pending untuk diverifikasi.",
+      };
+    }
+
+    if (!ekspedisiId) {
+      return {
+        success: false,
+        message: "Vendor ekspedisi penjemput wajib dipilih.",
+      };
+    }
+
+    await db
+      .update(setorSampah)
+      .set({ status: "diverifikasi", ekspedisiId, updatedAt: new Date() })
+      .where(eq(setorSampah.id, id));
+
+    revalidatePath("/setor-sampah");
     revalidatePath("/laporan/warmiendo");
     revalidatePath("/laporan/bank-sampah");
-    revalidatePath("/setor-sampah");
-    return { success: true, message: "Status setoran berhasil diperbarui." };
+    return {
+      success: true,
+      message:
+        "Setoran berhasil diverifikasi dan ekspedisi penjemput telah ditugaskan.",
+    };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: `Gagal memperbarui status: ${errorMsg}` };
+    return {
+      success: false,
+      message: `Gagal memverifikasi setoran: ${errorMsg}`,
+    };
   }
 }
+
+// ── BANK SAMPAH: Terima dan finalisasi setoran Warmiendo ─────────────────────
+
+export async function bankSampahTerimaSetoran(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "bank-sampah") {
+    return {
+      success: false,
+      message:
+        "Akses ditolak. Hanya Bank Sampah yang dapat menerima setoran Warmiendo.",
+    };
+  }
+
+  try {
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
+    });
+
+    if (!item) {
+      return { success: false, message: "Data setoran tidak ditemukan." };
+    }
+
+    if (item.status !== "diserahkan") {
+      return {
+        success: false,
+        message:
+          "Setoran ini belum dalam status diserahkan — tunggu konfirmasi penyerahan dari Warmiendo.",
+      };
+    }
+
+    // Hitung reward berdasarkan berat & jenis sampah
+    const depositor = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, item.userId),
+    });
+
+    const { totalPoin, totalKredit } = await calculateSetoranReward(
+      item.jenisSampah,
+      item.beratKg,
+      depositor?.role ?? "warmiendo",
+    );
+
+    // Update saldo nasabah Warmiendo
+    await db
+      .update(nasabah)
+      .set({
+        poin: sql`${nasabah.poin} + ${totalPoin}`,
+        kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(nasabah.id, item.userId));
+
+    // Update status setoran ke diterima
+    await db
+      .update(setorSampah)
+      .set({ status: "diterima", totalPoin, updatedAt: new Date() })
+      .where(eq(setorSampah.id, id));
+
+    revalidatePath("/setor-sampah");
+    revalidatePath("/laporan/warmiendo");
+    revalidatePath("/laporan/bank-sampah");
+    return {
+      success: true,
+      message:
+        "Setoran Warmiendo berhasil diterima dan insentif telah dikreditkan ke akun nasabah.",
+    };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: `Gagal menerima setoran: ${errorMsg}`,
+    };
+  }
+}
+
+// ── BANK SAMPAH: Ambil daftar setoran Warmiendo yang perlu dikelola ──────────
+
+export async function getSetoranWarmiendoForBankSampah({
+  page = 1,
+  limit = 20,
+  status = "",
+}: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}): Promise<{
+  data: SetoranType[];
+  total: number;
+}> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "bank-sampah") {
+    return { data: [], total: 0 };
+  }
+
+  const offset = (page - 1) * limit;
+  const filters: SQL[] = [eq(setorSampah.kategoriNasabah, "warmiendo")];
+
+  if (status && status !== "Semua") {
+    filters.push(
+      eq(
+        setorSampah.status,
+        status as
+          | "pending"
+          | "diverifikasi"
+          | "diserahkan"
+          | "diterima"
+          | "ditolak",
+      ),
+    );
+  }
+
+  const combinedWhere = filters.length > 0 ? and(...filters) : undefined;
+
+  const [data, countResult] = await Promise.all([
+    db.query.setorSampah.findMany({
+      where: combinedWhere,
+      with: {
+        user: true,
+        ekspedisi: true,
+      },
+      orderBy: [desc(setorSampah.id)],
+      limit,
+      offset,
+    }),
+    db.select({ id: setorSampah.id }).from(setorSampah).where(combinedWhere),
+  ]);
+
+  return {
+    data: data as unknown as SetoranType[],
+    total: countResult.length,
+  };
+}
+
+// ── CLIENT: Handover / serahkan setoran Warmiendo ke ekspedisi ──────────
 
 export async function handoverSetorSampahToEkspedisi(
   id: number,
@@ -223,8 +796,8 @@ export async function handoverSetorSampahToEkspedisi(
   }
 
   try {
-    const item = await db.query.setorSampahWarmiendo.findFirst({
-      where: eq(setorSampahWarmiendo.id, id),
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
     });
 
     if (!item) {
@@ -243,9 +816,9 @@ export async function handoverSetorSampahToEkspedisi(
     }
 
     await db
-      .update(setorSampahWarmiendo)
+      .update(setorSampah)
       .set({ status: "diserahkan", updatedAt: new Date() })
-      .where(eq(setorSampahWarmiendo.id, id));
+      .where(eq(setorSampah.id, id));
 
     revalidatePath("/setor-sampah");
     revalidatePath("/laporan/warmiendo");
@@ -259,295 +832,7 @@ export async function handoverSetorSampahToEkspedisi(
   }
 }
 
-// ── Helper: format tanggal Indonesia ────────────────────────────────────────
-
-function formatTanggalIndo(date: Date): string {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-// ── Helper: ambil harga sampah aktif bulan ini ──────────────────────────────
-
-// getHargaAktif is deprecated. Use calculateSetoranReward from @/app/lib/pricing instead.
-
-// ── READ: Ambil setoran milik konsumen yang sedang login / list untuk admin ────────────────────
-export async function getMySetoran({
-  page = 1,
-  limit = 50,
-  search = "",
-  jenisSampah = "",
-  status = "",
-  sortBy = "id",
-  sortOrder = "desc",
-  roleTarget,
-}: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  jenisSampah?: string;
-  status?: string;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-  roleTarget?: "konsumen" | "warmiendo" | "bank-sampah";
-}): Promise<{
-  data: SetoranType[];
-  total: number;
-  totalBerat: number;
-  totalPoin: number;
-  totalKredit: number;
-}> {
-  const user = await getCurrentUser();
-  if (!user)
-    return { data: [], total: 0, totalBerat: 0, totalPoin: 0, totalKredit: 0 };
-
-  const isAdmin = user.role === "admin" || user.role === "superadmin";
-  const offset = (page - 1) * limit;
-
-  // Resolve target table based on role target or user role
-  const resolvedRole =
-    roleTarget ?? (user.role as "konsumen" | "warmiendo" | "bank-sampah");
-  const isTargetWarmiendo = resolvedRole === "warmiendo";
-  const isTargetBankSampah = resolvedRole === "bank-sampah";
-  const _isTargetKonsumen = resolvedRole === "konsumen";
-
-  let targetTable:
-    | typeof setorSampahKonsumen
-    | typeof setorSampahWarmiendo
-    | typeof setorSampahBankSampah;
-  if (isTargetWarmiendo) {
-    targetTable = setorSampahWarmiendo;
-  } else if (isTargetBankSampah) {
-    targetTable = setorSampahBankSampah;
-  } else {
-    targetTable = setorSampahKonsumen;
-  }
-
-  // Build dynamic SQL/drizzle queries
-  const filters: SQL[] = [];
-
-  if (!isAdmin) {
-    filters.push(eq(targetTable.userId, user.id));
-  }
-
-  if (jenisSampah && jenisSampah !== "Semua") {
-    filters.push(
-      eq(
-        targetTable.jenisSampah,
-        jenisSampah as "Karton" | "Etiket" | "Paper Cup",
-      ),
-    );
-  }
-
-  if (status && status !== "Semua") {
-    filters.push(
-      eq(targetTable.status, status as "pending" | "diterima" | "ditolak"),
-    );
-  }
-
-  // search query filter
-  let searchFilter: SQL | undefined;
-  if (search) {
-    searchFilter = or(
-      ilike(targetTable.nomorSetor, `%${search}%`),
-      ilike(targetTable.catatan, `%${search}%`),
-    );
-  }
-
-  const combinedWhere =
-    filters.length > 0
-      ? searchFilter
-        ? and(...filters, searchFilter)
-        : and(...filters)
-      : searchFilter
-        ? searchFilter
-        : undefined;
-
-  // Sorting
-  let orderColumn: SQL = desc(targetTable.id);
-  if (sortBy === "beratKg") {
-    orderColumn =
-      sortOrder === "asc"
-        ? asc(targetTable.beratKg)
-        : desc(targetTable.beratKg);
-  } else if (sortBy === "totalPoin") {
-    orderColumn =
-      sortOrder === "asc"
-        ? asc(targetTable.totalPoin)
-        : desc(targetTable.totalPoin);
-  } else if (sortBy === "tanggalSetor") {
-    orderColumn =
-      sortOrder === "asc"
-        ? asc(targetTable.tanggalSetor)
-        : desc(targetTable.tanggalSetor);
-  } else if (sortBy === "status") {
-    orderColumn =
-      sortOrder === "asc" ? asc(targetTable.status) : desc(targetTable.status);
-  } else if (sortBy === "jenisSampah") {
-    orderColumn =
-      sortOrder === "asc"
-        ? asc(targetTable.jenisSampah)
-        : desc(targetTable.jenisSampah);
-  } else if (sortBy === "nomorSetor") {
-    orderColumn =
-      sortOrder === "asc"
-        ? asc(targetTable.nomorSetor)
-        : desc(targetTable.nomorSetor);
-  } else {
-    orderColumn =
-      sortOrder === "asc" ? asc(targetTable.id) : desc(targetTable.id);
-  }
-
-  let data: SetoranType[] = [];
-  let countResult: {
-    id: number;
-    beratKg: number;
-    totalPoin: number;
-    jenisSampah: "Karton" | "Etiket" | "Paper Cup";
-    tanggalSetor: string;
-    userId: number;
-  }[] = [];
-
-  if (isTargetWarmiendo) {
-    const [fetchedData, fetchedCount] = await Promise.all([
-      db.query.setorSampahWarmiendo.findMany({
-        where: combinedWhere,
-        with: {
-          user: true,
-          ekspedisi: true,
-        },
-        orderBy: [orderColumn],
-        limit,
-        offset,
-      }),
-      db
-        .select({
-          id: targetTable.id,
-          beratKg: targetTable.beratKg,
-          totalPoin: targetTable.totalPoin,
-          jenisSampah: targetTable.jenisSampah,
-          tanggalSetor: targetTable.tanggalSetor,
-          userId: targetTable.userId,
-        })
-        .from(targetTable)
-        .where(combinedWhere),
-    ]);
-    data = fetchedData;
-    countResult = fetchedCount;
-  } else if (isTargetBankSampah) {
-    const [fetchedData, fetchedCount] = await Promise.all([
-      db.query.setorSampahBankSampah.findMany({
-        where: combinedWhere,
-        with: {
-          user: true,
-        },
-        orderBy: [orderColumn],
-        limit,
-        offset,
-      }),
-      db
-        .select({
-          id: targetTable.id,
-          beratKg: targetTable.beratKg,
-          totalPoin: targetTable.totalPoin,
-          jenisSampah: targetTable.jenisSampah,
-          tanggalSetor: targetTable.tanggalSetor,
-          userId: targetTable.userId,
-        })
-        .from(targetTable)
-        .where(combinedWhere),
-    ]);
-    data = fetchedData;
-    countResult = fetchedCount;
-  } else {
-    const [fetchedData, fetchedCount] = await Promise.all([
-      db.query.setorSampahKonsumen.findMany({
-        where: combinedWhere,
-        with: {
-          user: true,
-        },
-        orderBy: [orderColumn],
-        limit,
-        offset,
-      }),
-      db
-        .select({
-          id: targetTable.id,
-          beratKg: targetTable.beratKg,
-          totalPoin: targetTable.totalPoin,
-          jenisSampah: targetTable.jenisSampah,
-          tanggalSetor: targetTable.tanggalSetor,
-          userId: targetTable.userId,
-        })
-        .from(targetTable)
-        .where(combinedWhere),
-    ]);
-    data = fetchedData;
-    countResult = fetchedCount;
-  }
-
-  // Ambil semua harga range dan master poin untuk pencarian lokal agar menghindari N+1 query
-  const allRanges = await db.select().from(hargaSampah);
-  const _allPoints = await db.select().from(poinSampah);
-
-  const getHargaRangeLokal = (jenis: string, berat: number) => {
-    const matched = allRanges.find(
-      (r) =>
-        r.jenisSampah === jenis &&
-        berat >= r.minBerat &&
-        (r.maxBerat === null || berat <= r.maxBerat),
-    );
-    return matched?.harga ?? 0;
-  };
-
-  const formattedData = data.map((item: SetoranType) => {
-    const role = item.user?.role ?? resolvedRole;
-    const isMoneyReward = role === "warmiendo" || role === "bank-sampah";
-    const totalKredit = isMoneyReward
-      ? getHargaRangeLokal(item.jenisSampah, item.beratKg)
-      : 0;
-    return {
-      ...item,
-      totalKredit,
-    };
-  });
-
-  const totalBerat = countResult.reduce(
-    (sum: number, item: { beratKg: number }) => sum + (item.beratKg || 0),
-    0,
-  );
-  const totalPoin = countResult.reduce(
-    (sum: number, item: { totalPoin: number }) => sum + (item.totalPoin || 0),
-    0,
-  );
-  const totalKredit = countResult.reduce(
-    (
-      sum: number,
-      item: { jenisSampah: string; beratKg: number; userId: number },
-    ) => {
-      const userObj = data.find((d) => d.userId === item.userId)?.user;
-      const role = userObj?.role ?? resolvedRole;
-      const isMoneyReward = role === "warmiendo" || role === "bank-sampah";
-      const price = isMoneyReward
-        ? getHargaRangeLokal(item.jenisSampah, item.beratKg)
-        : 0;
-      return sum + price;
-    },
-    0,
-  );
-
-  return {
-    data: formattedData,
-    total: countResult.length,
-    totalBerat,
-    totalPoin,
-    totalKredit,
-  };
-}
-
-// ── VALIDATE AI: Validasi berat dari foto timbangan ─────────────────────────
+// ── CLIENT: Validasi foto timbangan via Gemini ─────────────────────────
 
 export async function validateFotoTimbangan(
   imageBase64: string,
@@ -594,7 +879,7 @@ export async function validateFotoTimbangan(
   };
 }
 
-// ── CREATE: Submit setoran sampah ───────────────────────────────────────────
+// ── CLIENT: Submit / create setoran dari Warmiendo / Konsumen / Bank Sampah ──────────
 
 export async function createSetorSampah(
   _prevState: ActionState,
@@ -674,9 +959,26 @@ export async function createSetorSampah(
     user.role,
   );
 
-  // Generate nomor setor: "Setoran [Nama User] – [Tanggal]"
-  const tanggalFormatted = formatTanggalIndo(new Date(tanggalSetor));
-  const nomorSetor = `Setoran ${user.name} – ${tanggalFormatted}`;
+  // Query next sequence value for auto-increment ID
+  const nextValResult = await db.execute<{ nextval: string }>(
+    sql`SELECT nextval('setor_sampah_id_seq')`,
+  );
+  const nextId = nextValResult.rows[0]?.nextval
+    ? Number.parseInt(nextValResult.rows[0].nextval as string, 10)
+    : 1;
+
+  const dateParts = tanggalSetor.split("-");
+  const tahun = dateParts[0] || "2026";
+  const bulan = dateParts[1] || "01";
+  const tanggal = dateParts[2] || "01";
+
+  const roleToCode: Record<string, string> = {
+    "bank-sampah": "K",
+    warmiendo: "W",
+    konsumen: "B",
+  };
+  const code = roleToCode[user.role] || "B";
+  const nomorSetor = `${nextId}/${code}/NDL/BJM/${tanggal}/${bulan}/${tahun}`;
 
   // Upload foto timbangan ke R2
   let fotoTimbanganUrl: string;
@@ -684,7 +986,7 @@ export async function createSetorSampah(
     const uuid = randomUUID();
     fotoTimbanganUrl = await uploadImageToR2(
       fotoTimbanganBase64,
-      "timbangan",
+      "setoran-timbangan",
       `${user.id}-${uuid}`,
     );
   } catch (err) {
@@ -701,9 +1003,15 @@ export async function createSetorSampah(
   const fotoBuktiUrls: string[] = [];
   try {
     for (const base64 of fotoBuktiBase64List) {
-      const uuid = randomUUID();
-      const url = await uploadImageToR2(base64, "bukti", `${user.id}-${uuid}`);
-      fotoBuktiUrls.push(url);
+      if (base64 && base64.trim() !== "") {
+        const uuid = randomUUID();
+        const url = await uploadImageToR2(
+          base64,
+          "setoran-bukti-tambahan",
+          `${user.id}-${uuid}`,
+        );
+        fotoBuktiUrls.push(url);
+      }
     }
   } catch (err) {
     console.error("Upload foto bukti gagal:", err);
@@ -718,6 +1026,7 @@ export async function createSetorSampah(
     const isEkspedisi = metodeSetor === "ekspedisi";
     const isPending = isEkspedisi || requestManualValidation;
     const baseValues = {
+      id: nextId,
       nomorSetor,
       userId: user.id,
       jenisSampah: jenisSampah as "Karton" | "Etiket" | "Paper Cup",
@@ -734,41 +1043,25 @@ export async function createSetorSampah(
         | "diserahkan"
         | "diterima"
         | "ditolak",
+      kategoriNasabah: user.role as "konsumen" | "warmiendo" | "bank-sampah",
+      metodeSetor:
+        user.role === "warmiendo"
+          ? (metodeSetor as "langsung" | "ekspedisi")
+          : null,
     };
 
-    if (user.role === "warmiendo") {
-      await db.insert(setorSampahWarmiendo).values({
-        ...baseValues,
-        metodeSetor: metodeSetor as "langsung" | "ekspedisi",
-      });
-    } else if (user.role === "bank-sampah") {
-      await db.insert(setorSampahBankSampah).values(baseValues);
-    } else {
-      await db.insert(setorSampahKonsumen).values(baseValues);
-    }
+    await db.insert(setorSampah).values(baseValues);
 
     if (!isPending) {
-      // Update nasabah balance
-      const existingProfile = await db.query.nasabah.findFirst({
-        where: eq(nasabah.userId, user.id),
-      });
-
-      if (existingProfile) {
-        await db
-          .update(nasabah)
-          .set({
-            poin: existingProfile.poin + totalPoin,
-            kredit: existingProfile.kredit + totalKredit,
-            updatedAt: new Date(),
-          })
-          .where(eq(nasabah.userId, user.id));
-      } else {
-        await db.insert(nasabah).values({
-          userId: user.id,
-          poin: totalPoin,
-          kredit: totalKredit,
-        });
-      }
+      // Update nasabah balance directly
+      await db
+        .update(nasabah)
+        .set({
+          poin: sql`${nasabah.poin} + ${totalPoin}`,
+          kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, user.id));
     }
   } catch (err) {
     console.error("Insert setor sampah atau update nasabah gagal:", err);
@@ -780,216 +1073,4 @@ export async function createSetorSampah(
 
   revalidatePath("/setor-sampah");
   return { success: true };
-}
-
-export async function getAllActiveEkspedisi() {
-  return getEkspedisiFn();
-}
-
-// ── BANK SAMPAH: Verifikasi setoran Warmiendo & tugaskan ekspedisi ────────────
-
-export async function bankSampahVerifySetoran(
-  id: number,
-  ekspedisiId: number,
-): Promise<{ success: boolean; message: string }> {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "bank-sampah") {
-    return {
-      success: false,
-      message:
-        "Akses ditolak. Hanya Bank Sampah yang dapat memverifikasi setoran Warmiendo.",
-    };
-  }
-
-  try {
-    const item = await db.query.setorSampahWarmiendo.findFirst({
-      where: eq(setorSampahWarmiendo.id, id),
-    });
-
-    if (!item) {
-      return { success: false, message: "Data setoran tidak ditemukan." };
-    }
-
-    if (item.status !== "pending") {
-      return {
-        success: false,
-        message: "Setoran ini tidak dalam status pending untuk diverifikasi.",
-      };
-    }
-
-    if (!ekspedisiId) {
-      return {
-        success: false,
-        message: "Vendor ekspedisi penjemput wajib dipilih.",
-      };
-    }
-
-    await db
-      .update(setorSampahWarmiendo)
-      .set({ status: "diverifikasi", ekspedisiId, updatedAt: new Date() })
-      .where(eq(setorSampahWarmiendo.id, id));
-
-    revalidatePath("/setor-sampah");
-    revalidatePath("/laporan/warmiendo");
-    revalidatePath("/laporan/bank-sampah");
-    return {
-      success: true,
-      message:
-        "Setoran berhasil diverifikasi dan ekspedisi penjemput telah ditugaskan.",
-    };
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      message: `Gagal memverifikasi setoran: ${errorMsg}`,
-    };
-  }
-}
-
-// ── BANK SAMPAH: Terima dan finalisasi setoran Warmiendo ─────────────────────
-
-export async function bankSampahTerimaSetoran(
-  id: number,
-): Promise<{ success: boolean; message: string }> {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "bank-sampah") {
-    return {
-      success: false,
-      message:
-        "Akses ditolak. Hanya Bank Sampah yang dapat menerima setoran Warmiendo.",
-    };
-  }
-
-  try {
-    const item = await db.query.setorSampahWarmiendo.findFirst({
-      where: eq(setorSampahWarmiendo.id, id),
-    });
-
-    if (!item) {
-      return { success: false, message: "Data setoran tidak ditemukan." };
-    }
-
-    if (item.status !== "diserahkan") {
-      return {
-        success: false,
-        message:
-          "Setoran ini belum dalam status diserahkan — tunggu konfirmasi penyerahan dari Warmiendo.",
-      };
-    }
-
-    // Hitung reward berdasarkan berat & jenis sampah
-    const depositor = await db.query.users.findFirst({
-      where: eq(users.id, item.userId),
-    });
-
-    const { totalPoin, totalKredit } = await calculateSetoranReward(
-      item.jenisSampah,
-      item.beratKg,
-      depositor?.role ?? "warmiendo",
-    );
-
-    // Update saldo nasabah Warmiendo
-    const existingProfile = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, item.userId),
-    });
-
-    if (existingProfile) {
-      await db
-        .update(nasabah)
-        .set({
-          poin: existingProfile.poin + totalPoin,
-          kredit: existingProfile.kredit + totalKredit,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.userId, item.userId));
-    } else {
-      await db.insert(nasabah).values({
-        userId: item.userId,
-        poin: totalPoin,
-        kredit: totalKredit,
-      });
-    }
-
-    // Update status setoran ke diterima
-    await db
-      .update(setorSampahWarmiendo)
-      .set({ status: "diterima", totalPoin, updatedAt: new Date() })
-      .where(eq(setorSampahWarmiendo.id, id));
-
-    revalidatePath("/setor-sampah");
-    revalidatePath("/laporan/warmiendo");
-    revalidatePath("/laporan/bank-sampah");
-    return {
-      success: true,
-      message:
-        "Setoran Warmiendo berhasil diterima dan insentif telah dikreditkan ke akun nasabah.",
-    };
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      message: `Gagal menerima setoran: ${errorMsg}`,
-    };
-  }
-}
-
-// ── BANK SAMPAH: Ambil daftar setoran Warmiendo yang perlu dikelola ──────────
-
-export async function getSetoranWarmiendoForBankSampah({
-  page = 1,
-  limit = 20,
-  status = "",
-}: {
-  page?: number;
-  limit?: number;
-  status?: string;
-}): Promise<{
-  data: SetoranType[];
-  total: number;
-}> {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "bank-sampah") {
-    return { data: [], total: 0 };
-  }
-
-  const offset = (page - 1) * limit;
-  const filters: SQL[] = [];
-
-  if (status && status !== "Semua") {
-    filters.push(
-      eq(
-        setorSampahWarmiendo.status,
-        status as
-          | "pending"
-          | "diverifikasi"
-          | "diserahkan"
-          | "diterima"
-          | "ditolak",
-      ),
-    );
-  }
-
-  const combinedWhere = filters.length > 0 ? and(...filters) : undefined;
-
-  const [data, countResult] = await Promise.all([
-    db.query.setorSampahWarmiendo.findMany({
-      where: combinedWhere,
-      with: {
-        user: true,
-        ekspedisi: true,
-      },
-      orderBy: [desc(setorSampahWarmiendo.id)],
-      limit,
-      offset,
-    }),
-    db
-      .select({ id: setorSampahWarmiendo.id })
-      .from(setorSampahWarmiendo)
-      .where(combinedWhere),
-  ]);
-
-  return {
-    data: data as SetoranType[],
-    total: countResult.length,
-  };
 }

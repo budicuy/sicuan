@@ -4,13 +4,7 @@ import { eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import {
-  rawMaterial,
-  setorSampahBankSampah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-  users,
-} from "@/db/schema";
+import { nasabah, rawMaterial, setorSampah } from "@/db/schema";
 
 export interface WeeklyReportPoint {
   weekLabel: string;
@@ -70,58 +64,44 @@ export async function getRawMaterialReport(
   }
 
   // 1. Fetch raw materials and waste deposits in parallel (Optimal Queries)
-  const [rawRows, konsumenRows, warmiendoRows, bankSampahRows] =
-    await Promise.all([
-      db
-        .select({
-          id: rawMaterial.id,
-          periode: rawMaterial.periode,
-          kategori: rawMaterial.kategori,
-          klasifikasi: rawMaterial.klasifikasi,
-          beratKg: rawMaterial.beratKg,
-        })
-        .from(rawMaterial),
-      db
-        .select({
-          beratKg: setorSampahKonsumen.beratKg,
-          jenisSampah: setorSampahKonsumen.jenisSampah,
-          tanggalSetor: setorSampahKonsumen.tanggalSetor,
-          userId: setorSampahKonsumen.userId,
-          userName: users.name,
-        })
-        .from(setorSampahKonsumen)
-        .leftJoin(users, eq(setorSampahKonsumen.userId, users.id))
-        .where(eq(setorSampahKonsumen.status, "diterima")),
-      db
-        .select({
-          beratKg: setorSampahWarmiendo.beratKg,
-          jenisSampah: setorSampahWarmiendo.jenisSampah,
-          tanggalSetor: setorSampahWarmiendo.tanggalSetor,
-          userId: setorSampahWarmiendo.userId,
-          userName: users.name,
-        })
-        .from(setorSampahWarmiendo)
-        .leftJoin(users, eq(setorSampahWarmiendo.userId, users.id))
-        .where(eq(setorSampahWarmiendo.status, "diterima")),
-      db
-        .select({
-          beratKg: setorSampahBankSampah.beratKg,
-          jenisSampah: setorSampahBankSampah.jenisSampah,
-          tanggalSetor: setorSampahBankSampah.tanggalSetor,
-          userId: setorSampahBankSampah.userId,
-          userName: users.name,
-        })
-        .from(setorSampahBankSampah)
-        .leftJoin(users, eq(setorSampahBankSampah.userId, users.id))
-        .where(eq(setorSampahBankSampah.status, "diterima")),
-    ]);
+  const [rawRows, setoranRows] = await Promise.all([
+    db
+      .select({
+        id: rawMaterial.id,
+        periode: rawMaterial.periode,
+        kategori: rawMaterial.kategori,
+        klasifikasi: rawMaterial.klasifikasi,
+        beratKg: rawMaterial.beratKg,
+      })
+      .from(rawMaterial),
+    db
+      .select({
+        beratKg: setorSampah.beratKg,
+        jenisSampah: setorSampah.jenisSampah,
+        tanggalSetor: setorSampah.tanggalSetor,
+        userId: setorSampah.userId,
+        userName: nasabah.name,
+        kategoriNasabah: setorSampah.kategoriNasabah,
+      })
+      .from(setorSampah)
+      .leftJoin(nasabah, eq(setorSampah.userId, nasabah.id))
+      .where(eq(setorSampah.status, "diterima")),
+  ]);
 
   // Combine all deposits
-  const allDeposits = [
-    ...konsumenRows.map((r) => ({ ...r, source: "Konsumen" })),
-    ...warmiendoRows.map((r) => ({ ...r, source: "Warmiendo" })),
-    ...bankSampahRows.map((r) => ({ ...r, source: "Bank Sampah" })),
-  ];
+  const allDeposits = setoranRows.map((r) => ({
+    beratKg: r.beratKg,
+    jenisSampah: r.jenisSampah,
+    tanggalSetor: r.tanggalSetor,
+    userId: r.userId,
+    userName: r.userName,
+    source:
+      r.kategoriNasabah === "konsumen"
+        ? "Konsumen"
+        : r.kategoriNasabah === "warmiendo"
+          ? "Warmiendo"
+          : "Bank Sampah",
+  }));
 
   // ── Helper: parse date day of month
   const getDay = (dateStr: string) => {

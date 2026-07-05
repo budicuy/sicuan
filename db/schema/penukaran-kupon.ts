@@ -1,13 +1,13 @@
 import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { kupon } from "@/db/schema/kupon";
-import { users } from "@/db/schema/users";
+import { nasabah } from "@/db/schema/nasabah";
 
 export const penukaranKupon = pgTable("penukaran_kupon", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+    .references(() => nasabah.id, { onDelete: "cascade" }),
   kuponId: integer("kupon_id")
     .notNull()
     .references(() => kupon.id, { onDelete: "cascade" }),

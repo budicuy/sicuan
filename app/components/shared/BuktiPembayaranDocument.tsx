@@ -641,19 +641,16 @@ export function BuktiPembayaranDocument({
               <Image src={data.ttdPenerimaUrl} style={styles.ttdImage} />
             ) : null}
             <View style={{ marginTop: 4 }}>
-              <View style={styles.ttdLine} />
-              {data.namaPenerima ? (
-                <Text style={[styles.ttdName, { textAlign: "center" }]}>
-                  ({data.namaPenerima})
-                </Text>
-              ) : null}
-              {data.jabatanPenerima ? (
-                <Text style={[styles.ttdJabatan, { fontWeight: "bold" }]}>
-                  {data.jabatanPenerima}
-                </Text>
-              ) : null}
-              <Text style={[styles.ttdJabatan, { fontStyle: "italic" }]}>
-                [ Cup / Stempel Resmi ]
+              <Text style={[styles.ttdJabatan, { fontWeight: "bold" }]}>
+                PT. Indofood CBP Sukses Makmur Tbk,
+              </Text>
+              <Text
+                style={[
+                  styles.ttdJabatan,
+                  { fontStyle: "italic", fontSize: 8 },
+                ]}
+              >
+                [ Cap / Stempel Resmi ]
               </Text>
             </View>
           </View>

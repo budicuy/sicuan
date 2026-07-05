@@ -5,71 +5,32 @@ import { kupon } from "@/db/schema/kupon";
 import { nasabah } from "@/db/schema/nasabah";
 import { pencairanDana } from "@/db/schema/pencairan-dana";
 import { penukaranKupon } from "@/db/schema/penukaran-kupon";
-import { setorSampahBankSampah } from "@/db/schema/setoran_bank_sampah";
-import { setorSampahKonsumen } from "@/db/schema/setoran_konsumen";
-import { setorSampahWarmiendo } from "@/db/schema/setoran_warmiendo";
-import { users } from "@/db/schema/users";
+import { setorSampah } from "@/db/schema/setor-sampah";
 
-export const usersRelations = relations(users, ({ one, many }) => ({
-  nasabah: one(nasabah, {
-    fields: [users.id],
-    references: [nasabah.userId],
-  }),
-  setorSampahKonsumen: many(setorSampahKonsumen),
-  setorSampahWarmiendo: many(setorSampahWarmiendo),
-  setorSampahBankSampah: many(setorSampahBankSampah),
+export const nasabahRelations = relations(nasabah, ({ many }) => ({
+  setorSampah: many(setorSampah),
   penukaranKupon: many(penukaranKupon),
 }));
 
-export const nasabahRelations = relations(nasabah, ({ one }) => ({
-  user: one(users, {
-    fields: [nasabah.userId],
-    references: [users.id],
+export const setorSampahRelations = relations(setorSampah, ({ one }) => ({
+  user: one(nasabah, {
+    fields: [setorSampah.userId],
+    references: [nasabah.id],
+  }),
+  ekspedisi: one(ekspedisi, {
+    fields: [setorSampah.ekspedisiId],
+    references: [ekspedisi.id],
   }),
 }));
-
-export const setorSampahKonsumenRelations = relations(
-  setorSampahKonsumen,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [setorSampahKonsumen.userId],
-      references: [users.id],
-    }),
-  }),
-);
-
-export const setorSampahWarmiendoRelations = relations(
-  setorSampahWarmiendo,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [setorSampahWarmiendo.userId],
-      references: [users.id],
-    }),
-    ekspedisi: one(ekspedisi, {
-      fields: [setorSampahWarmiendo.ekspedisiId],
-      references: [ekspedisi.id],
-    }),
-  }),
-);
-
-export const setorSampahBankSampahRelations = relations(
-  setorSampahBankSampah,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [setorSampahBankSampah.userId],
-      references: [users.id],
-    }),
-  }),
-);
 
 export const kuponRelations = relations(kupon, ({ many }) => ({
   penukaranKupon: many(penukaranKupon),
 }));
 
 export const penukaranKuponRelations = relations(penukaranKupon, ({ one }) => ({
-  user: one(users, {
+  user: one(nasabah, {
     fields: [penukaranKupon.userId],
-    references: [users.id],
+    references: [nasabah.id],
   }),
   kupon: one(kupon, {
     fields: [penukaranKupon.kuponId],
@@ -78,9 +39,9 @@ export const penukaranKuponRelations = relations(penukaranKupon, ({ one }) => ({
 }));
 
 export const pencairanDanaRelations = relations(pencairanDana, ({ one }) => ({
-  user: one(users, {
+  user: one(nasabah, {
     fields: [pencairanDana.userId],
-    references: [users.id],
+    references: [nasabah.id],
   }),
   buktiPembayaran: one(buktiPembayaran, {
     fields: [pencairanDana.id],
@@ -91,9 +52,9 @@ export const pencairanDanaRelations = relations(pencairanDana, ({ one }) => ({
 export const buktiPembayaranRelations = relations(
   buktiPembayaran,
   ({ one }) => ({
-    user: one(users, {
+    user: one(nasabah, {
       fields: [buktiPembayaran.userId],
-      references: [users.id],
+      references: [nasabah.id],
     }),
     pencairanDana: one(pencairanDana, {
       fields: [buktiPembayaran.pencairanDanaId],

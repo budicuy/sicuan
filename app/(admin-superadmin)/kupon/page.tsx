@@ -16,6 +16,7 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { getCurrentUser } from "@/app/lib/auth-actions";
 
 interface Kupon {
   id: number;
@@ -33,6 +34,7 @@ export default function KuponPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     tier: "",
   });
@@ -81,6 +83,11 @@ export default function KuponPage() {
 
   useEffect(() => {
     refreshData();
+    getCurrentUser().then((user) => {
+      if (user) {
+        setUserRole(user.role);
+      }
+    });
   }, [refreshData]);
 
   const handleSort = (key: string) => {
@@ -286,7 +293,7 @@ export default function KuponPage() {
         onAdd={handleOpenAddModal}
         addLabel="Tambah Kupon"
         onEdit={handleOpenEditModal}
-        onDelete={handleDelete}
+        onDelete={userRole === "superadmin" ? handleDelete : undefined}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}

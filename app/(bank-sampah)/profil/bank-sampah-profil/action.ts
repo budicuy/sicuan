@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
-import { nasabah, users } from "@/db/schema";
+import { nasabah } from "@/db/schema";
 
 const profileSchema = z.object({
   name: z
@@ -88,29 +88,12 @@ export async function getProfileData() {
   try {
     const userId = await getAuthenticatedUserId();
 
-    const [user, existingProfile] = await Promise.all([
-      db.query.users.findFirst({
-        where: eq(users.id, userId),
-      }),
-      db.query.nasabah.findFirst({
-        where: eq(nasabah.userId, userId),
-      }),
-    ]);
+    const user = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, userId),
+    });
 
     if (!user) {
       throw new Error("User tidak ditemukan");
-    }
-
-    // If profile doesn't exist, create an empty one
-    let profile = existingProfile;
-    if (!profile) {
-      const inserted = await db
-        .insert(nasabah)
-        .values({
-          userId: userId,
-        })
-        .returning();
-      profile = inserted[0];
     }
 
     return {
@@ -121,12 +104,12 @@ export async function getProfileData() {
         username: user.username,
         role: user.role,
         status: user.status,
-        nik: profile?.nik || "",
-        tanggalLahir: profile?.tanggalLahir || "",
-        noTelepon: profile?.noTelepon || "",
-        alamat: profile?.alamat || "",
-        jenisBank: profile?.jenisBank || "",
-        noRekening: profile?.noRekening || "",
+        nik: user.nik || "",
+        tanggalLahir: user.tanggalLahir || "",
+        noTelepon: user.noTelepon || "",
+        alamat: user.alamat || "",
+        jenisBank: user.jenisBank || "",
+        noRekening: user.noRekening || "",
       },
     };
   } catch (error) {
@@ -165,46 +148,19 @@ export async function updateProfileData(
       };
     }
 
-    // 1. Update user name + check existing profile in parallel
-    const [, existingProfile] = await Promise.all([
-      db
-        .update(users)
-        .set({
-          name: parsed.data.name,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, userId)),
-      db.query.nasabah.findFirst({
-        where: eq(nasabah.userId, userId),
-      }),
-    ]);
-
-    // 2. Update/Insert nasabah profile
-
-    if (existingProfile) {
-      await db
-        .update(nasabah)
-        .set({
-          nik: parsed.data.nik,
-          tanggalLahir: parsed.data.tanggalLahir,
-          noTelepon: parsed.data.noTelepon,
-          alamat: parsed.data.alamat,
-          jenisBank: parsed.data.jenisBank,
-          noRekening: parsed.data.noRekening,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.userId, userId));
-    } else {
-      await db.insert(nasabah).values({
-        userId,
+    await db
+      .update(nasabah)
+      .set({
+        name: parsed.data.name,
         nik: parsed.data.nik,
         tanggalLahir: parsed.data.tanggalLahir,
         noTelepon: parsed.data.noTelepon,
         alamat: parsed.data.alamat,
         jenisBank: parsed.data.jenisBank,
         noRekening: parsed.data.noRekening,
-      });
-    }
+        updatedAt: new Date(),
+      })
+      .where(eq(nasabah.id, userId));
 
     revalidatePath("/profil/bank-sampah-profil");
     return {
@@ -244,8 +200,8 @@ export async function updatePassword(
     }
 
     // Get current user from db to verify old password
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
+    const user = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, userId),
     });
 
     if (!user) {
@@ -275,12 +231,12 @@ export async function updatePassword(
 
     // Update in database
     await db
-      .update(users)
+      .update(nasabah)
       .set({
         password: hashedPassword,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, userId));
+      .where(eq(nasabah.id, userId));
 
     return {
       success: true,

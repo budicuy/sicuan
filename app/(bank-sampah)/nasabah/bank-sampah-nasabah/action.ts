@@ -4,7 +4,7 @@ import argon2 from "argon2";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { insertNasabahSchema, nasabah, users } from "@/db/schema";
+import { insertNasabahSchema, nasabah } from "@/db/schema";
 
 export type ActionState = {
   success: boolean;
@@ -31,13 +31,13 @@ export async function getNasabah(params?: {
 
   // Enforce role is either konsumen or warmiendo for Bank Sampah view
   whereConditions.push(
-    or(eq(users.role, "konsumen"), eq(users.role, "warmiendo")),
+    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmiendo")),
   );
 
   if (search) {
     whereConditions.push(
       or(
-        ilike(users.name, `%${search}%`),
+        ilike(nasabah.name, `%${search}%`),
         ilike(nasabah.nik, `%${search}%`),
         ilike(nasabah.noTelepon, `%${search}%`),
         ilike(nasabah.alamat, `%${search}%`),
@@ -46,7 +46,7 @@ export async function getNasabah(params?: {
   }
 
   if (role) {
-    whereConditions.push(eq(users.role, role as "konsumen" | "warmiendo"));
+    whereConditions.push(eq(nasabah.role, role as "konsumen" | "warmiendo"));
   }
 
   const queryCondition = and(...whereConditions);
@@ -55,14 +55,13 @@ export async function getNasabah(params?: {
   const countRes = await db
     .select({ count: sql<number>`count(*)` })
     .from(nasabah)
-    .innerJoin(users, eq(nasabah.userId, users.id))
     .where(queryCondition);
   const total = Number(countRes[0]?.count ?? 0);
 
   // Dynamic sorting
   let orderColumn = sortOrder === "desc" ? desc(nasabah.id) : asc(nasabah.id);
   if (sortBy === "name") {
-    orderColumn = sortOrder === "desc" ? desc(users.name) : asc(users.name);
+    orderColumn = sortOrder === "desc" ? desc(nasabah.name) : asc(nasabah.name);
   } else if (sortBy === "nik") {
     orderColumn = sortOrder === "desc" ? desc(nasabah.nik) : asc(nasabah.nik);
   } else if (sortBy === "noTelepon") {
@@ -80,7 +79,7 @@ export async function getNasabah(params?: {
   const data = await db
     .select({
       id: nasabah.id,
-      userId: nasabah.userId,
+      userId: nasabah.id,
       nik: nasabah.nik,
       tanggalLahir: nasabah.tanggalLahir,
       noTelepon: nasabah.noTelepon,
@@ -88,27 +87,46 @@ export async function getNasabah(params?: {
       jenisBank: nasabah.jenisBank,
       noRekening: nasabah.noRekening,
       email: nasabah.email,
-      user: {
-        name: users.name,
-        username: users.username,
-        role: users.role,
-      },
+      name: nasabah.name,
+      username: nasabah.username,
+      role: nasabah.role,
     })
     .from(nasabah)
-    .innerJoin(users, eq(nasabah.userId, users.id))
     .where(queryCondition)
     .orderBy(orderColumn)
     .limit(limit)
     .offset(offset);
 
-  return { data, total };
+  // Map to nested format for frontend compatibility
+  const mappedData = data.map((d) => ({
+    id: d.id,
+    userId: d.userId,
+    nik: d.nik,
+    tanggalLahir: d.tanggalLahir,
+    noTelepon: d.noTelepon,
+    alamat: d.alamat,
+    jenisBank: d.jenisBank,
+    noRekening: d.noRekening,
+    email: d.email,
+    user: {
+      name: d.name,
+      username: d.username,
+      role: d.role,
+    },
+  }));
+
+  return { data: mappedData, total };
 }
 
 const nasabahFormSchema = insertNasabahSchema.omit({
   id: true,
-  userId: true,
   createdAt: true,
   updatedAt: true,
+  name: true,
+  username: true,
+  password: true,
+  role: true,
+  status: true,
 });
 
 export async function createNasabah(
@@ -157,24 +175,12 @@ export async function createNasabah(
     const hashedPassword = await argon2.hash(randomPassword);
 
     // Create user account, defaulting to role 'konsumen'
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        name: name.trim(),
-        username: username,
-        password: hashedPassword,
-        role: "konsumen",
-        status: "Aktif",
-      })
-      .returning();
-
-    if (!newUser) {
-      throw new Error("Gagal membuat user baru");
-    }
-
-    // Create nasabah profile
     await db.insert(nasabah).values({
-      userId: newUser.id,
+      name: name.trim(),
+      username: username,
+      password: hashedPassword,
+      role: "konsumen",
+      status: "Aktif",
       ...parsed.data,
     });
   } catch (error) {
@@ -225,31 +231,11 @@ export async function updateNasabah(
   }
 
   try {
-    // Get existing nasabah profile
-    const existing = await db.query.nasabah.findFirst({
-      where: eq(nasabah.id, id),
-    });
-
-    if (!existing) {
-      return {
-        success: false,
-        errors: { _form: ["Data nasabah tidak ditemukan"] },
-      };
-    }
-
-    // Update user account details (only name, preserving role)
-    await db
-      .update(users)
-      .set({
-        name: name.trim(),
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, existing.userId));
-
-    // Update nasabah profile details
+    // Update user account details direttament
     await db
       .update(nasabah)
       .set({
+        name: name.trim(),
         ...parsed.data,
         updatedAt: new Date(),
       })
@@ -268,19 +254,8 @@ export async function updateNasabah(
 
 export async function deleteNasabah(id: number): Promise<ActionState> {
   try {
-    const existing = await db.query.nasabah.findFirst({
-      where: eq(nasabah.id, id),
-    });
-
-    if (!existing) {
-      return {
-        success: false,
-        errors: { _form: ["Data nasabah tidak ditemukan"] },
-      };
-    }
-
-    // Deleting the user will automatically cascade delete the nasabah profile
-    await db.delete(users).where(eq(users.id, existing.userId));
+    // Deleting the user directly
+    await db.delete(nasabah).where(eq(nasabah.id, id));
 
     revalidatePath("/nasabah/bank-sampah-nasabah");
     return { success: true };

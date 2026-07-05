@@ -274,7 +274,11 @@ export default function BankSampahSetorSampah() {
     message: string,
   ) => setFeedback({ isOpen: true, type, title, message });
 
-  const namaSetorPreview = `Setoran – ${new Date(tanggalSetor).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`;
+  const dateParts = tanggalSetor.split("-");
+  const tahun = dateParts[0] || "2026";
+  const bulan = dateParts[1] || "01";
+  const tanggal = dateParts[2] || "01";
+  const namaSetorPreview = `[OTOMATIS]/K/NDL/BJM/${tanggal}/${bulan}/${tahun}`;
 
   const loadData = useCallback(async () => {
     const historyRes = await getMySetoran({ page: 1, limit: 10 });
@@ -613,13 +617,13 @@ export default function BankSampahSetorSampah() {
               <form onSubmit={handleSubmit} className="p-6 space-y-5">
                 <div>
                   <label
-                    htmlFor="namaSetor"
+                    htmlFor="nomorSetor"
                     className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
                   >
-                    Nama Setoran (otomatis)
+                    NOMOR SETOR OTOMATIS
                   </label>
                   <input
-                    id="namaSetor"
+                    id="nomorSetor"
                     type="text"
                     value={namaSetorPreview}
                     readOnly
@@ -1012,9 +1016,6 @@ export default function BankSampahSetorSampah() {
                         <div className="flex flex-col items-end gap-2 shrink-0">
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200">
                             {item.status}
-                          </span>
-                          <span className="text-xs font-bold text-primary-600">
-                            {`+Rp ${(item.totalKredit ?? 0).toLocaleString("id-ID")}`}
                           </span>
                         </div>
                       </div>

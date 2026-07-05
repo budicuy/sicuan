@@ -6,12 +6,7 @@ import React from "react";
 import { LaporanNasabahDocument } from "@/app/components/shared/LaporanNasabahDocument";
 import { sendEmail } from "@/app/lib/email";
 import { db } from "@/db";
-import {
-  nasabah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-  users,
-} from "@/db/schema";
+import { nasabah, setorSampah } from "@/db/schema";
 
 export async function getNasabahListWithSummaries(params?: {
   search?: string;
@@ -20,19 +15,19 @@ export async function getNasabahListWithSummaries(params?: {
 
   const whereConditions = [];
   whereConditions.push(
-    or(eq(users.role, "konsumen"), eq(users.role, "warmiendo")),
+    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmiendo")),
   );
 
   if (search) {
-    whereConditions.push(ilike(users.name, `%${search}%`));
+    whereConditions.push(ilike(nasabah.name, `%${search}%`));
   }
 
   try {
-    // 1. Fetch filtered nasabah profiles list (including email)
+    // 1. Fetch filtered users list directly
     const nasabahList = await db
       .select({
         id: nasabah.id,
-        userId: nasabah.userId,
+        userId: nasabah.id,
         nik: nasabah.nik,
         noTelepon: nasabah.noTelepon,
         email: nasabah.email,
@@ -40,52 +35,32 @@ export async function getNasabahListWithSummaries(params?: {
         poin: nasabah.poin,
         kredit: nasabah.kredit,
         user: {
-          name: users.name,
-          role: users.role,
-          username: users.username,
+          name: nasabah.name,
+          role: nasabah.role,
+          username: nasabah.username,
         },
       })
       .from(nasabah)
-      .innerJoin(users, eq(nasabah.userId, users.id))
       .where(and(...whereConditions))
-      .orderBy(users.name);
+      .orderBy(nasabah.name);
 
-    // 2. Fetch aggregates for all konsumen setoran (grouped by userId)
-    const konsumenAggregates = await db
+    // 2. Fetch aggregates for all setoran (grouped by userId)
+    const aggregates = await db
       .select({
-        userId: setorSampahKonsumen.userId,
-        totalBerat: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
-        totalTransaksi: sql<number>`count(${setorSampahKonsumen.id})`,
+        userId: setorSampah.userId,
+        totalBerat: sql<number>`sum(${setorSampah.beratKg})`,
+        totalTransaksi: sql<number>`count(${setorSampah.id})`,
       })
-      .from(setorSampahKonsumen)
-      .groupBy(setorSampahKonsumen.userId);
+      .from(setorSampah)
+      .groupBy(setorSampah.userId);
 
-    // 3. Fetch aggregates for all warmiendo setoran (grouped by userId)
-    const warmiendoAggregates = await db
-      .select({
-        userId: setorSampahWarmiendo.userId,
-        totalBerat: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
-        totalTransaksi: sql<number>`count(${setorSampahWarmiendo.id})`,
-      })
-      .from(setorSampahWarmiendo)
-      .groupBy(setorSampahWarmiendo.userId);
-
-    // 4. Map the aggregates by userId for O(1) lookups
+    // 3. Map the aggregates by userId for O(1) lookups
     const aggregatesMap = new Map<
       number,
       { totalBerat: number; totalTransaksi: number }
     >();
 
-    for (const row of konsumenAggregates) {
-      if (row.userId) {
-        aggregatesMap.set(row.userId, {
-          totalBerat: Number(row.totalBerat) || 0,
-          totalTransaksi: Number(row.totalTransaksi) || 0,
-        });
-      }
-    }
-
-    for (const row of warmiendoAggregates) {
+    for (const row of aggregates) {
       if (row.userId) {
         aggregatesMap.set(row.userId, {
           totalBerat: Number(row.totalBerat) || 0,
@@ -119,7 +94,7 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
     const profile = await db
       .select({
         id: nasabah.id,
-        userId: nasabah.userId,
+        userId: nasabah.id,
         nik: nasabah.nik,
         noTelepon: nasabah.noTelepon,
         email: nasabah.email,
@@ -129,13 +104,12 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
         jenisBank: nasabah.jenisBank,
         noRekening: nasabah.noRekening,
         user: {
-          name: users.name,
-          role: users.role,
-          username: users.username,
+          name: nasabah.name,
+          role: nasabah.role,
+          username: nasabah.username,
         },
       })
       .from(nasabah)
-      .innerJoin(users, eq(nasabah.userId, users.id))
       .where(eq(nasabah.id, nasabahId))
       .limit(1);
 
@@ -144,19 +118,16 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
     }
 
     const n = profile[0];
-    let setoranList = [];
-
-    if (n.user.role === "warmiendo") {
-      setoranList = await db.query.setorSampahWarmiendo.findMany({
-        where: eq(setorSampahWarmiendo.userId, n.userId),
-        orderBy: [desc(setorSampahWarmiendo.id)],
-      });
-    } else {
-      setoranList = await db.query.setorSampahKonsumen.findMany({
-        where: eq(setorSampahKonsumen.userId, n.userId),
-        orderBy: [desc(setorSampahKonsumen.id)],
-      });
-    }
+    const setoranList = await db.query.setorSampah.findMany({
+      where: and(
+        eq(setorSampah.userId, n.userId),
+        eq(
+          setorSampah.kategoriNasabah,
+          n.user.role as "konsumen" | "warmiendo" | "bank-sampah",
+        ),
+      ),
+      orderBy: [desc(setorSampah.id)],
+    });
 
     return {
       profile: n,
@@ -229,6 +200,7 @@ export async function sendPdfToEmailAction(
       };
     }
 
+    // Plain text fallback
     const messageText = `Halo ${data.profile.user.name},
 
 Berikut adalah Laporan Detail Setoran Sampah Anda di Bank Sampah Indofood:
@@ -242,6 +214,81 @@ Terima kasih atas partisipasi aktif Anda dalam menjaga kelestarian lingkungan! B
 Salam hangat,
 Bank Sampah Indofood`;
 
+    // Styled HTML Email Template
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Laporan Setoran Sampah - Bank Sampah Indofood</title>
+</head>
+<body style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f5f7; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f5f7; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #eef2f6;" border="0" cellspacing="0" cellpadding="0">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #059669, #10b981); padding: 35px 30px; text-align: center;">
+              <span style="font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 1px; display: block; margin: 0; text-transform: uppercase;">Bank Sampah Indofood</span>
+              <span style="font-size: 13px; color: #d1fae5; font-weight: 600; display: block; margin-top: 5px; letter-spacing: 0.5px;">Mewujudkan Lingkungan Bersih & Berkelanjutan</span>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding: 35px 30px;">
+              <p style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 10px 0;">Halo ${data.profile.user.name},</p>
+              <p style="font-size: 14px; color: #64748b; line-height: 1.6; margin: 0 0 25px 0;">Berikut adalah ringkasan Laporan Detail Setoran Sampah Anda. Berkas PDF laporan transaksi lengkap Anda telah dilampirkan pada email ini.</p>
+              
+              <!-- Stats Grid -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 30px;">
+                <tr>
+                  <td style="padding: 0 5px 0 0;" width="33%">
+                    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 15px 10px; text-align: center;">
+                      <span style="font-size: 10px; font-weight: bold; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">Setoran</span>
+                      <span style="font-size: 16px; font-weight: 800; color: #166534; font-family: monospace;">${totalTransaksi}</span>
+                    </div>
+                  </td>
+                  <td style="padding: 0 5px;" width="33%">
+                    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 15px 10px; text-align: center;">
+                      <span style="font-size: 10px; font-weight: bold; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">Total Berat</span>
+                      <span style="font-size: 16px; font-weight: 800; color: #166534; font-family: monospace;">${totalBerat.toLocaleString("id-ID")} kg</span>
+                    </div>
+                  </td>
+                  <td style="padding: 0 0 0 5px;" width="33%">
+                    <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 15px 10px; text-align: center;">
+                      <span style="font-size: 10px; font-weight: bold; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">Saldo Kredit</span>
+                      <span style="font-size: 16px; font-weight: 800; color: #065f46; font-family: monospace;">Rp ${totalKredit.toLocaleString("id-ID")}</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              
+              <div style="background-color: #f8fafc; border-left: 4px solid #10b981; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 25px;">
+                <p style="font-size: 13px; color: #475569; line-height: 1.5; margin: 0; font-style: italic;">
+                  &ldquo;Terima kasih atas partisipasi aktif Anda dalam program pemilahan sampah ini. Setiap kilogram sampah yang Anda setorkan berkontribusi nyata dalam menjaga kelestarian lingkungan sekitar kita.&rdquo;
+                </p>
+              </div>
+              
+              <p style="font-size: 14px; color: #64748b; line-height: 1.6; margin: 0 0 5px 0;">Salam hangat,</p>
+              <p style="font-size: 14px; font-weight: bold; color: #1e293b; margin: 0;">Tim Bank Sampah Indofood</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 25px 30px; border-top: 1px solid #eef2f6; text-align: center;">
+              <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0 0 5px 0;">Email ini dikirim secara otomatis oleh Sistem Portal Sicuan Bank Sampah Indofood.</p>
+              <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0;">&copy; 2026 PT. Indofood Sukses Makmur Tbk. All Rights Reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
     // Convert base64 PDF to Buffer for Nodemailer
     const pdfBuffer = Buffer.from(res.pdfBase64, "base64");
 
@@ -249,6 +296,7 @@ Bank Sampah Indofood`;
       to: emailAddress,
       subject: `Laporan Setoran Sampah - ${data.profile.user.name}`,
       text: messageText,
+      html: htmlContent,
       attachments: [
         {
           filename: res.fileName,

@@ -1,9 +1,11 @@
 "use server";
 
+import argon2 from "argon2";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
 import { db } from "@/db";
-import { insertNasabahSchema, nasabah, users } from "@/db/schema";
+import { insertNasabahSchema, nasabah } from "@/db/schema";
 
 export type ActionState = {
   success: boolean;
@@ -31,7 +33,8 @@ export async function getNasabah(params?: {
   if (search) {
     whereConditions.push(
       or(
-        ilike(users.name, `%${search}%`),
+        ilike(nasabah.name, `%${search}%`),
+        ilike(nasabah.username, `%${search}%`),
         ilike(nasabah.nik, `%${search}%`),
         ilike(nasabah.noTelepon, `%${search}%`),
         ilike(nasabah.alamat, `%${search}%`),
@@ -42,7 +45,7 @@ export async function getNasabah(params?: {
   if (role) {
     whereConditions.push(
       eq(
-        users.role,
+        nasabah.role,
         role as
           | "superadmin"
           | "admin"
@@ -60,14 +63,16 @@ export async function getNasabah(params?: {
   const countRes = await db
     .select({ count: sql<number>`count(*)` })
     .from(nasabah)
-    .innerJoin(users, eq(nasabah.userId, users.id))
     .where(queryCondition);
   const total = Number(countRes[0]?.count ?? 0);
 
   // Dynamic sorting
   let orderColumn = sortOrder === "desc" ? desc(nasabah.id) : asc(nasabah.id);
   if (sortBy === "name") {
-    orderColumn = sortOrder === "desc" ? desc(users.name) : asc(users.name);
+    orderColumn = sortOrder === "desc" ? desc(nasabah.name) : asc(nasabah.name);
+  } else if (sortBy === "username") {
+    orderColumn =
+      sortOrder === "desc" ? desc(nasabah.username) : asc(nasabah.username);
   } else if (sortBy === "nik") {
     orderColumn = sortOrder === "desc" ? desc(nasabah.nik) : asc(nasabah.nik);
   } else if (sortBy === "noTelepon") {
@@ -81,40 +86,57 @@ export async function getNasabah(params?: {
       sortOrder === "desc" ? desc(nasabah.jenisBank) : asc(nasabah.jenisBank);
   }
 
-  // Data query
+  // Data query - direct query to nasabah
   const data = await db
     .select({
       id: nasabah.id,
-      userId: nasabah.userId,
+      userId: nasabah.id, // For backward compatibility with the frontend structure
+      name: nasabah.name,
+      username: nasabah.username,
+      role: nasabah.role,
+      status: nasabah.status,
       nik: nasabah.nik,
       tanggalLahir: nasabah.tanggalLahir,
       noTelepon: nasabah.noTelepon,
+      email: nasabah.email,
       alamat: nasabah.alamat,
       jenisBank: nasabah.jenisBank,
       noRekening: nasabah.noRekening,
-      user: {
-        name: users.name,
-        username: users.username,
-        role: users.role,
-      },
+      poin: nasabah.poin,
+      kredit: nasabah.kredit,
     })
     .from(nasabah)
-    .innerJoin(users, eq(nasabah.userId, users.id))
     .where(queryCondition)
     .orderBy(orderColumn)
     .limit(limit)
     .offset(offset);
 
-  return { data, total };
+  // Map to frontend-friendly nested structure to keep frontend page changes minimal/safe
+  const mappedData = data.map((d) => ({
+    id: d.id,
+    userId: d.userId,
+    nik: d.nik,
+    tanggalLahir: d.tanggalLahir,
+    noTelepon: d.noTelepon,
+    email: d.email,
+    alamat: d.alamat,
+    jenisBank: d.jenisBank,
+    noRekening: d.noRekening,
+    poin: d.poin,
+    kredit: d.kredit,
+    user: {
+      name: d.name,
+      username: d.username,
+      role: d.role,
+      status: d.status,
+    },
+  }));
+
+  return { data: mappedData, total };
 }
 
-export async function getAvailableUsers() {
-  return db.query.users.findMany({
-    orderBy: users.name,
-  });
-}
-
-const nasabahFormSchema = insertNasabahSchema.omit({
+// Validation Schema
+const userFormSchema = insertNasabahSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -124,20 +146,36 @@ export async function createNasabah(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const userIdStr = formData.get("userId") as string;
+  const name = formData.get("name") as string;
+  const username = formData.get("username") as string;
+  const password = formData.get("password") as string;
+  const role = formData.get("role") as
+    | "superadmin"
+    | "admin"
+    | "konsumen"
+    | "warmiendo"
+    | "bank-sampah";
+  const status = formData.get("status") as string;
+
   const nik = formData.get("nik") as string;
   const tanggalLahir = formData.get("tanggalLahir") as string;
   const noTelepon = formData.get("noTelepon") as string;
+  const email = formData.get("email") as string;
   const alamat = formData.get("alamat") as string;
   const jenisBank = formData.get("jenisBank") as string;
   const noRekening = formData.get("noRekening") as string;
 
-  const userId = Number.parseInt(userIdStr, 10);
-  const parsed = nasabahFormSchema.safeParse({
-    userId,
+  // Validate all fields together
+  const parsed = userFormSchema.safeParse({
+    name,
+    username,
+    password,
+    role,
+    status,
     nik: nik || null,
     tanggalLahir: tanggalLahir || null,
     noTelepon: noTelepon || null,
+    email: email || null,
     alamat: alamat || null,
     jenisBank: jenisBank || null,
     noRekening: noRekening || null,
@@ -148,19 +186,26 @@ export async function createNasabah(
   }
 
   try {
-    // Check if user already has a nasabah profile
-    const existing = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, parsed.data.userId),
+    // Check if username already exists
+    const existingUser = await db.query.nasabah.findFirst({
+      where: eq(nasabah.username, parsed.data.username),
     });
 
-    if (existing) {
+    if (existingUser) {
       return {
         success: false,
-        errors: { userId: ["User ini sudah memiliki profil Nasabah Bank"] },
+        errors: { username: ["Username sudah terdaftar di sistem"] },
       };
     }
 
-    await db.insert(nasabah).values(parsed.data);
+    // Hash password
+    const hashedPassword = await argon2.hash(parsed.data.password);
+
+    // Insert user langsung
+    await db.insert(nasabah).values({
+      ...parsed.data,
+      password: hashedPassword,
+    });
   } catch (error) {
     console.error("Error creating nasabah:", error);
     return { success: false, errors: { _form: ["Terjadi kesalahan server"] } };
@@ -171,24 +216,40 @@ export async function createNasabah(
 }
 
 export async function updateNasabah(
-  id: number,
+  id: number, // this is the user id now
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const userIdStr = formData.get("userId") as string;
+  const name = formData.get("name") as string;
+  const username = formData.get("username") as string;
+  const password = formData.get("password") as string;
+  const role = formData.get("role") as
+    | "superadmin"
+    | "admin"
+    | "konsumen"
+    | "warmiendo"
+    | "bank-sampah";
+  const status = formData.get("status") as string;
+
   const nik = formData.get("nik") as string;
   const tanggalLahir = formData.get("tanggalLahir") as string;
   const noTelepon = formData.get("noTelepon") as string;
+  const email = formData.get("email") as string;
   const alamat = formData.get("alamat") as string;
   const jenisBank = formData.get("jenisBank") as string;
   const noRekening = formData.get("noRekening") as string;
 
-  const userId = Number.parseInt(userIdStr, 10);
-  const parsed = nasabahFormSchema.safeParse({
-    userId,
+  // Validate fields (password is optional for update)
+  const updateUserSchema = userFormSchema.omit({ password: true });
+  const parsed = updateUserSchema.safeParse({
+    name,
+    username,
+    role,
+    status,
     nik: nik || null,
     tanggalLahir: tanggalLahir || null,
     noTelepon: noTelepon || null,
+    email: email || null,
     alamat: alamat || null,
     jenisBank: jenisBank || null,
     noRekening: noRekening || null,
@@ -199,24 +260,29 @@ export async function updateNasabah(
   }
 
   try {
-    // Check if user already has a nasabah profile (and it belongs to someone else)
-    const existing = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, parsed.data.userId),
+    // Check if username is taken by another user
+    const existingUser = await db.query.nasabah.findFirst({
+      where: eq(nasabah.username, parsed.data.username),
     });
 
-    if (existing && existing.id !== id) {
+    if (existingUser && existingUser.id !== id) {
       return {
         success: false,
-        errors: {
-          userId: ["User ini sudah memiliki profil Nasabah Bank lain"],
-        },
+        errors: { username: ["Username sudah digunakan oleh user lain"] },
       };
     }
 
+    let hashedPassword: string | undefined;
+    if (password && password.trim() !== "") {
+      hashedPassword = await argon2.hash(password);
+    }
+
+    // Update user langsung
     await db
       .update(nasabah)
       .set({
         ...parsed.data,
+        ...(hashedPassword ? { password: hashedPassword } : {}),
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, id));
@@ -230,15 +296,24 @@ export async function updateNasabah(
 }
 
 export async function deleteNasabah(id: number): Promise<ActionState> {
+  if (!(await verifyIsSuperadmin())) {
+    return {
+      success: false,
+      errors: {
+        _form: ["Akses ditolak. Hanya Superadmin yang dapat menghapus data."],
+      },
+    };
+  }
   try {
     await db.delete(nasabah).where(eq(nasabah.id, id));
+
     revalidatePath("/nasabah");
     return { success: true };
   } catch (error) {
     console.error("Error deleting nasabah:", error);
     return {
       success: false,
-      errors: { _form: ["Gagal menghapus profil nasabah"] },
+      errors: { _form: ["Gagal menghapus data nasabah"] },
     };
   }
 }

@@ -1,32 +1,21 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import {
-  pencairanDana,
-  setorSampahBankSampah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-  users,
-} from "@/db/schema";
+import { nasabah, setorSampah } from "@/db/schema";
 
 export async function seedSetorSampah() {
-  console.log(
-    "🌱 Seeding setor sampah for Konsumen, Warmiendo, and Bank Sampah tables...",
-  );
+  console.log("🌱 Seeding setor sampah for unified table...");
 
-  await db.delete(pencairanDana);
-  await db.delete(setorSampahKonsumen);
-  await db.delete(setorSampahWarmiendo);
-  await db.delete(setorSampahBankSampah);
+  await db.delete(setorSampah);
 
   // Get active users
-  const budi = await db.query.users.findFirst({
-    where: eq(users.username, "budi.santoso"),
+  const budi = await db.query.nasabah.findFirst({
+    where: eq(nasabah.username, "budi.santoso"),
   });
-  const warmiendo = await db.query.users.findFirst({
-    where: eq(users.username, "warmiendo.demo"),
+  const warmiendo = await db.query.nasabah.findFirst({
+    where: eq(nasabah.username, "warmiendo.demo"),
   });
-  const bankSampah = await db.query.users.findFirst({
-    where: eq(users.username, "banksampah.demo"),
+  const bankSampah = await db.query.nasabah.findFirst({
+    where: eq(nasabah.username, "banksampah.demo"),
   });
   const activeEkspedisi = await db.query.ekspedisi.findMany();
 
@@ -39,10 +28,11 @@ export async function seedSetorSampah() {
   // Placeholder image
   const placeholderImage = "https://placehold.co/600x400";
 
-  // 1. Seed budi.santoso setoran (POIN) -> masuk ke setoran_konsumen
+  // 1. Seed budi.santoso setoran (POIN) -> masuk ke setor_sampah
+  // Untuk selain warmiendo, metode setor adalah "langsung"
   const budiSetoran = [
     {
-      nomorSetor: `Setoran Budi Santoso – 1 Juni 2026`,
+      nomorSetor: "1/B/NDL/BJM/01/06/2026",
       userId: budi.id,
       jenisSampah: "Karton" as const,
       beratKg: 10,
@@ -52,9 +42,11 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 200,
       status: "diterima" as const,
+      kategoriNasabah: "konsumen" as const,
+      metodeSetor: "langsung" as const,
     },
     {
-      nomorSetor: `Setoran Budi Santoso – 2 Juni 2026`,
+      nomorSetor: "2/B/NDL/BJM/02/06/2026",
       userId: budi.id,
       jenisSampah: "Etiket" as const,
       beratKg: 8,
@@ -64,9 +56,11 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 200,
       status: "diterima" as const,
+      kategoriNasabah: "konsumen" as const,
+      metodeSetor: "langsung" as const,
     },
     {
-      nomorSetor: `Setoran Budi Santoso – 3 Juni 2026`,
+      nomorSetor: "3/B/NDL/BJM/03/06/2026",
       userId: budi.id,
       jenisSampah: "Paper Cup" as const,
       beratKg: 10,
@@ -76,15 +70,18 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 300,
       status: "diterima" as const,
+      kategoriNasabah: "konsumen" as const,
+      metodeSetor: "langsung" as const,
     },
   ];
 
-  await db.insert(setorSampahKonsumen).values(budiSetoran);
+  await db.insert(setorSampah).values(budiSetoran);
 
-  // 2. Seed warmiendo.demo setoran (Kredit) -> masuk ke setoran_warmiendo
+  // 2. Seed warmiendo.demo setoran (Kredit) -> masuk ke setor_sampah
+  // Untuk warmiendo, metode setor adalah hanya via "ekspedisi"
   const warmiendoSetoran = [
     {
-      nomorSetor: `Setoran Mitra Warmiendo Demo – 1 Juni 2026`,
+      nomorSetor: "4/W/NDL/BJM/01/06/2026",
       userId: warmiendo.id,
       jenisSampah: "Karton" as const,
       beratKg: 10,
@@ -94,10 +91,12 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 0,
       status: "diterima" as const,
-      metodeSetor: "langsung",
+      metodeSetor: "ekspedisi" as const,
+      ekspedisiId: jneId,
+      kategoriNasabah: "warmiendo" as const,
     },
     {
-      nomorSetor: `Setoran Mitra Warmiendo Demo – 2 Juni 2026`,
+      nomorSetor: "5/W/NDL/BJM/02/06/2026",
       userId: warmiendo.id,
       jenisSampah: "Etiket" as const,
       beratKg: 20,
@@ -107,10 +106,12 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 0,
       status: "diterima" as const,
-      metodeSetor: "langsung",
+      metodeSetor: "ekspedisi" as const,
+      ekspedisiId: jneId,
+      kategoriNasabah: "warmiendo" as const,
     },
     {
-      nomorSetor: `Setoran Mitra Warmiendo Demo – 3 Juni 2026`,
+      nomorSetor: "6/W/NDL/BJM/03/06/2026",
       userId: warmiendo.id,
       jenisSampah: "Paper Cup" as const,
       beratKg: 15,
@@ -120,46 +121,19 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 0,
       status: "diterima" as const,
-      metodeSetor: "ekspedisi",
+      metodeSetor: "ekspedisi" as const,
       ekspedisiId: jneId,
+      kategoriNasabah: "warmiendo" as const,
     },
   ];
 
-  await db.insert(setorSampahWarmiendo).values(warmiendoSetoran);
+  await db.insert(setorSampah).values(warmiendoSetoran);
 
-  // Seed warmiendo.demo withdrawals (Pencairan)
-  const warmiendoPencairan = [
-    {
-      userId: warmiendo.id,
-      jumlah: 30000,
-      jenisBank: "BCA",
-      noRekening: "1234567890",
-      status: "berhasil",
-      buktiTransfer: placeholderImage,
-    },
-    {
-      userId: warmiendo.id,
-      jumlah: 20000,
-      jenisBank: "BCA",
-      noRekening: "1234567890",
-      status: "berhasil",
-      buktiTransfer: placeholderImage,
-    },
-    {
-      userId: warmiendo.id,
-      jumlah: 15000,
-      jenisBank: "BCA",
-      noRekening: "1234567890",
-      status: "pending",
-    },
-  ];
-
-  await db.insert(pencairanDana).values(warmiendoPencairan);
-
-  // 3. Seed banksampah.demo setoran (Kredit) -> masuk ke setoran_bank_sampah
+  // 3. Seed banksampah.demo setoran (Kredit) -> masuk ke setor_sampah
+  // Untuk selain warmiendo, metode setor adalah "langsung"
   const bankSampahSetoran = [
     {
-      nomorSetor: `Setoran Mitra Bank Sampah Demo – 1 Juni 2026`,
+      nomorSetor: "7/K/NDL/BJM/01/06/2026",
       userId: bankSampah.id,
       jenisSampah: "Karton" as const,
       beratKg: 15,
@@ -169,9 +143,11 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 300,
       status: "diterima" as const,
+      kategoriNasabah: "bank-sampah" as const,
+      metodeSetor: "langsung" as const,
     },
     {
-      nomorSetor: `Setoran Mitra Bank Sampah Demo – 2 Juni 2026`,
+      nomorSetor: "8/K/NDL/BJM/02/06/2026",
       userId: bankSampah.id,
       jenisSampah: "Paper Cup" as const,
       beratKg: 20,
@@ -181,31 +157,12 @@ export async function seedSetorSampah() {
       fotoBuktiTambahan: [placeholderImage],
       totalPoin: 600,
       status: "diterima" as const,
+      kategoriNasabah: "bank-sampah" as const,
+      metodeSetor: "langsung" as const,
     },
   ];
 
-  await db.insert(setorSampahBankSampah).values(bankSampahSetoran);
-
-  // Seed banksampah.demo withdrawals (Pencairan)
-  const bankSampahPencairan = [
-    {
-      userId: bankSampah.id,
-      jumlah: 40000,
-      jenisBank: "BRI",
-      noRekening: "0987654321",
-      status: "berhasil",
-      buktiTransfer: placeholderImage,
-    },
-    {
-      userId: bankSampah.id,
-      jumlah: 10000,
-      jenisBank: "BRI",
-      noRekening: "0987654321",
-      status: "pending",
-    },
-  ];
-
-  await db.insert(pencairanDana).values(bankSampahPencairan);
+  await db.insert(setorSampah).values(bankSampahSetoran);
 
   console.log("✅ Seeded split setoran and pencairan successfully");
 }

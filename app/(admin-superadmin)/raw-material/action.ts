@@ -2,6 +2,7 @@
 
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
 import { db } from "@/db";
 import { rawMaterial } from "@/db/schema";
 
@@ -207,6 +208,14 @@ export async function saveRawMaterial(
 }
 
 export async function deleteRawMaterial(id: number): Promise<ActionState> {
+  if (!(await verifyIsSuperadmin())) {
+    return {
+      success: false,
+      errors: {
+        _form: ["Akses ditolak. Hanya Superadmin yang dapat menghapus data."],
+      },
+    };
+  }
   try {
     // Find the record first to get the period
     const record = await db.query.rawMaterial.findFirst({

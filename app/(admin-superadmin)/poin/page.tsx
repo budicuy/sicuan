@@ -12,6 +12,7 @@ import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import { type Column, DataTable } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { getCurrentUser } from "@/app/lib/auth-actions";
 
 interface PoinSampah {
   id: number;
@@ -27,6 +28,7 @@ export default function PoinPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPoin, setEditingPoin] = useState<PoinSampah | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -71,6 +73,11 @@ export default function PoinPage() {
 
   useEffect(() => {
     refreshData();
+    getCurrentUser().then((user) => {
+      if (user) {
+        setUserRole(user.role);
+      }
+    });
   }, [refreshData]);
 
   const handleSort = (key: string) => {
@@ -217,7 +224,7 @@ export default function PoinPage() {
         onAdd={handleOpenAddModal}
         addLabel="Tambah Master Poin"
         onEdit={handleOpenEditModal}
-        onDelete={handleDelete}
+        onDelete={userRole === "superadmin" ? handleDelete : undefined}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}

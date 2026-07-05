@@ -1,11 +1,12 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getHargaRange } from "@/app/lib/pricing";
 import { db } from "@/db";
-import { nasabah, pencairanDana, setorSampahBankSampah } from "@/db/schema";
+import { nasabah, pencairanDana, setorSampah } from "@/db/schema";
 
 async function getCurrentUser() {
   try {
@@ -23,6 +24,59 @@ async function getCurrentUser() {
   }
 }
 
+async function getBankSampahMonthlyCredit(userId: number): Promise<number> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  const records = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, userId),
+      eq(setorSampah.kategoriNasabah, "bank-sampah"),
+      eq(setorSampah.status, "diterima"),
+      gte(setorSampah.tanggalSetor, startOfMonthStr),
+      lte(setorSampah.tanggalSetor, endOfMonthStr),
+    ),
+  });
+
+  const setoranList = records.map((r) => ({
+    jenisSampah: r.jenisSampah,
+    beratKg: r.beratKg,
+  }));
+
+  const wasteMap: Record<string, number> = {};
+  for (const item of setoranList) {
+    wasteMap[item.jenisSampah] =
+      (wasteMap[item.jenisSampah] || 0) + item.beratKg;
+  }
+
+  let dynamicKredit = 0;
+  for (const [jenis, berat] of Object.entries(wasteMap)) {
+    const harga = await getHargaRange(jenis, berat);
+    dynamicKredit += harga;
+  }
+
+  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
+  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+  const myDisbursements = await db.query.pencairanDana.findMany({
+    where: and(
+      eq(pencairanDana.userId, userId),
+      gte(pencairanDana.createdAt, startOfMonthDate),
+      lte(pencairanDana.createdAt, endOfMonthDate),
+    ),
+  });
+
+  const totalWithdrawn = myDisbursements
+    .filter((p) => p.status === "berhasil" || p.status === "pending")
+    .reduce((sum, p) => sum + p.jumlah, 0);
+
+  return Math.max(0, dynamicKredit - totalWithdrawn);
+}
+
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete("auth_token");
@@ -37,11 +91,14 @@ export async function getDashboardData() {
 
   const [profile, mySetoran, myPencairan] = await Promise.all([
     db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, user.id),
+      where: eq(nasabah.id, user.id),
     }),
-    db.query.setorSampahBankSampah.findMany({
-      where: eq(setorSampahBankSampah.userId, user.id),
-      orderBy: [desc(setorSampahBankSampah.createdAt)],
+    db.query.setorSampah.findMany({
+      where: and(
+        eq(setorSampah.userId, user.id),
+        eq(setorSampah.kategoriNasabah, "bank-sampah"),
+      ),
+      orderBy: [desc(setorSampah.createdAt)],
     }),
     db.query.pencairanDana.findMany({
       where: eq(pencairanDana.userId, user.id),
@@ -102,7 +159,7 @@ export async function getDashboardData() {
     name: user.name,
     profile: {
       poin: profile?.poin ?? 0,
-      kredit: profile?.kredit ?? 0,
+      kredit: profile ? await getBankSampahMonthlyCredit(profile.id) : 0,
     },
     metrics: {
       totalSetoranKg: Math.round(totalSetoranKg * 10) / 10,

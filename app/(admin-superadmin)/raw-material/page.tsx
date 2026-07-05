@@ -15,6 +15,7 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { getCurrentUser } from "@/app/lib/auth-actions";
 
 interface RawMaterial {
   id: number;
@@ -33,6 +34,7 @@ export default function RawMaterialPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     kategori: "",
     klasifikasi: "",
@@ -92,6 +94,11 @@ export default function RawMaterialPage() {
 
   useEffect(() => {
     refreshData();
+    getCurrentUser().then((user) => {
+      if (user) {
+        setUserRole(user.role);
+      }
+    });
   }, [refreshData]);
 
   const handleSort = (key: string) => {
@@ -375,7 +382,7 @@ export default function RawMaterialPage() {
         onAdd={handleOpenAddModal}
         addLabel="Tambah Raw Material"
         onEdit={handleOpenEditModal}
-        onDelete={handleDelete}
+        onDelete={userRole === "superadmin" ? handleDelete : undefined}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}

@@ -1,20 +1,33 @@
 import {
   doublePrecision,
   integer,
+  pgEnum,
   pgTable,
   serial,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { users } from "@/db/schema/users";
+
+// ── Nasabah (Database Level Table) ───────────────────────────────────────────
+
+export const userRoleEnum = pgEnum("user_role", [
+  "superadmin",
+  "admin",
+  "konsumen",
+  "warmiendo",
+  "bank-sampah",
+]);
 
 export const nasabah = pgTable("nasabah", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  role: userRoleEnum("role").notNull(),
+  status: text("status").notNull().default("Aktif"),
+
+  // Profile / Nasabah fields
   nik: text("nik"),
   tanggalLahir: text("tanggal_lahir"),
   noTelepon: text("no_telepon"),

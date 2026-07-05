@@ -1,6 +1,6 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -9,7 +9,7 @@ import {
   nasabah,
   pencairanDana,
   penukaranKupon,
-  setorSampahKonsumen,
+  setorSampah,
 } from "@/db/schema";
 
 async function getCurrentUser() {
@@ -42,11 +42,14 @@ export async function getDashboardData() {
 
   const [profile, mySetoran, myPencairan, myKupon] = await Promise.all([
     db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, user.id),
+      where: eq(nasabah.id, user.id),
     }),
-    db.query.setorSampahKonsumen.findMany({
-      where: eq(setorSampahKonsumen.userId, user.id),
-      orderBy: [desc(setorSampahKonsumen.createdAt)],
+    db.query.setorSampah.findMany({
+      where: and(
+        eq(setorSampah.userId, user.id),
+        eq(setorSampah.kategoriNasabah, "konsumen"),
+      ),
+      orderBy: [desc(setorSampah.createdAt)],
     }),
     db.query.pencairanDana.findMany({
       where: eq(pencairanDana.userId, user.id),

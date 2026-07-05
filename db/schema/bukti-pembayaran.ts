@@ -8,8 +8,8 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { nasabah } from "@/db/schema/nasabah";
 import { pencairanDana } from "@/db/schema/pencairan-dana";
-import { users } from "@/db/schema/users";
 
 export interface DataSampahItem {
   jenis: string;
@@ -26,7 +26,7 @@ export const buktiPembayaran = pgTable("bukti_pembayaran", {
   ),
   userId: integer("user_id")
     .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+    .references(() => nasabah.id, { onDelete: "cascade" }),
 
   // Identitas Pelanggan
   namaBankSampah: text("nama_bank_sampah").notNull(),

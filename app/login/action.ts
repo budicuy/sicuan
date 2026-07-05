@@ -6,7 +6,7 @@ import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
-import { nasabah, users } from "@/db/schema";
+import { nasabah } from "@/db/schema";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -51,6 +51,21 @@ function dateMatches(input: string, stored: string): boolean {
   const storedYear = parseInt(storedParts[0], 10);
   const storedMonth = parseInt(storedParts[1], 10);
   const storedDay = parseInt(storedParts[2], 10);
+
+  // Check format: DDMMYY (e.g. 240368 or 020302)
+  if (/^\d{6}$/.test(cleanedInput)) {
+    const day = parseInt(cleanedInput.substring(0, 2), 10);
+    const month = parseInt(cleanedInput.substring(2, 4), 10);
+    const year2D = parseInt(cleanedInput.substring(4, 6), 10);
+
+    if (
+      day === storedDay &&
+      month === storedMonth &&
+      year2D === storedYear % 100
+    ) {
+      return true;
+    }
+  }
 
   const inputParts = cleanedInput.split("/");
   if (inputParts.length !== 3) return false;
@@ -104,28 +119,19 @@ export async function loginAction(
     let user = null;
     let isNasabahAuth = false;
 
-    // 1. Check if username is a NIK in nasabah table
-    const nasabahRecords = await db
+    // 1. Check if username is a NIK in nasabah table directly
+    const userRecords = await db
       .select()
       .from(nasabah)
       .where(eq(nasabah.nik, username.trim()))
       .limit(1);
 
-    if (nasabahRecords.length > 0) {
-      const nasabahProfile = nasabahRecords[0];
-      const userRecords = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, nasabahProfile.userId))
-        .limit(1);
-
-      if (userRecords.length > 0) {
-        const potentialUser = userRecords[0];
-        const storedBirthdate = nasabahProfile.tanggalLahir;
-        if (storedBirthdate && dateMatches(password, storedBirthdate)) {
-          user = potentialUser;
-          isNasabahAuth = true;
-        }
+    if (userRecords.length > 0) {
+      const potentialUser = userRecords[0];
+      const storedBirthdate = potentialUser.tanggalLahir;
+      if (storedBirthdate && dateMatches(password, storedBirthdate)) {
+        user = potentialUser;
+        isNasabahAuth = true;
       }
     }
 
@@ -133,8 +139,8 @@ export async function loginAction(
     if (!isNasabahAuth) {
       const userRecords = await db
         .select()
-        .from(users)
-        .where(eq(users.username, username.trim()))
+        .from(nasabah)
+        .where(eq(nasabah.username, username.trim()))
         .limit(1);
 
       if (userRecords.length > 0) {

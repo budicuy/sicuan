@@ -2,6 +2,7 @@
 
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
 import { db } from "@/db";
 import { ekspedisi, insertEkspedisiSchema } from "@/db/schema";
 
@@ -153,6 +154,14 @@ export async function updateEkspedisi(
 }
 
 export async function deleteEkspedisi(id: number): Promise<ActionState> {
+  if (!(await verifyIsSuperadmin())) {
+    return {
+      success: false,
+      errors: {
+        _form: ["Akses ditolak. Hanya Superadmin yang dapat menghapus data."],
+      },
+    };
+  }
   try {
     await db.delete(ekspedisi).where(eq(ekspedisi.id, id));
     revalidatePath("/dashboard/ekspedisi");

@@ -1,10 +1,10 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import { nasabah, setorSampahWarmiendo, users } from "@/db/schema";
+import { nasabah, setorSampah } from "@/db/schema";
 
 async function getCurrentUser() {
   try {
@@ -28,27 +28,23 @@ export async function getPetaSampahData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  // 1. Ambil data nasabah warmiendo
-  const warmiendoNasabah = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
+  // 1. Ambil data user warmiendo (yang berisi koordinat & alamat)
+  const warmiendoUser = await db.query.nasabah.findFirst({
+    where: eq(nasabah.id, user.id),
   });
 
-  // 2. Ambil data bank sampah
-  const bankSampahUser = await db.query.users.findFirst({
-    where: eq(users.role, "bank-sampah"),
+  // 2. Ambil data bank sampah (yang berisi koordinat & alamat)
+  const bankSampahUser = await db.query.nasabah.findFirst({
+    where: eq(nasabah.role, "bank-sampah"),
   });
-
-  let bankSampahNasabah = null;
-  if (bankSampahUser) {
-    bankSampahNasabah = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, bankSampahUser.id),
-    });
-  }
 
   // 3. Ambil data setoran sampah warmiendo
-  const mySetoran = await db.query.setorSampahWarmiendo.findMany({
-    where: eq(setorSampahWarmiendo.userId, user.id),
-    orderBy: [desc(setorSampahWarmiendo.createdAt)],
+  const mySetoran = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, user.id),
+      eq(setorSampah.kategoriNasabah, "warmiendo"),
+    ),
+    orderBy: [desc(setorSampah.createdAt)],
   });
 
   return {
@@ -56,17 +52,17 @@ export async function getPetaSampahData() {
     warmiendo: {
       id: user.id,
       name: user.name,
-      latitude: warmiendoNasabah?.latitude ?? -3.32426,
-      longitude: warmiendoNasabah?.longitude ?? 114.59102,
-      alamat: warmiendoNasabah?.alamat ?? "Jl. Sultan Adam, Banjarmasin",
+      latitude: warmiendoUser?.latitude ?? -3.32426,
+      longitude: warmiendoUser?.longitude ?? 114.59102,
+      alamat: warmiendoUser?.alamat ?? "Jl. Sultan Adam, Banjarmasin",
     },
     bankSampah: bankSampahUser
       ? {
           id: bankSampahUser.id,
           name: bankSampahUser.name,
-          latitude: bankSampahNasabah?.latitude ?? -3.29826,
-          longitude: bankSampahNasabah?.longitude ?? 114.58602,
-          alamat: bankSampahNasabah?.alamat ?? "Jl. Hasan Basry, Banjarmasin",
+          latitude: bankSampahUser.latitude ?? -3.29826,
+          longitude: bankSampahUser.longitude ?? 114.58602,
+          alamat: bankSampahUser.alamat ?? "Jl. Hasan Basry, Banjarmasin",
         }
       : null,
     setoran: mySetoran.map((s) => ({
@@ -76,7 +72,7 @@ export async function getPetaSampahData() {
       beratKg: s.beratKg,
       tanggalSetor: s.tanggalSetor,
       status: s.status,
-      metodeSetor: s.metodeSetor,
+      metodeSetor: s.metodeSetor || "",
     })),
   };
 }

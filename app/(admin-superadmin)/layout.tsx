@@ -1,15 +1,10 @@
-import { count, eq, or } from "drizzle-orm";
+import { and, count, eq, or } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SidebarLayout } from "@/app/components/shared/sidebar";
 import { db } from "@/db";
-import {
-  pencairanDana,
-  setorSampahBankSampah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-} from "@/db/schema";
+import { pencairanDana, setorSampah } from "@/db/schema";
 
 async function logoutAction() {
   "use server";
@@ -54,23 +49,36 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
   // Fetch pending setoran counts
   const [pendingBankSampah] = await db
     .select({ count: count() })
-    .from(setorSampahBankSampah)
-    .where(eq(setorSampahBankSampah.status, "pending"));
+    .from(setorSampah)
+    .where(
+      and(
+        eq(setorSampah.kategoriNasabah, "bank-sampah"),
+        eq(setorSampah.status, "pending"),
+      ),
+    );
 
   const [pendingWarmiendo] = await db
     .select({ count: count() })
-    .from(setorSampahWarmiendo)
+    .from(setorSampah)
     .where(
-      or(
-        eq(setorSampahWarmiendo.status, "pending"),
-        eq(setorSampahWarmiendo.status, "diserahkan"),
+      and(
+        eq(setorSampah.kategoriNasabah, "warmiendo"),
+        or(
+          eq(setorSampah.status, "pending"),
+          eq(setorSampah.status, "diserahkan"),
+        ),
       ),
     );
 
   const [pendingKonsumen] = await db
     .select({ count: count() })
-    .from(setorSampahKonsumen)
-    .where(eq(setorSampahKonsumen.status, "pending"));
+    .from(setorSampah)
+    .where(
+      and(
+        eq(setorSampah.kategoriNasabah, "konsumen"),
+        eq(setorSampah.status, "pending"),
+      ),
+    );
 
   const countBankSampah = pendingBankSampah?.count ?? 0;
   const countWarmiendo = pendingWarmiendo?.count ?? 0;
@@ -98,7 +106,6 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         label: "Master Data",
         icon: "Folder",
         items: [
-          { href: "/users", label: "Data User", icon: "User" },
           { href: "/nasabah", label: "Data Nasabah", icon: "Coins" },
           { href: "/ekspedisi", label: "Data Ekspedisi", icon: "FileText" },
           { href: "/harga-sampah", label: "Harga Sampah", icon: "Settings" },

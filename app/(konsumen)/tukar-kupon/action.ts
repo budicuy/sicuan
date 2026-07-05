@@ -42,7 +42,7 @@ export async function getKonsumenPoints() {
   }
 
   const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
+    where: eq(nasabah.id, user.id),
   });
 
   return profile?.poin ?? 0;
@@ -123,7 +123,7 @@ export async function redeemCoupon(kuponId: number): Promise<ActionState> {
 
     // Deduct points from the nasabah table
     const profile = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, user.id),
+      where: eq(nasabah.id, user.id),
     });
 
     if (profile) {
@@ -133,7 +133,7 @@ export async function redeemCoupon(kuponId: number): Promise<ActionState> {
           poin: Math.max(0, profile.poin - targetKupon.poin),
           updatedAt: new Date(),
         })
-        .where(eq(nasabah.userId, user.id));
+        .where(eq(nasabah.id, user.id));
     }
 
     // Insert redemption transaction directly since neon-http doesn't support interactive transactions

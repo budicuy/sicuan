@@ -6,7 +6,6 @@ import {
   Camera,
   CheckCircle2,
   CreditCard,
-  Download,
   Eye,
   FileText,
   Loader2,
@@ -214,11 +213,11 @@ export default function PencairanAdminPage() {
     // Check if document already exists
     const existing = await getBuktiPembayaranByPencairanId(item.id);
     if (existing) {
-      setExistingDocId(existing.id);
+      handleDownloadPdf(existing.id);
     } else {
       setExistingDocId(null);
+      setBuktiPembayaranItem(item);
     }
-    setBuktiPembayaranItem(item);
   };
 
   const handleDownloadPdf = async (docId: number) => {
@@ -246,7 +245,7 @@ export default function PencairanAdminPage() {
     }
   };
 
-  const handleDownloadExistingDoc = (docId: number) => {
+  const _handleDownloadExistingDoc = (docId: number) => {
     handleDownloadPdf(docId);
   };
 
@@ -392,27 +391,14 @@ export default function PencairanAdminPage() {
         <div className="flex flex-wrap justify-center items-center gap-1.5">
           {item.status === "pending" ? (
             <>
-              {item.buktiPembayaranId ? (
-                <button
-                  type="button"
-                  onClick={() => setVerifyRequest(item)}
-                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
-                >
-                  <CreditCard className="w-3 h-3" />
-                  {item.metodePembayaran === "tunai"
-                    ? "Setujui"
-                    : "Upload Bukti"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleOpenBuktiPembayaran(item)}
-                  className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
-                >
-                  <FileText className="w-3 h-3" />
-                  Buat Dokumen
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => handleOpenBuktiPembayaran(item)}
+                className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
+              >
+                <CreditCard className="w-3 h-3" />
+                Proses
+              </button>
               <button
                 type="button"
                 onClick={() => setRejectRequest(item)}
@@ -439,7 +425,7 @@ export default function PencairanAdminPage() {
                 className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border-0"
               >
                 <FileText className="w-3 h-3" />
-                Dokumen
+                Cetak PDF
               </button>
             </>
           ) : (
@@ -710,60 +696,6 @@ export default function PencairanAdminPage() {
                     ? "Setujui Pencairan"
                     : "Setujui & Kirim"}
                 </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Existing document quick-download prompt */}
-      {buktiPembayaranItem && existingDocId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-6 relative animate-in zoom-in-95 duration-200 space-y-5">
-            <button
-              type="button"
-              onClick={() => {
-                setBuktiPembayaranItem(null);
-                setExistingDocId(null);
-              }}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all border-0 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex items-center gap-2.5 pb-2 border-b border-neutral-100">
-              <FileText className="w-5 h-5 text-primary-600" />
-              <h3 className="text-base font-bold text-neutral-800">
-                Dokumen Sudah Ada
-              </h3>
-            </div>
-            <p className="text-xs text-neutral-600">
-              Dokumen bukti pembayaran untuk pencairan ini sudah dibuat
-              sebelumnya. Download dokumen yang ada atau buat ulang.
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setBuktiPembayaranItem(null);
-                  setExistingDocId(null);
-                  setBuktiPembayaranItem(buktiPembayaranItem);
-                  setExistingDocId(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-600 hover:bg-neutral-50 cursor-pointer bg-white"
-              >
-                Buat Ulang
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleDownloadExistingDoc(existingDocId);
-                  setBuktiPembayaranItem(null);
-                  setExistingDocId(null);
-                }}
-                className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 border-0 cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                Download PDF
               </button>
             </div>
           </div>

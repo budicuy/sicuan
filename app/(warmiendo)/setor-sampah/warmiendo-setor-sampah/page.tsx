@@ -236,7 +236,11 @@ export default function WarmiendoSetorSampah() {
     message: string,
   ) => setFeedback({ isOpen: true, type, title, message });
 
-  const namaSetorPreview = `Setoran – ${new Date(tanggalSetor).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`;
+  const dateParts = tanggalSetor.split("-");
+  const tahun = dateParts[0] || "2026";
+  const bulan = dateParts[1] || "01";
+  const tanggal = dateParts[2] || "01";
+  const namaSetorPreview = `[OTOMATIS]/W/NDL/BJM/${tanggal}/${bulan}/${tahun}`;
 
   const activeEkspedisiSetoran = history.find(
     (item) =>
@@ -594,13 +598,13 @@ export default function WarmiendoSetorSampah() {
               <form onSubmit={handleSubmit} className="p-6 space-y-5">
                 <div>
                   <label
-                    htmlFor="namaSetor"
+                    htmlFor="nomorSetor"
                     className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
                   >
-                    Nama Setoran (otomatis)
+                    NOMOR SETOR OTOMATIS
                   </label>
                   <input
-                    id="namaSetor"
+                    id="nomorSetor"
                     type="text"
                     value={namaSetorPreview}
                     readOnly

@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { kupon, penukaranKupon, users } from "@/db/schema";
+import { kupon, nasabah, penukaranKupon } from "@/db/schema";
 
 export type ValidatorState = {
   success: boolean;
@@ -32,12 +32,12 @@ export async function getKuponDetailForValidation(
         tanggalGunakan: penukaranKupon.tanggalGunakan,
         createdAt: penukaranKupon.createdAt,
         rewardNama: kupon.nama,
-        pemilikNama: users.name,
+        pemilikNama: nasabah.name,
         biayaPoin: kupon.poin,
       })
       .from(penukaranKupon)
       .innerJoin(kupon, eq(penukaranKupon.kuponId, kupon.id))
-      .innerJoin(users, eq(penukaranKupon.userId, users.id))
+      .innerJoin(nasabah, eq(penukaranKupon.userId, nasabah.id))
       .where(eq(penukaranKupon.kodeUnik, kodeUnik))
       .limit(1);
 

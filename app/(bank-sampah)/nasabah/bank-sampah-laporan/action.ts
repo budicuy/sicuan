@@ -1,8 +1,8 @@
 "use server";
 
-import { desc } from "drizzle-orm";
+import { desc, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { setorSampahKonsumen, setorSampahWarmiendo } from "@/db/schema";
+import { setorSampah } from "@/db/schema";
 
 export type SetoranReportItem = {
   id: number;
@@ -42,58 +42,32 @@ export async function getLaporanSetoranNasabah(params?: {
 
   try {
     // 1. Fetch all setoran from database
-    const [konsumenSetoran, warmiendoSetoran] = await Promise.all([
-      db.query.setorSampahKonsumen.findMany({
-        with: { user: true },
-        orderBy: [desc(setorSampahKonsumen.id)],
-      }),
-      db.query.setorSampahWarmiendo.findMany({
-        with: { user: true },
-        orderBy: [desc(setorSampahWarmiendo.id)],
-      }),
-    ]);
+    const setoran = await db.query.setorSampah.findMany({
+      where: inArray(setorSampah.kategoriNasabah, ["konsumen", "warmiendo"]),
+      with: { user: true },
+      orderBy: [desc(setorSampah.id)],
+    });
 
-    // 2. Merge into a unified list
-    let merged: SetoranReportItem[] = [
-      ...konsumenSetoran.map((s) => ({
-        id: s.id,
-        nomorSetor: s.nomorSetor,
-        userId: s.userId,
-        jenisSampah: s.jenisSampah,
-        beratKg: s.beratKg,
-        tanggalSetor: s.tanggalSetor,
-        catatan: s.catatan,
-        totalPoin: s.totalPoin, // Rupiah amount
-        status: s.status,
-        createdAt: s.createdAt,
-        user: s.user
-          ? {
-              name: s.user.name,
-              role: s.user.role,
-              username: s.user.username,
-            }
-          : null,
-      })),
-      ...warmiendoSetoran.map((s) => ({
-        id: s.id,
-        nomorSetor: s.nomorSetor,
-        userId: s.userId,
-        jenisSampah: s.jenisSampah,
-        beratKg: s.beratKg,
-        tanggalSetor: s.tanggalSetor,
-        catatan: s.catatan,
-        totalPoin: s.totalPoin, // Rupiah amount
-        status: s.status,
-        createdAt: s.createdAt,
-        user: s.user
-          ? {
-              name: s.user.name,
-              role: s.user.role,
-              username: s.user.username,
-            }
-          : null,
-      })),
-    ];
+    // 2. Map into a unified list
+    let merged: SetoranReportItem[] = setoran.map((s) => ({
+      id: s.id,
+      nomorSetor: s.nomorSetor,
+      userId: s.userId,
+      jenisSampah: s.jenisSampah,
+      beratKg: s.beratKg,
+      tanggalSetor: s.tanggalSetor,
+      catatan: s.catatan,
+      totalPoin: s.totalPoin, // Rupiah amount
+      status: s.status,
+      createdAt: s.createdAt,
+      user: s.user
+        ? {
+            name: s.user.name,
+            role: s.user.role,
+            username: s.user.username,
+          }
+        : null,
+    }));
 
     // 3. Apply filters in memory
     if (search) {

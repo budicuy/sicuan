@@ -16,6 +16,7 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { getCurrentUser } from "@/app/lib/auth-actions";
 
 interface Ekspedisi {
   id: number;
@@ -32,6 +33,7 @@ export default function EkspedisiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     status: "",
   });
@@ -82,6 +84,11 @@ export default function EkspedisiPage() {
 
   useEffect(() => {
     refreshData();
+    getCurrentUser().then((user) => {
+      if (user) {
+        setUserRole(user.role);
+      }
+    });
   }, [refreshData]);
 
   const handleSort = (key: string) => {
@@ -263,7 +270,7 @@ export default function EkspedisiPage() {
         onAdd={handleOpenAddModal}
         addLabel="Tambah Vendor"
         onEdit={handleOpenEditModal}
-        onDelete={handleDelete}
+        onDelete={userRole === "superadmin" ? handleDelete : undefined}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}

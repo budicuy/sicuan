@@ -1,122 +1,190 @@
 import fs from "node:fs";
 import path from "node:path";
-import { notInArray } from "drizzle-orm";
+import argon2 from "argon2";
 import { db } from "@/db";
-import { nasabah, users } from "@/db/schema";
+import { type NewNasabah, nasabah } from "@/db/schema";
 
-export async function seedNasabah() {
-  console.log(
-    "🌱 Seeding nasabah profiles and calculating consistent points & credit balances...",
-  );
+interface CsvUser {
+  nik: string;
+  name: string;
+  passwordString: string;
+  tanggalLahir: string; // YYYY-MM-DD
+}
 
-  await db.delete(nasabah);
-
-  // Get all users that are not admin or superadmin
-  const listUsers = await db.query.users.findMany({
-    where: notInArray(users.role, ["admin", "superadmin"]),
-  });
-
-  const _banks = ["BCA", "BRI", "Mandiri", "BNI", "BSI", "BTN"];
-  const _addresses = [
-    "Jl. Ahmad Yani KM 1, Banjarmasin",
-    "Jl. Hasan Basry No. 42, Banjarmasin",
-    "Jl. Pramuka Raya No. 12, Banjarmasin",
-    "Jl. Gatot Subroto No. 88, Banjarmasin",
-    "Jl. Sultan Adam No. 5, Banjarmasin",
-  ];
-
-  // Parse CSV users for birthdates
-  const csvUsersMap = new Map<string, string>();
+function parseCsv(): CsvUser[] {
   try {
     const csvPath = path.join(process.cwd(), "db/csv/datauser.csv");
-    const csvContent = fs.readFileSync(csvPath, "utf-8");
-    const lines = csvContent.split("\n");
+    const lines = fs.readFileSync(csvPath, "utf-8").split("\n");
+    const result: CsvUser[] = [];
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
+
       const parts = line.split(",");
       if (parts.length < 3) continue;
+
       const nik = parts[0].trim();
+      const name = parts[1].trim();
       const birthdate = parts[2].trim();
 
-      // Normalize birthdate from MM/DD/YYYY to YYYY-MM-DD
+      if (!nik || !name || !birthdate) continue;
+
+      // birthdate: MM/DD/YYYY → password: DDMMYY, tanggalLahir: YYYY-MM-DD
       const dateParts = birthdate.split("/");
+      let passwordString = "Password123";
+      let tanggalLahir = "1990-01-01";
+
       if (dateParts.length === 3) {
-        const normalized = `${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`;
-        csvUsersMap.set(nik, normalized);
+        const [mm, dd, yyyy] = dateParts;
+        passwordString = `${dd.padStart(2, "0")}${mm.padStart(2, "0")}${yyyy.substring(2)}`;
+        tanggalLahir = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
       }
+
+      result.push({ nik, name, passwordString, tanggalLahir });
     }
+
+    return result;
   } catch (error) {
-    console.error(
-      "⚠️ Error reading or parsing users CSV in nasabah seed:",
-      error,
-    );
+    console.error("⚠️ Error reading or parsing users CSV:", error);
+    return [];
   }
+}
 
-  const data = [];
-  for (let i = 0; i < listUsers.length; i++) {
-    const user = listUsers[i];
+export async function seedNasabah() {
+  console.log("🌱 Seeding merged nasabah table...");
 
-    let poin = 0;
-    let kredit = 0;
+  // Clear existing nasabah
+  await db.delete(nasabah);
 
-    // Hardcode values for mandatory demo users to be 100% consistent with their seeded transactions
-    if (user.username === "budi.santoso") {
-      poin = 200; // 700 earned - 500 redeemed
-      kredit = 0;
-    } else if (user.username === "warmiendo.demo") {
-      poin = 0;
-      kredit = 50000; // 115000 earned - 65000 (30k + 20k + 15k) withdrawn
-    } else if (user.username === "banksampah.demo") {
-      poin = 0;
-      kredit = 40000; // 90000 earned - 50000 (40k + 10k) withdrawn
-    }
+  // Parse CSV
+  const csvUsers = parseCsv();
 
-    // Determine NIK and Tanggal Lahir
-    let nik = "";
-    let tanggalLahir = "";
-    let latitude: number | null = null;
-    let longitude: number | null = null;
+  // Password hashes
+  const hashSuperadmin = await argon2.hash("PasswordSuper123");
+  const hashAdmin = await argon2.hash("PasswordAdmin456");
+  const hashBudi = await argon2.hash("170895"); // DDMMYY dari 17/08/1995
+  const hashDefault = await argon2.hash("Password123");
 
-    if (user.username === "budi.santoso") {
-      nik = "637101000000000";
-      tanggalLahir = "1995-08-17";
-      latitude = -3.32;
-      longitude = 114.593;
-    } else if (user.username === "warmiendo.demo") {
-      nik = "637102000000000";
-      tanggalLahir = "1990-08-17";
-      latitude = -3.32426;
-      longitude = 114.59102;
-    } else if (user.username === "banksampah.demo") {
-      nik = "637103000000000";
-      tanggalLahir = "1985-08-17";
-      latitude = -3.29826;
-      longitude = 114.58602;
-    } else {
-      // It's a CSV user, username is their NIK
-      nik = user.username;
-      tanggalLahir = csvUsersMap.get(user.username) || "1990-01-01";
-    }
+  // Create list of all nasabah rows
+  const dataToInsert: NewNasabah[] = [
+    {
+      name: "Superadmin Sicuan",
+      username: "superadmin.sicuan",
+      password: hashSuperadmin,
+      role: "superadmin" as const,
+      status: "Aktif",
+      email: "learning.budicuy@gmail.com",
+      nik: null,
+      tanggalLahir: null,
+      noTelepon: null,
+      alamat: null,
+      jenisBank: null,
+      noRekening: null,
+      poin: 0,
+      kredit: 0,
+      latitude: null,
+      longitude: null,
+    },
+    {
+      name: "Admin Banjarmasin",
+      username: "admin.banjarmasin",
+      password: hashAdmin,
+      role: "admin" as const,
+      status: "Aktif",
+      email: "gaming.budicuy@gmail.com",
+      nik: null,
+      tanggalLahir: null,
+      noTelepon: null,
+      alamat: null,
+      jenisBank: null,
+      noRekening: null,
+      poin: 0,
+      kredit: 0,
+      latitude: null,
+      longitude: null,
+    },
+    {
+      name: "Budi Santoso",
+      username: "budi.santoso",
+      password: hashBudi,
+      role: "konsumen" as const,
+      status: "Aktif",
+      email: "budi.santoso@gmail.com",
+      nik: "637101000000000",
+      tanggalLahir: "1995-08-17",
+      noTelepon: null,
+      alamat: null,
+      jenisBank: null,
+      noRekening: null,
+      poin: 200, // 700 earned - 500 redeemed
+      kredit: 0,
+      latitude: -3.32,
+      longitude: 114.593,
+    },
+    {
+      name: "Mitra Warmiendo Demo",
+      username: "warmiendo.demo",
+      password: hashDefault,
+      role: "warmiendo" as const,
+      status: "Aktif",
+      email: "warmiendo.demo@gmail.com",
+      nik: "637102000000000",
+      tanggalLahir: "1990-08-17",
+      noTelepon: null,
+      alamat: null,
+      jenisBank: null,
+      noRekening: null,
+      poin: 0,
+      kredit: 50000, // 115000 earned - 65000 withdrawn
+      latitude: -3.32426,
+      longitude: 114.59102,
+    },
+    {
+      name: "Mitra Bank Sampah Demo",
+      username: "banksampah.demo",
+      password: hashDefault,
+      role: "bank-sampah" as const,
+      status: "Aktif",
+      email: "gaming.budicuy@gmail.com",
+      nik: "637103000000000",
+      tanggalLahir: "1985-08-17",
+      noTelepon: null,
+      alamat: null,
+      jenisBank: "BCA",
+      noRekening: "1234567890",
+      poin: 0,
+      kredit: 40000, // 90000 earned - 50000 withdrawn
+      latitude: -3.29826,
+      longitude: 114.58602,
+    },
+  ];
 
-    data.push({
-      userId: user.id,
-      nik,
-      tanggalLahir,
-      noTelepon: null, // Emptied/nullable as requested
-      alamat: null, // Emptied/nullable as requested
-      jenisBank: null, // Emptied/nullable as requested
-      noRekening: null, // Emptied/nullable as requested
-      poin,
-      kredit,
-      latitude,
-      longitude,
+  console.log(
+    `🔑 Using single cached hash for ${csvUsers.length} consumer passwords...`,
+  );
+  for (const u of csvUsers) {
+    dataToInsert.push({
+      name: u.name,
+      username: u.nik,
+      password: hashDefault,
+      role: "konsumen" as const,
+      status: "Aktif",
+      email: null,
+      nik: u.nik,
+      tanggalLahir: u.tanggalLahir,
+      noTelepon: null,
+      alamat: null,
+      jenisBank: null,
+      noRekening: null,
+      poin: 0,
+      kredit: 0,
+      latitude: null,
+      longitude: null,
     });
   }
 
-  if (data.length > 0) {
-    await db.insert(nasabah).values(data);
-  }
-
-  console.log(`✅ Seeded ${data.length} nasabah profiles successfully`);
+  // Insert all nasabah (which now holds all profile information)
+  await db.insert(nasabah).values(dataToInsert);
+  console.log(`✅ Seeded ${dataToInsert.length} merged nasabah successfully`);
 }

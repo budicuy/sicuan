@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { kupon, penukaranKupon, users } from "@/db/schema";
+import { kupon, nasabah, penukaranKupon } from "@/db/schema";
 
 export async function seedKupon() {
   console.log(
@@ -38,8 +38,8 @@ export async function seedKupon() {
   const insertedKupons = await db.insert(kupon).values(kuponData).returning();
 
   // Find Budi Santoso user
-  const budi = await db.query.users.findFirst({
-    where: eq(users.username, "budi.santoso"),
+  const budi = await db.query.nasabah.findFirst({
+    where: eq(nasabah.username, "budi.santoso"),
   });
 
   if (!budi) {

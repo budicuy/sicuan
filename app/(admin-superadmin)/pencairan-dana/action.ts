@@ -2,22 +2,22 @@
 
 import { randomUUID } from "node:crypto";
 import { renderToStream } from "@react-pdf/renderer";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import React from "react";
 import sharp from "sharp";
 import { BuktiPembayaranDocument } from "@/app/components/shared/BuktiPembayaranDocument";
+import { sendPencairanSelesaiNotifToUser } from "@/app/lib/email";
+import { getHargaRange } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
 import {
   buktiPembayaran,
   nasabah,
   pencairanDana,
-  setorSampahBankSampah,
-  setorSampahWarmiendo,
-  users,
+  setorSampah,
 } from "@/db/schema";
 import type { DataSampahItem } from "@/db/schema/bukti-pembayaran";
 
@@ -38,6 +38,64 @@ async function getCurrentUser() {
   }
 }
 
+export async function getAdminName() {
+  const user = await getCurrentUser();
+  return user?.name || "Admin";
+}
+
+async function getBankSampahMonthlyCredit(userId: number): Promise<number> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  const records = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, userId),
+      eq(setorSampah.kategoriNasabah, "bank-sampah"),
+      eq(setorSampah.status, "diterima"),
+      gte(setorSampah.tanggalSetor, startOfMonthStr),
+      lte(setorSampah.tanggalSetor, endOfMonthStr),
+    ),
+  });
+
+  const setoranList = records.map((r) => ({
+    jenisSampah: r.jenisSampah,
+    beratKg: r.beratKg,
+  }));
+
+  const wasteMap: Record<string, number> = {};
+  for (const item of setoranList) {
+    wasteMap[item.jenisSampah] =
+      (wasteMap[item.jenisSampah] || 0) + item.beratKg;
+  }
+
+  let dynamicKredit = 0;
+  for (const [jenis, berat] of Object.entries(wasteMap)) {
+    const harga = await getHargaRange(jenis, berat);
+    dynamicKredit += harga;
+  }
+
+  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
+  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+  const myDisbursements = await db.query.pencairanDana.findMany({
+    where: and(
+      eq(pencairanDana.userId, userId),
+      gte(pencairanDana.createdAt, startOfMonthDate),
+      lte(pencairanDana.createdAt, endOfMonthDate),
+    ),
+  });
+
+  const totalWithdrawn = myDisbursements
+    .filter((p) => p.status === "berhasil" || p.status === "pending")
+    .reduce((sum, p) => sum + p.jumlah, 0);
+
+  return Math.max(0, dynamicKredit - totalWithdrawn);
+}
+
 export type ActionState = {
   success: boolean;
   message: string;
@@ -51,13 +109,18 @@ export async function getDisbursementData() {
   }
 
   const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
+    where: eq(nasabah.id, user.id),
   });
+
+  let credit = profile?.kredit ?? 0;
+  if (user.role === "bank-sampah") {
+    credit = await getBankSampahMonthlyCredit(user.id);
+  }
 
   return {
     success: true,
     data: {
-      kredit: profile?.kredit ?? 0,
+      kredit: credit,
       jenisBank: profile?.jenisBank || "",
       noRekening: profile?.noRekening || "",
       user: {
@@ -111,7 +174,7 @@ export async function requestDisbursement(
 
   // Get nasabah profile
   const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
+    where: eq(nasabah.id, user.id),
   });
 
   if (!profile) {
@@ -136,10 +199,15 @@ export async function requestDisbursement(
     }
   }
 
-  if (profile.kredit < jumlah) {
+  let credit = profile.kredit;
+  if (user.role === "bank-sampah") {
+    credit = await getBankSampahMonthlyCredit(user.id);
+  }
+
+  if (credit < jumlah) {
     return {
       success: false,
-      message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${profile.kredit.toLocaleString("id-ID")}`,
+      message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${credit.toLocaleString("id-ID")}`,
       errors: { jumlah: ["Saldo kredit tidak mencukupi"] },
     };
   }
@@ -153,14 +221,16 @@ export async function requestDisbursement(
       `${user.id}-${uuid}`,
     );
 
-    // 2. Deduct from nasabah credit
-    await db
-      .update(nasabah)
-      .set({
-        kredit: profile.kredit - jumlah,
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.userId, user.id));
+    // 2. Deduct from user credit (skip for bank-sampah)
+    if (user.role !== "bank-sampah") {
+      await db
+        .update(nasabah)
+        .set({
+          kredit: sql`${nasabah.kredit} - ${jumlah}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, user.id));
+    }
 
     // 3. Insert disbursement log (defaults to "pending")
     await db.insert(pencairanDana).values({
@@ -223,14 +293,14 @@ export async function getAllDisbursementsForAdmin() {
       buktiTransfer: pencairanDana.buktiTransfer,
       createdAt: pencairanDana.createdAt,
       user: {
-        name: users.name,
-        username: users.username,
-        role: users.role,
+        name: nasabah.name,
+        username: nasabah.username,
+        role: nasabah.role,
       },
       buktiPembayaranId: buktiPembayaran.id,
     })
     .from(pencairanDana)
-    .innerJoin(users, eq(pencairanDana.userId, users.id))
+    .innerJoin(nasabah, eq(pencairanDana.userId, nasabah.id))
     .leftJoin(
       buktiPembayaran,
       eq(pencairanDana.id, buktiPembayaran.pencairanDanaId),
@@ -380,25 +450,38 @@ export async function rejectDisbursement(
       };
     }
 
-    // Refund to nasabah
-    const profile = await db.query.nasabah.findFirst({
-      where: eq(nasabah.userId, request.userId),
+    // Refund to user
+    const targetUser = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, request.userId),
     });
 
-    if (profile) {
+    if (targetUser && targetUser.role !== "bank-sampah") {
       await db
         .update(nasabah)
         .set({
-          kredit: profile.kredit + request.jumlah,
+          kredit: sql`${nasabah.kredit} + ${request.jumlah}`,
           updatedAt: new Date(),
         })
-        .where(eq(nasabah.userId, request.userId));
+        .where(eq(nasabah.id, request.userId));
     }
 
     await db
       .update(pencairanDana)
       .set({ status: "ditolak" })
       .where(eq(pencairanDana.id, id));
+
+    // Kirim notif email ke nasabah (fire-and-forget)
+    if (targetUser?.email) {
+      sendPencairanSelesaiNotifToUser({
+        userEmail: targetUser.email,
+        userName: targetUser.name,
+        jumlah: request.jumlah,
+        metode: request.metodePembayaran,
+        status: "ditolak",
+      }).catch((err) =>
+        console.error("[Email notif pencairan ditolak] Gagal kirim:", err),
+      );
+    }
 
     revalidatePath("/pencairan-dana");
     return {
@@ -440,6 +523,7 @@ export interface CreateBuktiPembayaranInput {
   jabatanPenyerah?: string;
   namaPenerima?: string;
   jabatanPenerima?: string;
+  buktiTransferBase64?: string;
 }
 
 function generateNomorDokumen(
@@ -540,12 +624,58 @@ export async function createBuktiPembayaran(
       })
       .returning({ id: buktiPembayaran.id });
 
-    // If the disbursement is cash, we can auto-transition the pencairanDana status to berhasil
-    if (pencairan && pencairan.metodePembayaran === "tunai") {
-      await db
-        .update(pencairanDana)
-        .set({ status: "berhasil" })
-        .where(eq(pencairanDana.id, input.pencairanDanaId));
+    // Transition pencairanDana status to berhasil and save transfer proof if provided
+    if (pencairan) {
+      if (pencairan.metodePembayaran === "tunai") {
+        await db
+          .update(pencairanDana)
+          .set({ status: "berhasil" })
+          .where(eq(pencairanDana.id, input.pencairanDanaId));
+      } else if (input.buktiTransferBase64) {
+        const uuidProof = randomUUID();
+        const buktiTransferUrl = await uploadImageToR2(
+          input.buktiTransferBase64,
+          "transfer",
+          `${input.userId}-${uuidProof}`,
+        );
+        await db
+          .update(pencairanDana)
+          .set({
+            status: "berhasil",
+            buktiTransfer: buktiTransferUrl,
+          })
+          .where(eq(pencairanDana.id, input.pencairanDanaId));
+      }
+    }
+
+    // Kirim notif email ke nasabah beserta lampiran PDF secara asynchronous (fire-and-forget)
+    const targetUser = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, input.userId),
+    });
+    if (targetUser?.email) {
+      getBuktiPembayaranPdfBase64(newDoc.id)
+        .then((pdfRes) => {
+          if (pdfRes.success && pdfRes.pdfBase64) {
+            sendPencairanSelesaiNotifToUser({
+              userEmail: targetUser.email || "",
+              userName: targetUser.name,
+              jumlah: input.totalTagihan,
+              metode: input.metodePembayaran,
+              status: "berhasil",
+              buktiTransferUrl: pencairan?.buktiTransfer ?? null,
+              pdfBase64: pdfRes.pdfBase64,
+              pdfFileName: pdfRes.fileName,
+            }).catch((err) =>
+              console.error(
+                "[Email notif pencairan selesai] Gagal kirim:",
+                err,
+              ),
+            );
+          }
+        })
+        .catch((err) => {
+          console.error("Gagal generate PDF untuk lampiran email:", err);
+        });
     }
 
     revalidatePath("/pencairan-dana");
@@ -588,13 +718,13 @@ export async function getAllBuktiPembayaran() {
       status: buktiPembayaran.status,
       createdAt: buktiPembayaran.createdAt,
       user: {
-        name: users.name,
-        username: users.username,
-        role: users.role,
+        name: nasabah.name,
+        username: nasabah.username,
+        role: nasabah.role,
       },
     })
     .from(buktiPembayaran)
-    .innerJoin(users, eq(buktiPembayaran.userId, users.id))
+    .innerJoin(nasabah, eq(buktiPembayaran.userId, nasabah.id))
     .orderBy(desc(buktiPembayaran.createdAt));
 }
 
@@ -620,8 +750,8 @@ export async function getNasabahProfileAndMonthlyWaste(
   }
 
   // 1. Fetch user to check role
-  const targetUser = await db.query.users.findFirst({
-    where: eq(users.id, userId),
+  const targetUser = await db.query.nasabah.findFirst({
+    where: eq(nasabah.id, userId),
   });
   if (!targetUser) {
     return { success: false, message: "User tidak ditemukan" };
@@ -629,7 +759,7 @@ export async function getNasabahProfileAndMonthlyWaste(
 
   // 2. Fetch nasabah profile
   const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, userId),
+    where: eq(nasabah.id, userId),
   });
 
   const BULAN_INDEX: Record<string, number> = {
@@ -652,34 +782,22 @@ export async function getNasabahProfileAndMonthlyWaste(
   const lastDay = new Date(year, monthNum, 0).getDate();
   const endOfMonthStr = `${year}-${String(monthNum).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
-  let setoranList: { jenisSampah: string; beratKg: number }[] = [];
-  if (targetUser.role === "bank-sampah") {
-    const records = await db.query.setorSampahBankSampah.findMany({
-      where: and(
-        eq(setorSampahBankSampah.userId, userId),
-        eq(setorSampahBankSampah.status, "diterima"),
-        gte(setorSampahBankSampah.tanggalSetor, startOfMonthStr),
-        lte(setorSampahBankSampah.tanggalSetor, endOfMonthStr),
+  const records = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, userId),
+      eq(
+        setorSampah.kategoriNasabah,
+        targetUser.role as "konsumen" | "warmiendo" | "bank-sampah",
       ),
-    });
-    setoranList = records.map((r) => ({
-      jenisSampah: r.jenisSampah,
-      beratKg: r.beratKg,
-    }));
-  } else if (targetUser.role === "warmiendo") {
-    const records = await db.query.setorSampahWarmiendo.findMany({
-      where: and(
-        eq(setorSampahWarmiendo.userId, userId),
-        eq(setorSampahWarmiendo.status, "diterima"),
-        gte(setorSampahWarmiendo.tanggalSetor, startOfMonthStr),
-        lte(setorSampahWarmiendo.tanggalSetor, endOfMonthStr),
-      ),
-    });
-    setoranList = records.map((r) => ({
-      jenisSampah: r.jenisSampah,
-      beratKg: r.beratKg,
-    }));
-  }
+      eq(setorSampah.status, "diterima"),
+      gte(setorSampah.tanggalSetor, startOfMonthStr),
+      lte(setorSampah.tanggalSetor, endOfMonthStr),
+    ),
+  });
+  const setoranList = records.map((r) => ({
+    jenisSampah: r.jenisSampah,
+    beratKg: r.beratKg,
+  }));
 
   const wasteMap: Record<string, number> = {};
   for (const item of setoranList) {

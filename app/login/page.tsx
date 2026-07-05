@@ -263,14 +263,12 @@ export default function LoginPage() {
                         Konsumen
                       </span>
                       <span className="text-neutral-500 font-mono text-[9px]">
-                        (Pass: BudiSetorSampah88)
+                        (Pass: 170895)
                       </span>
                     </div>
                     <button
                       type="button"
-                      onClick={() =>
-                        handleUseDemo("budi.santoso", "BudiSetorSampah88")
-                      }
+                      onClick={() => handleUseDemo("budi.santoso", "170895")}
                       className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
                     >
                       Gunakan ini
@@ -287,12 +285,12 @@ export default function LoginPage() {
                         Nasabah CSV
                       </span>
                       <span className="text-neutral-500 font-mono text-[9px]">
-                        (Lahir: 24/03/1968)
+                        (Lahir: 240368)
                       </span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleUseDemo("200032", "24/03/1968")}
+                      onClick={() => handleUseDemo("200032", "240368")}
                       className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
                     >
                       Gunakan ini
@@ -403,7 +401,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
-                    placeholder="Contoh: 24/03/1968 atau password"
+                    placeholder="Contoh: 240368 atau password"
                   />
                   <button
                     type="button"

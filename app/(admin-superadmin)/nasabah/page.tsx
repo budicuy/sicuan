@@ -5,7 +5,6 @@ import {
   type ActionState,
   createNasabah,
   deleteNasabah,
-  getAvailableUsers,
   getNasabah,
   updateNasabah,
 } from "@/app/(admin-superadmin)/nasabah/action";
@@ -17,41 +16,42 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { getCurrentUser } from "@/app/lib/auth-actions";
 
-interface Nasabah {
+interface NasabahWithUser {
   id: number;
   userId: number;
   nik: string | null;
   tanggalLahir: string | null;
   noTelepon: string | null;
+  email: string | null;
   alamat: string | null;
   jenisBank: string | null;
   noRekening: string | null;
+  poin: number;
+  kredit: number;
   user: {
     name: string;
     username: string;
     role: string;
+    status: string;
   };
 }
 
-interface User {
-  id: number;
-  name: string;
-  role: string;
-}
-
 export default function NasabahPage() {
-  const [data, setData] = useState<Nasabah[]>([]);
-  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [data, setData] = useState<NasabahWithUser[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     role: "",
   });
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingNasabah, setEditingNasabah] = useState<Nasabah | null>(null);
+  const [editingNasabah, setEditingNasabah] = useState<NasabahWithUser | null>(
+    null,
+  );
   const [isPending, startTransition] = useTransition();
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const [globalError, setGlobalError] = useState("");
@@ -68,7 +68,9 @@ export default function NasabahPage() {
     title: "",
     message: "",
   });
-  const [confirmDelete, setConfirmDelete] = useState<Nasabah | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<NasabahWithUser | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
   const showFeedback = (
@@ -88,14 +90,18 @@ export default function NasabahPage() {
       sortBy,
       sortOrder,
     }).then((res) => {
-      setData(res.data as Nasabah[]);
+      setData(res.data as NasabahWithUser[]);
       setTotalItems(res.total);
     });
-    getAvailableUsers().then((res) => setAvailableUsers(res as User[]));
   }, [currentPage, pageSize, search, filterValues, sortBy, sortOrder]);
 
   useEffect(() => {
     refreshData();
+    getCurrentUser().then((user) => {
+      if (user) {
+        setUserRole(user.role);
+      }
+    });
   }, [refreshData]);
 
   const handleSort = (key: string) => {
@@ -108,19 +114,25 @@ export default function NasabahPage() {
     setCurrentPage(1);
   };
 
-  const _getRoleBadgeColor = (role: string) => {
-    switch (role?.toLowerCase()) {
+  const getRoleBadge = (role: string) => {
+    switch (role) {
       case "superadmin":
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-red-50 text-red-700 border-red-200";
       case "admin":
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-blue-50 text-blue-700 border-blue-200";
       case "warmiendo":
-        return "bg-amber-100 text-amber-700 border-amber-200";
+        return "bg-amber-50 text-amber-700 border-amber-200";
       case "bank-sampah":
-        return "bg-purple-100 text-purple-700 border-purple-200";
+        return "bg-purple-50 text-purple-700 border-purple-200";
       default:
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
     }
+  };
+
+  const getStatusBadge = (status: string) => {
+    return status === "Aktif"
+      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+      : "bg-red-100 text-red-800 border-red-200";
   };
 
   const handleOpenAddModal = () => {
@@ -130,15 +142,15 @@ export default function NasabahPage() {
     setModalOpen(true);
   };
 
-  const handleOpenEditModal = (nasabahItem: Nasabah) => {
-    setEditingNasabah(nasabahItem);
+  const handleOpenEditModal = (item: NasabahWithUser) => {
+    setEditingNasabah(item);
     setFormErrors({});
     setGlobalError("");
     setModalOpen(true);
   };
 
-  const handleDelete = (nasabahItem: Nasabah) => {
-    setConfirmDelete(nasabahItem);
+  const handleDelete = (item: NasabahWithUser) => {
+    setConfirmDelete(item);
   };
 
   const handleConfirmDelete = async () => {
@@ -151,14 +163,14 @@ export default function NasabahPage() {
       showFeedback(
         "success",
         "Berhasil!",
-        `Profil nasabah "${confirmDelete.user?.name || ""}" berhasil dihapus.`,
+        `Nasabah "${confirmDelete.user?.name || ""}" berhasil dihapus.`,
       );
       refreshData();
     } else {
       showFeedback(
         "error",
         "Gagal!",
-        res.errors?._form?.[0] || "Gagal menghapus profil nasabah",
+        res.errors?._form?.[0] || "Gagal menghapus data nasabah",
       );
     }
   };
@@ -188,8 +200,8 @@ export default function NasabahPage() {
           "success",
           "Berhasil!",
           editingNasabah
-            ? "Profil nasabah berhasil diperbarui."
-            : "Profil nasabah baru berhasil ditambahkan.",
+            ? "Data nasabah berhasil diperbarui."
+            : "Nasabah baru berhasil ditambahkan.",
         );
         refreshData();
       } else {
@@ -202,17 +214,38 @@ export default function NasabahPage() {
     });
   };
 
-  const columns: Column<Nasabah>[] = [
+  const columns: Column<NasabahWithUser>[] = [
     {
-      header: "Nama Lengkap",
+      header: "Nama & Akun",
       sortKey: "name",
       render: (n) => (
         <div>
           <div className="font-semibold text-neutral-900">{n.user?.name}</div>
-          <div className="text-[10px] text-neutral-500 font-medium uppercase mt-0.5 tracking-wider">
-            Role: <span className="lowercase">{n.user?.role}</span>
+          <div className="text-[10px] text-neutral-400 font-mono mt-0.5">
+            @{n.user?.username}
           </div>
         </div>
+      ),
+    },
+    {
+      header: "Role",
+      sortKey: "role",
+      render: (n) => (
+        <span
+          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${getRoleBadge(n.user?.role)}`}
+        >
+          {n.user?.role}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      render: (n) => (
+        <span
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getStatusBadge(n.user?.status)}`}
+        >
+          {n.user?.status}
+        </span>
       ),
     },
     {
@@ -229,15 +262,6 @@ export default function NasabahPage() {
       sortKey: "noTelepon",
       render: (n) => (
         <span className="text-neutral-600">{n.noTelepon || "-"}</span>
-      ),
-    },
-    {
-      header: "Alamat",
-      sortKey: "alamat",
-      render: (n) => (
-        <span className="text-neutral-600 max-w-xs truncate block">
-          {n.alamat || "-"}
-        </span>
       ),
     },
     {
@@ -259,13 +283,16 @@ export default function NasabahPage() {
     },
   ];
 
-  const filters: TableFilter<Nasabah>[] = [
+  const filters: TableFilter<NasabahWithUser>[] = [
     {
       id: "role",
-      label: "Filter Tipe Nasabah",
+      label: "Filter Role",
       options: [
         { label: "Konsumen", value: "konsumen" },
         { label: "Warmiendo", value: "warmiendo" },
+        { label: "Bank Sampah", value: "bank-sampah" },
+        { label: "Admin", value: "admin" },
+        { label: "Superadmin", value: "superadmin" },
       ],
       filterFn: (item, val) => item.user?.role?.toLowerCase() === val,
     },
@@ -276,11 +303,11 @@ export default function NasabahPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-            Master Data Nasabah Bank
+            Master Data Nasabah
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Kelola profil nasabah, nomor identitas (NIK), nomor telepon, alamat,
-            dan nomor rekening penampung reward.
+            Kelola akun login dan profil nasabah secara bersamaan dalam satu
+            tampilan.
           </p>
         </div>
       </div>
@@ -307,185 +334,327 @@ export default function NasabahPage() {
           setFilterValues((prev) => ({ ...prev, [id]: val }));
           setCurrentPage(1);
         }}
-        searchPlaceholder="Cari nasabah berdasarkan nama, NIK, atau no telp..."
+        searchPlaceholder="Cari berdasarkan nama, username, NIK, atau no telp..."
         onAdd={handleOpenAddModal}
-        addLabel="Tambah Profil Nasabah"
+        addLabel="Tambah Nasabah"
         onEdit={handleOpenEditModal}
-        onDelete={handleDelete}
+        onDelete={userRole === "superadmin" ? handleDelete : undefined}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}
       />
 
+      {/* Form Modal */}
       <FormModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editingNasabah ? "Edit Profil Nasabah" : "Tambah Profil Nasabah"}
+        title={editingNasabah ? "Edit Data Nasabah" : "Tambah Nasabah Baru"}
         onSubmit={handleSubmit}
         isPending={isPending}
         globalError={globalError}
       >
+        {/* Hidden userId for edit mode */}
+        {editingNasabah && (
+          <input type="hidden" name="userId" value={editingNasabah.userId} />
+        )}
+
+        {/* ───── Section: Akun Login ───── */}
+        <div className="pb-3 mb-3 border-b border-neutral-100">
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
+            Akun Login
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label
+                htmlFor="name-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Nama Lengkap
+              </label>
+              <input
+                id="name-input"
+                type="text"
+                name="name"
+                required
+                defaultValue={editingNasabah?.user?.name || ""}
+                placeholder="e.g. Budi Santoso"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+              />
+              {formErrors.name && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.name[0]}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="username-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Username
+              </label>
+              <input
+                id="username-input"
+                type="text"
+                name="username"
+                required
+                defaultValue={editingNasabah?.user?.username || ""}
+                placeholder="e.g. budi.santoso"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
+              />
+              {formErrors.username && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.username[0]}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="password-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Password{" "}
+                {editingNasabah && (
+                  <span className="text-neutral-400 capitalize">
+                    (Kosongkan jika tidak diubah)
+                  </span>
+                )}
+              </label>
+              <input
+                id="password-input"
+                type="password"
+                name="password"
+                required={!editingNasabah}
+                placeholder={editingNasabah ? "••••••••" : "Masukkan password"}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+              />
+              {formErrors.password && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.password[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="role-select"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Role Akun
+                </label>
+                <select
+                  id="role-select"
+                  name="role"
+                  defaultValue={editingNasabah?.user?.role || "konsumen"}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+                >
+                  <option value="superadmin">Superadmin</option>
+                  <option value="admin">Admin</option>
+                  <option value="konsumen">Konsumen</option>
+                  <option value="warmiendo">Warmiendo</option>
+                  <option value="bank-sampah">Bank Sampah</option>
+                </select>
+                {formErrors.role && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.role[0]}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="status-select"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Status Akun
+                </label>
+                <select
+                  id="status-select"
+                  name="status"
+                  defaultValue={editingNasabah?.user?.status || "Aktif"}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+                >
+                  <option value="Aktif">Aktif</option>
+                  <option value="Nonaktif">Nonaktif</option>
+                </select>
+                {formErrors.status && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.status[0]}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ───── Section: Data Profil Nasabah ───── */}
         <div>
-          <label
-            htmlFor="userId-select"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Hubungkan dengan Akun User
-          </label>
-          <select
-            id="userId-select"
-            name="userId"
-            required
-            defaultValue={editingNasabah?.userId || ""}
-            disabled={!!editingNasabah}
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all disabled:bg-neutral-50 disabled:text-neutral-500"
-          >
-            <option value="" disabled>
-              -- Pilih Akun User --
-            </option>
-            {availableUsers.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name} ({user.role})
-              </option>
-            ))}
-          </select>
-          {formErrors.userId && (
-            <p className="text-red-600 text-xs mt-1">{formErrors.userId[0]}</p>
-          )}
-          {editingNasabah && (
-            <input type="hidden" name="userId" value={editingNasabah.userId} />
-          )}
-        </div>
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
+            Profil Nasabah
+          </p>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="nik-input"
-              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-            >
-              NIK
-            </label>
-            <input
-              id="nik-input"
-              type="text"
-              name="nik"
-              defaultValue={editingNasabah?.nik || ""}
-              placeholder="Nomor NIK Kependudukan"
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono"
-            />
-            {formErrors.nik && (
-              <p className="text-red-600 text-xs mt-1">{formErrors.nik[0]}</p>
-            )}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="nik-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  NIK
+                </label>
+                <input
+                  id="nik-input"
+                  type="text"
+                  name="nik"
+                  defaultValue={editingNasabah?.nik || ""}
+                  placeholder="Nomor NIK Kependudukan"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono"
+                />
+                {formErrors.nik && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.nik[0]}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="tanggalLahir-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Tanggal Lahir
+                </label>
+                <input
+                  id="tanggalLahir-input"
+                  type="date"
+                  name="tanggalLahir"
+                  defaultValue={editingNasabah?.tanggalLahir || ""}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
+                />
+                {formErrors.tanggalLahir && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.tanggalLahir[0]}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="noTelepon-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Nomor Telepon
+              </label>
+              <input
+                id="noTelepon-input"
+                type="text"
+                name="noTelepon"
+                defaultValue={editingNasabah?.noTelepon || ""}
+                placeholder="e.g. 081234567890"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
+              />
+              {formErrors.noTelepon && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.noTelepon[0]}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="email-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Email
+              </label>
+              <input
+                id="email-input"
+                type="email"
+                name="email"
+                defaultValue={editingNasabah?.email || ""}
+                placeholder="e.g. budi@email.com"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
+              />
+              {formErrors.email && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.email[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="jenisBank-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Jenis Bank
+                </label>
+                <input
+                  id="jenisBank-input"
+                  type="text"
+                  name="jenisBank"
+                  defaultValue={editingNasabah?.jenisBank || ""}
+                  placeholder="e.g. BCA, Mandiri, BRI"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all uppercase"
+                />
+                {formErrors.jenisBank && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.jenisBank[0]}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="noRekening-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Nomor Rekening
+                </label>
+                <input
+                  id="noRekening-input"
+                  type="text"
+                  name="noRekening"
+                  defaultValue={editingNasabah?.noRekening || ""}
+                  placeholder="e.g. 1234567890"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono"
+                />
+                {formErrors.noRekening && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.noRekening[0]}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="alamat-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Alamat Lengkap
+              </label>
+              <textarea
+                id="alamat-input"
+                name="alamat"
+                defaultValue={editingNasabah?.alamat || ""}
+                placeholder="Masukkan alamat lengkap..."
+                rows={3}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all resize-none"
+              />
+              {formErrors.alamat && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.alamat[0]}
+                </p>
+              )}
+            </div>
           </div>
-
-          <div>
-            <label
-              htmlFor="tanggalLahir-input"
-              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-            >
-              Tanggal Lahir
-            </label>
-            <input
-              id="tanggalLahir-input"
-              type="date"
-              name="tanggalLahir"
-              defaultValue={editingNasabah?.tanggalLahir || ""}
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
-            />
-            {formErrors.tanggalLahir && (
-              <p className="text-red-600 text-xs mt-1">
-                {formErrors.tanggalLahir[0]}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="jenisBank-input"
-              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-            >
-              Jenis Bank
-            </label>
-            <input
-              id="jenisBank-input"
-              type="text"
-              name="jenisBank"
-              defaultValue={editingNasabah?.jenisBank || ""}
-              placeholder="e.g. BCA, Mandiri, BRI"
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all uppercase"
-            />
-            {formErrors.jenisBank && (
-              <p className="text-red-600 text-xs mt-1">
-                {formErrors.jenisBank[0]}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="noRekening-input"
-              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-            >
-              Nomor Rekening
-            </label>
-            <input
-              id="noRekening-input"
-              type="text"
-              name="noRekening"
-              defaultValue={editingNasabah?.noRekening || ""}
-              placeholder="e.g. 1234567890"
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono"
-            />
-            {formErrors.noRekening && (
-              <p className="text-red-600 text-xs mt-1">
-                {formErrors.noRekening[0]}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="noTelepon-input"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Nomor Telepon
-          </label>
-          <input
-            id="noTelepon-input"
-            type="text"
-            name="noTelepon"
-            defaultValue={editingNasabah?.noTelepon || ""}
-            placeholder="e.g. 081234567890"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
-          />
-          {formErrors.noTelepon && (
-            <p className="text-red-600 text-xs mt-1">
-              {formErrors.noTelepon[0]}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="alamat-input"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Alamat Lengkap
-          </label>
-          <textarea
-            id="alamat-input"
-            name="alamat"
-            defaultValue={editingNasabah?.alamat || ""}
-            placeholder="Masukkan alamat lengkap..."
-            rows={3}
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all resize-none"
-          />
-          {formErrors.alamat && (
-            <p className="text-red-600 text-xs mt-1">{formErrors.alamat[0]}</p>
-          )}
         </div>
       </FormModal>
 
@@ -494,7 +663,7 @@ export default function NasabahPage() {
         isOpen={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
         onConfirm={handleConfirmDelete}
-        message={`Apakah Anda yakin ingin menghapus profil nasabah "${confirmDelete?.user?.name}"? Tindakan ini tidak dapat dibatalkan.`}
+        message={`Apakah Anda yakin ingin menghapus nasabah "${confirmDelete?.user?.name}"? Akun login dan seluruh data profil akan dihapus permanen.`}
         isPending={isDeleting}
       />
 

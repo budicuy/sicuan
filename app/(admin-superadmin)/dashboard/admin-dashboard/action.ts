@@ -10,10 +10,7 @@ import {
   nasabah,
   pencairanDana,
   penukaranKupon,
-  setorSampahBankSampah,
-  setorSampahKonsumen,
-  setorSampahWarmiendo,
-  users,
+  setorSampah,
 } from "@/db/schema";
 
 async function getCurrentUser() {
@@ -44,9 +41,9 @@ export async function getDashboardData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  // 1. Get user profile/nasabah info
+  // 1. Get user profile info
   const profile = await db.query.nasabah.findFirst({
-    where: eq(nasabah.userId, user.id),
+    where: eq(nasabah.id, user.id),
   });
 
   const isMgmt = user.role === "admin" || user.role === "superadmin";
@@ -54,204 +51,90 @@ export async function getDashboardData() {
   if (isMgmt) {
     // ADMIN / SUPERADMIN DASHBOARD DATA
 
-    // 1. Get total count of nasabah
+    // 1. Get total count of nasabah (non-admin users)
     const countNasabahRes = await db
       .select({ count: sql<number>`count(*)` })
-      .from(nasabah);
+      .from(nasabah)
+      .where(inArray(nasabah.role, ["konsumen", "warmiendo", "bank-sampah"]));
     const totalNasabahCount = Number(countNasabahRes[0]?.count ?? 0);
 
     // 2. Get total count of users with role in ['konsumen', 'warmiendo', 'bank-sampah']
     const countUsersRes = await db
       .select({ count: sql<number>`count(*)` })
-      .from(users)
-      .where(inArray(users.role, ["konsumen", "warmiendo", "bank-sampah"]));
+      .from(nasabah)
+      .where(inArray(nasabah.role, ["konsumen", "warmiendo", "bank-sampah"]));
     const totalUsers = Number(countUsersRes[0]?.count ?? 0);
 
     // 3. Get total weights and counts of setoran (pending/diterima/ditolak) via aggregation
     const [
-      resKonsumen,
-      resWarmiendo,
-      resBankSampah,
-      resTodayKonsumen,
-      resTodayWarmiendo,
-      resTodayBankSampah,
-      pendingKonsumen,
-      pendingWarmiendo,
-      pendingBankSampah,
-      ditolakKonsumen,
-      ditolakWarmiendo,
-      ditolakBankSampah,
-      compKonsumen,
-      compWarmiendo,
-      compBankSampah,
-      userKonsumen,
-      userWarmiendo,
-      userBankSampah,
+      resWeight,
+      resTodayWeight,
+      pendingCount,
+      ditolakCount,
+      compList,
+      userWeights,
     ] = await Promise.all([
-      // Total weight received
+      // 1. Total weight received
       db
         .select({
-          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+          totalWeight: sql<number>`sum(${setorSampah.beratKg})`,
         })
-        .from(setorSampahKonsumen)
-        .where(eq(setorSampahKonsumen.status, "diterima")),
-      db
-        .select({
-          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
-        })
-        .from(setorSampahWarmiendo)
-        .where(eq(setorSampahWarmiendo.status, "diterima")),
-      db
-        .select({
-          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
-        })
-        .from(setorSampahBankSampah)
-        .where(eq(setorSampahBankSampah.status, "diterima")),
+        .from(setorSampah)
+        .where(eq(setorSampah.status, "diterima")),
 
-      // Total weight today received
+      // 2. Total weight today received
       db
         .select({
-          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+          totalWeight: sql<number>`sum(${setorSampah.beratKg})`,
         })
-        .from(setorSampahKonsumen)
+        .from(setorSampah)
         .where(
           and(
-            eq(setorSampahKonsumen.status, "diterima"),
+            eq(setorSampah.status, "diterima"),
             eq(
-              setorSampahKonsumen.tanggalSetor,
-              new Date().toISOString().split("T")[0],
-            ),
-          ),
-        ),
-      db
-        .select({
-          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
-        })
-        .from(setorSampahWarmiendo)
-        .where(
-          and(
-            eq(setorSampahWarmiendo.status, "diterima"),
-            eq(
-              setorSampahWarmiendo.tanggalSetor,
-              new Date().toISOString().split("T")[0],
-            ),
-          ),
-        ),
-      db
-        .select({
-          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
-        })
-        .from(setorSampahBankSampah)
-        .where(
-          and(
-            eq(setorSampahBankSampah.status, "diterima"),
-            eq(
-              setorSampahBankSampah.tanggalSetor,
+              setorSampah.tanggalSetor,
               new Date().toISOString().split("T")[0],
             ),
           ),
         ),
 
-      // Total pending counts
+      // 3. Total pending counts
       db
         .select({ count: sql<number>`count(*)` })
-        .from(setorSampahKonsumen)
-        .where(eq(setorSampahKonsumen.status, "pending")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(setorSampahWarmiendo)
-        .where(eq(setorSampahWarmiendo.status, "pending")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(setorSampahBankSampah)
-        .where(eq(setorSampahBankSampah.status, "pending")),
+        .from(setorSampah)
+        .where(eq(setorSampah.status, "pending")),
 
-      // Total ditolak counts
+      // 4. Total ditolak counts
       db
         .select({ count: sql<number>`count(*)` })
-        .from(setorSampahKonsumen)
-        .where(eq(setorSampahKonsumen.status, "ditolak")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(setorSampahWarmiendo)
-        .where(eq(setorSampahWarmiendo.status, "ditolak")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(setorSampahBankSampah)
-        .where(eq(setorSampahBankSampah.status, "ditolak")),
+        .from(setorSampah)
+        .where(eq(setorSampah.status, "ditolak")),
 
-      // Waste composition group by
+      // 5. Waste composition group by jenisSampah
       db
         .select({
-          jenisSampah: setorSampahKonsumen.jenisSampah,
-          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+          jenisSampah: setorSampah.jenisSampah,
+          totalWeight: sql<number>`sum(${setorSampah.beratKg})`,
         })
-        .from(setorSampahKonsumen)
-        .where(eq(setorSampahKonsumen.status, "diterima"))
-        .groupBy(setorSampahKonsumen.jenisSampah),
-      db
-        .select({
-          jenisSampah: setorSampahWarmiendo.jenisSampah,
-          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
-        })
-        .from(setorSampahWarmiendo)
-        .where(eq(setorSampahWarmiendo.status, "diterima"))
-        .groupBy(setorSampahWarmiendo.jenisSampah),
-      db
-        .select({
-          jenisSampah: setorSampahBankSampah.jenisSampah,
-          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
-        })
-        .from(setorSampahBankSampah)
-        .where(eq(setorSampahBankSampah.status, "diterima"))
-        .groupBy(setorSampahBankSampah.jenisSampah),
+        .from(setorSampah)
+        .where(eq(setorSampah.status, "diterima"))
+        .groupBy(setorSampah.jenisSampah),
 
-      // Top contributors sum of weights by user
+      // 6. Top contributors sum of weights by user
       db
         .select({
-          userId: setorSampahKonsumen.userId,
-          totalWeight: sql<number>`sum(${setorSampahKonsumen.beratKg})`,
+          userId: setorSampah.userId,
+          totalWeight: sql<number>`sum(${setorSampah.beratKg})`,
         })
-        .from(setorSampahKonsumen)
-        .where(eq(setorSampahKonsumen.status, "diterima"))
-        .groupBy(setorSampahKonsumen.userId),
-      db
-        .select({
-          userId: setorSampahWarmiendo.userId,
-          totalWeight: sql<number>`sum(${setorSampahWarmiendo.beratKg})`,
-        })
-        .from(setorSampahWarmiendo)
-        .where(eq(setorSampahWarmiendo.status, "diterima"))
-        .groupBy(setorSampahWarmiendo.userId),
-      db
-        .select({
-          userId: setorSampahBankSampah.userId,
-          totalWeight: sql<number>`sum(${setorSampahBankSampah.beratKg})`,
-        })
-        .from(setorSampahBankSampah)
-        .where(eq(setorSampahBankSampah.status, "diterima"))
-        .groupBy(setorSampahBankSampah.userId),
+        .from(setorSampah)
+        .where(eq(setorSampah.status, "diterima"))
+        .groupBy(setorSampah.userId),
     ]);
 
-    const totalSetoranKg =
-      Number(resKonsumen[0]?.totalWeight ?? 0) +
-      Number(resWarmiendo[0]?.totalWeight ?? 0) +
-      Number(resBankSampah[0]?.totalWeight ?? 0);
-
-    const totalSetoranTodayKg =
-      Number(resTodayKonsumen[0]?.totalWeight ?? 0) +
-      Number(resTodayWarmiendo[0]?.totalWeight ?? 0) +
-      Number(resTodayBankSampah[0]?.totalWeight ?? 0);
-
-    const totalPendingSetoran =
-      Number(pendingKonsumen[0]?.count ?? 0) +
-      Number(pendingWarmiendo[0]?.count ?? 0) +
-      Number(pendingBankSampah[0]?.count ?? 0);
-
-    const totalDitolakSetoran =
-      Number(ditolakKonsumen[0]?.count ?? 0) +
-      Number(ditolakWarmiendo[0]?.count ?? 0) +
-      Number(ditolakBankSampah[0]?.count ?? 0);
+    const totalSetoranKg = Number(resWeight[0]?.totalWeight ?? 0);
+    const totalSetoranTodayKg = Number(resTodayWeight[0]?.totalWeight ?? 0);
+    const totalPendingSetoran = Number(pendingCount[0]?.count ?? 0);
+    const totalDitolakSetoran = Number(ditolakCount[0]?.count ?? 0);
 
     // Sum composition
     const composition = {
@@ -259,32 +142,15 @@ export async function getDashboardData() {
       Etiket: 0,
       "Paper Cup": 0,
     };
-    const allCompositions = [
-      ...compKonsumen,
-      ...compWarmiendo,
-      ...compBankSampah,
-    ];
-    for (const c of allCompositions) {
+    for (const c of compList) {
       const cat = c.jenisSampah as "Karton" | "Etiket" | "Paper Cup";
       if (composition[cat] !== undefined) {
         composition[cat] += Number(c.totalWeight ?? 0);
       }
     }
 
-    // Process top contributors
-    const userWeightsMap: Record<number, number> = {};
-    const addWeights = (list: { userId: number; totalWeight: number }[]) => {
-      for (const item of list) {
-        userWeightsMap[item.userId] =
-          (userWeightsMap[item.userId] || 0) + Number(item.totalWeight ?? 0);
-      }
-    };
-    addWeights(userKonsumen);
-    addWeights(userWarmiendo);
-    addWeights(userBankSampah);
-
-    const sortedUserIdsWithWeights = Object.entries(userWeightsMap)
-      .map(([id, weight]) => ({ userId: Number(id), total: weight }))
+    const sortedUserIdsWithWeights = userWeights
+      .map((w) => ({ userId: w.userId, total: Number(w.totalWeight ?? 0) }))
       .sort((a, b) => b.total - a.total);
 
     const top15Candidates = sortedUserIdsWithWeights.slice(0, 15);
@@ -294,12 +160,12 @@ export async function getDashboardData() {
       const candidateIds = top15Candidates.map((c) => c.userId);
       const candidatesUsers = await db
         .select({
-          id: users.id,
-          name: users.name,
-          role: users.role,
+          id: nasabah.id,
+          name: nasabah.name,
+          role: nasabah.role,
         })
-        .from(users)
-        .where(inArray(users.id, candidateIds));
+        .from(nasabah)
+        .where(inArray(nasabah.id, candidateIds));
 
       const mappedCandidates = top15Candidates
         .map((c) => {
@@ -371,24 +237,17 @@ export async function getDashboardData() {
     };
   } else {
     // CLIENT SIDE (KONSUMEN / WARMIENDO / BANK SAMPAH)
-    let mySetoran: SetoranType[] = [];
-    if (user.role === "warmiendo") {
-      mySetoran = await db.query.setorSampahWarmiendo.findMany({
-        where: eq(setorSampahWarmiendo.userId, user.id),
-        with: { ekspedisi: true },
-        orderBy: [desc(setorSampahWarmiendo.createdAt)],
-      });
-    } else if (user.role === "bank-sampah") {
-      mySetoran = await db.query.setorSampahBankSampah.findMany({
-        where: eq(setorSampahBankSampah.userId, user.id),
-        orderBy: [desc(setorSampahBankSampah.createdAt)],
-      });
-    } else {
-      mySetoran = await db.query.setorSampahKonsumen.findMany({
-        where: eq(setorSampahKonsumen.userId, user.id),
-        orderBy: [desc(setorSampahKonsumen.createdAt)],
-      });
-    }
+    const mySetoran = (await db.query.setorSampah.findMany({
+      where: and(
+        eq(setorSampah.userId, user.id),
+        eq(
+          setorSampah.kategoriNasabah,
+          user.role as "konsumen" | "warmiendo" | "bank-sampah",
+        ),
+      ),
+      with: { ekspedisi: true },
+      orderBy: [desc(setorSampah.createdAt)],
+    })) as unknown as SetoranType[];
 
     const myPencairan = await db.query.pencairanDana.findMany({
       where: eq(pencairanDana.userId, user.id),

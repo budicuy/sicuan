@@ -14,6 +14,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
 import { db } from "@/db";
 import { hargaSampah, insertHargaSampahSchema } from "@/db/schema";
 
@@ -250,6 +251,14 @@ export async function updateHargaSampah(
 }
 
 export async function deleteHargaSampah(id: number): Promise<ActionState> {
+  if (!(await verifyIsSuperadmin())) {
+    return {
+      success: false,
+      errors: {
+        _form: ["Akses ditolak. Hanya Superadmin yang dapat menghapus data."],
+      },
+    };
+  }
   try {
     await db.delete(hargaSampah).where(eq(hargaSampah.id, id));
     revalidatePath("/harga-sampah");

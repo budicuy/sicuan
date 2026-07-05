@@ -8,7 +8,4 @@ export * from "@/db/schema/penukaran-kupon";
 export * from "@/db/schema/poin-sampah";
 export * from "@/db/schema/raw-material";
 export * from "@/db/schema/relations";
-export * from "@/db/schema/setoran_bank_sampah";
-export * from "@/db/schema/setoran_konsumen";
-export * from "@/db/schema/setoran_warmiendo";
-export * from "@/db/schema/users";
+export * from "@/db/schema/setor-sampah";
