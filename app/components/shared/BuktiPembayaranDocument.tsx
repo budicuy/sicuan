@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   labelCol: {
-    width: 120,
+    width: 140,
     fontSize: 9,
     paddingLeft: 4,
   },
@@ -212,6 +212,40 @@ const styles = StyleSheet.create({
     height: 5,
     backgroundColor: DARK,
   },
+  table: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderStyle: "solid",
+    marginTop: 10,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#f5f5f5",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    borderBottomStyle: "solid",
+    paddingVertical: 5,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    borderBottomStyle: "solid",
+    paddingVertical: 4,
+  },
+  colNo: { width: "8%", textAlign: "center" },
+  colTanggal: { width: "22%" },
+  colNomor: { width: "38%" },
+  colJenis: { width: "17%" },
+  colBerat: { width: "15%", textAlign: "right" },
+  pageNumber: {
+    position: "absolute",
+    bottom: 15,
+    right: 40,
+    fontSize: 8,
+    color: "#888888",
+  },
 });
 
 function angkaTerbilang(n: number): string {
@@ -310,6 +344,13 @@ export interface BuktiPembayaranData {
   // TTD
   ttdPenyerahUrl?: string | null;
   ttdPenerimaUrl?: string | null;
+  buktiTransferUrl?: string | null;
+  setoranDetail?: {
+    nomorSetor: string;
+    jenisSampah: string;
+    beratKg: number;
+    tanggalSetor: string;
+  }[];
   namaPenyerah?: string | null;
   jabatanPenyerah?: string | null;
   namaPenerima?: string | null;
@@ -374,11 +415,6 @@ export function BuktiPembayaranDocument({
             <Text style={styles.labelCol}>Nama Bank Sampah</Text>
             <Text style={styles.colonCol}>:</Text>
             <Text style={styles.valueCol}>{data.namaBankSampah}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.labelCol}>ID Pelanggan</Text>
-            <Text style={styles.colonCol}>:</Text>
-            <Text style={styles.valueCol}>{data.idPelanggan}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.labelCol}>Nama</Text>
@@ -489,7 +525,7 @@ export function BuktiPembayaranDocument({
         <View style={styles.sectionBlock}>
           <Text style={styles.sectionTitle}>IV. LAMPIRAN DOKUMEN</Text>
           <View style={styles.row}>
-            <Text style={styles.labelCol}>Dokumentasi pengelolaan</Text>
+            <Text style={styles.labelCol}>Lampiran Bukti Pengelolaan</Text>
             <Text style={styles.colonCol}>:</Text>
             <View style={{ flex: 1 }}>
               {data.dataSampah.map((item, i) => (
@@ -624,7 +660,6 @@ export function BuktiPembayaranDocument({
               <Image src={data.ttdPenyerahUrl} style={styles.ttdImage} />
             ) : null}
             <View style={{ marginTop: 4 }}>
-              <View style={styles.ttdLine} />
               {data.namaPenyerah ? (
                 <Text style={styles.ttdName}>({data.namaPenyerah})</Text>
               ) : null}
@@ -641,21 +676,161 @@ export function BuktiPembayaranDocument({
               <Image src={data.ttdPenerimaUrl} style={styles.ttdImage} />
             ) : null}
             <View style={{ marginTop: 4 }}>
-              <Text style={[styles.ttdJabatan, { fontWeight: "bold" }]}>
-                PT. Indofood CBP Sukses Makmur Tbk,
-              </Text>
               <Text
                 style={[
                   styles.ttdJabatan,
-                  { fontStyle: "italic", fontSize: 8 },
+                  { fontWeight: "bold", textDecoration: "underline" },
                 ]}
               >
-                [ Cap / Stempel Resmi ]
+                (PT. Indofood CBP Sukses Makmur Tbk,)
               </Text>
+              <Text style={styles.ttdJabatan}>Pimpinan Perusahaan</Text>
             </View>
           </View>
         </View>
+        <Text
+          style={styles.pageNumber}
+          render={({ pageNumber, totalPages }) =>
+            `Halaman ${pageNumber} dari ${totalPages}`
+          }
+          fixed
+        />
       </Page>
+
+      {/* ── Page 2: Rincian Detail Setoran ── */}
+      <Page size="A4" style={styles.page}>
+        <View style={styles.headerRule} />
+        <View style={styles.headerRuleThin} />
+        <Text style={styles.headerTitle}>LAMPIRAN DETAIL SETORAN SAMPAH</Text>
+        <View style={[styles.headerRule, { marginTop: 4 }]} />
+
+        <View style={[styles.headerRow, { marginTop: 6 }]}>
+          <Text style={styles.docNumber}>
+            No. Dokumen : {data.nomorDokumen}
+          </Text>
+          <Text style={styles.docDate}>
+            Periode: {data.periodeBulan} {data.periodeTahun}
+          </Text>
+        </View>
+
+        <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
+          RINCIAN DATA SETORAN :
+        </Text>
+
+        <View style={styles.table}>
+          {/* Table Header */}
+          <View style={styles.tableHeader}>
+            <Text style={[styles.colNo, { fontWeight: "bold" }]}>No</Text>
+            <Text style={[styles.colTanggal, { fontWeight: "bold" }]}>
+              Tanggal Setor
+            </Text>
+            <Text style={[styles.colNomor, { fontWeight: "bold" }]}>
+              Nomor Setoran
+            </Text>
+            <Text style={[styles.colJenis, { fontWeight: "bold" }]}>
+              Jenis Sampah
+            </Text>
+            <Text
+              style={[styles.colBerat, { fontWeight: "bold", paddingRight: 5 }]}
+            >
+              Berat (kg)
+            </Text>
+          </View>
+
+          {/* Table Rows */}
+          {data.setoranDetail && data.setoranDetail.length > 0 ? (
+            data.setoranDetail.map((item, i) => (
+              <View key={item.nomorSetor} style={styles.tableRow}>
+                <Text style={styles.colNo}>{i + 1}</Text>
+                <Text style={styles.colTanggal}>
+                  {new Date(item.tanggalSetor).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </Text>
+                <Text style={styles.colNomor}>{item.nomorSetor}</Text>
+                <Text style={styles.colJenis}>{item.jenisSampah}</Text>
+                <Text style={[styles.colBerat, { paddingRight: 5 }]}>
+                  {item.beratKg.toFixed(2)}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <View style={styles.tableRow}>
+              <Text
+                style={{
+                  width: "100%",
+                  textAlign: "center",
+                  fontSize: 8,
+                  paddingVertical: 10,
+                  color: "#888",
+                }}
+              >
+                Tidak ada data setoran detail untuk periode ini.
+              </Text>
+            </View>
+          )}
+        </View>
+        <Text
+          style={styles.pageNumber}
+          render={({ pageNumber, totalPages }) =>
+            `Halaman ${pageNumber} dari ${totalPages}`
+          }
+          fixed
+        />
+      </Page>
+
+      {/* ── Page 3: Bukti Transfer ── */}
+      {data.buktiTransferUrl ? (
+        <Page size="A4" style={styles.page}>
+          <View style={styles.headerRule} />
+          <View style={styles.headerRuleThin} />
+          <Text style={styles.headerTitle}>
+            LAMPIRAN BUKTI TRANSFER PEMBAYARAN
+          </Text>
+          <View style={[styles.headerRule, { marginTop: 4 }]} />
+
+          <View style={[styles.headerRow, { marginTop: 6 }]}>
+            <Text style={styles.docNumber}>
+              No. Dokumen : {data.nomorDokumen}
+            </Text>
+            <Text style={styles.docDate}>Metode: Transfer Bank</Text>
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 20,
+            }}
+          >
+            <Image
+              src={data.buktiTransferUrl}
+              style={{ maxWidth: "100%", maxHeight: 400, objectFit: "contain" }}
+            />
+            <Text
+              style={{
+                fontSize: 8,
+                color: "#888",
+                marginTop: 10,
+                fontStyle: "italic",
+              }}
+            >
+              Dokumentasi bukti transfer bank resmi PT. Indofood CBP Sukses
+              Makmur Tbk.
+            </Text>
+          </View>
+          <Text
+            style={styles.pageNumber}
+            render={({ pageNumber, totalPages }) =>
+              `Halaman ${pageNumber} dari ${totalPages}`
+            }
+            fixed
+          />
+        </Page>
+      ) : null}
     </Document>
   );
 }

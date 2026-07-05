@@ -315,7 +315,6 @@ export function DisbursementLetterPreview({
               </div>
             )}
           </div>
-          <div className="border-b border-neutral-800 mx-auto w-32" />
           <p className="font-bold underline text-[10px] text-neutral-800">
             ({data?.user.name})
           </p>
@@ -340,8 +339,11 @@ export function DisbursementLetterPreview({
             )}
           </div>
           <div className="mt-1" />
-          <p className="font-bold text-[10px] text-neutral-800">
-            PT. Indofood CBP Sukses Makmur Tbk,
+          <p className="font-bold underline text-[10px] text-neutral-800">
+            (PT. Indofood CBP Sukses Makmur Tbk,)
+          </p>
+          <p className="text-[9px] text-neutral-500 leading-tight">
+            Pimpinan Perusahaan
           </p>
         </div>
       </div>

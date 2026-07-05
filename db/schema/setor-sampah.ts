@@ -72,4 +72,3 @@ export const selectSetorSampahSchema = createSelectSchema(setorSampah);
 
 export type SetorSampah = typeof setorSampah.$inferSelect;
 export type NewSetorSampah = typeof setorSampah.$inferInsert;
-

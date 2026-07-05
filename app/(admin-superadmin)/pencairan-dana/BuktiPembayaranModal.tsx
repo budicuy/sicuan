@@ -45,6 +45,8 @@ interface DisbursementItem {
   metodePembayaran: string;
   keterangan: string | null;
   ttdPenyerahUrl: string | null;
+  periodeBulan: number | null;
+  periodeTahun: number | null;
   createdAt: Date;
   user: { name: string; username: string; role: string };
 }
@@ -67,8 +69,10 @@ export function BuktiPembayaranModal({
   onClose,
   onSuccess,
 }: Props) {
-  const thisYear = new Date(item.createdAt).getFullYear();
-  const thisMonth = BULAN_OPTIONS[new Date(item.createdAt).getMonth()];
+  const thisYear = item.periodeTahun || new Date(item.createdAt).getFullYear();
+  const thisMonthNum =
+    item.periodeBulan || new Date(item.createdAt).getMonth() + 1;
+  const thisMonth = BULAN_OPTIONS[thisMonthNum - 1];
 
   // Form state (managed automatically, no manual inputs shown)
   const [namaBankSampah, setNamaBankSampah] = useState(

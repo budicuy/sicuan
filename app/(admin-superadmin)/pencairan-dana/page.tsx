@@ -42,6 +42,8 @@ interface DisbursementItem {
   keterangan: string | null;
   ttdPenyerahUrl: string | null;
   buktiTransfer: string | null;
+  periodeBulan: number | null;
+  periodeTahun: number | null;
   createdAt: Date;
   user: {
     name: string;

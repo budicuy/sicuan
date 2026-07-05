@@ -291,6 +291,8 @@ export async function getAllDisbursementsForAdmin() {
       keterangan: pencairanDana.keterangan,
       ttdPenyerahUrl: pencairanDana.ttdPenyerahUrl,
       buktiTransfer: pencairanDana.buktiTransfer,
+      periodeBulan: pencairanDana.periodeBulan,
+      periodeTahun: pencairanDana.periodeTahun,
       createdAt: pencairanDana.createdAt,
       user: {
         name: nasabah.name,
@@ -879,6 +881,48 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     penerimaPng = await convertWebPToPngBase64(doc.ttdPenerimaUrl);
   }
 
+  let pencairan: Awaited<ReturnType<typeof db.query.pencairanDana.findFirst>>;
+  let buktiTransferPng: string | null = null;
+  if (doc.pencairanDanaId) {
+    pencairan = await db.query.pencairanDana.findFirst({
+      where: eq(pencairanDana.id, doc.pencairanDanaId),
+    });
+
+    if (pencairan?.buktiTransfer) {
+      buktiTransferPng = await convertWebPToPngBase64(pencairan.buktiTransfer);
+    }
+  }
+
+  const monthIndex = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ].indexOf(doc.periodeBulan);
+  const startOfMonthDate = new Date(doc.periodeTahun, monthIndex, 1);
+  const endOfMonthDate = new Date(doc.periodeTahun, monthIndex + 1, 0);
+
+  const setoranDetail = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, doc.userId),
+      eq(setorSampah.status, "diterima"),
+      gte(
+        setorSampah.tanggalSetor,
+        startOfMonthDate.toISOString().split("T")[0],
+      ),
+      lte(setorSampah.tanggalSetor, endOfMonthDate.toISOString().split("T")[0]),
+    ),
+    orderBy: desc(setorSampah.tanggalSetor),
+  });
+
   const data = {
     nomorDokumen: doc.nomorDokumen,
     tanggal: doc.createdAt,
@@ -899,6 +943,13 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     keterangan: doc.keterangan,
     ttdPenyerahUrl: penyerahPng || doc.ttdPenyerahUrl,
     ttdPenerimaUrl: penerimaPng || doc.ttdPenerimaUrl,
+    buktiTransferUrl: buktiTransferPng || pencairan?.buktiTransfer || null,
+    setoranDetail: setoranDetail.map((s) => ({
+      nomorSetor: s.nomorSetor,
+      jenisSampah: s.jenisSampah,
+      beratKg: s.beratKg,
+      tanggalSetor: s.tanggalSetor,
+    })),
     namaPenyerah: doc.namaPenyerah,
     jabatanPenyerah: doc.jabatanPenyerah,
     namaPenerima: doc.namaPenerima,
