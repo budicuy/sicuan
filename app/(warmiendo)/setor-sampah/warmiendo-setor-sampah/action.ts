@@ -113,12 +113,13 @@ export async function updateSetorSampahStatus(
       depositor?.role ?? "konsumen",
     );
 
-    // Update nasabah balance directly
+    // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
+    const isWarmiendo = depositor?.role === "warmiendo";
     await db
       .update(nasabah)
       .set({
         poin: sql`${nasabah.poin} + ${totalPoin}`,
-        kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+        ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, item.userId));
@@ -566,12 +567,13 @@ export async function submitSetorSampah(
     await db.insert(setorSampah).values(baseValues);
 
     if (!isPending) {
-      // Update nasabah balance directly
+      // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
+      const isWarmiendo = user.role === "warmiendo";
       await db
         .update(nasabah)
         .set({
           poin: sql`${nasabah.poin} + ${totalPoin}`,
-          kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+          ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, user.id));
@@ -694,12 +696,13 @@ export async function bankSampahTerimaSetoran(
       depositor?.role ?? "warmiendo",
     );
 
-    // Update saldo nasabah Warmiendo
+    // Update saldo nasabah Warmiendo (skip credit since it's accumulated monthly)
+    const isWarmiendo = depositor?.role === "warmiendo";
     await db
       .update(nasabah)
       .set({
         poin: sql`${nasabah.poin} + ${totalPoin}`,
-        kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+        ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, item.userId));
@@ -1053,12 +1056,13 @@ export async function createSetorSampah(
     await db.insert(setorSampah).values(baseValues);
 
     if (!isPending) {
-      // Update nasabah balance directly
+      // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
+      const isWarmiendo = user.role === "warmiendo";
       await db
         .update(nasabah)
         .set({
           poin: sql`${nasabah.poin} + ${totalPoin}`,
-          kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+          ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, user.id));

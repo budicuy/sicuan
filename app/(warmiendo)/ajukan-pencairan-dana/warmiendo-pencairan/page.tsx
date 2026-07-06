@@ -7,20 +7,25 @@ import {
   Banknote,
   Camera,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Coins,
   CreditCard,
   Download,
-  ExternalLink,
   Eye,
+  FileText,
+  Info,
   Loader2,
+  LockKeyhole,
+  Package,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { getBuktiPembayaranPdfBase64 } from "@/app/(admin-superadmin)/pencairan-dana/action";
 import {
-  getDisbursementData,
+  getDisbursementDataForMonth,
   getDisbursementHistory,
   requestDisbursement,
 } from "@/app/(warmiendo)/ajukan-pencairan-dana/warmiendo-pencairan/action";
@@ -31,7 +36,6 @@ import {
 } from "@/app/components/shared/DataTable";
 import { DisbursementLetterPreview } from "@/app/components/shared/DisbursementLetterPreview";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-import { SyaratKetentuanCard } from "@/app/components/shared/SyaratKetentuanCard";
 
 interface DisbursementHistoryItem {
   id: number;
@@ -46,37 +50,96 @@ interface DisbursementHistoryItem {
   buktiPembayaranId: number | null;
 }
 
+interface DataSampahItem {
+  jenis: string;
+  beratKg: number;
+  kredit: number;
+}
+
+interface PencairanAktif {
+  id: number;
+  jumlah: number;
+  status: string;
+  metodePembayaran: string;
+  createdAt: string | Date;
+  keterangan?: string;
+  ttdPenyerahUrl?: string | null;
+  ttdPenerimaUrl?: string | null;
+}
+
 interface UserData {
   kredit: number;
+  isCurrentMonth: boolean;
+  sudahDicairkan: boolean;
+  pencairanAktif: PencairanAktif | null;
   jenisBank: string;
   noRekening: string;
   alamat?: string;
   noTelepon?: string;
   idPelanggan?: string;
-  dataSampah?: { jenis: string; beratKg: number; terlampir: boolean }[];
+  dataSampah?: DataSampahItem[];
   totalBeratKg?: number;
   user: { id: number; name: string; role: string };
 }
 
 type MetodePembayaran = "tunai" | "transfer";
+type KategoriSumber = "bank-sampah-induk" | "tps-3r" | "bank-sampah-unit";
+
+const BULAN_ID = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+];
+
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    berhasil: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    ditolak: "bg-red-100 text-red-700 border-red-200",
+    pending: "bg-amber-100 text-amber-700 border-amber-200",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${styles[status] ?? styles.pending}`}
+    >
+      {status}
+    </span>
+  );
+}
 
 export default function PencairanDanaPage() {
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+
   const [data, setData] = useState<UserData | null>(null);
   const [history, setHistory] = useState<DisbursementHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Step 1 form state
   const [customAmount, setCustomAmount] = useState("");
   const [metode, setMetode] = useState<MetodePembayaran>("transfer");
   const [keterangan, setKeterangan] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [viewProofUrl, setViewProofUrl] = useState<string | null>(null);
-
-  // TTD upload state
+  const [kategoriSumber, _setKategoriSumber] = useState<KategoriSumber>("tps-3r");
   const [ttdBase64, setTtdBase64] = useState<string | null>(null);
   const [ttdError, setTtdError] = useState("");
   const [isCompressingTtd, setIsCompressingTtd] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
-  // DataTable states
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  // Proof / history
+  const [viewProofUrl, setViewProofUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -113,8 +176,7 @@ export default function PencairanDanaPage() {
           res.message || "Gagal mengunduh dokumen PDF.",
         );
       }
-    } catch (error) {
-      console.error("Gagal mengunduh PDF:", error);
+    } catch {
       showFeedback(
         "error",
         "Gagal Mengunduh",
@@ -123,12 +185,18 @@ export default function PencairanDanaPage() {
     }
   };
 
-  const loadData = useCallback(() => {
-    setLoading(true);
-    Promise.all([getDisbursementData(), getDisbursementHistory()]).then(
-      ([dataRes, historyRes]) => {
+  const loadMonthData = useCallback(
+    (year: number, month: number) => {
+      setLoading(true);
+      Promise.all([
+        getDisbursementDataForMonth(year, month),
+        getDisbursementHistory(),
+      ]).then(([dataRes, historyRes]) => {
         if (dataRes.success && dataRes.data) {
-          setData(dataRes.data as UserData);
+          const d = dataRes.data as UserData;
+          setData(d);
+          // Auto-set jumlah ke total kredit bulan tersebut
+          setCustomAmount(d.kredit > 0 ? d.kredit.toString() : "");
         } else {
           showFeedback(
             "error",
@@ -138,13 +206,39 @@ export default function PencairanDanaPage() {
         }
         setHistory(historyRes as DisbursementHistoryItem[]);
         setLoading(false);
-      },
-    );
-  }, [showFeedback]);
+      });
+    },
+    [showFeedback],
+  );
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadMonthData(selectedYear, selectedMonth);
+  }, [loadMonthData, selectedYear, selectedMonth]);
+
+  const goToPrevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedYear((y) => y - 1);
+      setSelectedMonth(12);
+    } else {
+      setSelectedMonth((m) => m - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    const isCurrent =
+      selectedYear === now.getFullYear() &&
+      selectedMonth === now.getMonth() + 1;
+    if (isCurrent) return;
+    if (selectedMonth === 12) {
+      setSelectedYear((y) => y + 1);
+      setSelectedMonth(1);
+    } else {
+      setSelectedMonth((m) => m + 1);
+    }
+  };
+
+  const isCurrentMonth =
+    selectedYear === now.getFullYear() && selectedMonth === now.getMonth() + 1;
 
   const handleTtdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -181,32 +275,41 @@ export default function PencairanDanaPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // Step 1: validate then show confirm modal
+  const handleOpenConfirm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
-
     if (!ttdBase64) {
       setTtdError("Tanda tangan wajib diunggah sebelum mengajukan.");
       return;
     }
+    setShowConfirmModal(true);
+  };
 
-    const formData = new FormData(e.currentTarget);
+  // Step 2: confirmed → submit to server
+  const handleConfirmSubmit = () => {
+    if (!ttdBase64) return;
+    const formData = new FormData();
+    formData.set("jumlah", customAmount);
     formData.set("metodePembayaran", metode);
     formData.set("keterangan", keterangan);
     formData.set("ttdPenyerah", ttdBase64);
+    formData.set("selectedYear", selectedYear.toString());
+    formData.set("selectedMonth", selectedMonth.toString());
 
     startTransition(async () => {
       const res = await requestDisbursement(
         { success: false, message: "" },
         formData,
       );
+      setShowConfirmModal(false);
       if (res.success) {
         showFeedback("success", "Pencairan Berhasil Diajukan", res.message);
         setCustomAmount("");
         setMetode("transfer");
         setKeterangan("");
         setTtdBase64(null);
-        loadData();
+        loadMonthData(selectedYear, selectedMonth);
       } else {
         if (res.errors) setErrors(res.errors);
         showFeedback(
@@ -218,94 +321,87 @@ export default function PencairanDanaPage() {
     });
   };
 
-  const formatTanggal = (dateStr: string | Date) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
+  const formatTanggal = (dateStr: string | Date) =>
+    new Date(dateStr).toLocaleDateString("id-ID", {
       day: "numeric",
-      month: "short",
+      month: "long",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
-  const setAmount = (val: number) => setCustomAmount(val.toString());
+  const formatRp = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
 
-  const getMetodeBadge = (m: string) => {
-    if (m === "tunai")
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    return "bg-blue-50 text-blue-700 border-blue-200";
-  };
+  // Derived
+  const currentKredit = data?.kredit ?? 0;
+  const isBankSetup = !!(data?.jenisBank && data?.noRekening);
+  const isCurrentMonthData = data?.isCurrentMonth ?? isCurrentMonth;
+  const sudahDicairkan = data?.sudahDicairkan ?? false;
+  const pencairanAktif = data?.pencairanAktif;
+  const dataSampah: DataSampahItem[] =
+    (data?.dataSampah as DataSampahItem[] | undefined) ?? [];
 
+  const bulanLabel = `${BULAN_ID[selectedMonth - 1]} ${selectedYear}`;
+  const bulanBerikutnya = `1 ${BULAN_ID[selectedMonth % 12]} ${selectedMonth === 12 ? selectedYear + 1 : selectedYear}`;
+
+  // ── History table ──────────────────────────────────────────────────────────
   const columns: Column<DisbursementHistoryItem>[] = [
     {
-      header: "Tanggal & Waktu",
-      render: (item) => formatTanggal(item.createdAt),
+      header: "Tanggal",
+      render: (item) => (
+        <span className="text-xs text-neutral-600">
+          {formatTanggal(item.createdAt)}
+        </span>
+      ),
     },
     {
       header: "Metode",
       render: (item) => (
         <span
-          className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full border uppercase tracking-wider ${getMetodeBadge(item.metodePembayaran)}`}
+          className={`px-2 py-0.5 text-[9px] font-bold rounded-full border uppercase ${item.metodePembayaran === "tunai" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}
         >
           {item.metodePembayaran === "tunai" ? "Tunai" : "Transfer"}
         </span>
       ),
     },
     {
-      header: "Tujuan Transfer",
-      render: (item) => (
-        <div>
-          {item.metodePembayaran !== "tunai" ? (
-            <>
-              <div className="font-bold text-neutral-800">
-                {item.jenisBank ?? "-"}
-              </div>
-              <div className="text-[10px] text-neutral-400 font-mono mt-0.5">
-                {item.noRekening ?? "-"}
-              </div>
-            </>
-          ) : (
-            <span className="text-[10px] text-neutral-500 italic">
-              Pencairan Tunai
-            </span>
-          )}
-        </div>
-      ),
+      header: "Tujuan",
+      render: (item) =>
+        item.metodePembayaran !== "tunai" ? (
+          <div>
+            <div className="text-xs font-bold text-neutral-800">
+              {item.jenisBank ?? "-"}
+            </div>
+            <div className="text-[10px] text-neutral-400 font-mono">
+              {item.noRekening ?? "-"}
+            </div>
+          </div>
+        ) : (
+          <span className="text-[10px] text-neutral-400 italic">Tunai</span>
+        ),
     },
     {
-      header: "Jumlah Pencairan",
+      header: "Jumlah",
       render: (item) => (
-        <span className="font-bold text-neutral-800 text-sm">
-          Rp {item.jumlah.toLocaleString("id-ID")}
+        <span className="text-sm font-black text-neutral-800">
+          {formatRp(item.jumlah)}
         </span>
       ),
     },
     {
       header: "Status",
       render: (item) => (
-        <div className="flex flex-col items-start gap-1">
-          <span
-            className={`px-2.5 py-0.5 text-[9px] font-extrabold rounded-full border uppercase tracking-wider ${
-              item.status === "berhasil"
-                ? "bg-emerald-50 text-emerald-700 border-emerald-150"
-                : item.status === "ditolak"
-                  ? "bg-red-50 text-red-700 border-red-200"
-                  : "bg-amber-50 text-amber-700 border-amber-200"
-            }`}
-          >
-            {item.status}
-          </span>
+        <div className="flex flex-col gap-1.5">
+          <StatusBadge status={item.status} />
           {item.status === "berhasil" && (
-            <div className="flex flex-col gap-1 mt-1">
+            <div className="flex gap-2">
               {item.buktiTransfer && (
                 <button
                   type="button"
                   onClick={() => setViewProofUrl(item.buktiTransfer)}
-                  className="text-[10px] text-primary-600 hover:text-primary-750 font-bold flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0"
+                  className="text-[10px] text-primary-600 font-bold flex items-center gap-0.5 bg-transparent border-0 cursor-pointer p-0 hover:underline"
                 >
-                  <Eye className="w-3.5 h-3.5" />
-                  Lihat Bukti
+                  <Eye className="w-3 h-3" /> Bukti
                 </button>
               )}
               {item.buktiPembayaranId && (
@@ -315,10 +411,9 @@ export default function PencairanDanaPage() {
                     item.buktiPembayaranId &&
                     handleDownloadPdf(item.buktiPembayaranId)
                   }
-                  className="text-[10px] text-emerald-600 hover:text-emerald-750 font-bold flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0"
+                  className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5 bg-transparent border-0 cursor-pointer p-0 hover:underline"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  Unduh Surat
+                  <Download className="w-3 h-3" /> Surat
                 </button>
               )}
             </div>
@@ -342,13 +437,14 @@ export default function PencairanDanaPage() {
   ];
 
   const filteredHistory = history.filter((item) => {
-    const matchesSearch =
-      (item.jenisBank ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    const q = search.toLowerCase();
+    const matchSearch =
+      (item.jenisBank ?? "").toLowerCase().includes(q) ||
       (item.noRekening ?? "").includes(search) ||
       item.jumlah.toString().includes(search);
-    const matchesStatus =
+    const matchStatus =
       !filterValues.status || item.status === filterValues.status;
-    return matchesSearch && matchesStatus;
+    return matchSearch && matchStatus;
   });
 
   const paginatedHistory = filteredHistory.slice(
@@ -356,358 +452,622 @@ export default function PencairanDanaPage() {
     currentPage * pageSize,
   );
 
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
         <p className="text-sm font-semibold text-neutral-500">
-          Memuat info pencairan dana...
+          Memuat data pencairan...
         </p>
       </div>
     );
   }
 
-  const presets = [10000, 25000, 50000, 100000, 200000, 500000];
-  const currentKredit = data?.kredit ?? 0;
-  const isBankSetup = !!(data?.jenisBank && data?.noRekening);
-
+  // ── Main render ────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-12">
-      {/* Page Header */}
-      <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-48 h-48 bg-primary-100/20 rounded-full blur-3xl pointer-events-none -z-10" />
-        <div>
-          <h1 className="text-xl font-black text-neutral-900 tracking-tight flex items-center gap-2">
+    <div className="space-y-5 animate-in fade-in duration-300 pb-12 max-w-4xl mx-auto">
+      {/* ── HEADER ── */}
+      <div>
+        <h1 className="text-2xl font-black text-neutral-900 tracking-tight flex items-center gap-2.5">
+          <div className="p-2 bg-primary-100 rounded-xl">
             <ArrowRightLeft className="w-5 h-5 text-primary-600" />
-            Pencairan Dana
-          </h1>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            Cairkan reward saldo kredit ke rekening bank terdaftar atau tunai.
-          </p>
+          </div>
+          Pencairan Dana
+        </h1>
+        <p className="text-sm text-neutral-500 mt-1 ml-11">
+          Cairkan kredit dari akumulasi setoran sampah per bulan.
+        </p>
+      </div>
+
+      {/* ── KREDIT SUMMARY CARD ── */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-900 via-primary-950 to-emerald-900 text-white p-6 shadow-xl">
+        {/* decorative blobs */}
+        <div className="absolute -top-8 -right-8 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-10 -left-6 w-40 h-40 bg-primary-500/10 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold tracking-widest text-white/50 uppercase">
+                Kredit Akumulatif
+              </p>
+              <p className="text-[13px] font-semibold text-white/70 mt-0.5">
+                {bulanLabel}
+              </p>
+              <p className="text-4xl font-black mt-2 tracking-tight">
+                {formatRp(currentKredit)}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="p-2.5 bg-white/10 rounded-2xl border border-white/10">
+                <Coins className="w-6 h-6 text-emerald-400" />
+              </div>
+              {/* Status Badge */}
+              {isCurrentMonthData ? (
+                <span className="flex items-center gap-1 text-[9px] font-bold bg-blue-400/20 text-blue-300 border border-blue-400/30 rounded-full px-2.5 py-1">
+                  <Clock className="w-2.5 h-2.5" /> Berjalan
+                </span>
+              ) : sudahDicairkan ? (
+                <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-full px-2.5 py-1">
+                  <LockKeyhole className="w-2.5 h-2.5" /> Dicairkan
+                </span>
+              ) : currentKredit > 0 ? (
+                <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 rounded-full px-2.5 py-1">
+                  <CheckCircle2 className="w-2.5 h-2.5" /> Siap Dicairkan
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Breakdown per jenis sampah */}
+          {dataSampah.length > 0 ? (
+            <div className="mt-5 pt-4 border-t border-white/10">
+              <p className="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-3">
+                Rincian Setoran Diterima
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {dataSampah.map((item) => (
+                  <div
+                    key={item.jenis}
+                    className="bg-white/5 hover:bg-white/10 transition-colors rounded-2xl px-3 py-2.5 border border-white/10"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Package className="w-3 h-3 text-white/40 shrink-0" />
+                      <span className="text-[11px] font-semibold text-white/80 truncate">
+                        {item.jenis}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[10px] text-white/40">
+                        {item.beratKg} kg
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-400">
+                        {formatRp(item.kredit)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 pt-4 border-t border-white/10 flex items-center gap-2 text-white/40">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs">
+                Belum ada setoran diterima di {bulanLabel}.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Row 1: Balance Card + Syarat & Ketentuan */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Balance Card */}
-        <div className="md:col-span-2 relative overflow-hidden bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md border border-white/5">
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
-          <div className="relative z-10">
-            <span className="text-[10px] font-bold tracking-widest text-primary-300 uppercase block">
-              SALDO REWARD UTAMA
-            </span>
-            <div className="flex justify-between items-end mt-3">
-              <div>
-                <span className="text-xs text-primary-200">
-                  Total Kredit Tersedia
-                </span>
-                <h2 className="text-3xl font-black tracking-tight mt-0.5">
-                  Rp {currentKredit.toLocaleString("id-ID")}
-                </h2>
-              </div>
-              <Coins className="w-8 h-8 text-emerald-400 shrink-0 mb-1" />
-            </div>
-            <div className="pt-3 mt-3 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
-              <div>
-                <span className="text-primary-300 block text-[9px] uppercase font-bold tracking-wider">
-                  Rekening Tujuan
-                </span>
-                {isBankSetup ? (
-                  <span className="font-semibold text-white mt-0.5 block">
-                    {data?.jenisBank} — {data?.noRekening}
+      {/* ── FORM CARD (period picker + rekening + form) ── */}
+      <div className="bg-white border border-neutral-200 rounded-3xl shadow-sm overflow-hidden">
+        {/* Period Picker — header card yang mencolok */}
+        <div className="relative overflow-hidden bg-linear-to-br from-primary-900 via-primary-800 to-slate-800 px-5 py-5">
+          {/* decorative */}
+          <div className="absolute -right-6 -top-6 w-28 h-28 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+
+          <p className="text-[10px] font-bold tracking-widest text-white/50 uppercase mb-3">
+            Pilih Periode Pencairan
+          </p>
+
+          <div className="flex items-center gap-3">
+            {/* Prev */}
+            <button
+              type="button"
+              onClick={goToPrevMonth}
+              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-all cursor-pointer shrink-0 group"
+            >
+              <ChevronLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+
+            {/* Label */}
+            <div className="flex-1 text-center">
+              <p className="text-xl font-black text-white tracking-tight">
+                {bulanLabel}
+              </p>
+              <div className="flex items-center justify-center gap-2 mt-1.5">
+                {isCurrentMonthData ? (
+                  <span className="flex items-center gap-1 text-[9px] font-bold bg-blue-400/25 text-blue-200 border border-blue-400/30 rounded-full px-2.5 py-1">
+                    <Clock className="w-2.5 h-2.5" /> Sedang Berjalan
+                  </span>
+                ) : sudahDicairkan ? (
+                  <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/25 text-amber-200 border border-amber-400/30 rounded-full px-2.5 py-1">
+                    <LockKeyhole className="w-2.5 h-2.5" /> Sudah Dicairkan
+                  </span>
+                ) : currentKredit > 0 ? (
+                  <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30 rounded-full px-2.5 py-1">
+                    <CheckCircle2 className="w-2.5 h-2.5" /> Siap Dicairkan
                   </span>
                 ) : (
-                  <span className="text-amber-400 font-semibold mt-0.5 flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                    Rekening belum diset
+                  <span className="text-[9px] text-white/40">
+                    Tidak ada setoran
                   </span>
                 )}
               </div>
-              <Link
-                href="/profil/warmiendo-profil"
-                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all font-bold text-[10px] uppercase text-white tracking-wider border border-white/10 flex items-center gap-1.5 shrink-0"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                {isBankSetup ? "Ubah Rekening" : "Lengkapi Profil"}
-              </Link>
             </div>
+
+            {/* Next */}
+            <button
+              type="button"
+              onClick={goToNextMonth}
+              disabled={isCurrentMonth}
+              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-all cursor-pointer shrink-0 disabled:opacity-25 disabled:cursor-not-allowed group"
+            >
+              <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+            </button>
           </div>
         </div>
 
-        <SyaratKetentuanCard />
-      </div>
-
-      {/* Row 2: Form + Pratinjau Surat side by side */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        {/* Formulir Pencairan */}
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200 shadow-sm">
-          <div className="flex items-center gap-2 pb-3 border-b border-neutral-100 mb-5">
-            <ArrowRightLeft className="w-4.5 h-4.5 text-primary-600" />
-            <h3 className="text-sm font-bold text-neutral-800">
-              Formulir Pencairan
-            </h3>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Metode Pembayaran */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
-                Metode Pembayaran
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                {(["tunai", "transfer"] as MetodePembayaran[]).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMetode(m)}
-                    className={`py-2.5 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      metode === m
-                        ? "bg-primary-600 border-primary-600 text-white shadow-sm"
-                        : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
-                    }`}
-                  >
-                    {m === "tunai" ? (
-                      <Banknote className="w-3.5 h-3.5" />
-                    ) : (
-                      <CreditCard className="w-3.5 h-3.5" />
-                    )}
-                    <span className="capitalize">{m}</span>
-                  </button>
-                ))}
-              </div>
-              {metode !== "tunai" && !isBankSetup && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="text-xs text-amber-800">
-                    <span className="font-bold block">Rekening Diperlukan</span>
-                    <p>Lengkapi info rekening bank di profil untuk transfer.</p>
-                    <Link
-                      href="/profil/warmiendo-profil"
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-700 hover:text-primary-800 pt-1"
-                    >
-                      Atur Rekening <ExternalLink className="w-3 h-3" />
-                    </Link>
-                  </div>
-                </div>
-              )}
+        {/* Rekening info bar */}
+        <div className="px-5 py-3.5 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-1.5 bg-white rounded-lg border border-neutral-200 shrink-0">
+              <CreditCard className="w-3.5 h-3.5 text-neutral-500" />
             </div>
-
-            {/* Amount */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
-                Jumlah Pencairan (Rp)
-              </span>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-4 flex items-center font-bold text-neutral-400 text-sm">
-                  Rp
-                </span>
-                <input
-                  id="jumlah"
-                  name="jumlah"
-                  type="number"
-                  required
-                  min={10000}
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all text-neutral-800"
-                  placeholder="Masukkan nominal pencairan"
-                />
-              </div>
-              {errors.jumlah && (
-                <p className="text-[11px] font-semibold text-red-600">
-                  {errors.jumlah[0]}
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
+                Rekening Tujuan
+              </p>
+              {isBankSetup ? (
+                <p className="text-xs font-bold text-neutral-700 truncate">
+                  {data?.jenisBank}{" "}
+                  <span className="font-mono font-normal text-neutral-500">
+                    — {data?.noRekening}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-xs font-semibold text-amber-600 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" /> Rekening belum
+                  diisi
                 </p>
               )}
-              <p className="text-[10px] text-neutral-400">
-                Minimal pencairan adalah Rp 10.000.
-              </p>
             </div>
+          </div>
+          <Link
+            href="/profil/warmiendo-profil"
+            className="shrink-0 px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-white text-[10px] font-bold rounded-lg transition-colors whitespace-nowrap"
+          >
+            {isBankSetup ? "Ubah" : "Lengkapi"}
+          </Link>
+        </div>
 
-            {/* Presets */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                Pilih Nominal Instan
-              </span>
-              <div className="grid grid-cols-6 gap-2">
-                {presets.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setAmount(preset)}
-                    disabled={preset > currentKredit}
-                    className={`py-2 px-1 text-center font-bold text-xs rounded-xl border transition-all cursor-pointer ${
-                      customAmount === preset.toString()
-                        ? "bg-primary-600 border-primary-600 text-white shadow-sm"
-                        : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    }`}
+        {/* Form body */}
+        <div className="p-5">
+          {/* ── STATE 1: Bulan berjalan ── */}
+          {isCurrentMonthData ? (
+            <div className="py-6 flex flex-col items-center gap-5 text-center">
+              <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
+                <Clock className="w-7 h-7 text-blue-400" />
+              </div>
+              <div className="max-w-sm space-y-2">
+                <p className="font-bold text-neutral-800">
+                  Bulan {bulanLabel} Masih Berjalan
+                </p>
+                <p className="text-sm text-neutral-500">
+                  Pencairan baru dapat dilakukan di bulan berikutnya. Kredit
+                  yang tampil adalah estimasi berjalan saat ini.
+                </p>
+              </div>
+              {currentKredit > 0 && (
+                <div className="w-full max-w-xs bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4">
+                  <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider">
+                    Estimasi Kredit Saat Ini
+                  </p>
+                  <p className="text-2xl font-black text-emerald-700 mt-1">
+                    {formatRp(currentKredit)}
+                  </p>
+                  <p className="text-xs text-emerald-500 mt-1.5 flex items-center justify-center gap-1">
+                    <Info className="w-3 h-3" />
+                    Bisa dicairkan mulai {bulanBerikutnya}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : sudahDicairkan && pencairanAktif ? (
+            /* ── STATE 2: Sudah dicairkan ── */
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <LockKeyhole className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-amber-800">
+                    Pencairan {bulanLabel} Sudah Diajukan
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Hanya satu pencairan per bulan yang diizinkan. Lihat detail
+                    di bawah.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  {
+                    label: "Nominal",
+                    value: formatRp(pencairanAktif.jumlah),
+                    bold: true,
+                  },
+                  {
+                    label: "Metode",
+                    value: pencairanAktif.metodePembayaran,
+                    bold: false,
+                  },
+                  {
+                    label: "Diajukan",
+                    value: formatTanggal(pencairanAktif.createdAt),
+                    bold: false,
+                  },
+                  {
+                    label: "Status",
+                    value: null,
+                    status: pencairanAktif.status,
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className="bg-neutral-50 rounded-xl p-3 border border-neutral-100"
                   >
-                    {preset >= 1000 ? `${preset / 1000}K` : preset}
-                  </button>
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      {row.label}
+                    </p>
+                    {row.status ? (
+                      <div className="mt-1">
+                        <StatusBadge status={row.status} />
+                      </div>
+                    ) : (
+                      <p
+                        className={`text-sm mt-1 ${row.bold ? "font-black text-neutral-900" : "font-semibold text-neutral-700 capitalize"}`}
+                      >
+                        {row.value}
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
-            </div>
 
-            {/* Keterangan */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
-                Keterangan (opsional)
-              </span>
-              <input
-                type="text"
-                value={keterangan}
-                onChange={(e) => setKeterangan(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                placeholder="Catatan tambahan..."
-              />
+              {/* Rincian Surat Bukti Pembayaran */}
+              <div className="mt-6 pt-6 border-t border-neutral-100 space-y-3">
+                <span className="text-xs font-bold text-neutral-600 uppercase tracking-wider block">
+                  Surat Bukti Pembayaran
+                </span>
+                <div className="border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
+                  <DisbursementLetterPreview
+                    data={data}
+                    customAmount={pencairanAktif.jumlah.toString()}
+                    metode={pencairanAktif.metodePembayaran}
+                    keterangan={pencairanAktif.keterangan || ""}
+                    ttdBase64={pencairanAktif.ttdPenyerahUrl || null}
+                    kategoriSumber={kategoriSumber}
+                    ttdAdminBase64={pencairanAktif.ttdPenerimaUrl || null}
+                  />
+                </div>
+              </div>
             </div>
-
-            {/* TTD Upload */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
-                Tanda Tangan Anda (Wajib)
-              </span>
-              <p className="text-[10px] text-neutral-400">
-                Upload foto tanda tangan sebagai bukti persetujuan pencairan.
+          ) : dataSampah.length === 0 ? (
+            /* ── STATE 3: Tidak ada setoran ── */
+            <div className="py-8 flex flex-col items-center gap-3 text-center">
+              <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center">
+                <Package className="w-6 h-6 text-neutral-400" />
+              </div>
+              <p className="font-semibold text-neutral-600 text-sm">
+                Tidak Ada Setoran di {bulanLabel}
               </p>
-              {isCompressingTtd ? (
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 h-28 flex items-center justify-center gap-2">
-                  <Loader2 className="w-6 h-6 text-primary-600 animate-spin" />
-                  <p className="text-xs text-neutral-500">Mengompresi...</p>
+              <p className="text-xs text-neutral-400 max-w-xs">
+                Pencairan hanya bisa dilakukan jika ada setoran yang berstatus
+                diterima di bulan tersebut.
+              </p>
+            </div>
+          ) : (
+            /* ── STATE 4: Form aktif ── */
+            <form onSubmit={handleOpenConfirm} className="space-y-5">
+              {/* Metode */}
+              <div>
+                <span className="text-xs font-bold text-neutral-600 uppercase tracking-wider block mb-2">
+                  Metode Pembayaran
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  {(["transfer", "tunai"] as MetodePembayaran[]).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMetode(m)}
+                      className={`py-3 rounded-xl border-2 text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        metode === m
+                          ? "bg-primary-600 border-primary-600 text-white shadow-md shadow-primary-600/20"
+                          : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                      }`}
+                    >
+                      {m === "tunai" ? (
+                        <Banknote className="w-4 h-4" />
+                      ) : (
+                        <CreditCard className="w-4 h-4" />
+                      )}
+                      <span className="capitalize">{m}</span>
+                    </button>
+                  ))}
                 </div>
-              ) : ttdBase64 ? (
-                <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 h-28 flex items-center justify-center">
-                  {/* biome-ignore lint/performance/noImgElement: TTD preview */}
-                  <img
-                    src={ttdBase64}
-                    alt="Tanda Tangan"
-                    className="max-h-28 object-contain"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setTtdBase64(null)}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white border-0 cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                {metode === "transfer" && !isBankSetup && (
+                  <div className="mt-2.5 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700">
+                      Rekening bank belum diisi.{" "}
+                      <Link
+                        href="/profil/warmiendo-profil"
+                        className="font-bold underline"
+                      >
+                        Lengkapi sekarang.
+                      </Link>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Total Pencairan — otomatis = seluruh kredit bulan ini */}
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/80 p-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                    Total Pencairan
+                  </p>
+                  <p className="text-2xl font-black text-emerald-800 mt-0.5 tracking-tight">
+                    {formatRp(currentKredit)}
+                  </p>
+                  <p className="text-[10px] text-emerald-600/70 mt-1 flex items-center gap-1">
+                    <Coins className="w-3 h-3" />
+                    Seluruh kredit bulan {BULAN_ID[selectedMonth - 1]}{" "}
+                    {selectedYear} akan dicairkan
+                  </p>
                 </div>
-              ) : (
-                <div className="relative rounded-2xl border-2 border-dashed border-neutral-300 hover:border-primary-500/50 transition-all p-5 text-center bg-neutral-50/50">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleTtdUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <div className="space-y-1.5 text-neutral-500">
-                    <div className="p-2.5 bg-white rounded-full w-fit mx-auto shadow-xs border border-neutral-100">
-                      <Camera className="w-5 h-5 text-neutral-400" />
-                    </div>
-                    <p className="text-xs font-bold text-neutral-700">
-                      Upload Foto Tanda Tangan
+                <div className="p-3 bg-emerald-100 rounded-2xl border border-emerald-200 shrink-0">
+                  <Coins className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+
+              {/* Keterangan */}
+              <div>
+                <label
+                  htmlFor="keterangan"
+                  className="text-xs font-bold text-neutral-600 uppercase tracking-wider block mb-2"
+                >
+                  Keterangan{" "}
+                  <span className="text-neutral-400 font-normal normal-case">
+                    (opsional)
+                  </span>
+                </label>
+                <input
+                  id="keterangan"
+                  type="text"
+                  value={keterangan}
+                  onChange={(e) => setKeterangan(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-neutral-50 border-2 border-neutral-200 text-sm focus:outline-none focus:border-primary-500 transition-colors placeholder:text-neutral-400"
+                  placeholder="Catatan tambahan..."
+                />
+              </div>
+
+              {/* TTD Upload */}
+              <div>
+                <span className="text-xs font-bold text-neutral-600 uppercase tracking-wider block mb-2">
+                  Tanda Tangan <span className="text-red-500">*</span>
+                </span>
+                {isCompressingTtd ? (
+                  <div className="h-28 rounded-xl border-2 border-dashed border-neutral-300 flex items-center justify-center gap-2 bg-neutral-50">
+                    <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+                    <span className="text-xs text-neutral-500">
+                      Mengompresi gambar...
+                    </span>
+                  </div>
+                ) : ttdBase64 ? (
+                  <div className="relative rounded-xl border-2 border-primary-300 bg-primary-50/50 h-28 flex items-center justify-center overflow-hidden">
+                    {/* biome-ignore lint/performance/noImgElement: TTD preview */}
+                    <img
+                      src={ttdBase64}
+                      alt="Tanda Tangan"
+                      className="max-h-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setTtdBase64(null)}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center border-0 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="relative h-28 rounded-xl border-2 border-dashed border-neutral-300 hover:border-primary-400 transition-colors flex flex-col items-center justify-center gap-1.5 bg-neutral-50 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleTtdUpload}
+                      className="sr-only"
+                    />
+                    <Camera className="w-6 h-6 text-neutral-400" />
+                    <p className="text-xs font-semibold text-neutral-600">
+                      Klik untuk upload foto tanda tangan
                     </p>
                     <p className="text-[10px] text-neutral-400">
                       JPG, PNG, atau WEBP
                     </p>
-                  </div>
-                </div>
-              )}
-              {(ttdError || errors.ttdPenyerah) && (
-                <p className="text-[11px] font-semibold text-red-600">
-                  {ttdError || errors.ttdPenyerah?.[0]}
-                </p>
-              )}
-            </div>
-
-            {/* Submit */}
-            <div className="pt-3 border-t border-neutral-100 flex justify-end">
-              <button
-                type="submit"
-                disabled={
-                  isPending ||
-                  isCompressingTtd ||
-                  !customAmount ||
-                  Number(customAmount) > currentKredit ||
-                  Number(customAmount) < 10000 ||
-                  (metode !== "tunai" && !isBankSetup)
-                }
-                className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/10 hover:shadow-primary-600/25 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs uppercase tracking-wider"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Memproses...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Ajukan Pencairan</span>
-                  </>
+                  </label>
                 )}
+                {(ttdError || errors.ttdPenyerah) && (
+                  <p className="mt-1.5 text-xs font-semibold text-red-500">
+                    {ttdError || errors.ttdPenyerah?.[0]}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={
+                    isCompressingTtd ||
+                    currentKredit <= 0 ||
+                    (metode === "transfer" && !isBankSetup)
+                  }
+                  className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-600/20 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4" />
+                  Pratinjau & Ajukan Pencairan
+                </button>
+                <p className="text-center text-xs text-neutral-400 mt-2">
+                  Pratinjau surat bukti pembayaran akan muncul sebelum
+                  konfirmasi.
+                </p>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {/* ── RIWAYAT ── */}
+      <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-primary-600" />
+          <h2 className="text-sm font-bold text-neutral-800">
+            Riwayat Pencairan Dana
+          </h2>
+        </div>
+        <div className="p-5">
+          <DataTable
+            data={paginatedHistory}
+            columns={columns}
+            totalItems={filteredHistory.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            search={search}
+            onSearchChange={(val) => {
+              setSearch(val);
+              setCurrentPage(1);
+            }}
+            searchPlaceholder="Cari bank atau rekening..."
+            filters={filters}
+            filterValues={filterValues}
+            onFilterChange={(id, value) => {
+              setFilterValues({ ...filterValues, [id]: value });
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+      </div>
+
+      {/* ── CONFIRMATION MODAL (Pratinjau Surat) ── */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl max-h-[90vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary-600" />
+                <h3 className="font-bold text-neutral-800">
+                  Pratinjau Surat Bukti Pembayaran
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-neutral-400 border-0 bg-transparent cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
-          </form>
+
+            {/* Letter Preview - scrollable */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <DisbursementLetterPreview
+                data={data}
+                customAmount={customAmount}
+                metode={metode}
+                keterangan={keterangan}
+                ttdBase64={ttdBase64}
+                kategoriSumber={kategoriSumber}
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-neutral-100 shrink-0 bg-neutral-50/80">
+              <div className="flex items-center gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <Info className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-xs text-amber-700">
+                  Pastikan data di atas sudah benar. Pencairan sebesar{" "}
+                  <span className="font-bold">
+                    {formatRp(Number(customAmount))}
+                  </span>{" "}
+                  akan diajukan ke admin untuk diproses.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  disabled={isPending}
+                  className="flex-1 py-3 rounded-xl border-2 border-neutral-200 text-neutral-700 font-bold text-sm hover:bg-neutral-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Periksa Lagi
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSubmit}
+                  disabled={isPending}
+                  className="flex-1 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-md shadow-primary-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" /> Konfirmasi & Ajukan
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
 
-        <DisbursementLetterPreview
-          data={data}
-          customAmount={customAmount}
-          metode={metode}
-          keterangan={keterangan}
-          ttdBase64={ttdBase64}
-        />
-      </div>
-
-      {/* Row 4: Riwayat Pencairan */}
-      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-neutral-200 shadow-sm">
-        <div className="flex items-center gap-2 pb-3 border-b border-neutral-100 mb-5">
-          <Clock className="w-4.5 h-4.5 text-primary-600" />
-          <h3 className="text-sm font-bold text-neutral-800">
-            Riwayat Pencairan Dana
-          </h3>
-        </div>
-        <DataTable
-          data={paginatedHistory}
-          columns={columns}
-          totalItems={filteredHistory.length}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={(e) => {
-            setPageSize(Number(e.target.value));
-            setCurrentPage(1);
-          }}
-          search={search}
-          onSearchChange={(val) => {
-            setSearch(val);
-            setCurrentPage(1);
-          }}
-          searchPlaceholder="Cari tujuan bank atau nomor rekening..."
-          filters={filters}
-          filterValues={filterValues}
-          onFilterChange={(filterId, value) => {
-            setFilterValues({ ...filterValues, [filterId]: value });
-            setCurrentPage(1);
-          }}
-        />
-      </div>
-
-      {/* Bukti Transfer Modal */}
+      {/* ── BUKTI TRANSFER MODAL ── */}
       {viewProofUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-neutral-100 overflow-hidden p-6 relative animate-in zoom-in-95 duration-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-neutral-100 p-6 relative animate-in zoom-in-95 duration-200 space-y-4">
             <button
               type="button"
               onClick={() => setViewProofUrl(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all border-0 cursor-pointer"
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 text-neutral-400 border-0 bg-transparent cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
-            <h3 className="text-base font-bold text-neutral-800 pb-2 border-b border-neutral-100 flex items-center gap-2">
-              <Eye className="w-5 h-5 text-primary-600" />
-              Bukti Foto Transfer Pencairan
+            <h3 className="text-base font-bold text-neutral-800 flex items-center gap-2 pb-3 border-b border-neutral-100">
+              <Eye className="w-5 h-5 text-primary-600" /> Bukti Transfer
+              Pencairan
             </h3>
             <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-96 flex items-center justify-center">
-              {/* biome-ignore lint/performance/noImgElement: R2 remote proof image preview */}
+              {/* biome-ignore lint/performance/noImgElement: R2 remote proof image */}
               <img
                 src={viewProofUrl}
                 alt="Bukti Transfer"
@@ -718,7 +1078,7 @@ export default function PencairanDanaPage() {
               <button
                 type="button"
                 onClick={() => setViewProofUrl(null)}
-                className="px-5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition-all border-0 cursor-pointer"
+                className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-700 text-white rounded-xl text-sm font-bold transition-colors border-0 cursor-pointer"
               >
                 Tutup
               </button>

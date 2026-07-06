@@ -48,7 +48,7 @@ export function FeaturesSection() {
               <Award className="w-6 h-6" />
             </div>
             <h4 className="text-xl font-bold text-neutral-900">
-              Sistem Reward Berkeadilan
+              Sistem Reward
             </h4>
             <p className="text-neutral-600 text-sm leading-relaxed">
               Skema insentif bervariasi sesuai peranan Anda. Poin belanja kupon

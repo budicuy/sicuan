@@ -69,7 +69,7 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
               </span>
             </span>
             <p className="hidden md:block text-[9px] text-neutral-500 font-medium tracking-wider uppercase leading-none mt-0.5">
-              Daur Ulang Sampah Jadi Nilai Ekonomi
+              Sistem Informasi Cerdas Ubah Anorganik Jadi Nilai
             </p>
           </div>
         </div>

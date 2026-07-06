@@ -38,120 +38,121 @@ export type ActionState = {
   errors?: Record<string, string[]>;
 };
 
-async function getBankSampahMonthlyCredit(userId: number): Promise<number> {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0-indexed
-  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+async function calcMonthlyKredit(
+  userId: number,
+  year: number,
+  month: number, // 1-indexed
+): Promise<{
+  kredit: number;
+  dataSampah: { jenis: string; beratKg: number; kredit: number }[];
+}> {
+  const startOfMonthStr = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endOfMonthStr = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
   const records = await db.query.setorSampah.findMany({
     where: and(
       eq(setorSampah.userId, userId),
-      eq(setorSampah.kategoriNasabah, "bank-sampah"),
+      eq(setorSampah.kategoriNasabah, "warmiendo"),
       eq(setorSampah.status, "diterima"),
       gte(setorSampah.tanggalSetor, startOfMonthStr),
       lte(setorSampah.tanggalSetor, endOfMonthStr),
     ),
   });
 
-  const setoranList = records.map((r) => ({
-    jenisSampah: r.jenisSampah,
-    beratKg: r.beratKg,
-  }));
-
   const wasteMap: Record<string, number> = {};
-  for (const item of setoranList) {
-    wasteMap[item.jenisSampah] =
-      (wasteMap[item.jenisSampah] || 0) + item.beratKg;
+  for (const r of records) {
+    wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
   }
 
-  let dynamicKredit = 0;
+  const dataSampah: { jenis: string; beratKg: number; kredit: number }[] = [];
+  let totalKredit = 0;
   for (const [jenis, berat] of Object.entries(wasteMap)) {
     const harga = await getHargaRange(jenis, berat);
-    dynamicKredit += harga;
+    totalKredit += harga;
+    dataSampah.push({ jenis, beratKg: berat, kredit: harga });
   }
 
-  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
-  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
-
-  const myDisbursements = await db.query.pencairanDana.findMany({
-    where: and(
-      eq(pencairanDana.userId, userId),
-      gte(pencairanDana.createdAt, startOfMonthDate),
-      lte(pencairanDana.createdAt, endOfMonthDate),
-    ),
-  });
-
-  const totalWithdrawn = myDisbursements
-    .filter((p) => p.status === "berhasil" || p.status === "pending")
-    .reduce((sum, p) => sum + p.jumlah, 0);
-
-  return Math.max(0, dynamicKredit - totalWithdrawn);
+  return { kredit: totalKredit, dataSampah };
 }
 
-export async function getDisbursementData() {
+async function getMonthDisbursement(
+  userId: number,
+  year: number,
+  month: number, // 1-indexed
+) {
+  const disbursements = await db.query.pencairanDana.findMany({
+    where: and(
+      eq(pencairanDana.userId, userId),
+      eq(pencairanDana.periodeTahun, year),
+      eq(pencairanDana.periodeBulan, month),
+    ),
+    orderBy: [desc(pencairanDana.createdAt)],
+  });
+
+  // Filter hanya pending atau berhasil (diabaikan yang ditolak)
+  const activeDisbursement = disbursements.find(
+    (p) => p.status === "berhasil" || p.status === "pending",
+  );
+
+  return activeDisbursement ?? null;
+}
+
+export async function getDisbursementDataForMonth(
+  year: number,
+  month: number, // 1-indexed
+) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "warmiendo" && user.role !== "bank-sampah")) {
+  if (!user || user.role !== "warmiendo") {
     return { success: false, message: "Akses ditolak" };
   }
+
+  const now = new Date();
+  const isCurrentMonth =
+    year === now.getFullYear() && month === now.getMonth() + 1;
 
   const profile = await db.query.nasabah.findFirst({
     where: eq(nasabah.id, user.id),
   });
 
-  // Calculate monthly waste data
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0-indexed
-  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const { kredit, dataSampah } = await calcMonthlyKredit(user.id, year, month);
+  const pencairanAktif = await getMonthDisbursement(user.id, year, month);
 
-  const records = await db.query.setorSampah.findMany({
-    where: and(
-      eq(setorSampah.userId, user.id),
-      eq(setorSampah.kategoriNasabah, user.role),
-      eq(setorSampah.status, "diterima"),
-      gte(setorSampah.tanggalSetor, startOfMonthStr),
-      lte(setorSampah.tanggalSetor, endOfMonthStr),
-    ),
-  });
-
-  const setoranList = records.map((r) => ({
-    jenisSampah: r.jenisSampah,
-    beratKg: r.beratKg,
-  }));
-
-  const wasteMap: Record<string, number> = {};
-  for (const item of setoranList) {
-    wasteMap[item.jenisSampah] =
-      (wasteMap[item.jenisSampah] || 0) + item.beratKg;
-  }
-
-  const dataSampah = Object.entries(wasteMap).map(([jenis, berat]) => ({
-    jenis,
-    beratKg: berat,
-    terlampir: true,
-  }));
-
-  let credit = profile?.kredit ?? 0;
-  if (user.role === "bank-sampah") {
-    credit = await getBankSampahMonthlyCredit(user.id);
+  let ttdPenerimaUrl: string | null = null;
+  if (pencairanAktif) {
+    const doc = await db.query.buktiPembayaran.findFirst({
+      where: eq(buktiPembayaran.pencairanDanaId, pencairanAktif.id),
+    });
+    if (doc) {
+      ttdPenerimaUrl = doc.ttdPenerimaUrl;
+    }
   }
 
   return {
     success: true,
     data: {
-      kredit: credit,
+      kredit,
+      isCurrentMonth,
+      sudahDicairkan: pencairanAktif !== null,
+      pencairanAktif: pencairanAktif
+        ? {
+            id: pencairanAktif.id,
+            jumlah: pencairanAktif.jumlah,
+            status: pencairanAktif.status,
+            metodePembayaran: pencairanAktif.metodePembayaran,
+            createdAt: pencairanAktif.createdAt,
+            keterangan: pencairanAktif.keterangan || "",
+            ttdPenyerahUrl: pencairanAktif.ttdPenyerahUrl || null,
+            ttdPenerimaUrl: ttdPenerimaUrl,
+          }
+        : null,
       jenisBank: profile?.jenisBank || "",
       noRekening: profile?.noRekening || "",
       alamat: profile?.alamat || "",
       noTelepon: profile?.noTelepon || "",
       idPelanggan: `SPK-${String(user.id).padStart(3, "0")}`,
       dataSampah,
-      totalBeratKg: dataSampah.reduce((sum, item) => sum + item.beratKg, 0),
+      totalBeratKg: dataSampah.reduce((s, d) => s + d.beratKg, 0),
       user: {
         id: user.id,
         name: user.name,
@@ -161,12 +162,14 @@ export async function getDisbursementData() {
   };
 }
 
+
+
 export async function requestDisbursement(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "warmiendo" && user.role !== "bank-sampah")) {
+  if (!user || user.role !== "warmiendo") {
     return { success: false, message: "Akses ditolak" };
   }
 
@@ -176,6 +179,15 @@ export async function requestDisbursement(
     (formData.get("metodePembayaran") as string) || "transfer";
   const keterangan = (formData.get("keterangan") as string) || "";
   const ttdPenyerahBase64 = (formData.get("ttdPenyerah") as string) || "";
+
+  const selectedYear = Number.parseInt(
+    (formData.get("selectedYear") as string) || "0",
+    10,
+  );
+  const selectedMonth = Number.parseInt(
+    (formData.get("selectedMonth") as string) || "0",
+    10,
+  );
 
   if (Number.isNaN(jumlah) || jumlah <= 0) {
     return {
@@ -224,21 +236,48 @@ export async function requestDisbursement(
     }
   }
 
-  let credit = profile.kredit;
-  if (user.role === "bank-sampah") {
-    credit = await getBankSampahMonthlyCredit(user.id);
-  }
+  if (selectedYear > 0 && selectedMonth > 0) {
+    const now = new Date();
+    const isCurrentMonth =
+      selectedYear === now.getFullYear() &&
+      selectedMonth === now.getMonth() + 1;
+    if (isCurrentMonth) {
+      return {
+        success: false,
+        message:
+          "Pencairan untuk bulan berjalan belum bisa dilakukan. Silakan ajukan di awal bulan berikutnya.",
+        errors: { _form: ["Bulan berjalan belum bisa dicairkan"] },
+      };
+    }
 
-  if (credit < jumlah) {
-    return {
-      success: false,
-      message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${credit.toLocaleString("id-ID")}`,
-      errors: { jumlah: ["Saldo kredit tidak mencukupi"] },
-    };
+    const existing = await getMonthDisbursement(
+      user.id,
+      selectedYear,
+      selectedMonth,
+    );
+    if (existing) {
+      return {
+        success: false,
+        message: `Pencairan bulan ${selectedMonth}/${selectedYear} sudah pernah dilakukan.`,
+        errors: { _form: ["Bulan ini sudah memiliki pengajuan pencairan"] },
+      };
+    }
+
+    const { kredit } = await calcMonthlyKredit(
+      user.id,
+      selectedYear,
+      selectedMonth,
+    );
+    if (kredit < jumlah) {
+      return {
+        success: false,
+        message: `Kredit bulan ini tidak mencukupi. Total kredit bulan ini Rp ${kredit.toLocaleString("id-ID")}`,
+        errors: { jumlah: ["Kredit bulan ini tidak mencukupi"] },
+      };
+    }
   }
 
   try {
-    // 1. Upload mitra TTD to R2
     const uuid = randomUUID();
     const ttdPenyerahUrl = await uploadImageToR2(
       ttdPenyerahBase64,
@@ -246,18 +285,10 @@ export async function requestDisbursement(
       `${user.id}-${uuid}`,
     );
 
-    // 2. Deduct from user credit (skip for bank-sampah role)
-    if (user.role !== "bank-sampah") {
-      await db
-        .update(nasabah)
-        .set({
-          kredit: sql`${nasabah.kredit} - ${jumlah}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.id, user.id));
-    }
+    const now = new Date();
+    const finalMonth = selectedMonth > 0 ? selectedMonth : now.getMonth() + 1;
+    const finalYear = selectedYear > 0 ? selectedYear : now.getFullYear();
 
-    // 3. Insert disbursement log
     await db.insert(pencairanDana).values({
       userId: user.id,
       jumlah,
@@ -269,6 +300,8 @@ export async function requestDisbursement(
       metodePembayaran,
       keterangan: keterangan || null,
       ttdPenyerahUrl,
+      periodeBulan: finalMonth,
+      periodeTahun: finalYear,
     });
 
     revalidatePath("/ajukan-pencairan-dana/warmiendo-pencairan");

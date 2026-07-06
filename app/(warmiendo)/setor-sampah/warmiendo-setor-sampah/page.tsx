@@ -1008,9 +1008,6 @@ export default function WarmiendoSetorSampah() {
                         >
                           {item.status}
                         </span>
-                        <span className="text-xs font-bold text-primary-600">
-                          {`+Rp ${(item.totalKredit ?? 0).toLocaleString("id-ID")}`}
-                        </span>
                       </div>
                     </div>
                   </div>

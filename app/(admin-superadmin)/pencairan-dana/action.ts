@@ -457,7 +457,7 @@ export async function rejectDisbursement(
       where: eq(nasabah.id, request.userId),
     });
 
-    if (targetUser && targetUser.role !== "bank-sampah") {
+    if (targetUser && targetUser.role !== "bank-sampah" && targetUser.role !== "warmiendo") {
       await db
         .update(nasabah)
         .set({

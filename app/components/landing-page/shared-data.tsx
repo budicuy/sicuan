@@ -136,7 +136,7 @@ export const FAQS = [
   },
   {
     q: "Bagaimana cara kerja penukaran poin konsumen?",
-    a: "Setiap kilogram sampah anorganik yang Anda setorkan akan bernilai poin. Poin tersebut diakumulasikan dalam akun Anda. Setelah mencapai batas minimal tertentu (Tier Bronze: 100 Poin), Anda bisa langsung menukarkannya dengan kupon potongan harga belanja produk makanan langsung di aplikasi.",
+    a: "Setiap kilogram sampah anorganik yang Anda setorkan akan bernilai poin. Poin tersebut diakumulasikan dalam akun Anda. Setelah mencapai batas minimal tertentu, Anda bisa langsung menukarkannya dengan kupon potongan harga belanja produk makanan langsung di aplikasi.",
   },
   {
     q: "Berapa lama proses pencairan saldo Warmiendo dan Bank Sampah?",

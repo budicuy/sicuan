@@ -265,9 +265,7 @@ export default function LaporanWarmiendoPage() {
     {
       header: "Reward",
       render: (item: SetorSampahItem) => (
-        <span className="font-bold text-primary-600">
-          +Rp {(item.totalKredit ?? 0).toLocaleString("id-ID")}
-        </span>
+        <span className="font-medium text-neutral-400">-</span>
       ),
     },
     {
@@ -532,7 +530,7 @@ export default function LaporanWarmiendoPage() {
       </div>
 
       {/* Rangkuman Kartu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 print:grid-cols-3 print:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 print:grid-cols-2 print:gap-4">
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
             Total Setoran
@@ -554,15 +552,6 @@ export default function LaporanWarmiendoPage() {
             <span className="text-sm font-semibold text-primary-400 ml-1">
               kg
             </span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
-          <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-            Total Kredit Diperoleh
-          </div>
-          <div className="text-3xl font-extrabold text-emerald-600">
-            Rp <AnimatedCounter value={totalKredit} />
           </div>
         </div>
       </div>
@@ -621,8 +610,8 @@ export default function LaporanWarmiendoPage() {
                 </td>
                 <td className="p-3 border">{item.jenisSampah}</td>
                 <td className="p-3 border">{item.beratKg} kg</td>
-                <td className="p-3 border text-primary-600">
-                  Rp {(item.totalKredit ?? 0).toLocaleString("id-ID")}
+                <td className="p-3 border text-neutral-400">
+                  -
                 </td>
                 <td className="p-3 border">
                   {formatTanggal(item.tanggalSetor)}
@@ -733,9 +722,8 @@ export default function LaporanWarmiendoPage() {
                   <span className="text-neutral-500 block text-xs">
                     Reward diperoleh
                   </span>
-                  <span className="font-bold text-neutral-800 text-lg">
-                    +Rp{" "}
-                    {(selectedItem.totalKredit ?? 0).toLocaleString("id-ID")}
+                  <span className="font-bold text-neutral-400 text-lg">
+                    -
                   </span>
                 </div>
                 <div>

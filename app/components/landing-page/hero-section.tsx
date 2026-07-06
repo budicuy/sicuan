@@ -162,8 +162,10 @@ export function HeroSection() {
               transition={{ duration: 0.8, delay: 0.15, ease: "easeOut" }}
               className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.1]"
             >
-              Ubah Sampah <span className="text-primary-600">Anorganik</span>{" "}
-              Jadi Nilai Ekonomi
+              Sistem Informasi
+              <span className="text-blue-600"> Cerdas </span>
+              Ubah <span className="text-primary-600">Anorganik</span> Jadi
+              <span className="text-yellow-500"> Nilai</span>
             </motion.h1>
 
             {/* Description */}
