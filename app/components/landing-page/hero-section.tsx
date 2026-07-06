@@ -212,9 +212,7 @@ export function HeroSection() {
             >
               <div>
                 <h4 className="text-xl font-bold text-primary-950">100%</h4>
-                <p className="text-xs text-neutral-500">
-                  Transparan &amp; Real-time
-                </p>
+                <p className="text-xs text-neutral-500">Aman & Terpercaya</p>
               </div>
               <div>
                 <h4 className="text-xl font-bold text-primary-950">Rp 0</h4>
