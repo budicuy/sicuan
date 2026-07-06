@@ -50,7 +50,7 @@ export default function LaporanWarmiendoPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalBerat, setTotalBerat] = useState(0);
   const [_totalPoin, setTotalPoin] = useState(0);
-  const [totalKredit, setTotalKredit] = useState(0);
+  const [_totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Table pagination state
@@ -264,7 +264,7 @@ export default function LaporanWarmiendoPage() {
     },
     {
       header: "Reward",
-      render: (item: SetorSampahItem) => (
+      render: (_item: SetorSampahItem) => (
         <span className="font-medium text-neutral-400">-</span>
       ),
     },
@@ -610,9 +610,7 @@ export default function LaporanWarmiendoPage() {
                 </td>
                 <td className="p-3 border">{item.jenisSampah}</td>
                 <td className="p-3 border">{item.beratKg} kg</td>
-                <td className="p-3 border text-neutral-400">
-                  -
-                </td>
+                <td className="p-3 border text-neutral-400">-</td>
                 <td className="p-3 border">
                   {formatTanggal(item.tanggalSetor)}
                 </td>
@@ -722,9 +720,7 @@ export default function LaporanWarmiendoPage() {
                   <span className="text-neutral-500 block text-xs">
                     Reward diperoleh
                   </span>
-                  <span className="font-bold text-neutral-400 text-lg">
-                    -
-                  </span>
+                  <span className="font-bold text-neutral-400 text-lg">-</span>
                 </div>
                 <div>
                   <span className="text-neutral-500 block text-xs">

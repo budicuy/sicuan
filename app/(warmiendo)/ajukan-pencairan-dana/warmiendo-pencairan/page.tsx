@@ -128,7 +128,8 @@ export default function PencairanDanaPage() {
   const [customAmount, setCustomAmount] = useState("");
   const [metode, setMetode] = useState<MetodePembayaran>("transfer");
   const [keterangan, setKeterangan] = useState("");
-  const [kategoriSumber, _setKategoriSumber] = useState<KategoriSumber>("tps-3r");
+  const [kategoriSumber, _setKategoriSumber] =
+    useState<KategoriSumber>("tps-3r");
   const [ttdBase64, setTtdBase64] = useState<string | null>(null);
   const [ttdError, setTtdError] = useState("");
   const [isCompressingTtd, setIsCompressingTtd] = useState(false);

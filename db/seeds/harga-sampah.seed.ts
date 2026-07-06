@@ -1,21 +1,10 @@
 import { db } from "@/db";
-import { hargaSampah, poinSampah } from "@/db/schema";
+import { hargaSampah } from "@/db/schema";
 
 export async function seedHargaSampah() {
-  console.log("🌱 Seeding range harga sampah & master poin...");
+  console.log("🌱 Seeding range harga sampah...");
 
-  // 1. Seed Master Poin
-  const poinData = [
-    { jenisSampah: "Paper Cup", pointPerKg: 30 },
-    { jenisSampah: "Etiket", pointPerKg: 25 },
-    { jenisSampah: "Karton", pointPerKg: 20 },
-  ];
-
-  await db.delete(poinSampah);
-  await db.insert(poinSampah).values(poinData);
-  console.log("✅ Seeded poin_sampah successfully");
-
-  // 2. Seed Harga Sampah (Range)
+  // Seed Harga Sampah (Range)
   // Karton:
   // - 1 s/d 5 kg: 20000
   // - 5 s/d 10 kg: 45000

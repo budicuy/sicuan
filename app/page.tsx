@@ -14,7 +14,7 @@ import { Navbar } from "@/app/components/landing-page/navbar";
 import { ScrollProgress } from "@/app/components/landing-page/ScrollProgress";
 import { TRASH_TYPES } from "@/app/components/landing-page/shared-data";
 import { SplashScreen } from "@/app/components/landing-page/splash-screen";
-import { StatsBar } from "@/app/components/landing-page/stats-bar";
+// import { StatsBar } from "@/app/components/landing-page/stats-bar";
 
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
@@ -51,7 +51,7 @@ export default function Home() {
   }, [calcRole, calcTrash, calcWeight]);
 
   // Live stats animation
-  const [stats, setStats] = useState({
+  const [_stats, setStats] = useState({
     recycled: 12450,
     rewards: 37350000,
     partners: 142,
@@ -88,7 +88,7 @@ export default function Home() {
             setMobileMenuOpen={setMobileMenuOpen}
           />
           <HeroSection />
-          <StatsBar stats={stats} />
+          {/* <StatsBar stats={stats} /> */}
           <FeaturesSection />
           <MitraSection
             activeRoleTab={activeRoleTab}

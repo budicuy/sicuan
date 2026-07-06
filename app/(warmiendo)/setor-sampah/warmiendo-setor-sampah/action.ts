@@ -119,7 +119,9 @@ export async function updateSetorSampahStatus(
       .update(nasabah)
       .set({
         poin: sql`${nasabah.poin} + ${totalPoin}`,
-        ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
+        ...(isWarmiendo
+          ? {}
+          : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, item.userId));
@@ -573,7 +575,9 @@ export async function submitSetorSampah(
         .update(nasabah)
         .set({
           poin: sql`${nasabah.poin} + ${totalPoin}`,
-          ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
+          ...(isWarmiendo
+            ? {}
+            : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, user.id));
@@ -702,7 +706,9 @@ export async function bankSampahTerimaSetoran(
       .update(nasabah)
       .set({
         poin: sql`${nasabah.poin} + ${totalPoin}`,
-        ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
+        ...(isWarmiendo
+          ? {}
+          : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, item.userId));
@@ -1062,7 +1068,9 @@ export async function createSetorSampah(
         .update(nasabah)
         .set({
           poin: sql`${nasabah.poin} + ${totalPoin}`,
-          ...(isWarmiendo ? {} : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
+          ...(isWarmiendo
+            ? {}
+            : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, user.id));
