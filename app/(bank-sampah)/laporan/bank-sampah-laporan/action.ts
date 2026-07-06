@@ -233,7 +233,7 @@ export async function readWeightAndVerify(
       success: true,
       message: isMatch
         ? "Verifikasi AI sukses. Hasil timbangan cocok."
-        : "Verifikasi AI sukses, tetapi timbangan melebihi toleransi.",
+        : "Verifikasi AI sukses, tetapi timbangan tidak cocok dengan input.",
       weightFromAi: aiWeight,
       isMatch,
     };
@@ -868,7 +868,7 @@ export async function validateFotoTimbangan(
     return {
       success: false,
       berat: aiResult.berat,
-      message: `Berat yang terdeteksi tidak sesuai dengan input berat. Terdeteksi ${aiResult.berat} kg, namun Anda menginput ${beratInputKg} kg (toleransi ±200 gram). Silakan upload ulang gambar bukti timbangan yang jelas.`,
+      message: `Berat yang terdeteksi tidak sesuai dengan input berat. Terdeteksi ${aiResult.berat} kg, namun Anda menginput ${beratInputKg} kg. Silakan upload ulang gambar bukti timbangan yang jelas.`,
     };
   }
 

@@ -92,6 +92,12 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
       },
       {
         type: "link",
+        href: "/setor-sampah/terima-setoran-warmiendo",
+        label: "Terima Setoran Warmiendo",
+        icon: "Truck",
+      },
+      {
+        type: "link",
         href: "/ajukan-pencairan-dana/bank-sampah-pencairan",
         label: "Pencairan Dana",
         icon: "Coins",

@@ -94,14 +94,14 @@ export async function readWeightFromImage(
 
 /**
  * Validasi apakah berat dari AI sesuai dengan input user.
- * Toleransi: ±0.2 kg (200 gram) sesuai ketentuan.
+ * Tanpa toleransi, berat harus sama persis antara yang diinput dan yang dibaca AI.
  * @param beratUser  - berat yang diinput user (kg)
  * @param beratAi    - berat yang dibaca AI dari foto (kg)
- * @returns true jika selisih ≤ 0.2 kg
+ * @returns true jika berat sama persis
  */
 export async function validateBeratTolerance(
   beratUser: number,
   beratAi: number,
 ): Promise<boolean> {
-  return Math.abs(beratUser - beratAi) <= 0.2; // 200 gram toleransi
+  return beratUser === beratAi;
 }

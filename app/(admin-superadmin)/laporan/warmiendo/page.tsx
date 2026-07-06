@@ -928,7 +928,7 @@ export default function LaporanWarmiendoPage() {
                             ) : (
                               <CheckCircle2 className="w-3.5 h-3.5" />
                             )}
-                            Konfirmasi Sampah Diterima &amp; Cairkan Saldo
+                            Konfirmasi Sampah Diterima
                           </button>
                           <button
                             type="button"

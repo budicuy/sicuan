@@ -205,7 +205,7 @@ export default function KonsumenSetorSampah() {
   const [isValidatingAI, setIsValidatingAI] = useState(false);
   const [aiValidated, setAiValidated] = useState(false);
   const [beratAiKg, setBeratAiKg] = useState<number | null>(null);
-  const [aiError, setAiError] = useState("");
+  const [_aiError, setAiError] = useState("");
   const [requestManual, setRequestManual] = useState(false);
 
   const [fotoBuktiList, setFotoBuktiList] = useState<string[]>([]);
@@ -308,7 +308,11 @@ export default function KonsumenSetorSampah() {
     if (!fotoTimbangan) return;
     const beratNum = Number.parseFloat(beratKg);
     if (Number.isNaN(beratNum) || beratNum <= 0) {
-      setAiError("Isi berat (kg) terlebih dahulu sebelum validasi.");
+      showFeedback(
+        "error",
+        "Validasi Gagal",
+        "Isi berat (kg) terlebih dahulu sebelum validasi.",
+      );
       return;
     }
 
@@ -324,8 +328,8 @@ export default function KonsumenSetorSampah() {
       setAiValidated(true);
       setBeratAiKg(result.berat);
     } else {
-      setAiError(result.message);
       setBeratAiKg(null);
+      showFeedback("error", "Validasi Gagal", result.message);
     }
   };
 
@@ -575,13 +579,6 @@ export default function KonsumenSetorSampah() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {aiError && (
-                          <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
-                            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                            <p className="text-xs text-red-600">{aiError}</p>
-                          </div>
-                        )}
-
                         <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200">
                           <input
                             type="checkbox"

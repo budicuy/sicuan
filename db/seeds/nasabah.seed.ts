@@ -117,7 +117,7 @@ export async function seedNasabah() {
       alamat: null,
       jenisBank: null,
       noRekening: null,
-      poin: 200, // 700 earned - 500 redeemed
+      poin: 0,
       kredit: 0,
       latitude: -3.32,
       longitude: 114.593,
@@ -136,7 +136,7 @@ export async function seedNasabah() {
       jenisBank: null,
       noRekening: null,
       poin: 0,
-      kredit: 50000, // 115000 earned - 65000 withdrawn
+      kredit: 0,
       latitude: -3.32426,
       longitude: 114.59102,
     },
@@ -154,7 +154,7 @@ export async function seedNasabah() {
       jenisBank: "BCA",
       noRekening: "1234567890",
       poin: 0,
-      kredit: 40000, // 90000 earned - 50000 withdrawn
+      kredit: 0,
       latitude: -3.29826,
       longitude: 114.58602,
     },

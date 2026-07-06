@@ -16,6 +16,7 @@ import {
   Settings,
   ShoppingBag,
   Star,
+  Truck,
   User,
   Users,
   X,
@@ -39,6 +40,7 @@ const IconMap: Record<string, LucideIcon> = {
   Star,
   BookOpen,
   Map: MapIcon,
+  Truck,
 };
 
 function getIcon(name: string): LucideIcon {

@@ -113,12 +113,15 @@ export async function updateSetorSampahStatus(
       depositor?.role ?? "konsumen",
     );
 
-    // Update nasabah balance directly
+    // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
+    const isWarmiendo = depositor?.role === "warmiendo";
     await db
       .update(nasabah)
       .set({
         poin: sql`${nasabah.poin} + ${totalPoin}`,
-        kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+        ...(isWarmiendo
+          ? {}
+          : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, item.userId));
@@ -233,7 +236,7 @@ export async function readWeightAndVerify(
       success: true,
       message: isMatch
         ? "Verifikasi AI sukses. Hasil timbangan cocok."
-        : "Verifikasi AI sukses, tetapi timbangan melebihi toleransi.",
+        : "Verifikasi AI sukses, tetapi timbangan tidak cocok dengan input.",
       weightFromAi: aiWeight,
       isMatch,
     };
@@ -566,12 +569,15 @@ export async function submitSetorSampah(
     await db.insert(setorSampah).values(baseValues);
 
     if (!isPending) {
-      // Update nasabah balance directly
+      // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
+      const isWarmiendo = user.role === "warmiendo";
       await db
         .update(nasabah)
         .set({
           poin: sql`${nasabah.poin} + ${totalPoin}`,
-          kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+          ...(isWarmiendo
+            ? {}
+            : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, user.id));
@@ -694,12 +700,15 @@ export async function bankSampahTerimaSetoran(
       depositor?.role ?? "warmiendo",
     );
 
-    // Update saldo nasabah Warmiendo
+    // Update saldo nasabah Warmiendo (skip credit since it's accumulated monthly)
+    const isWarmiendo = depositor?.role === "warmiendo";
     await db
       .update(nasabah)
       .set({
         poin: sql`${nasabah.poin} + ${totalPoin}`,
-        kredit: sql`${nasabah.kredit} + ${totalKredit}`,
+        ...(isWarmiendo
+          ? {}
+          : { kredit: sql`${nasabah.kredit} + ${totalKredit}` }),
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, item.userId));
@@ -868,7 +877,7 @@ export async function validateFotoTimbangan(
     return {
       success: false,
       berat: aiResult.berat,
-      message: `Berat yang terdeteksi tidak sesuai dengan input berat. Terdeteksi ${aiResult.berat} kg, namun Anda menginput ${beratInputKg} kg (toleransi ±200 gram). Silakan upload ulang gambar bukti timbangan yang jelas.`,
+      message: `Berat yang terdeteksi tidak sesuai dengan input berat. Terdeteksi ${aiResult.berat} kg, namun Anda menginput ${beratInputKg} kg. Silakan upload ulang gambar bukti timbangan yang jelas.`,
     };
   }
 

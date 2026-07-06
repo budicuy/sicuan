@@ -18,7 +18,7 @@ export function FeedbackModal({
   type,
   title,
   message,
-  autoCloseMs = 3000,
+  autoCloseMs = 0,
 }: FeedbackModalProps) {
   useEffect(() => {
     if (isOpen && autoCloseMs > 0) {
