@@ -2,8 +2,8 @@
 
 import { AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
+import { AboutSection } from "@/app/components/landing-page/about-section";
 import { AlurSection } from "@/app/components/landing-page/alur-section";
-import { CalculatorSection } from "@/app/components/landing-page/calculator-section";
 import { FaqSection } from "@/app/components/landing-page/faq-section";
 import { FeaturesSection } from "@/app/components/landing-page/features-section";
 import { Footer } from "@/app/components/landing-page/footer";
@@ -35,10 +35,10 @@ export default function Home() {
   }, []);
 
   // Calculator state
-  const [calcRole, setCalcRole] = useState("konsumen");
-  const [calcTrash, setCalcTrash] = useState("plastik");
-  const [calcWeight, setCalcWeight] = useState(10);
-  const [calcResult, setCalcResult] = useState({ points: 0, cash: 0 });
+  const [calcRole, _setCalcRole] = useState("konsumen");
+  const [calcTrash, _setCalcTrash] = useState("plastik");
+  const [calcWeight, _setCalcWeight] = useState(10);
+  const [_calcResult, setCalcResult] = useState({ points: 0, cash: 0 });
 
   useEffect(() => {
     const selectedTrash = TRASH_TYPES.find((t) => t.id === calcTrash);
@@ -89,12 +89,13 @@ export default function Home() {
           />
           <HeroSection />
           {/* <StatsBar stats={stats} /> */}
+          <AboutSection />
           <FeaturesSection />
           <MitraSection
             activeRoleTab={activeRoleTab}
             setActiveRoleTab={setActiveRoleTab}
           />
-          <CalculatorSection
+          {/* <CalculatorSection
             calcRole={calcRole}
             setCalcRole={setCalcRole}
             calcTrash={calcTrash}
@@ -102,7 +103,7 @@ export default function Home() {
             calcWeight={calcWeight}
             setCalcWeight={setCalcWeight}
             calcResult={calcResult}
-          />
+          /> */}
           <AlurSection />
           <LoginSection />
           <FaqSection faqOpen={faqOpen} setFaqOpen={setFaqOpen} />

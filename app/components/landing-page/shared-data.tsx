@@ -93,7 +93,7 @@ export const ROLES = [
     rewardDesc:
       "Dapatkan saldo Rupiah yang dapat dicairkan langsung ke rekening bank terdaftar atau dompet digital Anda.",
     actionText: "Hubungi Kontak Admin",
-    actionHref: "mailto:info@sicuan.id",
+    actionHref: "mailto:sicuan2026@gmail.com",
     features: [
       "Metode setor langsung atau via ekspedisi rekanan",
       "Biaya ongkos kirim ekspedisi disubsidi sistem",
@@ -110,7 +110,7 @@ export const ROLES = [
     rewardDesc:
       "Dapatkan konversi harga khusus per tonase sampah serta insentif pengelolaan lingkungan.",
     actionText: "Hubungi Kontak Admin",
-    actionHref: "mailto:info@sicuan.id",
+    actionHref: "mailto:sicuan2026@gmail.com",
     features: [
       "Pencatatan volume sampah TPS terintegrasi",
       "Penjemputan terjadwal oleh truk logistik perusahaan",

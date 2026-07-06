@@ -11,9 +11,10 @@ interface NavbarProps {
 }
 
 const NAV_LINKS = [
+  { href: "#tentang-kami", label: "Tentang Kami" },
   { href: "#fitur", label: "Fitur Utama" },
   { href: "#mitra", label: "Skema Kemitraan" },
-  { href: "#kalkulator", label: "Kalkulator Reward" },
+  // { href: "#kalkulator", label: "Kalkulator Reward" },
   { href: "#alur", label: "Alur Setoran" },
   { href: "#faq", label: "FAQ" },
 ];

@@ -38,11 +38,22 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary-500" />
-                <span>(0511) 3254924 (Jam Operasional 07:00 - 17:00 WITA)</span>
+                <a
+                  href="tel:+6282251510087"
+                  className="hover:text-white transition-colors"
+                >
+                  +62 822-5151-0087
+                </a>
+                <span>(Jam Operasional 07:00 - 17:00 WITA)</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary-500" />
-                <span>info@sicuan.id</span>
+                <a
+                  href="mailto:sicuan2026@gmail.com"
+                  className="hover:text-white transition-colors"
+                >
+                  sicuan2026@gmail.com
+                </a>
               </div>
             </div>
           </div>
@@ -79,12 +90,6 @@ export function Footer() {
               ESG nasional, mengurangi sampah anorganik sekali pakai dari
               kemasan plastik produk kami.
             </p>
-            <div className="bg-primary-900 border border-primary-800 rounded-xl p-3.5 text-[10px] text-primary-200">
-              <span>
-                Terverifikasi Sistem Mutu &amp; Standar Keamanan Data
-                Perusahaan.
-              </span>
-            </div>
           </div>
         </div>
 
@@ -94,14 +99,6 @@ export function Footer() {
             &copy; {new Date().getFullYear()} SICUAN Banjarmasin. All rights
             reserved.
           </span>
-          <div className="flex gap-6">
-            <a href="#fitur" className="hover:text-white transition-colors">
-              Kebijakan Privasi
-            </a>
-            <a href="#fitur" className="hover:text-white transition-colors">
-              Syarat &amp; Ketentuan
-            </a>
-          </div>
         </div>
       </div>
     </footer>
