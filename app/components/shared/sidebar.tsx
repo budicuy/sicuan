@@ -188,16 +188,18 @@ export function SidebarLayout({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
-                    />
-                    <span>{item.label}</span>
+                    <div className="relative">
+                      <Icon
+                        className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                      />
+                      {item.badgeCount && item.badgeCount > 0 ? (
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-extrabold min-w-4 h-4 px-1 flex items-center justify-center rounded-full shrink-0">
+                          {item.badgeCount}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="whitespace-nowrap">{item.label}</span>
                   </div>
-                  {item.badgeCount && item.badgeCount > 0 ? (
-                    <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0">
-                      {item.badgeCount}
-                    </span>
-                  ) : null}
                 </Link>
               );
             }
@@ -213,22 +215,24 @@ export function SidebarLayout({
                 <button
                   type="button"
                   onClick={() => toggleSection(item.label)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all border-0 cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all border-0 cursor-pointer text-left ${
                     isSectionActive
                       ? "bg-neutral-50/80 text-primary-700 font-semibold"
                       : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <SecIcon
-                      className={`w-4.5 h-4.5 shrink-0 ${isSectionActive ? "text-primary-600" : "text-neutral-400"}`}
-                    />
-                    <span>{item.label}</span>
-                    {item.badgeCount && item.badgeCount > 0 ? (
-                      <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 animate-pulse">
-                        {item.badgeCount}
-                      </span>
-                    ) : null}
+                    <div className="relative">
+                      <SecIcon
+                        className={`w-4.5 h-4.5 shrink-0 ${isSectionActive ? "text-primary-600" : "text-neutral-400"}`}
+                      />
+                      {item.badgeCount && item.badgeCount > 0 ? (
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-extrabold min-w-4 h-4 px-1 flex items-center justify-center rounded-full shrink-0">
+                          {item.badgeCount}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="whitespace-nowrap">{item.label}</span>
                   </div>
                   <ChevronDown
                     className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -252,16 +256,20 @@ export function SidebarLayout({
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon
-                              className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
-                            />
-                            <span>{sub.label}</span>
-                          </div>
-                          {sub.badgeCount && sub.badgeCount > 0 ? (
-                            <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0">
-                              {sub.badgeCount}
+                            <div className="relative">
+                              <Icon
+                                className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                              />
+                              {sub.badgeCount && sub.badgeCount > 0 ? (
+                                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[7px] font-extrabold min-w-3.5 h-3.5 px-0.5 flex items-center justify-center rounded-full shrink-0">
+                                  {sub.badgeCount}
+                                </span>
+                              ) : null}
+                            </div>
+                            <span className="whitespace-nowrap">
+                              {sub.label}
                             </span>
-                          ) : null}
+                          </div>
                         </Link>
                       );
                     })}
@@ -293,7 +301,7 @@ export function SidebarLayout({
               <Icon
                 className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
               />
-              {item.label}
+              <span className="whitespace-nowrap">{item.label}</span>
             </Link>
           );
         })}
@@ -311,7 +319,7 @@ export function SidebarLayout({
               <button
                 type="button"
                 onClick={() => toggleSection(sec.label)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all border-0 cursor-pointer ${
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all border-0 cursor-pointer text-left ${
                   isSectionActive
                     ? "bg-neutral-50/80 text-primary-700 font-semibold"
                     : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
@@ -321,7 +329,7 @@ export function SidebarLayout({
                   <SecIcon
                     className={`w-4.5 h-4.5 shrink-0 ${isSectionActive ? "text-primary-600" : "text-neutral-400"}`}
                   />
-                  <span>{sec.label}</span>
+                  <span className="whitespace-nowrap">{sec.label}</span>
                 </div>
                 <ChevronDown
                   className={`w-4.5 h-4.5 text-neutral-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -347,7 +355,7 @@ export function SidebarLayout({
                         <Icon
                           className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
                         />
-                        {item.label}
+                        <span className="whitespace-nowrap">{item.label}</span>
                       </Link>
                     );
                   })}
@@ -440,7 +448,7 @@ export function SidebarLayout({
       </div>
 
       {/* DESKTOP PERMANENT SIDEBAR */}
-      <aside className="hidden lg:flex flex-col justify-between w-64 bg-white text-neutral-800 p-6 shrink-0 fixed top-0 bottom-0 left-0 border-r border-neutral-200 shadow-xs">
+      <aside className="hidden lg:flex flex-col justify-between w-72 bg-white text-neutral-800 p-6 shrink-0 fixed top-0 bottom-0 left-0 border-r border-neutral-200 shadow-xs">
         <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
           <div className="flex items-center gap-2 mb-8 shrink-0">
             <div className="w-10 h-10 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shadow-xs">
@@ -494,7 +502,7 @@ export function SidebarLayout({
       </aside>
 
       {/* MAIN DASHBOARD CONTENT AREA */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
+      <div className="flex-1 lg:pl-72 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-[1010] shadow-xs lg:hidden">
           <div className="flex items-center gap-4">
             <button

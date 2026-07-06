@@ -16,7 +16,7 @@ export function AboutSection() {
           <div className="lg:col-span-6 relative flex items-center justify-center">
             {/* Glow Background */}
             <div
-              className="absolute w-80 h-80 sm:w-110 sm:h-110 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse duration-[8000ms]"
+              className="absolute w-80 h-80 sm:w-110 sm:h-110 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse duration-8000"
               style={{
                 background:
                   "radial-gradient(circle, rgba(22,163,74,0.1) 0%, rgba(34,197,94,0.05) 50%, rgba(255,255,255,0) 75%)",

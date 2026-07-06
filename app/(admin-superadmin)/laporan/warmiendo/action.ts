@@ -864,10 +864,16 @@ export async function validateFotoTimbangan(
   }
 
   if (!aiResult.success) {
+    const isCleanError =
+      aiResult.message === "sampah bukan produk indofood" ||
+      aiResult.message === "sampah harus diletakkan di atas timbangan" ||
+      aiResult.message === "berat sampah tidak logis";
     return {
       success: false,
       berat: 0,
-      message: `${aiResult.message} (Detail: Pastikan API Key GEMINI_API_KEY sudah diset dengan benar di env dan gambar tidak terlalu besar)`,
+      message: isCleanError
+        ? aiResult.message
+        : `${aiResult.message} (Detail: Pastikan API Key GEMINI_API_KEY sudah diset dengan benar di env dan gambar tidak terlalu besar)`,
     };
   }
 

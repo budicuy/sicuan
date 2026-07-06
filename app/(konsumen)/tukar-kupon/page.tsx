@@ -232,7 +232,7 @@ export default function TukarKuponPage() {
       </div>
 
       {/* Points Display Widget */}
-      <div className="bg-linear-to-rrom-orange-500 via-orange-600 to-red-600 rounded-2xl p-5 text-white flex items-center gap-4 shadow-md border border-orange-650 max-w-lg">
+      <div className="bg-linear-to-r from-orange-500 via-orange-600 to-red-600 rounded-2xl p-5 text-white flex items-center gap-4 shadow-md border border-orange-600 max-w-lg">
         <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg text-white">
           <Award className="w-6 h-6 animate-pulse" />
         </div>

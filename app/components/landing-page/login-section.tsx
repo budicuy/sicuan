@@ -10,7 +10,7 @@ export function LoginSection() {
       className="py-24 bg-white border-t border-b border-neutral-200/60 scroll-mt-20 relative"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-linear-to-tr from-primary-900 to-emerald-950 rounded-[2rem] text-white p-8 sm:p-16 relative overflow-hidden shadow-2xl">
+        <div className="bg-linear-to-tr from-primary-900 to-emerald-950 rounded-4xl text-white p-8 sm:p-16 relative overflow-hidden shadow-2xl">
           <div className="absolute right-0 bottom-0 w-80 h-80 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">

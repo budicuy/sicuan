@@ -35,53 +35,9 @@ interface SetorSampahItem {
 
 function addWatermarkToImage(
   imageDataUrl: string,
-  timestamp: Date,
+  _timestamp: Date,
 ): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new window.Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        resolve(imageDataUrl);
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0);
-
-      const timeStr = timestamp.toLocaleString("id-ID", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      });
-
-      const fontSize = Math.max(16, Math.floor(img.width * 0.035));
-      ctx.font = `bold ${fontSize}px Inter, sans-serif`;
-      const padding = fontSize * 0.6;
-      const textWidth = ctx.measureText(timeStr).width;
-      const boxW = textWidth + padding * 2;
-      const boxH = fontSize + padding * 2;
-      const x = img.width - boxW - padding;
-      const y = img.height - boxH - padding;
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-      ctx.beginPath();
-      ctx.roundRect(x, y, boxW, boxH, 6);
-      ctx.fill();
-
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(timeStr, x + padding, y + padding + fontSize * 0.8);
-
-      resolve(canvas.toDataURL("image/jpeg", 0.85));
-    };
-    img.src = imageDataUrl;
-  });
+  return Promise.resolve(imageDataUrl);
 }
 
 function CameraCapture({

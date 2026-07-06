@@ -8,18 +8,45 @@ export interface WeightReadResult {
   message: string;
 }
 
-const PROMPT = `Kamu adalah asisten AI yang bertugas membaca angka berat dari foto timbangan atau timbangan digital.
+const PROMPT = `Kamu adalah asisten AI yang bertugas memvalidasi setoran sampah dan membaca angka berat dari foto timbangan atau timbangan digital.
 
-Analisis gambar ini dan tentukan berat yang tertera dalam satuan kilogram (kg).
+Tugas kamu adalah:
+1. Periksa apakah gambar menampilkan sampah/kemasan/dus/label yang merupakan produk dari Indofood (seperti mie instan Indomie, Pop Mie, Sarimi, Supermi, Sakura, Intermi, atau produk makanan/minuman/snack Indofood lainnya seperti Chitato, Lays, Chiki, dll.). Jika BUKAN merupakan produk Indofood, tolak setoran.
+2. Periksa apakah sampah Indofood tersebut benar-benar diletakkan di atas timbangan/alat timbang (timbangan tidak boleh kosong atau objek sampah tidak berada di atas timbangan). Jika tidak diletakkan di atas timbangan, tolak setoran.
+3. Periksa apakah angka berat yang dibaca dari timbangan masuk akal/logis untuk volume atau jumlah sampah yang terlihat pada gambar (misalnya, satu bungkus plastik kosong atau cup kosong tidak mungkin memiliki berat yang tidak wajar seperti beberapa kg, kecuali tumpukan/volumenya sangat banyak). Jika beratnya tidak logis, tolak setoran.
+4. Jika semua validasi di atas lolos, baca angka berat yang tertera pada timbangan dalam satuan kilogram (kg).
 
 Balas HANYA dalam format JSON berikut (tidak ada teks lain di luar JSON):
+
+Jika sampah BUKAN merupakan produk Indofood:
+{
+  "success": false,
+  "berat": 0,
+  "message": "sampah bukan produk indofood"
+}
+
+Jika objek sampah tidak diletakkan di atas timbangan atau timbangan kosong:
+{
+  "success": false,
+  "berat": 0,
+  "message": "sampah harus diletakkan di atas timbangan"
+}
+
+Jika angka berat yang terdeteksi tidak logis/tidak wajar untuk volume/jumlah sampah yang terlihat:
+{
+  "success": false,
+  "berat": 0,
+  "message": "berat sampah tidak logis"
+}
+
+Jika semua validasi lolos dan kamu berhasil membaca beratnya:
 {
   "success": true,
   "berat": <angka_dalam_kg>,
   "message": "Berat berhasil dibaca dari gambar timbangan."
 }
 
-Jika kamu tidak bisa membaca berat karena gambar buram, tidak jelas, atau tidak ada timbangan:
+Jika semua validasi lolos tetapi kamu tidak bisa membaca berat karena gambar buram, tidak jelas, atau tidak ada timbangan:
 {
   "success": false,
   "berat": 0,

@@ -6,6 +6,7 @@ import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
+import { sendSetoranNotifToAdmins } from "@/app/lib/email";
 import {
   readWeightFromImage,
   validateBeratTolerance,
@@ -855,10 +856,16 @@ export async function validateFotoTimbangan(
   }
 
   if (!aiResult.success) {
+    const isCleanError =
+      aiResult.message === "sampah bukan produk indofood" ||
+      aiResult.message === "sampah harus diletakkan di atas timbangan" ||
+      aiResult.message === "berat sampah tidak logis";
     return {
       success: false,
       berat: 0,
-      message: `${aiResult.message} (Detail: Pastikan API Key GEMINI_API_KEY sudah diset dengan benar di env dan gambar tidak terlalu besar)`,
+      message: isCleanError
+        ? aiResult.message
+        : `${aiResult.message} (Detail: Pastikan API Key GEMINI_API_KEY sudah diset dengan benar di env dan gambar tidak terlalu besar)`,
     };
   }
 
@@ -1051,6 +1058,22 @@ export async function createSetorSampah(
     };
 
     await db.insert(setorSampah).values(baseValues);
+
+    // Kirim notifikasi email ke admin secara asynchronous (fire-and-forget)
+    sendSetoranNotifToAdmins({
+      nomorSetor,
+      nasabahName: user.name,
+      nasabahRole: user.role,
+      jenisSampah,
+      beratKg,
+      tanggalSetor,
+      catatan,
+      status: baseValues.status,
+      fotoTimbanganBase64,
+      fotoBuktiBase64List,
+    }).catch((err) => {
+      console.error("Gagal mengirim email notifikasi setoran ke admin:", err);
+    });
 
     if (!isPending) {
       // Update nasabah balance directly
