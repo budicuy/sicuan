@@ -3,32 +3,13 @@
 import { eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
+import type {
+  MonthlyReportPoint,
+  WeeklyReportPoint,
+  YearlyReportPoint,
+} from "@/app/types";
 import { db } from "@/db";
 import { nasabah, rawMaterial, setorSampah } from "@/db/schema";
-
-export interface WeeklyReportPoint {
-  weekLabel: string;
-  totalRaw: number;
-  totalDeposited: number;
-  totalPct: number;
-  [key: string]: string | number;
-}
-
-export interface MonthlyReportPoint {
-  monthLabel: string;
-  totalRaw: number;
-  totalDeposited: number;
-  totalPct: number;
-  [key: string]: string | number;
-}
-
-export interface YearlyReportPoint {
-  yearLabel: string;
-  totalRaw: number;
-  totalDeposited: number;
-  totalPct: number;
-  [key: string]: string | number;
-}
 
 async function getCurrentUser() {
   try {
@@ -46,9 +27,53 @@ async function getCurrentUser() {
   }
 }
 
-function normalizeCategory(cat: string): "Karton" | "Etiket" | "Paper Cup" {
-  if (cat === "Cup") return "Paper Cup";
-  return cat as "Karton" | "Etiket" | "Paper Cup";
+// ── Helpers: parse date parts ─────────────────────────────────────────────
+
+const getYear = (dateStr: string) => {
+  const parts = dateStr.split("-");
+  return parts.length >= 1 ? Number(parts[0]) : 2026;
+};
+
+const getMonth = (dateStr: string) => {
+  const parts = dateStr.split("-");
+  return parts.length >= 2 ? Number(parts[1]) : 1;
+};
+
+const getDay = (dateStr: string) => {
+  const parts = dateStr.split("-");
+  return parts.length >= 3 ? Number(parts[2]) : 1;
+};
+
+const getWeekIndex = (dateStr: string) => {
+  const day = getDay(dateStr);
+  return Math.min(5, Math.floor((day - 1) / 7) + 1);
+};
+
+// ── Helper: hitung total berat (kg) dari satu baris raw material per kategori
+
+interface RawRow {
+  id: number;
+  periode: string;
+  etiketNnGram: number;
+  etiketGnGram: number;
+  etiketCnGram: number;
+  kartonNnGram: number;
+  kartonGnGram: number;
+  kartonCnGram: number;
+  cupCnGram: number;
+}
+
+function etiketKg(r: RawRow) {
+  return (r.etiketNnGram + r.etiketGnGram + r.etiketCnGram) / 1000;
+}
+function kartonKg(r: RawRow) {
+  return (r.kartonNnGram + r.kartonGnGram + r.kartonCnGram) / 1000;
+}
+function cupKg(r: RawRow) {
+  return r.cupCnGram / 1000;
+}
+function totalKg(r: RawRow) {
+  return etiketKg(r) + kartonKg(r) + cupKg(r);
 }
 
 export async function getRawMaterialReport(
@@ -63,15 +88,29 @@ export async function getRawMaterialReport(
     );
   }
 
-  // 1. Fetch raw materials and waste deposits in parallel (Optimal Queries)
+  const TARGET_YEAR = targetYear ?? 2026;
+  const TARGET_MONTH = targetMonth ?? 6;
+  const TARGET_WEEK = targetWeek ?? 1;
+
+  const categories: ("Karton" | "Etiket" | "Paper Cup")[] = [
+    "Karton",
+    "Etiket",
+    "Paper Cup",
+  ];
+
+  // 1. Fetch raw materials and waste deposits in parallel
   const [rawRows, setoranRows] = await Promise.all([
     db
       .select({
         id: rawMaterial.id,
         periode: rawMaterial.periode,
-        kategori: rawMaterial.kategori,
-        klasifikasi: rawMaterial.klasifikasi,
-        beratKg: rawMaterial.beratKg,
+        etiketNnGram: rawMaterial.etiketNnGram,
+        etiketGnGram: rawMaterial.etiketGnGram,
+        etiketCnGram: rawMaterial.etiketCnGram,
+        kartonNnGram: rawMaterial.kartonNnGram,
+        kartonGnGram: rawMaterial.kartonGnGram,
+        kartonCnGram: rawMaterial.kartonCnGram,
+        cupCnGram: rawMaterial.cupCnGram,
       })
       .from(rawMaterial),
     db
@@ -88,7 +127,6 @@ export async function getRawMaterialReport(
       .where(eq(setorSampah.status, "diterima")),
   ]);
 
-  // Combine all deposits
   const allDeposits = setoranRows.map((r) => ({
     beratKg: r.beratKg,
     jenisSampah: r.jenisSampah,
@@ -103,42 +141,7 @@ export async function getRawMaterialReport(
           : "Bank Sampah",
   }));
 
-  // ── Helper: parse date day of month
-  const getDay = (dateStr: string) => {
-    const parts = dateStr.split("-");
-    return parts.length >= 3 ? Number(parts[2]) : 1;
-  };
-
-  // ── Helper: parse date month (1-indexed)
-  const getMonth = (dateStr: string) => {
-    const parts = dateStr.split("-");
-    return parts.length >= 2 ? Number(parts[1]) : 1;
-  };
-
-  // ── Helper: parse date year
-  const getYear = (dateStr: string) => {
-    const parts = dateStr.split("-");
-    return parts.length >= 1 ? Number(parts[0]) : 2026;
-  };
-
-  // ── Helper: get week index (1 to 5)
-  const getWeekIndex = (dateStr: string) => {
-    const day = getDay(dateStr);
-    return Math.min(5, Math.floor((day - 1) / 7) + 1);
-  };
-
-  // 2. Filter data for report calculations based on inputs
-  const TARGET_YEAR = targetYear ?? 2026;
-  const TARGET_MONTH = targetMonth ?? 6; // June
-  const TARGET_WEEK = targetWeek ?? 1;
-
-  const categories: ("Karton" | "Etiket" | "Paper Cup")[] = [
-    "Karton",
-    "Etiket",
-    "Paper Cup",
-  ];
-
-  // Rankings helper
+  // ── Rankings helper ───────────────────────────────────────────────────────
   const getRankings = (depositsList: typeof allDeposits, role: string) => {
     const roleFiltered = depositsList.filter((d) => d.source === role);
     const userWeightMap: Record<number, { name: string; weight: number }> = {};
@@ -164,15 +167,15 @@ export async function getRawMaterialReport(
       .slice(0, 3);
   };
 
-  // Generic helper to compute report for a given time period
+  // ── Generic helper: hitung laporan untuk filter raw + deposit tertentu ───
   const getReportForFilter = (
     filterRawFn: (r: (typeof rawRows)[number]) => boolean,
     filterDepFn: (d: (typeof allDeposits)[number]) => boolean,
   ) => {
-    const filteredRaw = rawRows.filter(filterRawFn);
+    const filteredRaw = rawRows.filter(filterRawFn) as RawRow[];
     const filteredDeposits = allDeposits.filter(filterDepFn);
 
-    const totalRawWeight = filteredRaw.reduce((sum, r) => sum + r.beratKg, 0);
+    const totalRawWeight = filteredRaw.reduce((sum, r) => sum + totalKg(r), 0);
     const totalDepositedWeight = filteredDeposits.reduce(
       (sum, d) => sum + d.beratKg,
       0,
@@ -181,14 +184,16 @@ export async function getRawMaterialReport(
       totalRawWeight > 0 ? (totalDepositedWeight / totalRawWeight) * 100 : 0;
 
     const byCategory = categories.map((cat) => {
-      const catRaw = filteredRaw.filter(
-        (r) => normalizeCategory(r.kategori) === cat,
-      );
+      // Hitung berat raw per kategori langsung dari kolom flat
+      const rawWeight = filteredRaw.reduce((sum, r) => {
+        if (cat === "Etiket") return sum + etiketKg(r);
+        if (cat === "Karton") return sum + kartonKg(r);
+        return sum + cupKg(r); // Paper Cup
+      }, 0);
+
       const catDeposited = filteredDeposits.filter(
         (d) => d.jenisSampah === cat,
       );
-
-      const rawWeight = catRaw.reduce((sum, r) => sum + r.beratKg, 0);
       const depositedWeight = catDeposited.reduce(
         (sum, d) => sum + d.beratKg,
         0,
@@ -196,17 +201,44 @@ export async function getRawMaterialReport(
       const percentage =
         rawWeight > 0 ? (depositedWeight / rawWeight) * 100 : 0;
 
-      const classificationMap: Record<string, number> = {};
-      for (const r of catRaw) {
-        classificationMap[r.klasifikasi] =
-          (classificationMap[r.klasifikasi] || 0) + r.beratKg;
+      // Klasifikasi dalam kategori (dari kolom flat)
+      const classifications: { name: string; weight: number }[] = [];
+      if (cat === "Etiket") {
+        classifications.push(
+          {
+            name: "Normal Noodle (NN)",
+            weight: filteredRaw.reduce((s, r) => s + r.etiketNnGram / 1000, 0),
+          },
+          {
+            name: "Glass Noodle (GN)",
+            weight: filteredRaw.reduce((s, r) => s + r.etiketGnGram / 1000, 0),
+          },
+          {
+            name: "Cup Noodle (CN)",
+            weight: filteredRaw.reduce((s, r) => s + r.etiketCnGram / 1000, 0),
+          },
+        );
+      } else if (cat === "Karton") {
+        classifications.push(
+          {
+            name: "Normal Noodle (NN)",
+            weight: filteredRaw.reduce((s, r) => s + r.kartonNnGram / 1000, 0),
+          },
+          {
+            name: "Glass Noodle (GN)",
+            weight: filteredRaw.reduce((s, r) => s + r.kartonGnGram / 1000, 0),
+          },
+          {
+            name: "Cup Noodle (CN)",
+            weight: filteredRaw.reduce((s, r) => s + r.kartonCnGram / 1000, 0),
+          },
+        );
+      } else {
+        classifications.push({
+          name: "Cup Noodle (CN)",
+          weight: filteredRaw.reduce((s, r) => s + r.cupCnGram / 1000, 0),
+        });
       }
-      const classifications = Object.entries(classificationMap).map(
-        ([name, weight]) => ({
-          name,
-          weight,
-        }),
-      );
 
       return {
         category: cat,
@@ -272,12 +304,14 @@ export async function getRawMaterialReport(
     };
   };
 
-  // 4. Weekly Trend (for June 2026)
+  // ── Weekly Trend ──────────────────────────────────────────────────────────
+  // Raw material per bulan digunakan sebagai target penuh untuk setiap minggu
   const juneRaw = rawRows.filter(
     (r) =>
       getYear(r.periode) === TARGET_YEAR &&
       getMonth(r.periode) === TARGET_MONTH,
-  );
+  ) as RawRow[];
+
   const juneDeposits = allDeposits.filter(
     (d) =>
       getYear(d.tanggalSetor) === TARGET_YEAR &&
@@ -285,7 +319,7 @@ export async function getRawMaterialReport(
   );
 
   const weeklyData = [1, 2, 3, 4, 5].map((weekNum) => {
-    const weekRaw = juneRaw.filter((r) => getWeekIndex(r.periode) === weekNum);
+    // Raw: gunakan target bulan penuh (1 row per bulan) sebagai acuan
     const weekDeposited = juneDeposits.filter(
       (d) => getWeekIndex(d.tanggalSetor) === weekNum,
     );
@@ -298,13 +332,15 @@ export async function getRawMaterialReport(
     };
 
     categories.forEach((cat) => {
-      const catRaw = weekRaw.filter(
-        (r) => normalizeCategory(r.kategori) === cat,
-      );
-      const catDep = weekDeposited.filter((d) => d.jenisSampah === cat);
+      const raw = juneRaw.reduce((sum, r) => {
+        if (cat === "Etiket") return sum + etiketKg(r);
+        if (cat === "Karton") return sum + kartonKg(r);
+        return sum + cupKg(r);
+      }, 0);
 
-      const raw = catRaw.reduce((sum, r) => sum + r.beratKg, 0);
-      const dep = catDep.reduce((sum, d) => sum + d.beratKg, 0);
+      const dep = weekDeposited
+        .filter((d) => d.jenisSampah === cat)
+        .reduce((sum, d) => sum + d.beratKg, 0);
 
       dataObj[`${cat}_raw`] = raw;
       dataObj[`${cat}_dep`] = dep;
@@ -321,7 +357,7 @@ export async function getRawMaterialReport(
     return dataObj;
   });
 
-  // 5. Monthly Trend (for year 2026)
+  // ── Monthly Trend ─────────────────────────────────────────────────────────
   const monthNames = [
     "Jan",
     "Feb",
@@ -342,7 +378,8 @@ export async function getRawMaterialReport(
     const monthRaw = rawRows.filter(
       (r) =>
         getYear(r.periode) === TARGET_YEAR && getMonth(r.periode) === monthNum,
-    );
+    ) as RawRow[];
+
     const monthDeposited = allDeposits.filter(
       (d) =>
         getYear(d.tanggalSetor) === TARGET_YEAR &&
@@ -357,13 +394,15 @@ export async function getRawMaterialReport(
     };
 
     categories.forEach((cat) => {
-      const catRaw = monthRaw.filter(
-        (r) => normalizeCategory(r.kategori) === cat,
-      );
-      const catDep = monthDeposited.filter((d) => d.jenisSampah === cat);
+      const raw = monthRaw.reduce((sum, r) => {
+        if (cat === "Etiket") return sum + etiketKg(r);
+        if (cat === "Karton") return sum + kartonKg(r);
+        return sum + cupKg(r);
+      }, 0);
 
-      const raw = catRaw.reduce((sum, r) => sum + r.beratKg, 0);
-      const dep = catDep.reduce((sum, d) => sum + d.beratKg, 0);
+      const dep = monthDeposited
+        .filter((d) => d.jenisSampah === cat)
+        .reduce((sum, d) => sum + d.beratKg, 0);
 
       dataObj[`${cat}_raw`] = raw;
       dataObj[`${cat}_dep`] = dep;
@@ -378,10 +417,12 @@ export async function getRawMaterialReport(
     return dataObj;
   });
 
-  // 6. Yearly Trend
+  // ── Yearly Trend ──────────────────────────────────────────────────────────
   const years = [TARGET_YEAR - 2, TARGET_YEAR - 1, TARGET_YEAR];
   const yearlyData = years.map((yr) => {
-    const yearRaw = rawRows.filter((r) => getYear(r.periode) === yr);
+    const yearRaw = rawRows.filter(
+      (r) => getYear(r.periode) === yr,
+    ) as RawRow[];
     const yearDeposited = allDeposits.filter(
       (d) => getYear(d.tanggalSetor) === yr,
     );
@@ -394,13 +435,15 @@ export async function getRawMaterialReport(
     };
 
     categories.forEach((cat) => {
-      const catRaw = yearRaw.filter(
-        (r) => normalizeCategory(r.kategori) === cat,
-      );
-      const catDep = yearDeposited.filter((d) => d.jenisSampah === cat);
+      const raw = yearRaw.reduce((sum, r) => {
+        if (cat === "Etiket") return sum + etiketKg(r);
+        if (cat === "Karton") return sum + kartonKg(r);
+        return sum + cupKg(r);
+      }, 0);
 
-      const raw = catRaw.reduce((sum, r) => sum + r.beratKg, 0);
-      const dep = catDep.reduce((sum, d) => sum + d.beratKg, 0);
+      const dep = yearDeposited
+        .filter((d) => d.jenisSampah === cat)
+        .reduce((sum, d) => sum + d.beratKg, 0);
 
       dataObj[`${cat}_raw`] = raw;
       dataObj[`${cat}_dep`] = dep;
@@ -420,8 +463,7 @@ export async function getRawMaterialReport(
     weekly: getReportForFilter(
       (r) =>
         getYear(r.periode) === TARGET_YEAR &&
-        getMonth(r.periode) === TARGET_MONTH &&
-        getWeekIndex(r.periode) === TARGET_WEEK,
+        getMonth(r.periode) === TARGET_MONTH,
       (d) =>
         getYear(d.tanggalSetor) === TARGET_YEAR &&
         getMonth(d.tanggalSetor) === TARGET_MONTH &&

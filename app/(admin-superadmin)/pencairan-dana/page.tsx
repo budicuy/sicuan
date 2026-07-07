@@ -30,28 +30,7 @@ import {
   type TableFilter,
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-
-interface DisbursementItem {
-  id: number;
-  userId: number;
-  jumlah: number;
-  jenisBank: string | null;
-  noRekening: string | null;
-  status: string;
-  metodePembayaran: string;
-  keterangan: string | null;
-  ttdPenyerahUrl: string | null;
-  buktiTransfer: string | null;
-  periodeBulan: number | null;
-  periodeTahun: number | null;
-  createdAt: Date;
-  user: {
-    name: string;
-    username: string;
-    role: string;
-  };
-  buktiPembayaranId: number | null;
-}
+import type { DisbursementItem } from "@/app/types";
 
 export default function PencairanAdminPage() {
   const [items, setItems] = useState<DisbursementItem[]>([]);
@@ -414,7 +393,7 @@ export default function PencairanAdminPage() {
               {item.buktiTransfer && (
                 <button
                   type="button"
-                  onClick={() => setViewProofUrl(item.buktiTransfer)}
+                  onClick={() => setViewProofUrl(item.buktiTransfer ?? null)}
                   className="px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <Eye className="w-3 h-3" />

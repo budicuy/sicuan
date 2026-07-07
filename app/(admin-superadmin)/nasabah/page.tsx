@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  type ActionState,
   createNasabah,
   deleteNasabah,
   getNasabah,
@@ -17,26 +16,7 @@ import {
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
 import { getCurrentUser } from "@/app/lib/auth-actions";
-
-interface NasabahWithUser {
-  id: number;
-  userId: number;
-  nik: string | null;
-  tanggalLahir: string | null;
-  noTelepon: string | null;
-  email: string | null;
-  alamat: string | null;
-  jenisBank: string | null;
-  noRekening: string | null;
-  poin: number;
-  kredit: number;
-  user: {
-    name: string;
-    username: string;
-    role: string;
-    status: string;
-  };
-}
+import type { ActionState, NasabahWithUser } from "@/app/types";
 
 export default function NasabahPage() {
   const [data, setData] = useState<NasabahWithUser[]>([]);

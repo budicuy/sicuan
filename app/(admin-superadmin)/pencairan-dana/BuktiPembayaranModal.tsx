@@ -18,6 +18,7 @@ import {
 } from "@/app/(admin-superadmin)/pencairan-dana/action";
 import { DisbursementLetterPreview } from "@/app/components/shared/DisbursementLetterPreview";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import type { DisbursementItem } from "@/app/types";
 import type { DataSampahItem } from "@/db/schema/bukti-pembayaran";
 
 const BULAN_OPTIONS = [
@@ -34,22 +35,6 @@ const BULAN_OPTIONS = [
   "November",
   "Desember",
 ];
-
-interface DisbursementItem {
-  id: number;
-  userId: number;
-  jumlah: number;
-  jenisBank: string | null;
-  noRekening: string | null;
-  status: string;
-  metodePembayaran: string;
-  keterangan: string | null;
-  ttdPenyerahUrl: string | null;
-  periodeBulan: number | null;
-  periodeTahun: number | null;
-  createdAt: Date;
-  user: { name: string; username: string; role: string };
-}
 
 interface Props {
   item: DisbursementItem;

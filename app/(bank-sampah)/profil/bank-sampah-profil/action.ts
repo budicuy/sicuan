@@ -67,11 +67,7 @@ const passwordSchema = z
     path: ["confirmPassword"],
   });
 
-export type ActionState = {
-  success: boolean;
-  message: string;
-  errors?: Record<string, string[]>;
-};
+import type { ActionState } from "@/app/types";
 
 // Helper function to get the current authenticated user's ID
 async function getAuthenticatedUserId(): Promise<number> {

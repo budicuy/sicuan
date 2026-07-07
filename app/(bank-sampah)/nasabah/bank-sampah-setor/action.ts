@@ -2,13 +2,9 @@
 
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import { nasabah, setorSampah } from "@/db/schema";
-
-export type ActionState = {
-  success: boolean;
-  errors?: Record<string, string[]>;
-};
 
 // Helper: format tanggal Indonesia
 function _formatTanggalIndo(dateStr: string): string {

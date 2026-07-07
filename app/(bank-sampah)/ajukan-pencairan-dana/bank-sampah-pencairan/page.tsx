@@ -305,7 +305,11 @@ export default function PencairanDanaPage() {
       );
       setShowConfirmModal(false);
       if (res.success) {
-        showFeedback("success", "Pencairan Berhasil Diajukan", res.message);
+        showFeedback(
+          "success",
+          "Pencairan Berhasil Diajukan",
+          res.message ?? "",
+        );
         setCustomAmount("");
         setMetode("transfer");
         setKeterangan("");

@@ -3,13 +3,9 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
+import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import { insertPoinSampahSchema, poinSampah } from "@/db/schema";
-
-export type ActionState = {
-  success: boolean;
-  errors?: Record<string, string[]>;
-};
 
 export async function getPoinSampah(params?: {
   page?: number;

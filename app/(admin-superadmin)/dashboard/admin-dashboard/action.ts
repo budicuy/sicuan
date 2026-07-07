@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { SetoranType } from "@/app/(konsumen)/setor-sampah/action";
+import type { SetoranType } from "@/app/types";
 import { db } from "@/db";
 import {
   nasabah,

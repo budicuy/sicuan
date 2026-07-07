@@ -2,91 +2,40 @@ import { db } from "@/db";
 import { rawMaterial } from "@/db/schema";
 
 export async function seedRawMaterial() {
-  console.log("🌱 Seeding raw material only for June 2026...");
+  console.log("🌱 Seeding raw material (1 baris per bulan)...");
 
-  // Clear old raw material data
+  // Hapus semua data lama
   await db.delete(rawMaterial);
 
-  const dates = [
-    "2026-06-01",
-    "2026-06-08",
-    "2026-06-15",
-    "2026-06-22",
-    "2026-06-29",
-  ];
-  const seedData = [];
+  // 1 baris per bulan — semua kategori dalam satu record
+  await db.insert(rawMaterial).values([
+    {
+      periode: "2026-06-01",
+      // Etiket
+      etiketNnGram: 3000,
+      etiketGnGram: 3000,
+      etiketCnGram: 2000,
+      // Karton
+      kartonNnGram: 4000,
+      kartonGnGram: 3000,
+      kartonCnGram: 3000,
+      // Cup / Paper Cup
+      cupCnGram: 4000,
+    },
+    {
+      periode: "2026-07-01",
+      // Etiket
+      etiketNnGram: 3500,
+      etiketGnGram: 3200,
+      etiketCnGram: 2200,
+      // Karton
+      kartonNnGram: 4500,
+      kartonGnGram: 3500,
+      kartonCnGram: 3200,
+      // Cup / Paper Cup
+      cupCnGram: 4200,
+    },
+  ]);
 
-  for (const dateStr of dates) {
-    // Karton
-    seedData.push({
-      periode: dateStr,
-      kategori: "Karton" as const,
-      klasifikasi: "Cup Noodle (CN)" as const,
-      beratKg: 3.0,
-      beratGram: 3000.0,
-    });
-    seedData.push({
-      periode: dateStr,
-      kategori: "Karton" as const,
-      klasifikasi: "Glass Noodle (GN)" as const,
-      beratKg: 3.0,
-      beratGram: 3000.0,
-    });
-    seedData.push({
-      periode: dateStr,
-      kategori: "Karton" as const,
-      klasifikasi: "Normal Noodle (NN)" as const,
-      beratKg: 4.0,
-      beratGram: 4000.0,
-    });
-
-    // Etiket
-    seedData.push({
-      periode: dateStr,
-      kategori: "Etiket" as const,
-      klasifikasi: "Cup Noodle (CN)" as const,
-      beratKg: 2.0,
-      beratGram: 2000.0,
-    });
-    seedData.push({
-      periode: dateStr,
-      kategori: "Etiket" as const,
-      klasifikasi: "Glass Noodle (GN)" as const,
-      beratKg: 3.0,
-      beratGram: 3000.0,
-    });
-    seedData.push({
-      periode: dateStr,
-      kategori: "Etiket" as const,
-      klasifikasi: "Normal Noodle (NN)" as const,
-      beratKg: 3.0,
-      beratGram: 3000.0,
-    });
-
-    // Cup
-    seedData.push({
-      periode: dateStr,
-      kategori: "Cup" as const,
-      klasifikasi: "Cup Noodle (CN)" as const,
-      beratKg: 4.0,
-      beratGram: 4000.0,
-    });
-    seedData.push({
-      periode: dateStr,
-      kategori: "Cup" as const,
-      klasifikasi: "Glass Noodle (GN)" as const,
-      beratKg: 4.0,
-      beratGram: 4000.0,
-    });
-    seedData.push({
-      periode: dateStr,
-      kategori: "Cup" as const,
-      klasifikasi: "Normal Noodle (NN)" as const,
-      beratKg: 4.0,
-      beratGram: 4000.0,
-    });
-  }
-
-  await db.insert(rawMaterial).values(seedData);
-  console.log(`✅ Seeded ${seedData.length} raw material records`);
+  console.log("✅ Seeded raw material records untuk Juni & Juli 2026");
 }

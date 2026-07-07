@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  type ActionState,
   createHargaSampah,
   deleteHargaSampah,
   getHargaSampah,
@@ -17,16 +16,7 @@ import {
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
 import { getCurrentUser } from "@/app/lib/auth-actions";
-
-interface HargaSampah {
-  id: number;
-  jenisSampah: string;
-  minBerat: number;
-  maxBerat: number | null;
-  harga: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { ActionState, HargaSampah } from "@/app/types";
 
 export default function HargaSampahPage() {
   const [data, setData] = useState<HargaSampah[]>([]);

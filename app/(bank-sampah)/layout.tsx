@@ -1,7 +1,10 @@
+import { and, eq, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SidebarLayout } from "@/app/components/shared/sidebar";
+import { db } from "@/db";
+import { setorSampah } from "@/db/schema";
 
 async function logoutAction() {
   "use server";
@@ -42,6 +45,17 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
       redirect("/login");
     }
   }
+
+  const waitingSetoranCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(setorSampah)
+    .where(
+      and(
+        eq(setorSampah.kategoriNasabah, "warmiendo"),
+        eq(setorSampah.status, "diserahkan"),
+      ),
+    )
+    .then((res) => Number(res[0]?.count ?? 0));
 
   const sidebarItems: import("@/app/components/shared/sidebar").SidebarItem[] =
     [
@@ -95,6 +109,7 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
         href: "/setor-sampah/terima-setoran-warmiendo",
         label: "Terima Setoran Warmiendo",
         icon: "Truck",
+        badgeCount: waitingSetoranCount,
       },
       {
         type: "link",

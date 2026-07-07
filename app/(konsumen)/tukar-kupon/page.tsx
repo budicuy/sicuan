@@ -21,16 +21,7 @@ import {
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { QrModal } from "@/app/components/shared/QrModal";
-
-interface Kupon {
-  id: number;
-  nama: string;
-  deskripsi: string;
-  poin: number;
-  tier: "silver" | "gold" | "diamond";
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { Kupon } from "@/app/types";
 
 interface RedemptionHistoryItem {
   id: number;

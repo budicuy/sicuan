@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  type ActionState,
   createKupon,
   deleteKupon,
   getKupon,
@@ -17,16 +16,7 @@ import {
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
 import { getCurrentUser } from "@/app/lib/auth-actions";
-
-interface Kupon {
-  id: number;
-  nama: string;
-  deskripsi: string;
-  poin: number;
-  tier: "silver" | "gold" | "diamond";
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { ActionState, Kupon } from "@/app/types";
 
 export default function KuponPage() {
   const [data, setData] = useState<Kupon[]>([]);

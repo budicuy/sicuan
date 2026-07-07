@@ -37,53 +37,17 @@ import {
 import { DisbursementLetterPreview } from "@/app/components/shared/DisbursementLetterPreview";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 
-interface DisbursementHistoryItem {
-  id: number;
-  userId: number;
-  jumlah: number;
-  jenisBank: string | null;
-  noRekening: string | null;
-  status: string;
-  metodePembayaran: string;
-  buktiTransfer: string | null;
-  createdAt: string | Date;
-  buktiPembayaranId: number | null;
-}
+import type {
+  DataSampahPencairan,
+  DisbursementHistoryItem,
+  KategoriSumber,
+  MetodePembayaran,
+  UserDataPencairan,
+} from "@/app/types";
 
-interface DataSampahItem {
-  jenis: string;
-  beratKg: number;
-  kredit: number;
-}
-
-interface PencairanAktif {
-  id: number;
-  jumlah: number;
-  status: string;
-  metodePembayaran: string;
-  createdAt: string | Date;
-  keterangan?: string;
-  ttdPenyerahUrl?: string | null;
-  ttdPenerimaUrl?: string | null;
-}
-
-interface UserData {
-  kredit: number;
-  isCurrentMonth: boolean;
-  sudahDicairkan: boolean;
-  pencairanAktif: PencairanAktif | null;
-  jenisBank: string;
-  noRekening: string;
-  alamat?: string;
-  noTelepon?: string;
-  idPelanggan?: string;
-  dataSampah?: DataSampahItem[];
-  totalBeratKg?: number;
-  user: { id: number; name: string; role: string };
-}
-
-type MetodePembayaran = "tunai" | "transfer";
-type KategoriSumber = "bank-sampah-induk" | "tps-3r" | "bank-sampah-unit";
+// Alias lokal agar tidak perlu ganti nama di seluruh komponen
+type DataSampahItem = DataSampahPencairan;
+type UserData = UserDataPencairan;
 
 const BULAN_ID = [
   "Januari",
@@ -305,7 +269,11 @@ export default function PencairanDanaPage() {
       );
       setShowConfirmModal(false);
       if (res.success) {
-        showFeedback("success", "Pencairan Berhasil Diajukan", res.message);
+        showFeedback(
+          "success",
+          "Pencairan Berhasil Diajukan",
+          res.message ?? "",
+        );
         setCustomAmount("");
         setMetode("transfer");
         setKeterangan("");

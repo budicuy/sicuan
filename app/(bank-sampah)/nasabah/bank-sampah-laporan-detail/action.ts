@@ -203,7 +203,7 @@ export async function sendPdfToEmailAction(
     // Plain text fallback
     const messageText = `Halo ${data.profile.user.name},
 
-Berikut adalah Laporan Detail Setoran Sampah Anda di Bank Sampah Indofood:
+Berikut adalah Laporan Detail Setoran Sampah Anda di SICUAN:
 
 - Total Transaksi: ${totalTransaksi} Setoran
 - Total Berat Sampah: ${totalBerat.toLocaleString("id-ID")} kg
@@ -212,7 +212,7 @@ Berikut adalah Laporan Detail Setoran Sampah Anda di Bank Sampah Indofood:
 Terima kasih atas partisipasi aktif Anda dalam menjaga kelestarian lingkungan! Berkas PDF laporan lengkap Anda terlampir pada email ini.
 
 Salam hangat,
-Bank Sampah Indofood`;
+SICUAN`;
 
     // Styled HTML Email Template
     const htmlContent = `
@@ -220,7 +220,7 @@ Bank Sampah Indofood`;
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Laporan Setoran Sampah - Bank Sampah Indofood</title>
+  <title>Laporan Setoran Sampah - SICUAN</title>
 </head>
 <body style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f5f7; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f5f7; padding: 30px 15px;">
@@ -230,7 +230,7 @@ Bank Sampah Indofood`;
           <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #059669, #10b981); padding: 35px 30px; text-align: center;">
-              <span style="font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 1px; display: block; margin: 0; text-transform: uppercase;">Bank Sampah Indofood</span>
+              <span style="font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 1px; display: block; margin: 0; text-transform: uppercase;">SICUAN</span>
               <span style="font-size: 13px; color: #d1fae5; font-weight: 600; display: block; margin-top: 5px; letter-spacing: 0.5px;">Mewujudkan Lingkungan Bersih & Berkelanjutan</span>
             </td>
           </tr>
@@ -271,13 +271,13 @@ Bank Sampah Indofood`;
               </div>
               
               <p style="font-size: 14px; color: #64748b; line-height: 1.6; margin: 0 0 5px 0;">Salam hangat,</p>
-              <p style="font-size: 14px; font-weight: bold; color: #1e293b; margin: 0;">Tim Bank Sampah Indofood</p>
+              <p style="font-size: 14px; font-weight: bold; color: #1e293b; margin: 0;">Tim SICUAN</p>
             </td>
           </tr>
           <!-- Footer -->
           <tr>
             <td style="background-color: #f8fafc; padding: 25px 30px; border-top: 1px solid #eef2f6; text-align: center;">
-              <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0 0 5px 0;">Email ini dikirim secara otomatis oleh Sistem Portal Sicuan Bank Sampah Indofood.</p>
+              <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0 0 5px 0;">Email ini dikirim secara otomatis oleh Sistem Portal SICUAN.</p>
               <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 0;">&copy; 2026 PT. Indofood Sukses Makmur Tbk. All Rights Reserved.</p>
             </td>
           </tr>

@@ -21,29 +21,7 @@ import {
 } from "@/app/(warmiendo)/laporan/warmiendo-laporan/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 import { DataTable } from "@/app/components/shared/DataTable";
-
-interface SetorSampahItem {
-  id: number;
-  nomorSetor: string;
-  jenisSampah: string;
-  beratKg: number;
-  totalPoin: number;
-  totalKredit?: number;
-  tanggalSetor: string;
-  status: string;
-  createdAt: Date;
-  fotoTimbangan: string;
-  fotoBuktiTambahan?: string[] | null;
-  catatan: string | null;
-  metodeSetor?: string;
-  ekspedisiId?: number | null;
-  ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
-  user?: {
-    name: string;
-    username: string;
-    role: string;
-  } | null;
-}
+import type { SetorSampahItem } from "@/app/types";
 
 export default function LaporanWarmiendoPage() {
   const [data, setData] = useState<SetorSampahItem[]>([]);

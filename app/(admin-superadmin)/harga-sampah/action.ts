@@ -15,13 +15,9 @@ import {
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
+import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, insertHargaSampahSchema } from "@/db/schema";
-
-export type ActionState = {
-  success: boolean;
-  errors?: Record<string, string[]>;
-};
 
 export async function getHargaSampah(params?: {
   page?: number;

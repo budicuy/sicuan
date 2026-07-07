@@ -16,19 +16,49 @@ import {
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
 import { getCurrentUser } from "@/app/lib/auth-actions";
+import type { DisplayRow, RawMaterial } from "@/app/types";
 
-interface RawMaterial {
-  id: number;
-  periode: string;
-  kategori: string;
-  klasifikasi: string;
-  beratKg: number;
-  beratGram: number;
-  createdAt: Date;
-  updatedAt: Date;
+/** Expand 1 baris DB → 7 baris tampilan */
+function expandToDisplayRows(raw: RawMaterial): DisplayRow[] {
+  const make = (
+    suffix: string,
+    kategori: DisplayRow["kategori"],
+    klasifikasi: DisplayRow["klasifikasi"],
+    gram: number,
+  ): DisplayRow => ({
+    // id = sourceId (number) agar DataTable puas; _key unik per baris display
+    id: raw.id,
+    _key: `${raw.id}-${suffix}`,
+    periode: raw.periode,
+    kategori,
+    klasifikasi,
+    beratGram: gram,
+    beratKg: gram / 1000,
+  });
+
+  return [
+    make("cup-cn", "Cup", "Cup Noodle (CN)", raw.cupCnGram),
+    make("etiket-nn", "Etiket", "Normal Noodle (NN)", raw.etiketNnGram),
+    make("etiket-gn", "Etiket", "Glass Noodle (GN)", raw.etiketGnGram),
+    make("etiket-cn", "Etiket", "Cup Noodle (CN)", raw.etiketCnGram),
+    make("karton-nn", "Karton", "Normal Noodle (NN)", raw.kartonNnGram),
+    make("karton-gn", "Karton", "Glass Noodle (GN)", raw.kartonGnGram),
+    make("karton-cn", "Karton", "Cup Noodle (CN)", raw.kartonCnGram),
+  ];
 }
 
+const INITIAL_FORM = {
+  etiket_nn: 0,
+  etiket_gn: 0,
+  etiket_cn: 0,
+  karton_nn: 0,
+  karton_gn: 0,
+  karton_cn: 0,
+  cup_cn: 0,
+};
+
 export default function RawMaterialPage() {
+  // Data DB (1 baris per bulan)
   const [data, setData] = useState<RawMaterial[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,15 +76,7 @@ export default function RawMaterialPage() {
   const [globalError, setGlobalError] = useState("");
   const [sortBy, setSortBy] = useState<string>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [formValues, setFormValues] = useState({
-    etiket_cn: 0,
-    etiket_gn: 0,
-    etiket_nn: 0,
-    karton_cn: 0,
-    karton_gn: 0,
-    karton_nn: 0,
-    cup_cn: 0,
-  });
+  const [formValues, setFormValues] = useState(INITIAL_FORM);
   const [feedback, setFeedback] = useState<{
     isOpen: boolean;
     type: "success" | "error";
@@ -66,7 +88,7 @@ export default function RawMaterialPage() {
     title: "",
     message: "",
   });
-  const [confirmDelete, setConfirmDelete] = useState<RawMaterial | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<DisplayRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const showFeedback = (
@@ -82,22 +104,18 @@ export default function RawMaterialPage() {
       page: currentPage,
       limit: pageSize,
       search,
-      kategori: filterValues.kategori,
-      klasifikasi: filterValues.klasifikasi,
       sortBy,
       sortOrder,
     }).then((res) => {
       setData(res.data as RawMaterial[]);
       setTotalItems(res.total);
     });
-  }, [currentPage, pageSize, search, filterValues, sortBy, sortOrder]);
+  }, [currentPage, pageSize, search, sortBy, sortOrder]);
 
   useEffect(() => {
     refreshData();
     getCurrentUser().then((user) => {
-      if (user) {
-        setUserRole(user.role);
-      }
+      if (user) setUserRole(user.role);
     });
   }, [refreshData]);
 
@@ -111,100 +129,64 @@ export default function RawMaterialPage() {
     setCurrentPage(1);
   };
 
-  const _formatNumber = (val: number) =>
-    new Intl.NumberFormat("id-ID", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(val);
+  // ── Format helpers ────────────────────────────────────────────────────────
 
-  // "1000" → "1.000 gr"
   const formatGram = (val: number) =>
     new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(val);
 
-  // "1.000" → "1 kg", "0.0063" → "0,006 kg" (tanpa trailing zero)
   const formatKg = (val: number) => {
-    // hitung dari gram agar presisi terjaga
     const rounded = Number(val.toFixed(4));
-    // hilangkan trailing zero: parse lagi dengan toLocaleString
     return new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
     }).format(rounded);
   };
 
-  // Konversi YYYY-MM-DD → "Januari 2026"
   const formatPeriode = (dateStr: string) =>
     new Date(`${dateStr}T00:00:00`).toLocaleDateString("id-ID", {
       year: "numeric",
       month: "long",
     });
 
+  // ── Modal handlers ────────────────────────────────────────────────────────
+
   const handleOpenAddModal = () => {
     setEditingRaw(null);
     setFormErrors({});
     setGlobalError("");
-    setFormValues({
-      etiket_cn: 0,
-      etiket_gn: 0,
-      etiket_nn: 0,
-      karton_cn: 0,
-      karton_gn: 0,
-      karton_nn: 0,
-      cup_cn: 0,
-    });
+    setFormValues(INITIAL_FORM);
     setModalOpen(true);
   };
 
-  const handleOpenEditModal = (item: RawMaterial) => {
-    setEditingRaw(item);
+  const handleOpenEditModal = (item: DisplayRow) => {
+    // Cari data asli dari array data berdasarkan id (= sourceId)
+    const source = data.find((d) => d.id === item.id) ?? null;
+    setEditingRaw(source);
     setFormErrors({});
     setGlobalError("");
+
     startTransition(async () => {
       const records = await getRawMaterialByPeriod(item.periode);
-      setFormValues({
-        etiket_cn:
-          records.find(
-            (r) =>
-              r.kategori === "Etiket" && r.klasifikasi === "Cup Noodle (CN)",
-          )?.beratGram ?? 0,
-        etiket_gn:
-          records.find(
-            (r) =>
-              r.kategori === "Etiket" && r.klasifikasi === "Glass Noodle (GN)",
-          )?.beratGram ?? 0,
-        etiket_nn:
-          records.find(
-            (r) =>
-              r.kategori === "Etiket" && r.klasifikasi === "Normal Noodle (NN)",
-          )?.beratGram ?? 0,
-        karton_cn:
-          records.find(
-            (r) =>
-              r.kategori === "Karton" && r.klasifikasi === "Cup Noodle (CN)",
-          )?.beratGram ?? 0,
-        karton_gn:
-          records.find(
-            (r) =>
-              r.kategori === "Karton" && r.klasifikasi === "Glass Noodle (GN)",
-          )?.beratGram ?? 0,
-        karton_nn:
-          records.find(
-            (r) =>
-              r.kategori === "Karton" && r.klasifikasi === "Normal Noodle (NN)",
-          )?.beratGram ?? 0,
-        cup_cn:
-          records.find(
-            (r) => r.kategori === "Cup" && r.klasifikasi === "Cup Noodle (CN)",
-          )?.beratGram ?? 0,
-      });
+      const record = records[0];
+      if (record) {
+        setFormValues({
+          etiket_nn: record.etiketNnGram,
+          etiket_gn: record.etiketGnGram,
+          etiket_cn: record.etiketCnGram,
+          karton_nn: record.kartonNnGram,
+          karton_gn: record.kartonGnGram,
+          karton_cn: record.kartonCnGram,
+          cup_cn: record.cupCnGram,
+        });
+      }
       setModalOpen(true);
     });
   };
 
-  const handleDelete = (item: RawMaterial) => {
+  const handleDelete = (item: DisplayRow) => {
     setConfirmDelete(item);
   };
 
@@ -218,7 +200,7 @@ export default function RawMaterialPage() {
       showFeedback(
         "success",
         "Berhasil!",
-        `Seluruh data raw material periode "${confirmDelete.periode}" berhasil dihapus.`,
+        `Seluruh data raw material periode "${formatPeriode(confirmDelete.periode)}" berhasil dihapus.`,
       );
       refreshData();
     } else {
@@ -257,13 +239,16 @@ export default function RawMaterialPage() {
     });
   };
 
-  // ── Kolom tabel ───────────────────────────────────────────────────────────
+  // ── Expand DB rows → display rows ────────────────────────────────────────
+  const displayData = data.flatMap(expandToDisplayRows);
 
-  const columns: Column<RawMaterial>[] = [
+  // ── Kolom tabel (tampilan lama) ───────────────────────────────────────────
+
+  const columns: Column<DisplayRow>[] = [
     {
       header: "Periode",
       sortKey: "periode",
-      grouped: true, // ← dirender sekali per grup dengan rowSpan
+      grouped: true, // render sekali per grup dengan rowSpan
       render: (item) => (
         <span className="font-bold text-neutral-900 text-sm">
           {formatPeriode(item.periode)}
@@ -318,7 +303,7 @@ export default function RawMaterialPage() {
     },
   ];
 
-  const filters: TableFilter<RawMaterial>[] = [
+  const filters: TableFilter<DisplayRow>[] = [
     {
       id: "kategori",
       label: "Semua Kategori",
@@ -341,6 +326,22 @@ export default function RawMaterialPage() {
     },
   ];
 
+  // ── Form input helpers ────────────────────────────────────────────────────
+
+  type FormKey = keyof typeof INITIAL_FORM;
+
+  const ETIKET_FIELDS: { id: string; name: FormKey; label: string }[] = [
+    { id: "etiket-nn-input", name: "etiket_nn", label: "Normal Noodle (NN)" },
+    { id: "etiket-gn-input", name: "etiket_gn", label: "Glass Noodle (GN)" },
+    { id: "etiket-cn-input", name: "etiket_cn", label: "Cup Noodle (CN)" },
+  ];
+
+  const KARTON_FIELDS: { id: string; name: FormKey; label: string }[] = [
+    { id: "karton-nn-input", name: "karton_nn", label: "Normal Noodle (NN)" },
+    { id: "karton-gn-input", name: "karton_gn", label: "Glass Noodle (GN)" },
+    { id: "karton-cn-input", name: "karton_cn", label: "Cup Noodle (CN)" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
@@ -355,11 +356,11 @@ export default function RawMaterialPage() {
         </div>
       </div>
 
-      {/* Tabel dengan grouping per periode */}
+      {/* Tabel dengan grouping per periode — tampilan sama seperti sebelumnya */}
       <DataTable
-        data={data}
+        data={displayData}
         columns={columns}
-        totalItems={totalItems}
+        totalItems={totalItems * 7}
         currentPage={currentPage}
         pageSize={pageSize}
         onPageChange={setCurrentPage}
@@ -406,6 +407,7 @@ export default function RawMaterialPage() {
           <input type="hidden" name="oldPeriode" value={editingRaw.periode} />
         )}
 
+        {/* Periode */}
         <div>
           <label
             htmlFor="periode-input"
@@ -419,9 +421,7 @@ export default function RawMaterialPage() {
             name="periode"
             required
             defaultValue={
-              editingRaw?.periode
-                ? editingRaw.periode.substring(0, 7) // ambil YYYY-MM dari YYYY-MM-DD
-                : ""
+              editingRaw?.periode ? editingRaw.periode.substring(0, 7) : ""
             }
             className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800 font-medium"
           />
@@ -437,28 +437,7 @@ export default function RawMaterialPage() {
             Kategori: Etiket (GR)
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {(
-              [
-                {
-                  id: "etiket-nn-input",
-                  name: "etiket_nn",
-                  label: "Normal Noodle (NN)",
-                  key: "etiket_nn",
-                },
-                {
-                  id: "etiket-gn-input",
-                  name: "etiket_gn",
-                  label: "Glass Noodle (GN)",
-                  key: "etiket_gn",
-                },
-                {
-                  id: "etiket-cn-input",
-                  name: "etiket_cn",
-                  label: "Cup Noodle (CN)",
-                  key: "etiket_cn",
-                },
-              ] as const
-            ).map(({ id, name, label, key }) => (
+            {ETIKET_FIELDS.map(({ id, name, label }) => (
               <div key={name}>
                 <label
                   htmlFor={id}
@@ -471,11 +450,11 @@ export default function RawMaterialPage() {
                   type="number"
                   step="any"
                   name={name}
-                  value={formValues[key]}
+                  value={formValues[name]}
                   onChange={(e) =>
                     setFormValues((prev) => ({
                       ...prev,
-                      [key]: Number(e.target.value),
+                      [name]: Number(e.target.value),
                     }))
                   }
                   className="w-full px-3 py-1.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 font-mono text-neutral-800"
@@ -492,28 +471,7 @@ export default function RawMaterialPage() {
             Kategori: Karton (GR)
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {(
-              [
-                {
-                  id: "karton-nn-input",
-                  name: "karton_nn",
-                  label: "Normal Noodle (NN)",
-                  key: "karton_nn",
-                },
-                {
-                  id: "karton-gn-input",
-                  name: "karton_gn",
-                  label: "Glass Noodle (GN)",
-                  key: "karton_gn",
-                },
-                {
-                  id: "karton-cn-input",
-                  name: "karton_cn",
-                  label: "Cup Noodle (CN)",
-                  key: "karton_cn",
-                },
-              ] as const
-            ).map(({ id, name, label, key }) => (
+            {KARTON_FIELDS.map(({ id, name, label }) => (
               <div key={name}>
                 <label
                   htmlFor={id}
@@ -526,11 +484,11 @@ export default function RawMaterialPage() {
                   type="number"
                   step="any"
                   name={name}
-                  value={formValues[key]}
+                  value={formValues[name]}
                   onChange={(e) =>
                     setFormValues((prev) => ({
                       ...prev,
-                      [key]: Number(e.target.value),
+                      [name]: Number(e.target.value),
                     }))
                   }
                   className="w-full px-3 py-1.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 font-mono text-neutral-800"
@@ -579,7 +537,7 @@ export default function RawMaterialPage() {
         onClose={() => setConfirmDelete(null)}
         onConfirm={handleConfirmDelete}
         title="Konfirmasi Hapus Periode"
-        message={`Apakah Anda yakin ingin menghapus seluruh data raw material untuk periode "${confirmDelete?.periode}"? Semua kategori dalam periode ini akan ikut terhapus.`}
+        message={`Apakah Anda yakin ingin menghapus seluruh data raw material untuk periode "${confirmDelete ? formatPeriode(confirmDelete.periode) : ""}"? Semua kategori dalam periode ini akan ikut terhapus.`}
         isPending={isDeleting}
       />
 

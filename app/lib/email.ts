@@ -5,7 +5,8 @@ import { nasabah } from "@/db/schema";
 
 export interface EmailAttachment {
   filename: string;
-  content: Buffer;
+  content?: Buffer;
+  path?: string;
   contentType?: string;
   cid?: string;
 }
@@ -41,7 +42,7 @@ export async function sendEmail({
   });
 
   const mailOptions = {
-    from: `"Bank Sampah Indofood" <${user}>`,
+    from: `"SICUAN" <${user}>`,
     to,
     subject,
     text,
@@ -145,7 +146,7 @@ export async function sendPencairanNotifToAdmins(payload: {
                 <tr>
                   <td>
                     <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
-                      <span style="color:#4ade80;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Bank Sampah Indofood</span>
+                      <span style="color:#4ade80;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
                     </div>
                     <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
                       Pengajuan Pencairan Dana
@@ -238,7 +239,7 @@ export async function sendPencairanNotifToAdmins(payload: {
 
               <!-- Footer note -->
               <p style="margin:24px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
-                Email ini dikirim otomatis oleh sistem Bank Sampah Indofood.<br/>
+                Email ini dikirim otomatis oleh sistem SICUAN.<br/>
                 Harap jangan membalas email ini.
               </p>
 
@@ -263,7 +264,7 @@ export async function sendPencairanNotifToAdmins(payload: {
   `.trim();
 
   const text = `
-[Bank Sampah Indofood] Pengajuan Pencairan Dana Baru
+[SICUAN] Pengajuan Pencairan Dana Baru
 
 Nasabah   : ${nasabahName} (${roleLabel})
 Jumlah    : ${formatRp(jumlah)}
@@ -338,7 +339,7 @@ export async function sendPencairanSelesaiNotifToUser(payload: {
       : "⚠️ Pengajuan pencairan dana Anda tidak dapat disetujui. Silakan cek detail atau ajukan kembali.";
 
   const text = `
-[Bank Sampah Indofood] Notifikasi Pencairan Dana
+[SICUAN] Notifikasi Pencairan Dana
 
 Halo ${userName},
 Status pencairan dana Anda sebesar ${formatRp(jumlah)} telah diperbarui menjadi: ${status.toUpperCase()}.
@@ -369,7 +370,7 @@ Terima kasih atas kontribusi Anda dalam menjaga lingkungan!
                 <tr>
                   <td>
                     <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
-                      <span style="color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Bank Sampah Indofood</span>
+                      <span style="color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
                     </div>
                     <h1 style="margin:0 0 6px;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">
                       ${statusTitle}
@@ -445,7 +446,7 @@ Terima kasih atas kontribusi Anda dalam menjaga lingkungan!
               </div>
 
               <p style="margin:28px 0 0;text-align:center;font-size:10.5px;color:#94a3b8;">
-                Email ini dikirim secara otomatis oleh sistem Bank Sampah Indofood.<br/>
+                Email ini dikirim secara otomatis oleh sistem SICUAN.<br/>
                 © PT. Indofood CBP Sukses Makmur Tbk
               </p>
 
@@ -580,7 +581,7 @@ export async function sendSetoranNotifToAdmins(payload: {
                 <tr>
                   <td>
                     <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
-                      <span style="color:#4ade80;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Bank Sampah Indofood</span>
+                      <span style="color:#4ade80;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
                     </div>
                     <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
                       Setoran Sampah Baru
@@ -683,7 +684,7 @@ export async function sendSetoranNotifToAdmins(payload: {
 
               <!-- Footer note -->
               <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
-                Email ini dikirim otomatis oleh sistem Portal Sicuan Bank Sampah Indofood.<br/>
+                Email ini dikirim otomatis oleh sistem Portal Sicuan SICUAN.<br/>
                 Harap jangan membalas email ini.
               </p>
 
@@ -708,7 +709,7 @@ export async function sendSetoranNotifToAdmins(payload: {
   `.trim();
 
   const text = `
-[Bank Sampah Indofood] Setoran Sampah Baru Terdaftar
+[SICUAN] Setoran Sampah Baru Terdaftar
 
 Nomor Setor    : ${nomorSetor}
 Nasabah        : ${nasabahName} (${roleLabel})
@@ -737,6 +738,220 @@ Silakan masuk ke dashboard admin untuk memeriksa detailnya.
   if (failed.length > 0) {
     console.error(
       `Gagal mengirim notif setoran ke ${failed.length} admin:`,
+      failed,
+    );
+  }
+}
+
+// ─── Notifikasi Serah Terima/Kirim Sampah Baru ke Bank Sampah ───
+
+export async function sendHandoverNotifToBankSampah(payload: {
+  nomorSetor: string;
+  nasabahName: string;
+  jenisSampah: string;
+  beratKg: number;
+  tanggalSetor: string;
+  catatan?: string | null;
+  fotoTimbanganUrl?: string | null;
+}) {
+  // Ambil semua bank-sampah yang punya email
+  const bankSampahs = await db.query.nasabah.findMany({
+    where: and(eq(nasabah.role, "bank-sampah"), isNotNull(nasabah.email)),
+    columns: { email: true, name: true },
+  });
+
+  const validBankSampahs = bankSampahs.filter(
+    (bs) => bs.email && bs.email.trim() !== "",
+  );
+
+  if (validBankSampahs.length === 0) {
+    console.warn("Tidak ada bank-sampah dengan email terdaftar.");
+    return;
+  }
+
+  const {
+    nomorSetor,
+    nasabahName,
+    jenisSampah,
+    beratKg,
+    tanggalSetor,
+    catatan,
+    fotoTimbanganUrl,
+  } = payload;
+
+  // Siapkan attachments
+  const attachments: EmailAttachment[] = [];
+
+  if (fotoTimbanganUrl) {
+    attachments.push({
+      filename: "bukti-timbangan.jpg",
+      path: fotoTimbanganUrl,
+      cid: "foto_timbangan",
+    });
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Notifikasi Setoran Masuk Baru</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#064e3b 0%,#047857 100%);border-radius:20px 20px 0 0;padding:36px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
+                      <span style="color:#34d399;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Bank Sampah Indofood</span>
+                    </div>
+                    <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                      Sampah Siap Diterima
+                    </h1>
+                    <p style="margin:0;color:rgba(255,255,255,0.8);font-size:13px;">
+                      Ada setoran sampah baru dari mitra Warmiendo yang sedang dalam perjalanan ke Bank Sampah Anda.
+                    </p>
+                  </td>
+                  <td align="right" valign="top">
+                    <div style="width:56px;height:56px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                      <span style="font-size:28px;line-height:56px;display:block;text-align:center;">🚚</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:0 0 20px 20px;padding:32px 40px;">
+
+              <!-- Detail -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                <tr>
+                  <td colspan="2" style="padding-bottom:12px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;">Detail Setoran Kurir</p>
+                  </td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;width:45%;">Nomor Setor</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${nomorSetor}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Mitra Pengirim</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${nasabahName} (Warmiendo)</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Jenis Sampah</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${jenisSampah}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Berat Sampah</td>
+                  <td style="padding:12px 0;font-weight:800;font-size:15px;color:#047857;">${beratKg} kg</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Tanggal Kirim</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${tanggalSetor}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Status Tindakan</td>
+                  <td style="padding:12px 0;">
+                    <span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;">Harus Diterima</span>
+                  </td>
+                </tr>
+                ${
+                  catatan
+                    ? `<tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Catatan</td>
+                  <td style="padding:12px 0;font-size:13px;color:#374151;font-style:italic;">"${catatan}"</td>
+                </tr>`
+                    : ""
+                }
+              </table>
+
+              <!-- Foto Timbangan -->
+              ${
+                fotoTimbanganUrl
+                  ? `<div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:20px;">
+                <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f172a;">Foto Bukti Timbangan:</p>
+                <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#f8fafc;padding:12px;text-align:center;">
+                  <img src="cid:foto_timbangan" alt="Bukti Timbangan" style="max-width:100%;max-height:300px;border-radius:8px;display:block;margin:0 auto;"/>
+                </div>
+              </div>`
+                  : ""
+              }
+
+              <!-- Tindakan -->
+              <div style="margin-top:32px;text-align:center;">
+                <p style="margin:0 0 12px;font-size:13px;color:#64748b;">
+                  Harap segera lakukan konfirmasi penerimaan sampah setelah barang sampai di lokasi Bank Sampah Anda.
+                </p>
+              </div>
+
+              <!-- Footer note -->
+              <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
+                Email ini dikirim otomatis oleh sistem Portal Sicuan Bank Sampah Indofood.<br/>
+                Harap jangan membalas email ini.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer brand -->
+          <tr>
+            <td style="padding:20px 0;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;">
+                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+[Bank Sampah Indofood] Notifikasi Sampah Baru Harus Diterima
+
+Nomor Setor    : ${nomorSetor}
+Mitra Pengirim : ${nasabahName} (Warmiendo)
+Jenis Sampah   : ${jenisSampah}
+Berat Sampah   : ${beratKg} kg
+Tanggal Kirim  : ${tanggalSetor}
+Status         : HARUS DITERIMA (Sedang Dikirim)
+${catatan ? `Catatan        : ${catatan}\n` : ""}
+Harap segera periksa dashboard Bank Sampah Anda untuk mengonfirmasi penerimaan barang.
+  `.trim();
+
+  const results = await Promise.allSettled(
+    validBankSampahs.map((bs) =>
+      sendEmail({
+        to: bs.email as string,
+        subject: `🚚 [Harus Diterima] Setoran Sampah Baru dari Warmiendo — ${nomorSetor}`,
+        text,
+        html,
+        attachments,
+      }),
+    ),
+  );
+
+  const failed = results.filter((r) => r.status === "rejected");
+  if (failed.length > 0) {
+    console.error(
+      `Gagal mengirim notif serah sampah ke ${failed.length} bank-sampah:`,
       failed,
     );
   }

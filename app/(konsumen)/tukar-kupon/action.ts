@@ -4,14 +4,9 @@ import { desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import { kupon, nasabah, penukaranKupon } from "@/db/schema";
-
-export type ActionState = {
-  success: boolean;
-  message?: string;
-  errors?: Record<string, string[]>;
-};
 
 async function getCurrentUser() {
   try {

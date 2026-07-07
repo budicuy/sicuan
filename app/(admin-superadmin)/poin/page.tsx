@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  type ActionState,
   createPoinSampah,
   deletePoinSampah,
   getPoinSampah,
@@ -13,14 +12,7 @@ import { type Column, DataTable } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
 import { getCurrentUser } from "@/app/lib/auth-actions";
-
-interface PoinSampah {
-  id: number;
-  jenisSampah: string;
-  pointPerKg: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { ActionState, PoinSampah } from "@/app/types";
 
 export default function PoinPage() {
   const [data, setData] = useState<PoinSampah[]>([]);

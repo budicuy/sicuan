@@ -18,26 +18,7 @@ import {
   updateSetorSampahStatus,
 } from "@/app/(bank-sampah)/laporan/bank-sampah-laporan/action";
 import { DataTable } from "@/app/components/shared/DataTable";
-
-interface SetorSampahItem {
-  id: number;
-  nomorSetor: string;
-  jenisSampah: string;
-  beratKg: number;
-  totalPoin: number;
-  totalKredit?: number;
-  tanggalSetor: string;
-  status: string;
-  createdAt: Date;
-  fotoTimbangan: string;
-  fotoBuktiTambahan?: string[] | null;
-  catatan: string | null;
-  user?: {
-    name: string;
-    username: string;
-    role: string;
-  } | null;
-}
+import type { SetorSampahItem } from "@/app/types";
 
 export default function LaporanBankSampahPage() {
   const [data, setData] = useState<SetorSampahItem[]>([]);

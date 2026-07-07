@@ -12,36 +12,9 @@ import {
 } from "@/app/lib/gemini-weight-reader";
 import { calculateSetoranReward } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
+import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
-
-export interface SetoranType {
-  id: number;
-  nomorSetor: string;
-  userId: number;
-  jenisSampah: "Karton" | "Etiket" | "Paper Cup";
-  beratKg: number;
-  beratAiKg?: number | null;
-  tanggalSetor: string;
-  fotoTimbangan: string;
-  fotoBuktiTambahan: string[];
-  catatan?: string | null;
-  totalPoin: number;
-  status: "pending" | "diverifikasi" | "diserahkan" | "diterima" | "ditolak";
-  metodeSetor?: string | null;
-  ekspedisiId?: number | null;
-  ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
-  user?: { id: number; name: string; username: string; role: string } | null;
-  totalKredit?: number;
-  kategoriNasabah: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type ActionState = {
-  success: boolean;
-  errors?: Record<string, string[]>;
-};
 
 export async function getCurrentUserRole(): Promise<string | null> {
   const user = await getCurrentUser();

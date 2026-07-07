@@ -32,11 +32,7 @@ async function getCurrentUser() {
   }
 }
 
-export type ActionState = {
-  success: boolean;
-  message: string;
-  errors?: Record<string, string[]>;
-};
+import type { ActionState } from "@/app/types";
 
 async function calcMonthlyKredit(
   userId: number,

@@ -40,7 +40,25 @@ mock.module("../db", () => {
     db: {
       query: {
         nasabah: {
-          findMany: async () => {
+          findMany: async (options?: { where?: unknown }) => {
+            const seen = new WeakSet();
+            const queryStr = JSON.stringify(options || {}, (_key, value) => {
+              if (typeof value === "object" && value !== null) {
+                if (seen.has(value)) return "[Circular]";
+                seen.add(value);
+              }
+              return value;
+            });
+            if (
+              queryStr.includes('"value":"bank-sampah"') ||
+              (queryStr.includes('"bank-sampah"') &&
+                !queryStr.includes('"admin"'))
+            ) {
+              return [
+                { email: "banksampah1@example.com", name: "Bank Sampah Satu" },
+                { email: "banksampah2@example.com", name: "Bank Sampah Dua" },
+              ];
+            }
             return [
               { email: "admin1@example.com", name: "Admin Satu" },
               { email: "admin2@example.com", name: "Admin Dua" },
@@ -80,7 +98,10 @@ import { validateFotoTimbangan as validateBankSampah } from "../app/(bank-sampah
 // Now import actions to be tested
 import { validateFotoTimbangan as validateKonsumen } from "../app/(konsumen)/setor-sampah/action";
 import { validateFotoTimbangan as validateWarmiendo } from "../app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";
-import { sendSetoranNotifToAdmins } from "../app/lib/email";
+import {
+  sendHandoverNotifToBankSampah,
+  sendSetoranNotifToAdmins,
+} from "../app/lib/email";
 
 const SAMPLE_DIR = path.join(__dirname, "../docs/sampel_gambar");
 
@@ -176,6 +197,20 @@ describe("Notifikasi Email Admin", () => {
       status: "diverifikasi",
       fotoTimbanganBase64: base64,
       fotoBuktiBase64List: [base64],
+    });
+  });
+});
+
+describe("Notifikasi Email Bank Sampah", () => {
+  test("Mengirimkan email notifikasi barang siap diterima ke Bank Sampah", async () => {
+    await sendHandoverNotifToBankSampah({
+      nomorSetor: "TEST/HANDOVER/001",
+      nasabahName: "Warmiendo Mitra",
+      jenisSampah: "Karton",
+      beratKg: 5.4,
+      tanggalSetor: new Date().toISOString().split("T")[0],
+      catatan: "Uji coba kirim ke bank-sampah",
+      fotoTimbanganUrl: "https://r2.example.com/test-timbangan.jpg",
     });
   });
 });

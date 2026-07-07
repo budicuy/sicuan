@@ -12,6 +12,7 @@ import { BuktiPembayaranDocument } from "@/app/components/shared/BuktiPembayaran
 import { sendPencairanSelesaiNotifToUser } from "@/app/lib/email";
 import { getHargaRange } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
+import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import {
   buktiPembayaran,
@@ -95,12 +96,6 @@ async function getBankSampahMonthlyCredit(userId: number): Promise<number> {
 
   return Math.max(0, dynamicKredit - totalWithdrawn);
 }
-
-export type ActionState = {
-  success: boolean;
-  message: string;
-  errors?: Record<string, string[]>;
-};
 
 export async function getDisbursementData() {
   const user = await getCurrentUser();
@@ -506,32 +501,6 @@ export async function rejectDisbursement(
 
 // ── BUKTI PEMBAYARAN ─────────────────────────────────────────────────────────
 
-export interface CreateBuktiPembayaranInput {
-  pencairanDanaId: number;
-  userId: number;
-  namaBankSampah: string;
-  idPelanggan: string;
-  nama: string;
-  alamat?: string;
-  noTelepon?: string;
-  periodeBulan: string;
-  periodeTahun: number;
-  kategoriSumber: string;
-  dataSampah: DataSampahItem[];
-  totalBeratKg: number;
-  tarifDasar: number;
-  biayaTambahan: number;
-  totalTagihan: number;
-  metodePembayaran: string;
-  keterangan?: string;
-  ttdPenerimaBase64: string; // admin TTD (right side)
-  namaPenyerah?: string;
-  jabatanPenyerah?: string;
-  namaPenerima?: string;
-  jabatanPenerima?: string;
-  buktiTransferBase64?: string;
-}
-
 function generateNomorDokumen(
   urutan: number,
   bulanRomawi: string,
@@ -539,6 +508,32 @@ function generateNomorDokumen(
 ): string {
   const num = String(urutan).padStart(3, "0");
   return `${num} / BPPS / NDL / BJM / ${bulanRomawi} / ${tahun}`;
+}
+
+export interface CreateBuktiPembayaranInput {
+  pencairanDanaId: number;
+  userId: number;
+  namaBankSampah: string;
+  idPelanggan: string;
+  nama: string;
+  alamat?: string | null;
+  noTelepon?: string | null;
+  periodeBulan: string;
+  periodeTahun: number;
+  kategoriSumber: "bank_sampah_induk" | "tps_3r" | "bank_sampah_unit";
+  dataSampah: (DataSampahItem & { kredit?: number })[];
+  totalBeratKg: number;
+  tarifDasar: number;
+  biayaTambahan: number;
+  totalTagihan: number;
+  metodePembayaran: string;
+  keterangan?: string | null;
+  ttdPenerimaBase64?: string;
+  namaPenyerah?: string;
+  jabatanPenyerah?: string;
+  namaPenerima?: string;
+  jabatanPenerima?: string;
+  buktiTransferBase64?: string;
 }
 
 const BULAN_ROMAWI: Record<string, string> = {

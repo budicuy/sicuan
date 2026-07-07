@@ -22,23 +22,7 @@ import {
   validateFotoTimbangan,
 } from "@/app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-
-interface SetorSampahItem {
-  id: number;
-  nomorSetor: string;
-  jenisSampah: string;
-  beratKg: number;
-  totalPoin: number;
-  totalKredit?: number;
-  tanggalSetor: string;
-  status: string;
-  createdAt: Date;
-  metodeSetor?: string;
-  ekspedisi?: {
-    namaVendor: string;
-    noTelepon: string;
-  } | null;
-}
+import type { SetorSampahItem } from "@/app/types";
 
 function addWatermarkToImage(
   imageDataUrl: string,
@@ -632,11 +616,14 @@ export default function WarmiendoSetorSampah() {
                     <input
                       id="tanggalSetor"
                       type="date"
+                      value={tanggalSetor}
+                      disabled
+                      className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-400 focus:outline-none transition-all cursor-not-allowed"
+                    />
+                    <input
+                      type="hidden"
                       name="tanggalSetor"
                       value={tanggalSetor}
-                      onChange={(e) => setTanggalSetor(e.target.value)}
-                      required
-                      className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
                     />
                   </div>
                 </div>

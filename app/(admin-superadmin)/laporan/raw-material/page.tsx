@@ -22,64 +22,7 @@ import {
 } from "recharts";
 import { getRawMaterialReport } from "@/app/(admin-superadmin)/laporan/raw-material/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
-
-interface ChartDataPoint {
-  weekLabel?: string;
-  monthLabel?: string;
-  yearLabel?: string;
-  totalRaw: number;
-  totalDeposited: number;
-  [key: string]: string | number | undefined;
-}
-
-interface RankingPoint {
-  userId: number;
-  name: string;
-  totalWeight: number;
-}
-
-interface ReportSegment {
-  overall: {
-    totalRawWeight: number;
-    totalDepositedWeight: number;
-    overallPercentage: number;
-  };
-  byCategory: {
-    category: string;
-    rawWeight: number;
-    depositedWeight: number;
-    percentage: number;
-    classifications: { name: string; weight: number }[];
-  }[];
-  byRole: {
-    role: string;
-    totalWeight: number;
-    sharePercentage: number;
-    rawContributionPercentage: number;
-    categories: { category: string; weight: number }[];
-  }[];
-  topCategories: {
-    category: string;
-    depositedWeight: number;
-    rawWeight: number;
-    percentage: number;
-  }[];
-  rankings: {
-    Konsumen: RankingPoint[];
-    Warmiendo: RankingPoint[];
-    "Bank Sampah": RankingPoint[];
-  };
-}
-
-interface ReportData {
-  success: boolean;
-  weekly: ReportSegment;
-  monthly: ReportSegment;
-  yearly: ReportSegment;
-  weeklyData: ChartDataPoint[];
-  monthlyData: ChartDataPoint[];
-  yearlyData: ChartDataPoint[];
-}
+import type { ReportData } from "@/app/types";
 
 export default function LaporanRawMaterialPage() {
   const [data, setData] = useState<ReportData | null>(null);
@@ -87,9 +30,15 @@ export default function LaporanRawMaterialPage() {
   const [activeTab, setActiveTab] = useState<"weekly" | "monthly" | "yearly">(
     "weekly",
   );
-  const [selectedYear, setSelectedYear] = useState<number>(2026);
-  const [selectedMonth, setSelectedMonth] = useState<number>(6); // June
-  const [selectedWeek, setSelectedWeek] = useState<number>(1);
+  const [selectedYear, setSelectedYear] = useState<number>(() =>
+    new Date().getFullYear(),
+  );
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    () => new Date().getMonth() + 1,
+  );
+  const [selectedWeek, setSelectedWeek] = useState<number>(() =>
+    Math.min(5, Math.ceil(new Date().getDate() / 7)),
+  );
   const [_isPending, startTransition] = useTransition();
 
   const monthNamesIndo = [

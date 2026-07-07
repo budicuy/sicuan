@@ -6,43 +6,19 @@ import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
-import { sendSetoranNotifToAdmins } from "@/app/lib/email";
+import {
+  sendHandoverNotifToBankSampah,
+  sendSetoranNotifToAdmins,
+} from "@/app/lib/email";
 import {
   readWeightFromImage,
   validateBeratTolerance,
 } from "@/app/lib/gemini-weight-reader";
 import { calculateSetoranReward } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
+import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
-
-export interface SetoranType {
-  id: number;
-  nomorSetor: string;
-  userId: number;
-  jenisSampah: "Karton" | "Etiket" | "Paper Cup";
-  beratKg: number;
-  beratAiKg?: number | null;
-  tanggalSetor: string;
-  fotoTimbangan: string;
-  fotoBuktiTambahan: string[];
-  catatan?: string | null;
-  totalPoin: number;
-  status: "pending" | "diverifikasi" | "diserahkan" | "diterima" | "ditolak";
-  metodeSetor?: string | null;
-  ekspedisiId?: number | null;
-  ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
-  user?: { id: number; name: string; username: string; role: string } | null;
-  totalKredit?: number;
-  kategoriNasabah: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type ActionState = {
-  success: boolean;
-  errors?: Record<string, string[]>;
-};
 
 export async function getCurrentUserRole(): Promise<string | null> {
   const user = await getCurrentUser();
@@ -829,6 +805,22 @@ export async function handoverSetorSampahToEkspedisi(
       .update(setorSampah)
       .set({ status: "diserahkan", updatedAt: new Date() })
       .where(eq(setorSampah.id, id));
+
+    // Kirim email notifikasi ke Bank Sampah secara asynchronous (fire-and-forget)
+    sendHandoverNotifToBankSampah({
+      nomorSetor: item.nomorSetor,
+      nasabahName: user.name,
+      jenisSampah: item.jenisSampah,
+      beratKg: item.beratKg,
+      tanggalSetor: item.tanggalSetor,
+      catatan: item.catatan,
+      fotoTimbanganUrl: item.fotoTimbangan,
+    }).catch((err) => {
+      console.error(
+        "Gagal mengirim email notifikasi serah sampah ke Bank Sampah:",
+        err,
+      );
+    });
 
     revalidatePath("/setor-sampah");
     revalidatePath("/laporan/warmiendo");

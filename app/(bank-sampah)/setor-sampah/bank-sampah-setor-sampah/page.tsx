@@ -20,19 +20,7 @@ import {
   validateFotoTimbangan,
 } from "@/app/(bank-sampah)/setor-sampah/bank-sampah-setor-sampah/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-
-interface SetorSampahItem {
-  id: number;
-  nomorSetor: string;
-  jenisSampah: string;
-  beratKg: number;
-  totalPoin: number;
-  totalKredit?: number;
-  tanggalSetor: string;
-  status: string;
-  createdAt: Date;
-  metodeSetor?: string;
-}
+import type { SetorSampahItem } from "@/app/types";
 
 function addWatermarkToImage(
   imageDataUrl: string,
@@ -474,10 +462,14 @@ export default function BankSampahSetorSampah() {
                   <input
                     type="date"
                     id="tanggalSetor"
+                    value={tanggalSetor}
+                    disabled
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-400 focus:outline-none transition-all cursor-not-allowed"
+                  />
+                  <input
+                    type="hidden"
                     name="tanggalSetor"
                     value={tanggalSetor}
-                    onChange={(e) => setTanggalSetor(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 cursor-pointer transition-all"
                   />
                 </div>
               </div>
@@ -753,7 +745,7 @@ export default function BankSampahSetorSampah() {
               10 setoran terakhir Anda
             </p>
 
-            <div className="space-y-3.5 max-h-[580px] overflow-y-auto pr-1">
+            <div className="space-y-3.5 max-h-145 overflow-y-auto pr-1">
               {history.length === 0 ? (
                 <div className="text-center py-10">
                   <Package className="w-8 h-8 text-neutral-300 mx-auto mb-2" />

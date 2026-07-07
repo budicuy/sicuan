@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  type ActionState,
   createNasabah,
   deleteNasabah,
   getNasabah,
@@ -16,6 +15,7 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import type { ActionState } from "@/app/types";
 
 interface Nasabah {
   id: number;

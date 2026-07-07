@@ -8,20 +8,7 @@ import {
   updateProfileData,
 } from "@/app/(bank-sampah)/profil/bank-sampah-profil/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
-
-interface ProfileData {
-  id: number;
-  name: string;
-  username: string;
-  role: string;
-  status: string;
-  nik: string;
-  tanggalLahir: string;
-  noTelepon: string;
-  alamat: string;
-  jenisBank: string;
-  noRekening: string;
-}
+import type { ProfileData } from "@/app/types";
 
 export default function ProfilPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);

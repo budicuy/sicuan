@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  type ActionState,
   createEkspedisi,
   deleteEkspedisi,
   getEkspedisi,
@@ -17,15 +16,7 @@ import {
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
 import { getCurrentUser } from "@/app/lib/auth-actions";
-
-interface Ekspedisi {
-  id: number;
-  namaVendor: string;
-  noTelepon: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { ActionState, Ekspedisi } from "@/app/types";
 
 export default function EkspedisiPage() {
   const [data, setData] = useState<Ekspedisi[]>([]);
