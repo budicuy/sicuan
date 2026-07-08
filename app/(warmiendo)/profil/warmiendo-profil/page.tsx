@@ -337,6 +337,29 @@ export default function ProfilPage() {
               )}
             </div>
 
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="email"
+                className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+              >
+                Alamat Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                defaultValue={profile?.email || ""}
+                className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
+                placeholder="Contoh: nama@domain.com"
+              />
+              {profileErrors.email && (
+                <p className="text-[11px] font-semibold text-red-600">
+                  {profileErrors.email[0]}
+                </p>
+              )}
+            </div>
+
             {/* Alamat */}
             <div className="space-y-1.5 md:col-span-2">
               <label

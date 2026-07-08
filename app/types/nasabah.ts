@@ -39,4 +39,5 @@ export interface ProfileData {
   alamat: string;
   jenisBank: string;
   noRekening: string;
+  email: string;
 }

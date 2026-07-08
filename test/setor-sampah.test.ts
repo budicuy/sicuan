@@ -99,8 +99,11 @@ import { validateFotoTimbangan as validateBankSampah } from "../app/(bank-sampah
 import { validateFotoTimbangan as validateKonsumen } from "../app/(konsumen)/setor-sampah/action";
 import { validateFotoTimbangan as validateWarmiendo } from "../app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";
 import {
+  sendAssignmentNotifToWarmiendo,
   sendHandoverNotifToBankSampah,
+  sendReceiptNotifToDepositor,
   sendSetoranNotifToAdmins,
+  sendStatusUpdateNotifToDepositor,
 } from "../app/lib/email";
 
 const SAMPLE_DIR = path.join(__dirname, "../docs/sampel_gambar");
@@ -211,6 +214,69 @@ describe("Notifikasi Email Bank Sampah", () => {
       tanggalSetor: new Date().toISOString().split("T")[0],
       catatan: "Uji coba kirim ke bank-sampah",
       fotoTimbanganUrl: "https://r2.example.com/test-timbangan.jpg",
+    });
+  });
+});
+
+describe("Notifikasi Email Warmiendo", () => {
+  test("Mengirimkan email notifikasi penugasan ekspedisi ke Warmiendo", async () => {
+    await sendAssignmentNotifToWarmiendo({
+      warmiendoEmail: "warmiendo@example.com",
+      warmiendoName: "Warmiendo Mitra",
+      nomorSetor: "141/W/NDL/BJM/07/07/2026",
+      jenisSampah: "Karton",
+      beratKg: 1,
+      tanggalSetor: "2026-07-07",
+      vendorName: "JNE Logistics",
+      vendorPhone: "08123456789",
+    });
+  });
+});
+
+describe("Notifikasi Tanda Terima Nasabah", () => {
+  test("Mengirimkan email tanda terima setoran ke Nasabah", async () => {
+    await sendReceiptNotifToDepositor({
+      email: "nasabah@example.com",
+      name: "Budi Nasabah",
+      role: "konsumen",
+      nomorSetor: "142/K/NDL/BJM/07/07/2026",
+      jenisSampah: "Mie Instan",
+      beratKg: 1.5,
+      tanggalSetor: "2026-07-07",
+      catatan: "Setor sore hari",
+      status: "pending",
+    });
+  });
+});
+
+describe("Notifikasi Hasil Verifikasi Nasabah (Diterima)", () => {
+  test("Mengirimkan email setoran diterima ke Nasabah", async () => {
+    await sendStatusUpdateNotifToDepositor({
+      email: "nasabah@example.com",
+      name: "Budi Nasabah",
+      role: "konsumen",
+      nomorSetor: "142/K/NDL/BJM/07/07/2026",
+      jenisSampah: "Mie Instan",
+      beratKg: 1.5,
+      tanggalSetor: "2026-07-07",
+      status: "diterima",
+      totalPoin: 15,
+    });
+  });
+});
+
+describe("Notifikasi Hasil Verifikasi Nasabah (Ditolak)", () => {
+  test("Mengirimkan email setoran ditolak ke Nasabah", async () => {
+    await sendStatusUpdateNotifToDepositor({
+      email: "nasabah@example.com",
+      name: "Budi Nasabah",
+      role: "konsumen",
+      nomorSetor: "142/K/NDL/BJM/07/07/2026",
+      jenisSampah: "Mie Instan",
+      beratKg: 1.5,
+      tanggalSetor: "2026-07-07",
+      status: "ditolak",
+      alasanPenolakan: "Foto timbangan tidak terbaca jelas.",
     });
   });
 });

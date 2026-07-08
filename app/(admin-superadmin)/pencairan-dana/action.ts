@@ -9,7 +9,10 @@ import { cookies } from "next/headers";
 import React from "react";
 import sharp from "sharp";
 import { BuktiPembayaranDocument } from "@/app/components/shared/BuktiPembayaranDocument";
-import { sendPencairanSelesaiNotifToUser } from "@/app/lib/email";
+import {
+  sendPencairanPengajuanNotifToUser,
+  sendPencairanSelesaiNotifToUser,
+} from "@/app/lib/email";
 import { getHargaRange } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import type { ActionState } from "@/app/types";
@@ -241,6 +244,26 @@ export async function requestDisbursement(
       ttdPenyerahUrl,
     });
 
+    // Kirim notifikasi email tanda terima pengajuan pencairan (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    if (profile.email) {
+      try {
+        await sendPencairanPengajuanNotifToUser({
+          userEmail: profile.email,
+          userName: user.name,
+          jumlah,
+          metode: metodePembayaran,
+          jenisBank: profile.jenisBank,
+          noRekening: profile.noRekening,
+          tanggalPengajuan: new Date().toLocaleDateString("id-ID"),
+        });
+      } catch (err) {
+        console.error(
+          "Gagal mengirim email tanda terima pengajuan pencairan:",
+          err,
+        );
+      }
+    }
+
     revalidatePath("/pencairan-dana");
     return {
       success: true,
@@ -471,17 +494,19 @@ export async function rejectDisbursement(
       .set({ status: "ditolak" })
       .where(eq(pencairanDana.id, id));
 
-    // Kirim notif email ke nasabah (fire-and-forget)
+    // Kirim notif email ke nasabah (di-await untuk menjamin pengiriman pada Vercel Serverless)
     if (targetUser?.email) {
-      sendPencairanSelesaiNotifToUser({
-        userEmail: targetUser.email,
-        userName: targetUser.name,
-        jumlah: request.jumlah,
-        metode: request.metodePembayaran,
-        status: "ditolak",
-      }).catch((err) =>
-        console.error("[Email notif pencairan ditolak] Gagal kirim:", err),
-      );
+      try {
+        await sendPencairanSelesaiNotifToUser({
+          userEmail: targetUser.email,
+          userName: targetUser.name,
+          jumlah: request.jumlah,
+          metode: request.metodePembayaran,
+          status: "ditolak",
+        });
+      } catch (err) {
+        console.error("[Email notif pencairan ditolak] Gagal kirim:", err);
+      }
     }
 
     revalidatePath("/pencairan-dana");
@@ -649,34 +674,38 @@ export async function createBuktiPembayaran(
       }
     }
 
-    // Kirim notif email ke nasabah beserta lampiran PDF secara asynchronous (fire-and-forget)
+    // Kirim notif email ke nasabah beserta lampiran PDF (di-await untuk menjamin pengiriman pada Vercel Serverless)
     const targetUser = await db.query.nasabah.findFirst({
       where: eq(nasabah.id, input.userId),
     });
     if (targetUser?.email) {
-      getBuktiPembayaranPdfBase64(newDoc.id)
-        .then((pdfRes) => {
-          if (pdfRes.success && pdfRes.pdfBase64) {
-            sendPencairanSelesaiNotifToUser({
-              userEmail: targetUser.email || "",
-              userName: targetUser.name,
-              jumlah: input.totalTagihan,
-              metode: input.metodePembayaran,
-              status: "berhasil",
-              buktiTransferUrl: pencairan?.buktiTransfer ?? null,
-              pdfBase64: pdfRes.pdfBase64,
-              pdfFileName: pdfRes.fileName,
-            }).catch((err) =>
-              console.error(
-                "[Email notif pencairan selesai] Gagal kirim:",
-                err,
-              ),
-            );
-          }
-        })
-        .catch((err) => {
-          console.error("Gagal generate PDF untuk lampiran email:", err);
-        });
+      try {
+        const pdfRes = await getBuktiPembayaranPdfBase64(newDoc.id);
+        if (pdfRes.success && pdfRes.pdfBase64) {
+          // Cari pencairan ter-update untuk mendapatkan bukti transfer terbaru
+          const updatedPencairan = await db.query.pencairanDana.findFirst({
+            where: eq(pencairanDana.id, input.pencairanDanaId || 0),
+          });
+          await sendPencairanSelesaiNotifToUser({
+            userEmail: targetUser.email || "",
+            userName: targetUser.name,
+            jumlah: input.totalTagihan,
+            metode: input.metodePembayaran,
+            status: "berhasil",
+            buktiTransferUrl:
+              updatedPencairan?.buktiTransfer ??
+              pencairan?.buktiTransfer ??
+              null,
+            pdfBase64: pdfRes.pdfBase64,
+            pdfFileName: pdfRes.fileName,
+          });
+        }
+      } catch (err) {
+        console.error(
+          "Gagal mengirim email bukti pembayaran / pencairan selesai:",
+          err,
+        );
+      }
     }
 
     revalidatePath("/pencairan-dana");

@@ -26,7 +26,7 @@ export default function LaporanBankSampahPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalBerat, setTotalBerat] = useState(0);
   const [_totalPoin, setTotalPoin] = useState(0);
-  const [totalKredit, setTotalKredit] = useState(0);
+  const [_totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Table pagination state
@@ -205,14 +205,6 @@ export default function LaporanBankSampahPage() {
       ),
     },
     {
-      header: "Reward",
-      render: (item: SetorSampahItem) => (
-        <span className="font-bold text-primary-600">
-          +Rp {(item.totalKredit ?? 0).toLocaleString("id-ID")}
-        </span>
-      ),
-    },
-    {
       header: "Status",
       sortKey: "status",
       render: (item: SetorSampahItem) => getStatusBadge(item.status),
@@ -252,29 +244,14 @@ export default function LaporanBankSampahPage() {
 
         if (isPending) {
           return (
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                disabled={updatingId === item.id}
-                onClick={() => handleStatusUpdate(item.id, "diterima")}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
-              >
-                {updatingId === item.id ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                )}
-                Terima
-              </button>
-              <button
-                type="button"
-                disabled={updatingId === item.id}
-                onClick={() => handleStatusUpdate(item.id, "ditolak")}
-                className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg border-0 cursor-pointer disabled:opacity-50 transition-all"
-              >
-                Tolak
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedItem(item)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-bold shadow-xs border-0 transition-all cursor-pointer"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Validasi
+            </button>
           );
         }
 
@@ -363,7 +340,7 @@ export default function LaporanBankSampahPage() {
       </div>
 
       {/* Rangkuman Kartu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 print:grid-cols-3 print:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 print:grid-cols-2 print:gap-4">
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
             Total Setoran
@@ -385,15 +362,6 @@ export default function LaporanBankSampahPage() {
             <span className="text-sm font-semibold text-primary-400 ml-1">
               kg
             </span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
-          <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-            Total Kredit Diperoleh
-          </div>
-          <div className="text-3xl font-extrabold text-emerald-600">
-            Rp <AnimatedCounter value={totalKredit} />
           </div>
         </div>
       </div>
@@ -520,29 +488,42 @@ export default function LaporanBankSampahPage() {
                     Status Verifikasi
                   </span>
                   <div className="mt-1">
-                    {userRole === "admin" || userRole === "superadmin" ? (
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={selectedItem.status}
+                    {(userRole === "admin" || userRole === "superadmin") &&
+                    selectedItem.status === "pending" ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <button
+                          type="button"
                           disabled={updatingId === selectedItem.id}
-                          onChange={(e) =>
-                            handleStatusUpdate(
+                          onClick={async () => {
+                            await handleStatusUpdate(
                               selectedItem.id,
-                              e.target.value as
-                                | "pending"
-                                | "diterima"
-                                | "ditolak",
-                            )
-                          }
-                          className="px-2.5 py-1 border border-neutral-200 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:border-primary-600 text-neutral-800 cursor-pointer"
+                              "diterima",
+                            );
+                            setSelectedItem(null);
+                          }}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg cursor-pointer disabled:opacity-50 transition-colors flex items-center gap-1"
                         >
-                          <option value="pending">Pending</option>
-                          <option value="diterima">Diterima</option>
-                          <option value="ditolak">Ditolak</option>
-                        </select>
-                        {updatingId === selectedItem.id && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-600" />
-                        )}
+                          {updatingId === selectedItem.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          )}
+                          Setuju
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updatingId === selectedItem.id}
+                          onClick={async () => {
+                            await handleStatusUpdate(
+                              selectedItem.id,
+                              "ditolak",
+                            );
+                            setSelectedItem(null);
+                          }}
+                          className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg cursor-pointer disabled:opacity-50 transition-colors"
+                        >
+                          Tolak
+                        </button>
                       </div>
                     ) : (
                       getStatusBadge(selectedItem.status)
@@ -555,15 +536,6 @@ export default function LaporanBankSampahPage() {
                   </span>
                   <span className="font-bold text-neutral-800 text-lg">
                     {selectedItem.beratKg} kg
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Reward diperoleh
-                  </span>
-                  <span className="font-bold text-neutral-800 text-lg">
-                    +Rp{" "}
-                    {(selectedItem.totalKredit ?? 0).toLocaleString("id-ID")}
                   </span>
                 </div>
               </div>

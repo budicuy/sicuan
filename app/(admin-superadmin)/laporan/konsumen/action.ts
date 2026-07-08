@@ -6,6 +6,7 @@ import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
+import { sendStatusUpdateNotifToDepositor } from "@/app/lib/email";
 import {
   readWeightFromImage,
   validateBeratTolerance,
@@ -96,7 +97,7 @@ export async function updateSetorSampahStatus(
       })
       .where(eq(nasabah.id, item.userId));
 
-    // Update status setoran ke diterima
+    // Update status setoran ke diterima/ditolak
     await db
       .update(setorSampah)
       .set({
@@ -105,6 +106,26 @@ export async function updateSetorSampahStatus(
         updatedAt: new Date(),
       })
       .where(eq(setorSampah.id, id));
+
+    // Kirim notifikasi email status update ke nasabah (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    if (depositor?.email && (status === "diterima" || status === "ditolak")) {
+      try {
+        await sendStatusUpdateNotifToDepositor({
+          email: depositor.email,
+          name: depositor.name,
+          role: depositor.role,
+          nomorSetor: item.nomorSetor,
+          jenisSampah: item.jenisSampah,
+          beratKg: item.beratKg,
+          tanggalSetor: item.tanggalSetor,
+          status: status,
+          totalPoin: totalPoin,
+          alasanPenolakan: item.catatan || undefined,
+        });
+      } catch (err) {
+        console.error("Gagal mengirim email status update ke nasabah:", err);
+      }
+    }
 
     revalidatePath(`/laporan/${roleTarget}`);
     return { success: true, message: "Status setoran berhasil diperbarui." };

@@ -6,7 +6,10 @@ import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
-import { sendSetoranNotifToAdmins } from "@/app/lib/email";
+import {
+  sendReceiptNotifToDepositor,
+  sendSetoranNotifToAdmins,
+} from "@/app/lib/email";
 import {
   readWeightFromImage,
   validateBeratTolerance,
@@ -1048,6 +1051,33 @@ export async function createSetorSampah(
       });
     } catch (err) {
       console.error("Gagal mengirim email notifikasi setoran ke admin:", err);
+    }
+
+    // Ambil data detail nasabah untuk mendapatkan email
+    const userDetail = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, user.id),
+    });
+
+    // Kirim notifikasi email tanda terima ke nasabah (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    if (userDetail?.email) {
+      try {
+        await sendReceiptNotifToDepositor({
+          email: userDetail.email,
+          name: user.name,
+          role: user.role,
+          nomorSetor,
+          jenisSampah,
+          beratKg,
+          tanggalSetor,
+          catatan: catatan || undefined,
+          status: baseValues.status,
+        });
+      } catch (err) {
+        console.error(
+          "Gagal mengirim email tanda terima setoran ke nasabah:",
+          err,
+        );
+      }
     }
 
     if (!isPending) {

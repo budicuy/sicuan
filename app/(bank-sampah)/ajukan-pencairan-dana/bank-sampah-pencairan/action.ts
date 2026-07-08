@@ -5,7 +5,10 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { sendPencairanNotifToAdmins } from "@/app/lib/email";
+import {
+  sendPencairanNotifToAdmins,
+  sendPencairanPengajuanNotifToUser,
+} from "@/app/lib/email";
 import { getHargaRange } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
@@ -387,19 +390,38 @@ export async function requestDisbursement(
       periodeTahun: finalYear,
     });
 
-    // Kirim notif email ke semua admin/superadmin (fire-and-forget)
-    sendPencairanNotifToAdmins({
-      nasabahName: user.name,
-      nasabahRole: user.role,
-      jumlah,
-      metode: metodePembayaran,
-      jenisBank: profile.jenisBank ?? null,
-      noRekening: profile.noRekening ?? null,
-      keterangan: keterangan || null,
-      tanggal: new Date(),
-    }).catch((err) =>
-      console.error("[Email notif pencairan] Gagal kirim:", err),
-    );
+    // Kirim notif email ke semua admin/superadmin (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    try {
+      await sendPencairanNotifToAdmins({
+        nasabahName: user.name,
+        nasabahRole: user.role,
+        jumlah,
+        metode: metodePembayaran,
+        jenisBank: profile.jenisBank ?? null,
+        noRekening: profile.noRekening ?? null,
+        keterangan: keterangan || null,
+        tanggal: new Date(),
+      });
+    } catch (err) {
+      console.error("[Email notif pencairan ke admin] Gagal kirim:", err);
+    }
+
+    // Kirim notifikasi email tanda terima pengajuan pencairan ke nasabah (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    if (profile.email) {
+      try {
+        await sendPencairanPengajuanNotifToUser({
+          userEmail: profile.email,
+          userName: user.name,
+          jumlah,
+          metode: metodePembayaran,
+          jenisBank: profile.jenisBank,
+          noRekening: profile.noRekening,
+          tanggalPengajuan: new Date().toLocaleDateString("id-ID"),
+        });
+      } catch (err) {
+        console.error("[Email notif pencairan ke nasabah] Gagal kirim:", err);
+      }
+    }
 
     revalidatePath("/ajukan-pencairan-dana/bank-sampah-pencairan");
     return {

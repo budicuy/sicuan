@@ -54,6 +54,14 @@ const profileSchema = z.object({
     .nullable()
     .transform((val) => (val ? val.trim() : ""))
     .transform((val) => (val === "" ? null : val)),
+  email: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? val.trim() : ""))
+    .refine((val) => val === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+      message: "Format email tidak valid",
+    })
+    .transform((val) => (val === "" ? null : val)),
 });
 
 const passwordSchema = z
@@ -106,6 +114,7 @@ export async function getProfileData() {
         alamat: user.alamat || "",
         jenisBank: user.jenisBank || "",
         noRekening: user.noRekening || "",
+        email: user.email || "",
       },
     };
   } catch (error) {
@@ -133,6 +142,7 @@ export async function updateProfileData(
       alamat: (formData.get("alamat") as string) || null,
       jenisBank: (formData.get("jenisBank") as string) || null,
       noRekening: (formData.get("noRekening") as string) || null,
+      email: (formData.get("email") as string) || null,
     };
 
     const parsed = profileSchema.safeParse(rawData);
@@ -154,6 +164,7 @@ export async function updateProfileData(
         alamat: parsed.data.alamat,
         jenisBank: parsed.data.jenisBank,
         noRekening: parsed.data.noRekening,
+        email: parsed.data.email,
         updatedAt: new Date(),
       })
       .where(eq(nasabah.id, userId));

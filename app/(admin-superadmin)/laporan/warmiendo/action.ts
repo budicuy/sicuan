@@ -7,6 +7,10 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
 import {
+  sendAssignmentNotifToWarmiendo,
+  sendStatusUpdateNotifToDepositor,
+} from "@/app/lib/email";
+import {
   readWeightFromImage,
   validateBeratTolerance,
 } from "@/app/lib/gemini-weight-reader";
@@ -14,7 +18,7 @@ import { calculateSetoranReward } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
-import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
+import { ekspedisi, hargaSampah, nasabah, setorSampah } from "@/db/schema";
 
 export async function getCurrentUserRole(): Promise<string | null> {
   const user = await getCurrentUser();
@@ -99,15 +103,72 @@ export async function updateSetorSampahStatus(
       })
       .where(eq(nasabah.id, item.userId));
 
-    // Update status setoran ke diterima
+    // Update status setoran ke diterima/diverifikasi
     await db
       .update(setorSampah)
       .set({
         status,
         totalPoin: totalPoin,
+        ...(_ekspedisiId ? { ekspedisiId: _ekspedisiId } : {}),
         updatedAt: new Date(),
       })
       .where(eq(setorSampah.id, id));
+
+    // Kirim notifikasi email ke Warmiendo jika status diubah menjadi diverifikasi (ditugaskan ke ekspedisi)
+    if (
+      status === "diverifikasi" &&
+      roleTarget === "warmiendo" &&
+      depositor?.email
+    ) {
+      let vendorName = "Ekspedisi Penjemput";
+      let vendorPhone = "-";
+      if (_ekspedisiId) {
+        const eksp = await db.query.ekspedisi.findFirst({
+          where: eq(ekspedisi.id, _ekspedisiId),
+        });
+        if (eksp) {
+          vendorName = eksp.namaVendor;
+          vendorPhone = eksp.noTelepon;
+        }
+      }
+      try {
+        await sendAssignmentNotifToWarmiendo({
+          warmiendoEmail: depositor.email,
+          warmiendoName: depositor.name,
+          nomorSetor: item.nomorSetor,
+          jenisSampah: item.jenisSampah,
+          beratKg: item.beratKg,
+          tanggalSetor: item.tanggalSetor,
+          vendorName,
+          vendorPhone,
+        });
+      } catch (emailErr) {
+        console.error(
+          "Gagal mengirim email penugasan ekspedisi ke Warmiendo:",
+          emailErr,
+        );
+      }
+    }
+
+    // Kirim notifikasi email status update ke nasabah (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    if (depositor?.email && (status === "diterima" || status === "ditolak")) {
+      try {
+        await sendStatusUpdateNotifToDepositor({
+          email: depositor.email,
+          name: depositor.name,
+          role: depositor.role,
+          nomorSetor: item.nomorSetor,
+          jenisSampah: item.jenisSampah,
+          beratKg: item.beratKg,
+          tanggalSetor: item.tanggalSetor,
+          status: status,
+          totalPoin: totalPoin,
+          alasanPenolakan: item.catatan || undefined,
+        });
+      } catch (err) {
+        console.error("Gagal mengirim email status update ke nasabah:", err);
+      }
+    }
 
     revalidatePath(`/laporan/${roleTarget}`);
     return { success: true, message: "Status setoran berhasil diperbarui." };

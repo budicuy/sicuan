@@ -376,8 +376,14 @@ Terima kasih atas kontribusi Anda dalam menjaga lingkungan!
                       ${statusTitle}
                     </h1>
                   </td>
-                  <td align="right" valign="top">
-                    <span style="font-size:32px;">${status === "berhasil" ? "✅" : "❌"}</span>
+                  <td align="right" valign="middle" style="width:70px;padding-left:12px;">
+                    <table cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;width:56px;height:56px;text-align:center;border-collapse:collapse;border:0;">
+                      <tr>
+                        <td align="center" valign="middle" style="font-size:28px;line-height:56px;margin:0;padding:0;">
+                          ${status === "berhasil" ? "✅" : "❌"}
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
@@ -975,4 +981,750 @@ Harap segera periksa dashboard Bank Sampah Anda untuk mengonfirmasi penerimaan b
       failed,
     );
   }
+}
+
+// ─── Notifikasi Penugasan Ekspedisi Ke Warmiendo ───
+
+export async function sendAssignmentNotifToWarmiendo(payload: {
+  warmiendoEmail: string;
+  warmiendoName: string;
+  nomorSetor: string;
+  jenisSampah: string;
+  beratKg: number;
+  tanggalSetor: string;
+  vendorName: string;
+  vendorPhone: string;
+}) {
+  const {
+    warmiendoEmail,
+    warmiendoName,
+    nomorSetor,
+    jenisSampah,
+    beratKg,
+    tanggalSetor,
+    vendorName,
+    vendorPhone,
+  } = payload;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Setoran Sampah Ditugaskan ke Ekspedisi</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);border-radius:20px 20px 0 0;padding:36px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
+                      <span style="color:#38bdf8;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
+                    </div>
+                    <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                      Penjemputan Ditugaskan
+                    </h1>
+                    <p style="margin:0;color:rgba(255,255,255,0.8);font-size:13px;">
+                      Halo ${warmiendoName}, setoran sampah Anda telah diverifikasi oleh Admin dan kurir ekspedisi telah ditugaskan untuk menjemput.
+                    </p>
+                  </td>
+                  <td align="right" valign="middle" style="width:70px;padding-left:12px;">
+                    <table cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;width:56px;height:56px;text-align:center;border-collapse:collapse;border:0;">
+                      <tr>
+                        <td align="center" valign="middle" style="font-size:28px;line-height:56px;margin:0;padding:0;">
+                          📦
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:0 0 20px 20px;padding:32px 40px;">
+
+              <!-- Detail Setoran -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                <tr>
+                  <td colspan="2" style="padding-bottom:12px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;">Detail Setoran Anda</p>
+                  </td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;width:45%;">Nomor Setor</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${nomorSetor}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Jenis Sampah</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${jenisSampah}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Berat Sampah</td>
+                  <td style="padding:12px 0;font-weight:800;font-size:15px;color:#0369a1;">${beratKg} kg</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Tanggal Setor</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${tanggalSetor}</td>
+                </tr>
+              </table>
+
+              <!-- Kurir Ekspedisi -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:20px;">
+                <tr>
+                  <td colspan="2" style="padding:16px 0 12px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;">Kurir Penjemput</p>
+                  </td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;width:45%;">Nama Vendor</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${vendorName}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">No. Telepon Kurir</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${vendorPhone}</td>
+                </tr>
+              </table>
+
+              <!-- Tindakan -->
+              <div style="margin-top:32px;text-align:center;">
+                <p style="margin:0 0 16px;font-size:13px;color:#64748b;">
+                  Silakan serahkan sampah kepada kurir ekspedisi saat penjemputan dilakukan, lalu konfirmasi penyerahan sampah pada halaman detail setoran Anda.
+                </p>
+                <div style="margin-top:16px;margin-bottom:8px;">
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://sicuan.vercel.app"}/setor-sampah" target="_blank" style="background-color:#0284c7;background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:12px;display:inline-block;box-shadow:0 4px 6px -1px rgba(2,132,199,0.2);font-family:'Segoe UI',Arial,sans-serif;">
+                    Buka Setoran Saya
+                  </a>
+                </div>
+              </div>
+
+              <!-- Footer note -->
+              <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
+                Email ini dikirim otomatis oleh sistem Portal Sicuan Bank Sampah Indofood.<br/>
+                Harap jangan membalas email ini.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer brand -->
+          <tr>
+            <td style="padding:20px 0;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;">
+                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+[SICUAN] Penjemputan Ditugaskan ke Ekspedisi
+
+Halo ${warmiendoName}, setoran sampah Anda telah diverifikasi oleh Admin dan kurir ekspedisi telah ditugaskan untuk menjemput.
+
+Nomor Setor    : ${nomorSetor}
+Jenis Sampah   : ${jenisSampah}
+Berat Sampah   : ${beratKg} kg
+Tanggal Setor  : ${tanggalSetor}
+
+Kurir Penjemput:
+Nama Vendor    : ${vendorName}
+No. Telepon    : ${vendorPhone}
+
+Silakan serahkan sampah kepada kurir ekspedisi saat penjemputan dilakukan, lalu buka halaman detail setoran di web portal untuk melakukan konfirmasi penyerahan.
+  `.trim();
+
+  await sendEmail({
+    to: warmiendoEmail,
+    subject: `📦 [Penjemputan Ditugaskan] Setoran Sampah ${nomorSetor}`,
+    text,
+    html,
+  });
+}
+
+// ─── Notifikasi Tanda Terima Setoran Baru Ke Nasabah ───
+
+export async function sendReceiptNotifToDepositor(payload: {
+  email: string;
+  name: string;
+  role: string;
+  nomorSetor: string;
+  jenisSampah: string;
+  beratKg: number;
+  tanggalSetor: string;
+  catatan?: string;
+  status: string;
+}) {
+  const {
+    email,
+    name,
+    role,
+    nomorSetor,
+    jenisSampah,
+    beratKg,
+    tanggalSetor,
+    catatan,
+    status,
+  } = payload;
+
+  const roleLabel =
+    role === "warmiendo"
+      ? "Warmiendo"
+      : role === "bank-sampah"
+        ? "Bank Sampah"
+        : "Konsumen";
+  const isVerified = status === "diverifikasi" || status === "diterima";
+  const statusLabel = isVerified ? "Disetujui Otomatis" : "Menunggu Verifikasi";
+  const statusBadge = isVerified
+    ? `<span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;">Diterima (AI)</span>`
+    : `<span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;">Pending Validasi</span>`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Bukti Pengajuan Setoran Sampah</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0f2027 0%,#1a3a2a 60%,#134e2a 100%);border-radius:20px 20px 0 0;padding:36px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
+                      <span style="color:#4ade80;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
+                    </div>
+                    <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                      Setoran Terdaftar
+                    </h1>
+                    <p style="margin:0;color:rgba(255,255,255,0.6);font-size:13px;">
+                      Halo ${name}, pengajuan setoran sampah Anda telah berhasil kami catat di database.
+                    </p>
+                  </td>
+                  <td align="right" valign="middle" style="width:70px;padding-left:12px;">
+                    <table cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;width:56px;height:56px;text-align:center;border-collapse:collapse;border:0;">
+                      <tr>
+                        <td align="center" valign="middle" style="font-size:28px;line-height:56px;margin:0;padding:0;">
+                          📥
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:0 0 20px 20px;padding:32px 40px;">
+
+              <!-- Detail -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                <tr>
+                  <td colspan="2" style="padding-bottom:12px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;">Tanda Terima Setoran</p>
+                  </td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;width:45%;">Nomor Setor</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${nomorSetor}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Kategori Peran</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${roleLabel}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Jenis Sampah</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${jenisSampah}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Berat Sampah</td>
+                  <td style="padding:12px 0;font-weight:800;font-size:15px;color:#16a34a;">${beratKg} kg</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Tanggal Setor</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${tanggalSetor}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Status Pengajuan</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${statusBadge}</td>
+                </tr>
+                ${
+                  catatan
+                    ? `
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Catatan</td>
+                  <td style="padding:12px 0;font-size:13px;color:#475569;font-style:italic;">"${catatan}"</td>
+                </tr>
+                `
+                    : ""
+                }
+              </table>
+
+              <!-- Button Lihat Setoran -->
+              <div style="margin:32px 0 20px;text-align:center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://sicuan.vercel.app"}/setor-sampah" target="_blank" style="background-color:#16a34a;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:12px;display:inline-block;box-shadow:0 4px 6px -1px rgba(22,163,74,0.2);font-family:'Segoe UI',Arial,sans-serif;">
+                  Lihat Riwayat Setoran
+                </a>
+              </div>
+
+              <!-- Footer note -->
+              <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
+                Email ini dikirim otomatis oleh sistem Portal Sicuan Bank Sampah Indofood.<br/>
+                Harap jangan membalas email ini.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer brand -->
+          <tr>
+            <td style="padding:20px 0;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;">
+                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+[SICUAN] Pengajuan Setoran Sampah Terdaftar
+
+Halo ${name}, pengajuan setoran sampah Anda telah berhasil kami catat.
+
+Nomor Setor    : ${nomorSetor}
+Peran          : ${roleLabel}
+Jenis Sampah   : ${jenisSampah}
+Berat Sampah   : ${beratKg} kg
+Tanggal Setor  : ${tanggalSetor}
+Status         : ${statusLabel}
+${catatan ? `Catatan        : ${catatan}\n` : ""}
+Silakan kunjungi dashboard Sicuan untuk melacak status setoran Anda.
+  `.trim();
+
+  await sendEmail({
+    to: email,
+    subject: `📥 [Tanda Terima] Setoran Sampah ${nomorSetor} Terdaftar`,
+    text,
+    html,
+  });
+}
+
+// ─── Notifikasi Pembaruan Status Setoran Ke Nasabah ───
+
+export async function sendStatusUpdateNotifToDepositor(payload: {
+  email: string;
+  name: string;
+  role: string;
+  nomorSetor: string;
+  jenisSampah: string;
+  beratKg: number;
+  tanggalSetor: string;
+  status: "diterima" | "ditolak";
+  totalPoin?: number;
+  alasanPenolakan?: string;
+}) {
+  const {
+    email,
+    name,
+    role,
+    nomorSetor,
+    jenisSampah,
+    beratKg,
+    tanggalSetor,
+    status,
+    totalPoin = 0,
+    alasanPenolakan,
+  } = payload;
+
+  const isDiterima = status === "diterima";
+  const _roleLabel =
+    role === "warmiendo"
+      ? "Warmiendo"
+      : role === "bank-sampah"
+        ? "Bank Sampah"
+        : "Konsumen";
+
+  // Header styles
+  const headerBg = isDiterima
+    ? "linear-gradient(135deg,#064e3b 0%,#047857 100%)" // Green gradient
+    : "linear-gradient(135deg,#7f1d1d 0%,#b91c1c 100%)"; // Red gradient
+  const headerText = isDiterima ? "Setoran Diterima" : "Setoran Ditolak";
+  const headerLogo = isDiterima ? "✅" : "❌";
+  const subheadText = isDiterima
+    ? `Selamat ${name}! Setoran sampah Anda telah berhasil dikonfirmasi dan disetujui.`
+    : `Mohon maaf ${name}, setoran sampah Anda ditolak setelah diverifikasi oleh petugas.`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Notifikasi Status Setoran Sampah</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:${headerBg};border-radius:20px 20px 0 0;padding:36px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
+                      <span style="color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
+                    </div>
+                    <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                      ${headerText}
+                    </h1>
+                    <p style="margin:0;color:rgba(255,255,255,0.8);font-size:13px;">
+                      ${subheadText}
+                    </p>
+                  </td>
+                  <td align="right" valign="middle" style="width:70px;padding-left:12px;">
+                    <table cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;width:56px;height:56px;text-align:center;border-collapse:collapse;border:0;">
+                      <tr>
+                        <td align="center" valign="middle" style="font-size:28px;line-height:56px;margin:0;padding:0;">
+                          ${headerLogo}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:0 0 20px 20px;padding:32px 40px;">
+
+              <!-- Detail Setoran -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                <tr>
+                  <td colspan="2" style="padding-bottom:12px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;">Hasil Verifikasi Setoran</p>
+                  </td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;width:45%;">Nomor Setor</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${nomorSetor}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Jenis Sampah</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${jenisSampah}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Berat Sampah</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${beratKg} kg</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Tanggal Setor</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${tanggalSetor}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Status Akhir</td>
+                  <td style="padding:12px 0;font-size:13px;">
+                    ${
+                      isDiterima
+                        ? `<span style="color:#16a34a;font-weight:700;">Diterima</span>`
+                        : `<span style="color:#dc2626;font-weight:700;">Ditolak</span>`
+                    }
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Blok Reward / Blok Alasan Penolakan -->
+              ${
+                isDiterima
+                  ? role === "konsumen"
+                    ? `
+              <div style="background-color:#f0fdf4;border:1px dashed #bbf7d0;border-radius:12px;padding:16px;margin:24px 0;text-align:center;">
+                <p style="margin:0 0 4px;font-size:12px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Poin yang Didapat</p>
+                <p style="margin:0;font-size:28px;font-weight:800;color:#15803d;">+${totalPoin} Poin</p>
+              </div>
+              `
+                    : ""
+                  : `
+              <div style="background-color:#fef2f2;border:1px dashed #fecaca;border-radius:12px;padding:16px;margin:24px 0;">
+                <p style="margin:0 0 6px;font-size:12px;color:#b91c1c;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Alasan Penolakan:</p>
+                <p style="margin:0;font-size:13px;color:#7f1d1d;font-style:italic;">"${alasanPenolakan || "Ada ketidaksesuaian data sampah dengan fisik."}"</p>
+              </div>
+              `
+              }
+
+              <!-- Button Lihat Setoran -->
+              <div style="margin:32px 0 20px;text-align:center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://sicuan.vercel.app"}/setor-sampah" target="_blank" style="background-color:${isDiterima ? "#16a34a" : "#dc2626"};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:12px;display:inline-block;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);font-family:'Segoe UI',Arial,sans-serif;">
+                  Buka Riwayat Setoran
+                </a>
+              </div>
+
+              <!-- Footer note -->
+              <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
+                Email ini dikirim otomatis oleh sistem Portal Sicuan Bank Sampah Indofood.<br/>
+                Harap jangan membalas email ini.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer brand -->
+          <tr>
+            <td style="padding:20px 0;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;">
+                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const statusLabel = isDiterima ? "DITERIMA" : "DITOLAK";
+  const rewardOrReason = isDiterima
+    ? role === "konsumen"
+      ? `Poin Diperoleh: +${totalPoin} Poin`
+      : ""
+    : `Alasan Penolakan: ${alasanPenolakan || "-"}`;
+
+  const text = `
+[SICUAN] Hasil Verifikasi Setoran Sampah — ${statusLabel}
+
+Halo ${name},
+
+Setoran sampah Anda dengan nomor ${nomorSetor} telah selesai diverifikasi oleh petugas dengan hasil: ${statusLabel}.
+
+Detail Setoran:
+Nomor Setor    : ${nomorSetor}
+Jenis Sampah   : ${jenisSampah}
+Berat Sampah   : ${beratKg} kg
+Tanggal Setor  : ${tanggalSetor}
+
+${rewardOrReason}
+
+Silakan kunjungi dashboard Sicuan untuk melacak riwayat setoran Anda.
+  `.trim();
+
+  await sendEmail({
+    to: email,
+    subject: `${isDiterima ? "✅ [Disetujui]" : "❌ [Ditolak]"} Hasil Verifikasi Setoran ${nomorSetor}`,
+    text,
+    html,
+  });
+}
+
+// ─── Notifikasi Bukti Pengajuan Pencairan Dana Ke Nasabah ───
+
+export async function sendPencairanPengajuanNotifToUser(payload: {
+  userEmail: string;
+  userName: string;
+  jumlah: number;
+  metode: string;
+  jenisBank?: string | null;
+  noRekening?: string | null;
+  tanggalPengajuan: string;
+}) {
+  const {
+    userEmail,
+    userName,
+    jumlah,
+    metode,
+    jenisBank,
+    noRekening,
+    tanggalPengajuan,
+  } = payload;
+  const formatRp = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Bukti Pengajuan Pencairan Dana</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#075985 0%,#0369a1 60%,#0284c7 100%);border-radius:20px 20px 0 0;padding:36px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
+                      <span style="color:#38bdf8;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
+                    </div>
+                    <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                      Pengajuan Pencairan
+                    </h1>
+                    <p style="margin:0;color:rgba(255,255,255,0.6);font-size:13px;">
+                      Halo ${userName}, pengajuan pencairan dana Anda berhasil didaftarkan dan menunggu persetujuan admin.
+                    </p>
+                  </td>
+                  <td align="right" valign="middle" style="width:70px;padding-left:12px;">
+                    <table cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;width:56px;height:56px;text-align:center;border-collapse:collapse;border:0;">
+                      <tr>
+                        <td align="center" valign="middle" style="font-size:28px;line-height:56px;margin:0;padding:0;">
+                          💸
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:0 0 20px 20px;padding:32px 40px;">
+
+              <!-- Detail -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                <tr>
+                  <td colspan="2" style="padding-bottom:12px;">
+                    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;">Tanda Terima Pengajuan</p>
+                  </td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;width:45%;">Nama Pengaju</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${userName}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Jumlah Pencairan</td>
+                  <td style="padding:12px 0;font-weight:800;font-size:16px;color:#0284c7;">${formatRp(jumlah)}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Metode Pembayaran</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;font-weight:600;">${metode === "tunai" ? "Tunai" : "Transfer Bank"}</td>
+                </tr>
+                ${
+                  metode !== "tunai"
+                    ? `
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Bank Tujuan</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${jenisBank || "-"}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Nomor Rekening</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${noRekening || "-"}</td>
+                </tr>
+                `
+                    : ""
+                }
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Tanggal Pengajuan</td>
+                  <td style="padding:12px 0;font-size:13px;color:#0f172a;">${tanggalPengajuan}</td>
+                </tr>
+                <tr style="border-top:1px solid #f1f5f9;">
+                  <td style="padding:12px 0;color:#64748b;font-size:13px;">Status Verifikasi</td>
+                  <td style="padding:12px 0;font-size:13px;"><span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;">Pending Verifikasi</span></td>
+                </tr>
+              </table>
+
+              <!-- Info/Footer Note -->
+              <div style="margin-top:28px;border-top:1px solid #e2e8f0;padding-top:20px;text-align:center;">
+                <p style="margin:0;font-size:12px;color:#64748b;">Pengajuan Anda saat ini sedang dalam antrean verifikasi oleh Admin Keuangan kami.</p>
+              </div>
+
+              <!-- Footer note -->
+              <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
+                Email ini dikirim otomatis oleh sistem Portal Sicuan Bank Sampah Indofood.<br/>
+                Harap jangan membalas email ini.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer brand -->
+          <tr>
+            <td style="padding:20px 0;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;">
+                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+[SICUAN] Tanda Terima Pengajuan Pencairan Dana
+
+Halo ${userName},
+
+Pengajuan pencairan dana Anda sebesar ${formatRp(jumlah)} berhasil didaftarkan dan sedang menunggu verifikasi admin.
+
+Detail Pengajuan:
+Nama Pengaju   : ${userName}
+Jumlah Dana    : ${formatRp(jumlah)}
+Metode         : ${metode === "tunai" ? "Tunai" : "Transfer Bank"}
+Bank Tujuan    : ${metode !== "tunai" ? jenisBank || "-" : "-"}
+No Rekening    : ${metode !== "tunai" ? noRekening || "-" : "-"}
+Tanggal        : ${tanggalPengajuan}
+Status         : Pending Verifikasi
+  `.trim();
+
+  await sendEmail({
+    to: userEmail,
+    subject: `💸 [Tanda Terima] Pengajuan Pencairan Dana ${formatRp(jumlah)}`,
+    text,
+    html,
+  });
 }
