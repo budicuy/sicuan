@@ -116,6 +116,14 @@ export async function getDisbursementDataForMonth(
   });
 
   const { kredit, dataSampah } = await calcMonthlyKredit(user.id, year, month);
+  const lastMonth = month === 1 ? 12 : month - 1;
+  const lastYear = month === 1 ? year - 1 : year;
+  const { kredit: lastMonthKredit } = await calcMonthlyKredit(
+    user.id,
+    lastYear,
+    lastMonth,
+  );
+
   const pencairanAktif = await getMonthDisbursement(user.id, year, month);
 
   let ttdPenerimaUrl: string | null = null;
@@ -132,6 +140,7 @@ export async function getDisbursementDataForMonth(
     success: true,
     data: {
       kredit,
+      lastMonthKredit,
       isCurrentMonth,
       sudahDicairkan: pencairanAktif !== null,
       pencairanAktif: pencairanAktif

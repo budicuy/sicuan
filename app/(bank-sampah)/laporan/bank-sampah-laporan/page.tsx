@@ -1,12 +1,18 @@
 "use client";
 
 import {
+  AlertCircle,
+  Calendar,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Eye,
   FileText,
+  Layers,
   Loader2,
   Printer,
+  Scale,
+  User,
   X,
   XCircle,
 } from "lucide-react";
@@ -203,12 +209,7 @@ export default function LaporanBankSampahPage() {
         </span>
       ),
     },
-    {
-      header: "Reward",
-      render: (_item: SetorSampahItem) => (
-        <span className="text-neutral-400">-</span>
-      ),
-    },
+
     {
       header: "Status",
       sortKey: "status",
@@ -426,7 +427,6 @@ export default function LaporanBankSampahPage() {
               <th className="p-3 border">Nasabah</th>
               <th className="p-3 border">Jenis</th>
               <th className="p-3 border">Berat</th>
-              <th className="p-3 border">Kredit</th>
               <th className="p-3 border">Tanggal</th>
               <th className="p-3 border">Status</th>
             </tr>
@@ -440,7 +440,6 @@ export default function LaporanBankSampahPage() {
                 </td>
                 <td className="p-3 border">{item.jenisSampah}</td>
                 <td className="p-3 border">{item.beratKg} kg</td>
-                <td className="p-3 border text-neutral-400">-</td>
                 <td className="p-3 border">
                   {formatTanggal(item.tanggalSetor)}
                 </td>
@@ -454,7 +453,7 @@ export default function LaporanBankSampahPage() {
       {/* DETAIL MODAL OVERLAY */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
               <div>
@@ -475,152 +474,166 @@ export default function LaporanBankSampahPage() {
             </div>
 
             {/* Scrollable Content */}
-            <div className="p-6 space-y-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Nasabah
-                  </span>
-                  <span className="font-semibold text-neutral-800">
-                    {selectedItem.user ? selectedItem.user.name : "Saya"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Tanggal Setor
-                  </span>
-                  <span className="font-semibold text-neutral-800">
-                    {formatTanggal(selectedItem.tanggalSetor)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Jenis Sampah
-                  </span>
-                  <span className="font-semibold text-neutral-800">
-                    {selectedItem.jenisSampah}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Status Verifikasi
-                  </span>
-                  <div className="mt-1">
-                    {userRole === "admin" || userRole === "superadmin" ? (
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={selectedItem.status}
-                          disabled={updatingId === selectedItem.id}
-                          onChange={(e) =>
-                            handleStatusUpdate(
-                              selectedItem.id,
-                              e.target.value as
-                                | "pending"
-                                | "diterima"
-                                | "ditolak",
-                            )
-                          }
-                          className="px-2.5 py-1 border border-neutral-200 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:border-primary-600 text-neutral-800 cursor-pointer"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="diterima">Diterima</option>
-                          <option value="ditolak">Ditolak</option>
-                        </select>
-                        {updatingId === selectedItem.id && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-600" />
-                        )}
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Left Side: Metadata & Catatan (5 cols) */}
+                <div className="md:col-span-5 space-y-5">
+                  <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/60 space-y-4 shadow-2xs">
+                    <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Informasi Setoran
+                    </h4>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <User className="w-4 h-4" />
                       </div>
-                    ) : (
-                      getStatusBadge(selectedItem.status)
-                    )}
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Nasabah
+                        </span>
+                        <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                          {selectedItem.user ? selectedItem.user.name : "Saya"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Tanggal Setor
+                        </span>
+                        <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                          {formatTanggal(selectedItem.tanggalSetor)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Jenis Sampah
+                        </span>
+                        <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                          {selectedItem.jenisSampah}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <Scale className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Berat Sampah
+                        </span>
+                        <span className="font-extrabold text-neutral-900 text-base">
+                          {selectedItem.beratKg} kg
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Status Verifikasi
+                        </span>
+                        <div className="mt-1">
+                          {getStatusBadge(selectedItem.status)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Catatan Card */}
+                  <div className="bg-primary-50/40 rounded-2xl p-5 border border-primary-100/50 shadow-2xs">
+                    <h4 className="text-xs font-bold text-primary-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                      <ClipboardList className="w-4 h-4" />
+                      Catatan Tambahan
+                    </h4>
+                    <p className="text-neutral-700 text-sm leading-relaxed italic bg-white/60 p-3 rounded-xl border border-primary-50">
+                      {selectedItem.catatan || "Tidak ada catatan tambahan."}
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Berat Timbangan
-                  </span>
-                  <span className="font-bold text-neutral-800 text-lg">
-                    {selectedItem.beratKg} kg
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Reward diperoleh
-                  </span>
-                  <span className="font-bold text-neutral-400 text-lg">-</span>
-                </div>
-              </div>
 
-              {/* Catatan */}
-              <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-200">
-                <span className="text-xs text-neutral-500 font-semibold block mb-1">
-                  Catatan Tambahan
-                </span>
-                <p className="text-sm text-neutral-700 italic">
-                  {selectedItem.catatan || "Tidak ada catatan tambahan."}
-                </p>
-              </div>
-
-              {/* Foto Timbangan */}
-              <div className="space-y-2">
-                <span className="text-xs text-neutral-500 font-semibold block">
-                  Foto Bukti Timbangan
-                </span>
-                {selectedItem.fotoTimbangan ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedImageLightBox(selectedItem.fotoTimbangan)
-                    }
-                    className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group"
-                    title="Klik zoom foto timbangan"
-                  >
-                    <Image
-                      src={selectedItem.fotoTimbangan}
-                      alt="Foto timbangan detail"
-                      fill
-                      className="object-contain group-hover:scale-102 transition-all"
-                      unoptimized
-                    />
-                  </button>
-                ) : (
-                  <span className="text-sm text-neutral-400">
-                    Tidak ada foto bukti timbangan.
-                  </span>
-                )}
-              </div>
-
-              {/* Foto Bukti Tambahan */}
-              <div className="space-y-2">
-                <span className="text-xs text-neutral-500 font-semibold block">
-                  Foto Bukti Tambahan
-                </span>
-                {selectedItem.fotoBuktiTambahan &&
-                selectedItem.fotoBuktiTambahan.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-3">
-                    {selectedItem.fotoBuktiTambahan.map((imgUrl, idx) => (
+                {/* Right Side: Foto-foto Bukti (7 cols) */}
+                <div className="md:col-span-7 space-y-5">
+                  {/* Foto Timbangan */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
+                      Foto Bukti Timbangan
+                    </span>
+                    {selectedItem.fotoTimbangan ? (
                       <button
-                        key={imgUrl}
                         type="button"
-                        onClick={() => setSelectedImageLightBox(imgUrl)}
-                        className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 cursor-zoom-in p-0 block group w-full"
-                        title="Klik zoom foto bukti tambahan"
+                        onClick={() =>
+                          setSelectedImageLightBox(selectedItem.fotoTimbangan)
+                        }
+                        className="relative aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group shadow-xs hover:border-primary-400 hover:shadow-sm transition-all"
+                        title="Klik zoom foto timbangan"
                       >
                         <Image
-                          src={imgUrl}
-                          alt={`Bukti Tambahan ${idx + 1}`}
+                          src={selectedItem.fotoTimbangan}
+                          alt="Foto timbangan detail"
                           fill
-                          className="object-cover group-hover:scale-105 transition-all"
+                          className="object-contain group-hover:scale-102 transition-all duration-300"
                           unoptimized
                         />
                       </button>
-                    ))}
+                    ) : (
+                      <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
+                        <span className="text-sm text-neutral-400">
+                          Tidak ada foto bukti timbangan.
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <span className="text-sm text-neutral-400">
-                    Tidak ada foto bukti tambahan.
-                  </span>
-                )}
+
+                  {/* Foto Bukti Tambahan */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
+                      Foto Bukti Tambahan
+                    </span>
+                    {selectedItem.fotoBuktiTambahan &&
+                    selectedItem.fotoBuktiTambahan.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-3">
+                        {selectedItem.fotoBuktiTambahan.map((imgUrl, idx) => (
+                          <button
+                            key={imgUrl}
+                            type="button"
+                            onClick={() => setSelectedImageLightBox(imgUrl)}
+                            className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 cursor-zoom-in p-0 block group shadow-2xs hover:border-primary-400 hover:shadow-xs transition-all"
+                            title="Klik zoom foto bukti tambahan"
+                          >
+                            <Image
+                              src={imgUrl}
+                              alt={`Bukti Tambahan ${idx + 1}`}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-all duration-300"
+                              unoptimized
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
+                        <span className="text-sm text-neutral-400">
+                          Tidak ada foto bukti tambahan.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

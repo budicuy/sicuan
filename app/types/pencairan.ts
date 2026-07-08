@@ -74,6 +74,7 @@ export interface PencairanAktif {
 /** Data user lengkap pada halaman pengajuan pencairan */
 export interface UserDataPencairan {
   kredit: number;
+  lastMonthKredit?: number;
   isCurrentMonth: boolean;
   sudahDicairkan: boolean;
   pencairanAktif: PencairanAktif | null;

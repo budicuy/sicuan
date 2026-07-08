@@ -303,6 +303,7 @@ export default function PencairanDanaPage() {
 
   // Derived
   const currentKredit = data?.kredit ?? 0;
+  const lastMonthKredit = data?.lastMonthKredit ?? 0;
   const isBankSetup = !!(data?.jenisBank && data?.noRekening);
   const isCurrentMonthData = data?.isCurrentMonth ?? isCurrentMonth;
   const sudahDicairkan = data?.sudahDicairkan ?? false;
@@ -467,6 +468,16 @@ export default function PencairanDanaPage() {
               <p className="text-4xl font-black mt-2 tracking-tight">
                 {formatRp(currentKredit)}
               </p>
+              {isCurrentMonthData && (
+                <div className="mt-2.5">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg px-2.5 py-0.5 font-medium backdrop-blur-xs">
+                    kredit bulan lalu:{" "}
+                    <span className="font-bold text-white">
+                      {formatRp(lastMonthKredit)}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="p-2.5 bg-white/10 rounded-2xl border border-white/10">

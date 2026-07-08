@@ -1,13 +1,19 @@
 "use client";
 
 import {
+  AlertCircle,
+  Calendar,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Eye,
   FileText,
+  Layers,
   Loader2,
   Printer,
+  Scale,
   Truck,
+  User,
   X,
   XCircle,
 } from "lucide-react";
@@ -240,12 +246,7 @@ export default function LaporanWarmiendoPage() {
         </span>
       ),
     },
-    {
-      header: "Reward",
-      render: (_item: SetorSampahItem) => (
-        <span className="font-medium text-neutral-400">-</span>
-      ),
-    },
+
     {
       header: "Status",
       sortKey: "status",
@@ -574,7 +575,6 @@ export default function LaporanWarmiendoPage() {
               <th className="p-3 border">Nasabah</th>
               <th className="p-3 border">Jenis</th>
               <th className="p-3 border">Berat</th>
-              <th className="p-3 border">Kredit</th>
               <th className="p-3 border">Tanggal</th>
               <th className="p-3 border">Status</th>
             </tr>
@@ -588,7 +588,6 @@ export default function LaporanWarmiendoPage() {
                 </td>
                 <td className="p-3 border">{item.jenisSampah}</td>
                 <td className="p-3 border">{item.beratKg} kg</td>
-                <td className="p-3 border text-neutral-400">-</td>
                 <td className="p-3 border">
                   {formatTanggal(item.tanggalSetor)}
                 </td>
@@ -602,7 +601,7 @@ export default function LaporanWarmiendoPage() {
       {/* DETAIL MODAL OVERLAY */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
               <div>
@@ -623,316 +622,358 @@ export default function LaporanWarmiendoPage() {
             </div>
 
             {/* Scrollable Content */}
-            <div className="p-6 space-y-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Nasabah
-                  </span>
-                  <span className="font-semibold text-neutral-800">
-                    {selectedItem.user ? selectedItem.user.name : "Saya"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Tanggal Setor
-                  </span>
-                  <span className="font-semibold text-neutral-800">
-                    {formatTanggal(selectedItem.tanggalSetor)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Jenis Sampah
-                  </span>
-                  <span className="font-semibold text-neutral-800">
-                    {selectedItem.jenisSampah}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Status Verifikasi
-                  </span>
-                  <div className="mt-1">
-                    {(userRole === "admin" || userRole === "superadmin") &&
-                    selectedItem.metodeSetor !== "ekspedisi" ? (
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={selectedItem.status}
-                          disabled={updatingId === selectedItem.id}
-                          onChange={(e) =>
-                            handleStatusUpdate(
-                              selectedItem.id,
-                              e.target.value as
-                                | "pending"
-                                | "diverifikasi"
-                                | "diserahkan"
-                                | "diterima"
-                                | "ditolak",
-                            )
-                          }
-                          className="px-2.5 py-1 border border-neutral-200 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:border-primary-600 text-neutral-800 cursor-pointer"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="diterima">Diterima</option>
-                          <option value="ditolak">Ditolak</option>
-                        </select>
-                        {updatingId === selectedItem.id && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-600" />
-                        )}
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Left Side: Metadata & Catatan (5 cols) */}
+                <div className="md:col-span-5 space-y-5">
+                  <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200/60 space-y-4 shadow-2xs">
+                    <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      Informasi Setoran
+                    </h4>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <User className="w-4 h-4" />
                       </div>
-                    ) : (
-                      getStatusBadge(selectedItem.status)
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Nasabah
+                        </span>
+                        <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                          {selectedItem.user ? selectedItem.user.name : "Saya"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Tanggal Setor
+                        </span>
+                        <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                          {formatTanggal(selectedItem.tanggalSetor)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Jenis Sampah
+                        </span>
+                        <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                          {selectedItem.jenisSampah}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <Scale className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Berat Sampah
+                        </span>
+                        <span className="font-extrabold text-neutral-900 text-base">
+                          {selectedItem.beratKg} kg
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <Truck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Metode Setor
+                        </span>
+                        <span className="font-semibold text-neutral-800 text-sm capitalize">
+                          {selectedItem.metodeSetor || "Langsung"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {selectedItem.metodeSetor === "ekspedisi" && (
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                          <Truck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs text-neutral-500 block">
+                            Ekspedisi Penjemput
+                          </span>
+                          <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                            {selectedItem.ekspedisi
+                              ? `${selectedItem.ekspedisi.namaVendor} (${selectedItem.ekspedisi.noTelepon})`
+                              : "Belum ditugaskan"}
+                          </span>
+                        </div>
+                      </div>
                     )}
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-neutral-500 block">
+                          Status Verifikasi
+                        </span>
+                        <div className="mt-1">
+                          {getStatusBadge(selectedItem.status)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Catatan Card */}
+                  <div className="bg-primary-50/40 rounded-2xl p-5 border border-primary-100/50 shadow-2xs">
+                    <h4 className="text-xs font-bold text-primary-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                      <ClipboardList className="w-4 h-4" />
+                      Catatan Tambahan
+                    </h4>
+                    <p className="text-neutral-700 text-sm leading-relaxed italic bg-white/60 p-3 rounded-xl border border-primary-50">
+                      {selectedItem.catatan || "Tidak ada catatan tambahan."}
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Berat Timbangan
-                  </span>
-                  <span className="font-bold text-neutral-800 text-lg">
-                    {selectedItem.beratKg} kg
-                  </span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Reward diperoleh
-                  </span>
-                  <span className="font-bold text-neutral-400 text-lg">-</span>
-                </div>
-                <div>
-                  <span className="text-neutral-500 block text-xs">
-                    Metode Setor
-                  </span>
-                  <span className="font-semibold text-neutral-800 capitalize">
-                    {selectedItem.metodeSetor || "Langsung"}
-                  </span>
-                </div>
-                {selectedItem.metodeSetor === "ekspedisi" && (
-                  <div>
-                    <span className="text-neutral-500 block text-xs">
-                      Ekspedisi Penjemput
+
+                {/* Right Side: Foto-foto Bukti & Panel Aksi (7 cols) */}
+                <div className="md:col-span-7 space-y-5">
+                  {/* Foto Timbangan */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
+                      Foto Bukti Timbangan
                     </span>
-                    <span className="font-semibold text-neutral-800">
-                      {selectedItem.ekspedisi
-                        ? `${selectedItem.ekspedisi.namaVendor} (${selectedItem.ekspedisi.noTelepon})`
-                        : "Belum ditugaskan"}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Catatan */}
-              <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-200">
-                <span className="text-xs text-neutral-500 font-semibold block mb-1">
-                  Catatan Tambahan
-                </span>
-                <p className="text-sm text-neutral-700 italic">
-                  {selectedItem.catatan || "Tidak ada catatan tambahan."}
-                </p>
-              </div>
-
-              {/* Foto Timbangan */}
-              <div className="space-y-2">
-                <span className="text-xs text-neutral-500 font-semibold block">
-                  Foto Bukti Timbangan
-                </span>
-                {selectedItem.fotoTimbangan ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedImageLightBox(selectedItem.fotoTimbangan)
-                    }
-                    className="relative aspect-video rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group w-full"
-                    title="Klik zoom foto timbangan"
-                  >
-                    <Image
-                      src={selectedItem.fotoTimbangan}
-                      alt="Foto timbangan detail"
-                      fill
-                      className="object-contain group-hover:scale-102 transition-all"
-                      unoptimized
-                    />
-                  </button>
-                ) : (
-                  <span className="text-sm text-neutral-400">
-                    Tidak ada foto bukti timbangan.
-                  </span>
-                )}
-              </div>
-
-              {/* Foto Bukti Tambahan */}
-              <div className="space-y-2">
-                <span className="text-xs text-neutral-500 font-semibold block">
-                  Foto Bukti Tambahan
-                </span>
-                {selectedItem.fotoBuktiTambahan &&
-                selectedItem.fotoBuktiTambahan.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-3">
-                    {selectedItem.fotoBuktiTambahan.map((imgUrl, idx) => (
+                    {selectedItem.fotoTimbangan ? (
                       <button
-                        key={imgUrl}
                         type="button"
-                        onClick={() => setSelectedImageLightBox(imgUrl)}
-                        className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 cursor-zoom-in p-0 block group w-full"
-                        title="Klik zoom foto bukti tambahan"
+                        onClick={() =>
+                          setSelectedImageLightBox(selectedItem.fotoTimbangan)
+                        }
+                        className="relative aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group shadow-xs hover:border-primary-400 hover:shadow-sm transition-all"
+                        title="Klik zoom foto timbangan"
                       >
                         <Image
-                          src={imgUrl}
-                          alt={`Bukti Tambahan ${idx + 1}`}
+                          src={selectedItem.fotoTimbangan}
+                          alt="Foto timbangan detail"
                           fill
-                          className="object-cover group-hover:scale-105 transition-all"
+                          className="object-contain group-hover:scale-102 transition-all duration-300"
                           unoptimized
                         />
                       </button>
-                    ))}
+                    ) : (
+                      <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
+                        <span className="text-sm text-neutral-400">
+                          Tidak ada foto bukti timbangan.
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <span className="text-sm text-neutral-400">
-                    Tidak ada foto bukti tambahan.
-                  </span>
-                )}
-              </div>
 
-              {/* Ekspedisi Verification Actions for Admin */}
-              {(userRole === "admin" || userRole === "superadmin") &&
-                selectedItem.metodeSetor === "ekspedisi" && (
-                  <div className="p-4 bg-primary-50/40 border border-primary-150 rounded-xl space-y-4">
-                    <h4 className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 uppercase tracking-wider">
-                      <Truck className="w-4 h-4 text-primary-600" />
-                      Panel Kontrol Ekspedisi (Admin)
-                    </h4>
-
-                    {selectedItem.status === "pending" && (
-                      <div className="space-y-3">
-                        <p className="text-xs text-neutral-500">
-                          Pilih vendor ekspedisi yang akan ditugaskan untuk
-                          menjemput sampah di lokasi Warmiendo:
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <select
-                            value={selectedEkspedisiId}
-                            onChange={(e) =>
-                              setSelectedEkspedisiId(e.target.value)
-                            }
-                            className="flex-1 px-3 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:border-primary-600"
+                  {/* Foto Bukti Tambahan */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
+                      Foto Bukti Tambahan
+                    </span>
+                    {selectedItem.fotoBuktiTambahan &&
+                    selectedItem.fotoBuktiTambahan.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-3">
+                        {selectedItem.fotoBuktiTambahan.map((imgUrl, idx) => (
+                          <button
+                            key={imgUrl}
+                            type="button"
+                            onClick={() => setSelectedImageLightBox(imgUrl)}
+                            className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 cursor-zoom-in p-0 block group shadow-2xs hover:border-primary-400 hover:shadow-xs transition-all"
+                            title="Klik zoom foto bukti tambahan"
                           >
-                            {ekspedisiList.length === 0 ? (
-                              <option value="">
-                                Tidak ada vendor ekspedisi aktif
-                              </option>
-                            ) : (
-                              ekspedisiList.map((e) => (
-                                <option key={e.id} value={e.id}>
-                                  {e.namaVendor} ({e.noTelepon})
-                                </option>
-                              ))
-                            )}
-                          </select>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              disabled={
-                                updatingId === selectedItem.id ||
-                                !selectedEkspedisiId
-                              }
-                              onClick={() =>
-                                handleStatusUpdate(
-                                  selectedItem.id,
-                                  "diverifikasi",
-                                  Number(selectedEkspedisiId),
-                                )
-                              }
-                              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
-                            >
-                              {updatingId === selectedItem.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                              )}
-                              Setujui &amp; Tugaskan
-                            </button>
+                            <Image
+                              src={imgUrl}
+                              alt={`Bukti Tambahan ${idx + 1}`}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-all duration-300"
+                              unoptimized
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
+                        <span className="text-sm text-neutral-400">
+                          Tidak ada foto bukti tambahan.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ekspedisi Verification Actions for Admin */}
+                  {(userRole === "admin" || userRole === "superadmin") &&
+                    selectedItem.metodeSetor === "ekspedisi" && (
+                      <div className="p-4 bg-primary-50/40 border border-primary-150 rounded-xl space-y-4 shadow-2xs">
+                        <h4 className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 uppercase tracking-wider">
+                          <Truck className="w-4 h-4 text-primary-600" />
+                          Panel Kontrol Ekspedisi (Admin)
+                        </h4>
+
+                        {selectedItem.status === "pending" && (
+                          <div className="space-y-3">
+                            <p className="text-xs text-neutral-500">
+                              Pilih vendor ekspedisi yang akan ditugaskan untuk
+                              menjemput sampah di lokasi Warmiendo:
+                            </p>
+                            <div className="flex flex-col gap-3">
+                              <select
+                                value={selectedEkspedisiId}
+                                onChange={(e) =>
+                                  setSelectedEkspedisiId(e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:border-primary-600"
+                              >
+                                {ekspedisiList.length === 0 ? (
+                                  <option value="">
+                                    Tidak ada vendor ekspedisi aktif
+                                  </option>
+                                ) : (
+                                  ekspedisiList.map((e) => (
+                                    <option key={e.id} value={e.id}>
+                                      {e.namaVendor} ({e.noTelepon})
+                                    </option>
+                                  ))
+                                )}
+                              </select>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  disabled={
+                                    updatingId === selectedItem.id ||
+                                    !selectedEkspedisiId
+                                  }
+                                  onClick={async () => {
+                                    await handleStatusUpdate(
+                                      selectedItem.id,
+                                      "diverifikasi",
+                                      Number(selectedEkspedisiId),
+                                    );
+                                    setSelectedItem(null);
+                                  }}
+                                  className="flex-1 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center justify-center gap-1"
+                                >
+                                  {updatingId === selectedItem.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
+                                  Setujui &amp; Tugaskan
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={updatingId === selectedItem.id}
+                                  onClick={async () => {
+                                    await handleStatusUpdate(
+                                      selectedItem.id,
+                                      "ditolak",
+                                    );
+                                    setSelectedItem(null);
+                                  }}
+                                  className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
+                                >
+                                  Tolak
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedItem.status === "diverifikasi" && (
+                          <div className="space-y-2 text-xs">
+                            <p className="text-neutral-600 font-semibold">
+                              Status: Menunggu mitra Warmiendo menyerahkan
+                              sampah ke kurir (
+                              {selectedItem.ekspedisi?.namaVendor}).
+                            </p>
                             <button
                               type="button"
                               disabled={updatingId === selectedItem.id}
-                              onClick={() =>
-                                handleStatusUpdate(selectedItem.id, "ditolak")
-                              }
-                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all"
+                              onClick={async () => {
+                                await handleStatusUpdate(
+                                  selectedItem.id,
+                                  "ditolak",
+                                );
+                                setSelectedItem(null);
+                              }}
+                              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer transition-all"
                             >
-                              Tolak
+                              Batalkan / Tolak
                             </button>
                           </div>
-                        </div>
+                        )}
+
+                        {selectedItem.status === "diserahkan" && (
+                          <div className="space-y-3">
+                            <p className="text-xs text-neutral-600 font-semibold">
+                              Status: Kurir telah mengambil sampah. Konfirmasi
+                              jika sampah sudah Anda terima dengan benar di
+                              pusat:
+                            </p>
+                            <div className="flex gap-2.5">
+                              <button
+                                type="button"
+                                disabled={updatingId === selectedItem.id}
+                                onClick={async () => {
+                                  await handleStatusUpdate(
+                                    selectedItem.id,
+                                    "diterima",
+                                  );
+                                  setSelectedItem(null);
+                                }}
+                                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
+                              >
+                                {updatingId === selectedItem.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                )}
+                                Konfirmasi Diterima
+                              </button>
+                              <button
+                                type="button"
+                                disabled={updatingId === selectedItem.id}
+                                onClick={async () => {
+                                  await handleStatusUpdate(
+                                    selectedItem.id,
+                                    "ditolak",
+                                  );
+                                  setSelectedItem(null);
+                                }}
+                                className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
+                              >
+                                Tolak / Gagal
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {(selectedItem.status === "diterima" ||
+                          selectedItem.status === "ditolak") && (
+                          <p className="text-xs text-neutral-500 font-semibold">
+                            Proses selesai. Status akhir:{" "}
+                            <span className="capitalize font-bold text-neutral-700">
+                              {selectedItem.status}
+                            </span>
+                          </p>
+                        )}
                       </div>
                     )}
-
-                    {selectedItem.status === "diverifikasi" && (
-                      <div className="space-y-2 text-xs">
-                        <p className="text-neutral-600 font-semibold">
-                          Status: Menunggu mitra Warmiendo menyerahkan sampah ke
-                          kurir ({selectedItem.ekspedisi?.namaVendor}).
-                        </p>
-                        <button
-                          type="button"
-                          disabled={updatingId === selectedItem.id}
-                          onClick={() =>
-                            handleStatusUpdate(selectedItem.id, "ditolak")
-                          }
-                          className="px-4 py-2 bg-red-650 hover:bg-red-700 text-white font-bold text-xs rounded-xl border-0 cursor-pointer transition-all"
-                        >
-                          Batalkan / Tolak
-                        </button>
-                      </div>
-                    )}
-
-                    {selectedItem.status === "diserahkan" && (
-                      <div className="space-y-3">
-                        <p className="text-xs text-neutral-600 font-semibold">
-                          Status: Kurir telah mengambil sampah. Konfirmasi jika
-                          sampah sudah Anda terima dengan benar di pusat:
-                        </p>
-                        <div className="flex gap-2.5">
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedItem.id}
-                            onClick={() =>
-                              handleStatusUpdate(selectedItem.id, "diterima")
-                            }
-                            className="px-4 py-2.5 bg-emerald-650 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
-                          >
-                            {updatingId === selectedItem.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                            )}
-                            Konfirmasi Sampah Diterima &amp; Cairkan Saldo
-                          </button>
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedItem.id}
-                            onClick={() =>
-                              handleStatusUpdate(selectedItem.id, "ditolak")
-                            }
-                            className="px-4 py-2.5 bg-red-650 hover:bg-red-700 text-white font-bold text-xs rounded-xl border-0 cursor-pointer disabled:opacity-50 transition-all"
-                          >
-                            Tolak / Gagal
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {(selectedItem.status === "diterima" ||
-                      selectedItem.status === "ditolak") && (
-                      <p className="text-xs text-neutral-500 font-semibold">
-                        Proses selesai. Status akhir:{" "}
-                        <span className="capitalize font-bold text-neutral-700">
-                          {selectedItem.status}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                )}
+                </div>
+              </div>
             </div>
 
             {/* Footer */}
@@ -940,7 +981,7 @@ export default function LaporanWarmiendoPage() {
               <button
                 type="button"
                 onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold text-sm rounded-xl transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-sm rounded-xl transition-colors cursor-pointer shadow-sm"
               >
                 Tutup
               </button>
