@@ -590,10 +590,14 @@ export async function sendSetoranNotifToAdmins(payload: {
                       Ada data setoran sampah baru yang berhasil masuk ke database.
                     </p>
                   </td>
-                  <td align="right" valign="top">
-                    <div style="width:56px;height:56px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:16px;display:flex;align-items:center;justify-content:center;">
-                      <span style="font-size:28px;line-height:56px;display:block;text-align:center;">♻️</span>
-                    </div>
+                  <td align="right" valign="middle" style="width:70px;padding-left:12px;">
+                    <table cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;width:56px;height:56px;text-align:center;border-collapse:collapse;border:0;">
+                      <tr>
+                        <td align="center" valign="middle" style="font-size:28px;line-height:56px;margin:0;padding:0;">
+                          ♻️
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
@@ -681,6 +685,13 @@ export async function sendSetoranNotifToAdmins(payload: {
               </div>`
                   : ""
               }
+
+              <!-- Button Lihat Setoran -->
+              <div style="margin:32px 0 20px;text-align:center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://sicuan.vercel.app"}/dashboard/admin-dashboard" target="_blank" style="background-color:#16a34a;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:12px;display:inline-block;box-shadow:0 4px 6px -1px rgba(22,163,74,0.2);font-family:'Segoe UI',Arial,sans-serif;">
+                  Lihat Setoran di Dashboard
+                </a>
+              </div>
 
               <!-- Footer note -->
               <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
@@ -821,10 +832,14 @@ export async function sendHandoverNotifToBankSampah(payload: {
                       Ada setoran sampah baru dari mitra Warmiendo yang sedang dalam perjalanan ke Bank Sampah Anda.
                     </p>
                   </td>
-                  <td align="right" valign="top">
-                    <div style="width:56px;height:56px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:16px;display:flex;align-items:center;justify-content:center;">
-                      <span style="font-size:28px;line-height:56px;display:block;text-align:center;">🚚</span>
-                    </div>
+                  <td align="right" valign="middle" style="width:70px;padding-left:12px;">
+                    <table cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;width:56px;height:56px;text-align:center;border-collapse:collapse;border:0;">
+                      <tr>
+                        <td align="center" valign="middle" style="font-size:28px;line-height:56px;margin:0;padding:0;">
+                          🚚
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
@@ -892,9 +907,14 @@ export async function sendHandoverNotifToBankSampah(payload: {
 
               <!-- Tindakan -->
               <div style="margin-top:32px;text-align:center;">
-                <p style="margin:0 0 12px;font-size:13px;color:#64748b;">
+                <p style="margin:0 0 16px;font-size:13px;color:#64748b;">
                   Harap segera lakukan konfirmasi penerimaan sampah setelah barang sampai di lokasi Bank Sampah Anda.
                 </p>
+                <div style="margin-top:16px;margin-bottom:8px;">
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://sicuan.vercel.app"}/setor-sampah/terima-setoran-warmiendo" target="_blank" style="background-color:#059669;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:12px;display:inline-block;box-shadow:0 4px 6px -1px rgba(5,150,105,0.2);font-family:'Segoe UI',Arial,sans-serif;">
+                    Terima &amp; Konfirmasi Setoran
+                  </a>
+                </div>
               </div>
 
               <!-- Footer note -->
