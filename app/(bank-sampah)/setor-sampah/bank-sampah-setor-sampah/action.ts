@@ -1041,21 +1041,23 @@ export async function createSetorSampah(
 
     await db.insert(setorSampah).values(baseValues);
 
-    // Kirim notifikasi email ke admin secara asynchronous (fire-and-forget)
-    sendSetoranNotifToAdmins({
-      nomorSetor,
-      nasabahName: user.name,
-      nasabahRole: user.role,
-      jenisSampah,
-      beratKg,
-      tanggalSetor,
-      catatan,
-      status: baseValues.status,
-      fotoTimbanganBase64,
-      fotoBuktiBase64List,
-    }).catch((err) => {
+    // Kirim notifikasi email ke admin (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    try {
+      await sendSetoranNotifToAdmins({
+        nomorSetor,
+        nasabahName: user.name,
+        nasabahRole: user.role,
+        jenisSampah,
+        beratKg,
+        tanggalSetor,
+        catatan,
+        status: baseValues.status,
+        fotoTimbanganBase64,
+        fotoBuktiBase64List,
+      });
+    } catch (err) {
       console.error("Gagal mengirim email notifikasi setoran ke admin:", err);
-    });
+    }
 
     if (!isPending) {
       // Update nasabah balance directly

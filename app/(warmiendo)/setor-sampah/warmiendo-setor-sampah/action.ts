@@ -807,20 +807,23 @@ export async function handoverSetorSampahToEkspedisi(
       .where(eq(setorSampah.id, id));
 
     // Kirim email notifikasi ke Bank Sampah secara asynchronous (fire-and-forget)
-    sendHandoverNotifToBankSampah({
-      nomorSetor: item.nomorSetor,
-      nasabahName: user.name,
-      jenisSampah: item.jenisSampah,
-      beratKg: item.beratKg,
-      tanggalSetor: item.tanggalSetor,
-      catatan: item.catatan,
-      fotoTimbanganUrl: item.fotoTimbangan,
-    }).catch((err) => {
+    // Kirim email notifikasi ke Bank Sampah (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    try {
+      await sendHandoverNotifToBankSampah({
+        nomorSetor: item.nomorSetor,
+        nasabahName: user.name,
+        jenisSampah: item.jenisSampah,
+        beratKg: item.beratKg,
+        tanggalSetor: item.tanggalSetor,
+        catatan: item.catatan,
+        fotoTimbanganUrl: item.fotoTimbangan,
+      });
+    } catch (err) {
       console.error(
         "Gagal mengirim email notifikasi serah sampah ke Bank Sampah:",
         err,
       );
-    });
+    }
 
     revalidatePath("/setor-sampah");
     revalidatePath("/laporan/warmiendo");
@@ -1060,21 +1063,23 @@ export async function createSetorSampah(
 
     await db.insert(setorSampah).values(baseValues);
 
-    // Kirim notifikasi email ke admin secara asynchronous (fire-and-forget)
-    sendSetoranNotifToAdmins({
-      nomorSetor,
-      nasabahName: user.name,
-      nasabahRole: user.role,
-      jenisSampah,
-      beratKg,
-      tanggalSetor,
-      catatan,
-      status: baseValues.status,
-      fotoTimbanganBase64,
-      fotoBuktiBase64List,
-    }).catch((err) => {
+    // Kirim notifikasi email ke admin (di-await untuk menjamin pengiriman pada Vercel Serverless)
+    try {
+      await sendSetoranNotifToAdmins({
+        nomorSetor,
+        nasabahName: user.name,
+        nasabahRole: user.role,
+        jenisSampah,
+        beratKg,
+        tanggalSetor,
+        catatan,
+        status: baseValues.status,
+        fotoTimbanganBase64,
+        fotoBuktiBase64List,
+      });
+    } catch (err) {
       console.error("Gagal mengirim email notifikasi setoran ke admin:", err);
-    });
+    }
 
     if (!isPending) {
       // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
