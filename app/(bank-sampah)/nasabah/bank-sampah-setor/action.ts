@@ -142,15 +142,6 @@ export async function createSetoranNasabah(
       metodeSetor: depositor.role === "warmiendo" ? "langsung" : null,
     };
     await db.insert(setorSampah).values(setoranData);
-
-    // 5. Update user cash balance (kredit) directly
-    await db
-      .update(nasabah)
-      .set({
-        kredit: sql`${nasabah.kredit} + ${totalKredit}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.id, userId));
   } catch (error) {
     console.error("Error creating setoran nasabah by bank-sampah:", error);
     return {

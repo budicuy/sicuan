@@ -116,7 +116,6 @@ interface LaporanNasabahData {
     noTelepon: string | null;
     alamat: string | null;
     poin: number;
-    kredit: number;
     user: {
       name: string;
       role: string;

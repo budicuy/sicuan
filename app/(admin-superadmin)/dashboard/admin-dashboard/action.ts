@@ -316,7 +316,6 @@ export async function getDashboardData() {
       name: user.name,
       profile: {
         poin: profile?.poin ?? 0,
-        kredit: profile?.kredit ?? 0,
       },
       metrics: {
         totalSetoranKg: Math.round(totalSetoranKg * 10) / 10,

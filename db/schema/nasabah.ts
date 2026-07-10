@@ -36,7 +36,6 @@ export const nasabah = pgTable("nasabah", {
   jenisBank: text("jenis_bank"),
   noRekening: text("no_rekening"),
   poin: integer("poin").notNull().default(0),
-  kredit: integer("kredit").notNull().default(0),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
 

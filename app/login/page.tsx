@@ -457,6 +457,16 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+
+              <div className="text-center text-xs text-neutral-500 pt-2">
+                Belum memiliki akun?{" "}
+                <TransitionLink
+                  href="/register"
+                  className="text-primary-600 hover:text-primary-700 font-bold hover:underline"
+                >
+                  Daftar Sekarang
+                </TransitionLink>
+              </div>
             </form>
           </div>
         </div>

@@ -13,7 +13,6 @@ export interface NasabahWithUser {
   jenisBank: string | null;
   noRekening: string | null;
   poin: number;
-  kredit: number;
   user: {
     name: string;
     username: string;

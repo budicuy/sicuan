@@ -99,7 +99,6 @@ export async function getNasabah(params?: {
       jenisBank: nasabah.jenisBank,
       noRekening: nasabah.noRekening,
       poin: nasabah.poin,
-      kredit: nasabah.kredit,
     })
     .from(nasabah)
     .where(queryCondition)
@@ -119,7 +118,6 @@ export async function getNasabah(params?: {
     jenisBank: d.jenisBank,
     noRekening: d.noRekening,
     poin: d.poin,
-    kredit: d.kredit,
     user: {
       name: d.name,
       username: d.username,

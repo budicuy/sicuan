@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -182,17 +182,34 @@ export async function getDisbursementData() {
     where: eq(nasabah.id, user.id),
   });
 
+  const credit = await getWarmiendoMonthlyCredit(user.id);
+
+  return {
+    success: true,
+    data: {
+      kredit: credit,
+      jenisBank: profile?.jenisBank || "",
+      noRekening: profile?.noRekening || "",
+      user: {
+        name: user.name,
+        role: user.role,
+      },
+    },
+  };
+}
+
+async function getWarmiendoMonthlyCredit(userId: number): Promise<number> {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
+  const currentMonth = now.getMonth(); // 0-indexed
   const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
   const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
   const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
   const records = await db.query.setorSampah.findMany({
     where: and(
-      eq(setorSampah.userId, user.id),
-      eq(setorSampah.kategoriNasabah, user.role),
+      eq(setorSampah.userId, userId),
+      eq(setorSampah.kategoriNasabah, "warmiendo"),
       eq(setorSampah.status, "diterima"),
       gte(setorSampah.tanggalSetor, startOfMonthStr),
       lte(setorSampah.tanggalSetor, endOfMonthStr),
@@ -204,30 +221,28 @@ export async function getDisbursementData() {
     wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
   }
 
-  const dataSampah = Object.entries(wasteMap).map(([jenis, berat]) => ({
-    jenis,
-    beratKg: berat,
-    terlampir: true,
-  }));
+  let dynamicKredit = 0;
+  for (const [jenis, berat] of Object.entries(wasteMap)) {
+    const harga = await getHargaRange(jenis, berat);
+    dynamicKredit += harga;
+  }
 
-  return {
-    success: true,
-    data: {
-      kredit: profile?.kredit ?? 0,
-      jenisBank: profile?.jenisBank || "",
-      noRekening: profile?.noRekening || "",
-      alamat: profile?.alamat || "",
-      noTelepon: profile?.noTelepon || "",
-      idPelanggan: `SPK-${String(user.id).padStart(3, "0")}`,
-      dataSampah,
-      totalBeratKg: dataSampah.reduce((sum, item) => sum + item.beratKg, 0),
-      user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-      },
-    },
-  };
+  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
+  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+  const myDisbursements = await db.query.pencairanDana.findMany({
+    where: and(
+      eq(pencairanDana.userId, userId),
+      gte(pencairanDana.createdAt, startOfMonthDate),
+      lte(pencairanDana.createdAt, endOfMonthDate),
+    ),
+  });
+
+  const totalWithdrawn = myDisbursements
+    .filter((p) => p.status === "berhasil" || p.status === "pending")
+    .reduce((sum, p) => sum + p.jumlah, 0);
+
+  return Math.max(0, dynamicKredit - totalWithdrawn);
 }
 
 export async function requestDisbursement(
@@ -342,11 +357,12 @@ export async function requestDisbursement(
         errors: { jumlah: ["Kredit bulan ini tidak mencukupi"] },
       };
     }
-  } else if (user.role !== "bank-sampah") {
-    if (profile.kredit < jumlah) {
+  } else if (user.role === "warmiendo") {
+    const credit = await getWarmiendoMonthlyCredit(user.id);
+    if (credit < jumlah) {
       return {
         success: false,
-        message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${profile.kredit.toLocaleString("id-ID")}`,
+        message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${credit.toLocaleString("id-ID")}`,
         errors: { jumlah: ["Saldo kredit tidak mencukupi"] },
       };
     }
@@ -359,17 +375,6 @@ export async function requestDisbursement(
       "ttd-penyerah",
       `${user.id}-${uuid}`,
     );
-
-    // Untuk warmiendo: potong kredit dari kolom. Bank-sampah: skip (dinamis)
-    if (user.role !== "bank-sampah") {
-      await db
-        .update(nasabah)
-        .set({
-          kredit: sql`${nasabah.kredit} - ${jumlah}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.id, user.id));
-    }
 
     const now = new Date();
     const finalMonth = selectedMonth > 0 ? selectedMonth : now.getMonth() + 1;

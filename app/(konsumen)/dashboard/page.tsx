@@ -39,7 +39,6 @@ interface DashboardData {
   };
   profile?: {
     poin: number;
-    kredit: number;
   };
   composition?: { name: string; value: number; color: string }[];
   setoranHistory?: {

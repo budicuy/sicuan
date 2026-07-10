@@ -189,7 +189,7 @@ export function HeroSection() {
               className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2"
             >
               <TransitionLink
-                href="/login"
+                href="/register"
                 className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold shadow-lg shadow-primary-600/20 hover:shadow-primary-600/35 transition-all duration-300 flex items-center justify-center gap-2 group"
               >
                 Mulai Setor Sekarang

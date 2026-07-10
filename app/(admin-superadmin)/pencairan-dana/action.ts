@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { renderToStream } from "@react-pdf/renderer";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -100,6 +100,53 @@ async function getBankSampahMonthlyCredit(userId: number): Promise<number> {
   return Math.max(0, dynamicKredit - totalWithdrawn);
 }
 
+async function getWarmiendoMonthlyCredit(userId: number): Promise<number> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  const records = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, userId),
+      eq(setorSampah.kategoriNasabah, "warmiendo"),
+      eq(setorSampah.status, "diterima"),
+      gte(setorSampah.tanggalSetor, startOfMonthStr),
+      lte(setorSampah.tanggalSetor, endOfMonthStr),
+    ),
+  });
+
+  const wasteMap: Record<string, number> = {};
+  for (const r of records) {
+    wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
+  }
+
+  let dynamicKredit = 0;
+  for (const [jenis, berat] of Object.entries(wasteMap)) {
+    const harga = await getHargaRange(jenis, berat);
+    dynamicKredit += harga;
+  }
+
+  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
+  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+  const myDisbursements = await db.query.pencairanDana.findMany({
+    where: and(
+      eq(pencairanDana.userId, userId),
+      gte(pencairanDana.createdAt, startOfMonthDate),
+      lte(pencairanDana.createdAt, endOfMonthDate),
+    ),
+  });
+
+  const totalWithdrawn = myDisbursements
+    .filter((p) => p.status === "berhasil" || p.status === "pending")
+    .reduce((sum, p) => sum + p.jumlah, 0);
+
+  return Math.max(0, dynamicKredit - totalWithdrawn);
+}
+
 export async function getDisbursementData() {
   const user = await getCurrentUser();
   if (!user || (user.role !== "warmiendo" && user.role !== "bank-sampah")) {
@@ -110,9 +157,11 @@ export async function getDisbursementData() {
     where: eq(nasabah.id, user.id),
   });
 
-  let credit = profile?.kredit ?? 0;
+  let credit = 0;
   if (user.role === "bank-sampah") {
     credit = await getBankSampahMonthlyCredit(user.id);
+  } else if (user.role === "warmiendo") {
+    credit = await getWarmiendoMonthlyCredit(user.id);
   }
 
   return {
@@ -197,9 +246,11 @@ export async function requestDisbursement(
     }
   }
 
-  let credit = profile.kredit;
+  let credit = 0;
   if (user.role === "bank-sampah") {
     credit = await getBankSampahMonthlyCredit(user.id);
+  } else if (user.role === "warmiendo") {
+    credit = await getWarmiendoMonthlyCredit(user.id);
   }
 
   if (credit < jumlah) {
@@ -218,17 +269,6 @@ export async function requestDisbursement(
       "ttd-penyerah",
       `${user.id}-${uuid}`,
     );
-
-    // 2. Deduct from user credit (skip for bank-sampah)
-    if (user.role !== "bank-sampah") {
-      await db
-        .update(nasabah)
-        .set({
-          kredit: sql`${nasabah.kredit} - ${jumlah}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.id, user.id));
-    }
 
     // 3. Insert disbursement log (defaults to "pending")
     await db.insert(pencairanDana).values({
@@ -470,24 +510,10 @@ export async function rejectDisbursement(
       };
     }
 
-    // Refund to user
+    // Fetch target user for email notification
     const targetUser = await db.query.nasabah.findFirst({
       where: eq(nasabah.id, request.userId),
     });
-
-    if (
-      targetUser &&
-      targetUser.role !== "bank-sampah" &&
-      targetUser.role !== "warmiendo"
-    ) {
-      await db
-        .update(nasabah)
-        .set({
-          kredit: sql`${nasabah.kredit} + ${request.jumlah}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.id, request.userId));
-    }
 
     await db
       .update(pencairanDana)

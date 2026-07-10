@@ -35,13 +35,13 @@ export function LoginSection() {
                 >
                   Masuk ke Dashboard
                 </Link>
-                <a
-                  id="hero-cta-support"
-                  href="#faq"
+                <Link
+                  id="hero-cta-register"
+                  href="/register"
                   className="px-8 py-4 bg-transparent border border-white/30 hover:border-white text-white text-center font-bold rounded-xl transition-all"
                 >
-                  Hubungi Dukungan
-                </a>
+                  Daftar Akun Baru
+                </Link>
               </div>
             </div>
 

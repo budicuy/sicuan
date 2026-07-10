@@ -1,12 +1,13 @@
 "use server";
 
 import { renderToStream } from "@react-pdf/renderer";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import React from "react";
 import { LaporanNasabahDocument } from "@/app/components/shared/LaporanNasabahDocument";
 import { sendEmail } from "@/app/lib/email";
+import { getHargaRange } from "@/app/lib/pricing";
 import { db } from "@/db";
-import { nasabah, setorSampah } from "@/db/schema";
+import { nasabah, pencairanDana, setorSampah } from "@/db/schema";
 
 export async function getNasabahListWithSummaries(params?: {
   search?: string;
@@ -33,7 +34,6 @@ export async function getNasabahListWithSummaries(params?: {
         email: nasabah.email,
         alamat: nasabah.alamat,
         poin: nasabah.poin,
-        kredit: nasabah.kredit,
         user: {
           name: nasabah.name,
           role: nasabah.role,
@@ -50,6 +50,7 @@ export async function getNasabahListWithSummaries(params?: {
         userId: setorSampah.userId,
         totalBerat: sql<number>`sum(${setorSampah.beratKg})`,
         totalTransaksi: sql<number>`count(${setorSampah.id})`,
+        totalKredit: sql<number>`sum(${setorSampah.totalPoin})`,
       })
       .from(setorSampah)
       .groupBy(setorSampah.userId);
@@ -57,7 +58,7 @@ export async function getNasabahListWithSummaries(params?: {
     // 3. Map the aggregates by userId for O(1) lookups
     const aggregatesMap = new Map<
       number,
-      { totalBerat: number; totalTransaksi: number }
+      { totalBerat: number; totalTransaksi: number; totalKredit: number }
     >();
 
     for (const row of aggregates) {
@@ -65,6 +66,7 @@ export async function getNasabahListWithSummaries(params?: {
         aggregatesMap.set(row.userId, {
           totalBerat: Number(row.totalBerat) || 0,
           totalTransaksi: Number(row.totalTransaksi) || 0,
+          totalKredit: Number(row.totalKredit) || 0,
         });
       }
     }
@@ -74,11 +76,13 @@ export async function getNasabahListWithSummaries(params?: {
       const agg = aggregatesMap.get(n.userId) ?? {
         totalBerat: 0,
         totalTransaksi: 0,
+        totalKredit: 0,
       };
       return {
         ...n,
         totalBerat: agg.totalBerat,
         totalTransaksi: agg.totalTransaksi,
+        kredit: agg.totalKredit,
       };
     });
 
@@ -87,6 +91,53 @@ export async function getNasabahListWithSummaries(params?: {
     console.error("Error fetching nasabah list with summaries:", error);
     return [];
   }
+}
+
+async function getWarmiendoMonthlyCredit(userId: number): Promise<number> {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  const records = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, userId),
+      eq(setorSampah.kategoriNasabah, "warmiendo"),
+      eq(setorSampah.status, "diterima"),
+      gte(setorSampah.tanggalSetor, startOfMonthStr),
+      lte(setorSampah.tanggalSetor, endOfMonthStr),
+    ),
+  });
+
+  const wasteMap: Record<string, number> = {};
+  for (const r of records) {
+    wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
+  }
+
+  let dynamicKredit = 0;
+  for (const [jenis, berat] of Object.entries(wasteMap)) {
+    const harga = await getHargaRange(jenis, berat);
+    dynamicKredit += harga;
+  }
+
+  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
+  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+  const myDisbursements = await db.query.pencairanDana.findMany({
+    where: and(
+      eq(pencairanDana.userId, userId),
+      gte(pencairanDana.createdAt, startOfMonthDate),
+      lte(pencairanDana.createdAt, endOfMonthDate),
+    ),
+  });
+
+  const totalWithdrawn = myDisbursements
+    .filter((p) => p.status === "berhasil" || p.status === "pending")
+    .reduce((sum, p) => sum + p.jumlah, 0);
+
+  return Math.max(0, dynamicKredit - totalWithdrawn);
 }
 
 export async function getNasabahDetailAndSetoran(nasabahId: number) {
@@ -100,7 +151,6 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
         email: nasabah.email,
         alamat: nasabah.alamat,
         poin: nasabah.poin,
-        kredit: nasabah.kredit,
         jenisBank: nasabah.jenisBank,
         noRekening: nasabah.noRekening,
         user: {
@@ -129,8 +179,14 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
       orderBy: [desc(setorSampah.id)],
     });
 
+    const credit =
+      n.user.role === "warmiendo" ? await getWarmiendoMonthlyCredit(n.id) : 0;
+
     return {
-      profile: n,
+      profile: {
+        ...n,
+        kredit: credit,
+      },
       setoran: setoranList.map((s) => ({
         id: s.id,
         nomorSetor: s.nomorSetor,

@@ -100,7 +100,7 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
           </TransitionLink>
           <TransitionLink
             id="nav-register-btn"
-            href="/login"
+            href="/register"
             className="text-sm font-semibold bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg shadow-sm shadow-primary-600/10 hover:shadow-primary-600/20 transition-all duration-200"
           >
             Mulai Setor
@@ -147,7 +147,7 @@ export function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
               Masuk
             </TransitionLink>
             <TransitionLink
-              href="/login"
+              href="/register"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2.5 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-sm transition-colors block"
             >

@@ -49,7 +49,6 @@ interface DashboardData {
   };
   profile?: {
     poin: number;
-    kredit: number;
   };
   composition?: { name: string; value: number; color: string }[];
   topContributors?: {
@@ -677,10 +676,7 @@ export default function DashboardPage() {
                 Saldo Kredit Tersedia
               </span>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-0.5">
-                <AnimatedCounter
-                  value={data?.profile?.kredit ?? 0}
-                  prefix="Rp "
-                />
+                <AnimatedCounter value={0} prefix="Rp " />
               </h2>
             </div>
             <Coins className="w-8 h-8 text-emerald-400 shrink-0 mb-1" />
