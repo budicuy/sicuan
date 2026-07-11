@@ -6,7 +6,7 @@ import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
-import { nasabah } from "@/db/schema";
+import { nasabah, users } from "@/db/schema";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -121,8 +121,16 @@ export async function loginAction(
 
     // 1. Check if username is a NIK in nasabah table directly
     const userRecords = await db
-      .select()
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        role: users.role,
+        status: users.status,
+        tanggalLahir: nasabah.tanggalLahir,
+      })
       .from(nasabah)
+      .innerJoin(users, eq(nasabah.id, users.id))
       .where(eq(nasabah.nik, username.trim()))
       .limit(1);
 
@@ -139,8 +147,8 @@ export async function loginAction(
     if (!isNasabahAuth) {
       const userRecords = await db
         .select()
-        .from(nasabah)
-        .where(eq(nasabah.username, username.trim()))
+        .from(users)
+        .where(eq(users.username, username.trim()))
         .limit(1);
 
       if (userRecords.length > 0) {

@@ -83,8 +83,8 @@ describe("Notifikasi Email Realisasi Pencairan Dana (Selesai)", () => {
 describe("Notifikasi Email Pencairan ke Admin", () => {
   test("Mengirimkan notifikasi email pengajuan pencairan baru ke Admin", async () => {
     await sendPencairanNotifToAdmins({
-      nasabahName: "Warmiendo Mitra",
-      nasabahRole: "warmiendo",
+      nasabahName: "Warmindo Mitra",
+      nasabahRole: "warmindo",
       jumlah: 150000,
       metode: "transfer",
       jenisBank: "Bank Mandiri",

@@ -98,7 +98,7 @@ export default function LaporanRawMaterialPage() {
         byCategory: [],
         byRole: [],
         topCategories: [],
-        rankings: { Konsumen: [], Warmiendo: [], "Bank Sampah": [] },
+        rankings: { Konsumen: [], Warmindo: [], "Bank Sampah": [] },
       };
 
   // Get active chart data
@@ -157,7 +157,7 @@ export default function LaporanRawMaterialPage() {
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
               Perbandingan data raw material yang dikeluarkan Indofood dengan
-              hasil sampah yang disetorkan (Konsumen + Warmiendo + Bank Sampah).
+              hasil sampah yang disetorkan (Konsumen + Warmindo + Bank Sampah).
             </p>
           </div>
         </div>
@@ -692,7 +692,7 @@ export default function LaporanRawMaterialPage() {
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-neutral-150">
-          {(["Konsumen", "Warmiendo", "Bank Sampah"] as const).map(
+          {(["Konsumen", "Warmindo", "Bank Sampah"] as const).map(
             (role, idx) => {
               const roleRankings = activeRankings[role] || [];
               return (
@@ -704,8 +704,8 @@ export default function LaporanRawMaterialPage() {
                     <h4 className="font-extrabold text-neutral-900 text-sm">
                       {role === "Konsumen"
                         ? "Peran Konsumen"
-                        : role === "Warmiendo"
-                          ? "Peran Mitra Warmiendo"
+                        : role === "Warmindo"
+                          ? "Peran Mitra Warmindo"
                           : "Peran Mitra Bank Sampah"}
                     </h4>
                     <p className="text-[10px] text-neutral-450 text-neutral-400 mt-0.5">

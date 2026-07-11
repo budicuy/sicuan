@@ -1,19 +1,76 @@
 "use client";
 
 import { Info, Key, Loader2, Lock, Save, User } from "lucide-react";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   getProfileData,
   updatePassword,
   updateProfileData,
 } from "@/app/(bank-sampah)/profil/bank-sampah-profil/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { ProfileData } from "@/app/types";
+
+const profilSteps = [
+  {
+    element: "#tour-bank-sampah-profil-tabs",
+    popover: {
+      title: "Menu Profil",
+      description:
+        "Anda dapat berpindah tab antara melihat informasi data diri profil Bank Sampah atau mengganti password akun Anda secara terpisah.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-profil-form",
+    popover: {
+      title: "Detail Data Profil",
+      description:
+        "Seluruh data diri kemitraan Anda ditampilkan secara lengkap di sini. Pada mode demo tour ini, data telah otomatis diisi.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-profil-save",
+    popover: {
+      title: "Simpan Perubahan",
+      description: "Klik tombol simpan untuk memperbarui profil (Simulasi).",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function ProfilPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
+
+  const [isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = profile;
+    setIsTourActive(true);
+    setProfile({
+      id: 999,
+      name: "Bank Sampah Sejahtera",
+      username: "banksampah_demo",
+      nik: "637101xxxxxxx",
+      noTelepon: "0882022xxxxx",
+      email: "demo-banksampah@gmail.com",
+      noRekening: "123456xxx",
+      jenisBank: "BNI",
+      status: "aktif",
+      alamat: "Jl. A. Yani No. 99 (Demo)",
+      role: "bank-sampah",
+      tanggalLahir: "1990-01-01",
+    });
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    setProfile(savedStateRef.current);
+  };
 
   // Transition hooks for server actions
   const [isProfilePending, startProfileTransition] = useTransition();
@@ -77,6 +134,16 @@ export default function ProfilPage() {
     e.preventDefault();
     setProfileErrors({});
 
+    if (isTourActive) {
+      document.dispatchEvent(new CustomEvent("close-tour-guide"));
+      showFeedback(
+        "success",
+        "Profil Diperbarui! (Simulasi)",
+        "Simulasi: Detail data profil demo berhasil diperbarui.",
+      );
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
     startProfileTransition(async () => {
       const res = await updateProfileData(
@@ -139,7 +206,7 @@ export default function ProfilPage() {
         return "bg-red-100 text-red-700 border-red-200";
       case "admin":
         return "bg-blue-100 text-blue-700 border-blue-200";
-      case "warmiendo":
+      case "warmindo":
         return "bg-amber-100 text-amber-700 border-amber-200";
       case "bank-sampah":
         return "bg-purple-100 text-purple-700 border-purple-200";
@@ -151,7 +218,7 @@ export default function ProfilPage() {
   const formatRoleName = (role?: string) => {
     if (!role) return "Nasabah";
     if (role === "bank-sampah") return "Bank Sampah";
-    if (role === "warmiendo") return "Warmiendo";
+    if (role === "warmindo") return "Warmindo";
     if (role === "konsumen") return "Konsumen";
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
@@ -169,6 +236,12 @@ export default function ProfilPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <TourGuide
+        pageKey="bank_sampah_profil"
+        steps={profilSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
       {/* Header Info Card */}
       <div className="relative overflow-hidden bg-linear-to-r from-primary-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
         <div className="absolute top-[-30%] right-[-10%] w-[45%] h-[150%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
@@ -196,7 +269,10 @@ export default function ProfilPage() {
       </div>
 
       {/* Tabs Layout */}
-      <div className="flex border-b border-neutral-200">
+      <div
+        id="tour-bank-sampah-profil-tabs"
+        className="flex border-b border-neutral-200"
+      >
         <button
           type="button"
           onClick={() => setActiveTab("profile")}
@@ -226,6 +302,8 @@ export default function ProfilPage() {
       {/* Tab Contents */}
       {activeTab === "profile" ? (
         <form
+          key={profile ? profile.id : "loading"}
+          id="tour-bank-sampah-profil-form"
           onSubmit={handleProfileSubmit}
           className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-200/60 space-y-6"
         >
@@ -440,6 +518,7 @@ export default function ProfilPage() {
 
           <div className="flex justify-end pt-4 border-t border-neutral-100">
             <button
+              id="tour-bank-sampah-profil-save"
               type="submit"
               disabled={isProfilePending}
               className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/10 hover:shadow-primary-600/25 flex items-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed text-xs uppercase tracking-wider"

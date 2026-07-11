@@ -17,7 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getCurrentUserRole,
   getMySetoran,
@@ -25,7 +25,47 @@ import {
 } from "@/app/(admin-superadmin)/laporan/bank-sampah/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 import { DataTable } from "@/app/components/shared/DataTable";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
+
+const bankSampahSteps = [
+  {
+    element: "#tour-admin-setoran-bank-header",
+    popover: {
+      title: "Setoran Bank Sampah",
+      description:
+        "Halaman ini menampilkan historis dan daftar setoran sampah dari seluruh mitra Bank Sampah yang perlu diverifikasi oleh Admin.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-setoran-bank-summary",
+    popover: {
+      title: "Rangkuman Setoran",
+      description:
+        "Kartu ini menampilkan total jumlah setoran dan total berat keseluruhan sampah dari Bank Sampah yang telah masuk ke sistem.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-setoran-bank-table",
+    popover: {
+      title: "Daftar Setoran Masuk",
+      description:
+        "Tabel ini mendaftarkan seluruh setoran Bank Sampah. Setoran berstatus 'Pending' dapat diverifikasi melalui tombol Validasi di kolom Aksi.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-setoran-bank-action",
+    popover: {
+      title: "Aksi Validasi Setoran",
+      description:
+        "Klik 'Validasi' untuk membuka detail dan memutuskan apakah setoran diterima atau ditolak. Pada mode tour ini adalah simulasi.",
+      side: "left" as const,
+    },
+  },
+];
 
 export default function LaporanBankSampahPage() {
   const [data, setData] = useState<SetorSampahItem[]>([]);
@@ -34,6 +74,52 @@ export default function LaporanBankSampahPage() {
   const [_totalPoin, setTotalPoin] = useState(0);
   const [_totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<{
+    data: SetorSampahItem[];
+    totalItems: number;
+    totalBerat: number;
+  } | null>(null);
+
+  const demoSetoranBankSampah: SetorSampahItem = {
+    id: 99902,
+    nomorSetor: "SIMULASI-BS-01",
+    jenisSampah: "Karton",
+    beratKg: 50,
+    totalKredit: 25000,
+    totalPoin: 0,
+    status: "pending",
+    tanggalSetor: new Date().toISOString().split("T")[0],
+    catatan: "Setoran simulasi demo tour",
+    fotoTimbangan: "/sampel_1.png",
+    createdAt: new Date(),
+    user: {
+      name: "Bank Sampah Demo",
+      username: "bank_sampah_demo",
+      role: "bank-sampah",
+    },
+  };
+
+  const handleTourStart = () => {
+    savedStateRef.current = { data, totalItems, totalBerat };
+    setIsTourActive(true);
+    const hasPending = data.some((d) => d.status === "pending");
+    if (!hasPending) {
+      setData([demoSetoranBankSampah, ...data]);
+      setTotalItems((prev) => prev + 1);
+      setTotalBerat((prev) => prev + 50);
+    }
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    if (savedStateRef.current) {
+      setData(savedStateRef.current.data);
+      setTotalItems(savedStateRef.current.totalItems);
+      setTotalBerat(savedStateRef.current.totalBerat);
+    }
+  };
 
   // Table pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,6 +187,16 @@ export default function LaporanBankSampahPage() {
     id: number,
     status: "pending" | "diterima" | "ditolak",
   ) => {
+    // Tour mode: simulate action
+    if (isTourActive && id === 99902) {
+      setData((prev) =>
+        prev.map((item) => (item.id === 99902 ? { ...item, status } : item)),
+      );
+      if (selectedItem?.id === 99902) setSelectedItem(null);
+      document.dispatchEvent(new CustomEvent("close-tour-guide"));
+      return;
+    }
+
     setUpdatingId(id);
     try {
       const res = await updateSetorSampahStatus(
@@ -250,14 +346,20 @@ export default function LaporanBankSampahPage() {
 
         if (isPending) {
           return (
-            <button
-              type="button"
-              onClick={() => setSelectedItem(item)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-bold shadow-xs border-0 transition-all cursor-pointer"
+            <span
+              id={
+                item.id === 99902 ? "tour-admin-setoran-bank-action" : undefined
+              }
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Validasi
-            </button>
+              <button
+                type="button"
+                onClick={() => setSelectedItem(item)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-bold shadow-xs border-0 transition-all cursor-pointer"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Validasi
+              </button>
+            </span>
           );
         }
 
@@ -316,8 +418,18 @@ export default function LaporanBankSampahPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
+      <TourGuide
+        pageKey="admin_setoran_bank"
+        steps={bankSampahSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 print:hidden">
+      <div
+        id="tour-admin-setoran-bank-header"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 print:hidden"
+      >
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-primary-100">
             <FileText className="w-6 h-6 text-primary-600" />
@@ -346,7 +458,10 @@ export default function LaporanBankSampahPage() {
       </div>
 
       {/* Rangkuman Kartu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 print:grid-cols-2 print:gap-4">
+      <div
+        id="tour-admin-setoran-bank-summary"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 print:grid-cols-2 print:gap-4"
+      >
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
             Total Setoran
@@ -373,7 +488,7 @@ export default function LaporanBankSampahPage() {
       </div>
 
       {/* DataTable */}
-      <div className="print:hidden">
+      <div id="tour-admin-setoran-bank-table" className="print:hidden">
         {isLoading ? (
           <div className="py-24 text-center bg-white rounded-2xl border border-neutral-200 shadow-sm">
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-3" />

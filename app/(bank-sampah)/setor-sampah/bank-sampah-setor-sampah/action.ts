@@ -50,7 +50,7 @@ export async function updateSetorSampahStatus(
   id: number,
   status: "pending" | "diverifikasi" | "diserahkan" | "diterima" | "ditolak",
   _ekspedisiId?: number,
-  roleTarget: "konsumen" | "warmiendo" | "bank-sampah" = "konsumen",
+  roleTarget: "konsumen" | "warmindo" | "bank-sampah" = "konsumen",
 ): Promise<{ success: boolean; message: string }> {
   const user = await getCurrentUser();
   if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
@@ -91,8 +91,8 @@ export async function updateSetorSampahStatus(
       depositor?.role ?? "konsumen",
     );
 
-    // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
-    const _isWarmiendo = depositor?.role === "warmiendo";
+    // Update nasabah balance directly (skip credit for warmindo since it's accumulated monthly)
+    const _isWarmindo = depositor?.role === "warmindo";
     await db
       .update(nasabah)
       .set({
@@ -146,7 +146,7 @@ export async function assignEkspedisiToSetoran(
       })
       .where(eq(setorSampah.id, id));
 
-    revalidatePath("/laporan/warmiendo");
+    revalidatePath("/laporan/warmindo");
     return { success: true, message: "Ekspedisi berhasil dipetakan." };
   } catch (error) {
     console.error("Gagal memetakan ekspedisi:", error);
@@ -157,7 +157,7 @@ export async function assignEkspedisiToSetoran(
 export async function readWeightAndVerify(
   id: number,
   base64Photo: string,
-  roleTarget: "konsumen" | "warmiendo" | "bank-sampah" = "konsumen",
+  roleTarget: "konsumen" | "warmindo" | "bank-sampah" = "konsumen",
 ): Promise<{
   success: boolean;
   message: string;
@@ -232,7 +232,7 @@ export async function getMySetoran(params: {
   status?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  roleTarget?: "konsumen" | "warmiendo" | "bank-sampah";
+  roleTarget?: "konsumen" | "warmindo" | "bank-sampah";
 }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -249,7 +249,7 @@ export async function getMySetoran(params: {
   const sortOrder = params?.sortOrder ?? "desc";
   const roleTarget =
     params?.roleTarget ??
-    (user.role as "konsumen" | "warmiendo" | "bank-sampah");
+    (user.role as "konsumen" | "warmindo" | "bank-sampah");
 
   const isAdmin = user.role === "admin" || user.role === "superadmin";
 
@@ -364,7 +364,7 @@ export async function getMySetoran(params: {
         (r.maxBerat === null || s.beratKg <= r.maxBerat),
     );
     const isMoneyReward =
-      roleTarget === "warmiendo" || roleTarget === "bank-sampah";
+      roleTarget === "warmindo" || roleTarget === "bank-sampah";
     const kreditVal = isMoneyReward ? (range?.harga ?? 0) : 0;
 
     return {
@@ -411,7 +411,7 @@ export async function getMySetoran(params: {
         (r.maxBerat === null || s.beratKg <= r.maxBerat),
     );
     const isMoneyReward =
-      roleTarget === "warmiendo" || roleTarget === "bank-sampah";
+      roleTarget === "warmindo" || roleTarget === "bank-sampah";
     const kreditVal = isMoneyReward ? (range?.harga ?? 0) : 0;
 
     sumBerat += s.beratKg;
@@ -493,7 +493,7 @@ export async function submitSetorSampah(
       user.role,
     );
 
-    const isPending = user.role === "konsumen" || user.role === "warmiendo";
+    const isPending = user.role === "konsumen" || user.role === "warmindo";
 
     // Query next sequence value for auto-increment ID
     const nextValResult = await db.execute<{ nextval: string }>(
@@ -510,7 +510,7 @@ export async function submitSetorSampah(
 
     const roleToCode: Record<string, string> = {
       "bank-sampah": "K",
-      warmiendo: "W",
+      warmindo: "W",
       konsumen: "B",
     };
     const code = roleToCode[user.role] || "B";
@@ -534,9 +534,9 @@ export async function submitSetorSampah(
         | "diserahkan"
         | "diterima"
         | "ditolak",
-      kategoriNasabah: user.role as "konsumen" | "warmiendo" | "bank-sampah",
+      kategoriNasabah: user.role as "konsumen" | "warmindo" | "bank-sampah",
       metodeSetor:
-        user.role === "warmiendo"
+        user.role === "warmindo"
           ? (metodeSetor as "langsung" | "ekspedisi")
           : null,
     };
@@ -544,8 +544,8 @@ export async function submitSetorSampah(
     await db.insert(setorSampah).values(baseValues);
 
     if (!isPending) {
-      // Update nasabah balance directly (skip credit for warmiendo since it's accumulated monthly)
-      const _isWarmiendo = user.role === "warmiendo";
+      // Update nasabah balance directly (skip credit for warmindo since it's accumulated monthly)
+      const _isWarmindo = user.role === "warmindo";
       await db
         .update(nasabah)
         .set({
@@ -570,7 +570,7 @@ export async function getAllActiveEkspedisi() {
   return getEkspedisiFn();
 }
 
-// ── BANK SAMPAH: Verifikasi setoran Warmiendo & tugaskan ekspedisi ────────────
+// ── BANK SAMPAH: Verifikasi setoran Warmindo & tugaskan ekspedisi ────────────
 
 export async function bankSampahVerifySetoran(
   id: number,
@@ -581,7 +581,7 @@ export async function bankSampahVerifySetoran(
     return {
       success: false,
       message:
-        "Akses ditolak. Hanya Bank Sampah yang dapat memverifikasi setoran Warmiendo.",
+        "Akses ditolak. Hanya Bank Sampah yang dapat memverifikasi setoran Warmindo.",
     };
   }
 
@@ -614,7 +614,7 @@ export async function bankSampahVerifySetoran(
       .where(eq(setorSampah.id, id));
 
     revalidatePath("/setor-sampah");
-    revalidatePath("/laporan/warmiendo");
+    revalidatePath("/laporan/warmindo");
     revalidatePath("/laporan/bank-sampah");
     return {
       success: true,
@@ -630,17 +630,34 @@ export async function bankSampahVerifySetoran(
   }
 }
 
-// ── BANK SAMPAH: Terima dan finalisasi setoran Warmiendo ─────────────────────
+// ── BANK SAMPAH: Terima dan finalisasi setoran Warmindo ─────────────────────
 
 export async function bankSampahTerimaSetoran(
   id: number,
+  beratAktual: number,
+  fotoTimbanganBase64: string,
+  jenisSampah?: string,
 ): Promise<{ success: boolean; message: string }> {
   const user = await getCurrentUser();
   if (!user || user.role !== "bank-sampah") {
     return {
       success: false,
       message:
-        "Akses ditolak. Hanya Bank Sampah yang dapat menerima setoran Warmiendo.",
+        "Akses ditolak. Hanya Bank Sampah yang dapat menerima setoran Warmindo.",
+    };
+  }
+
+  if (Number.isNaN(beratAktual) || beratAktual <= 0) {
+    return {
+      success: false,
+      message: "Berat aktual harus lebih dari 0 kg.",
+    };
+  }
+
+  if (!fotoTimbanganBase64 || fotoTimbanganBase64.trim() === "") {
+    return {
+      success: false,
+      message: "Foto timbangan verifikasi wajib dilampirkan.",
     };
   }
 
@@ -653,11 +670,32 @@ export async function bankSampahTerimaSetoran(
       return { success: false, message: "Data setoran tidak ditemukan." };
     }
 
-    if (item.status !== "diserahkan") {
+    const isValidStatus =
+      item.status === "diserahkan" ||
+      (item.status === "pending" && item.metodeSetor === "langsung");
+
+    if (!isValidStatus) {
       return {
         success: false,
         message:
-          "Setoran ini belum dalam status diserahkan — tunggu konfirmasi penyerahan dari Warmiendo.",
+          "Setoran ini belum dalam status yang siap diverifikasi — harap pastikan kurir telah mengantar atau metode adalah datang langsung.",
+      };
+    }
+
+    // Upload foto timbangan verifikasi ke R2
+    let fotoTimbanganUrl: string;
+    try {
+      const uuid = randomUUID();
+      fotoTimbanganUrl = await uploadImageToR2(
+        fotoTimbanganBase64,
+        "setoran-timbangan",
+        `${user.id}-${uuid}`,
+      );
+    } catch (err) {
+      console.error("Gagal mengupload foto timbangan verifikasi:", err);
+      return {
+        success: false,
+        message: "Gagal mengupload foto timbangan verifikasi ke storage.",
       };
     }
 
@@ -666,14 +704,15 @@ export async function bankSampahTerimaSetoran(
       where: eq(nasabah.id, item.userId),
     });
 
-    const { totalPoin, totalKredit } = await calculateSetoranReward(
-      item.jenisSampah,
-      item.beratKg,
-      depositor?.role ?? "warmiendo",
+    const targetJenisSampah = (jenisSampah || item.jenisSampah) as "Karton" | "Etiket" | "Paper Cup";
+
+    const { totalPoin } = await calculateSetoranReward(
+      targetJenisSampah,
+      beratAktual,
+      depositor?.role ?? "warmindo",
     );
 
-    // Update saldo nasabah Warmiendo (skip credit since it's accumulated monthly)
-    const _isWarmiendo = depositor?.role === "warmiendo";
+    // Update saldo nasabah Warmindo (skip credit since it's accumulated monthly)
     await db
       .update(nasabah)
       .set({
@@ -682,13 +721,21 @@ export async function bankSampahTerimaSetoran(
       })
       .where(eq(nasabah.id, item.userId));
 
-    // Update status setoran ke diterima
+    // Update status setoran ke diterima, catat berat aktual dan foto timbangan
     await db
       .update(setorSampah)
-      .set({ status: "diterima", totalPoin, updatedAt: new Date() })
+      .set({
+        status: "diterima",
+        beratKg: beratAktual,
+        jenisSampah: targetJenisSampah,
+        fotoTimbangan: fotoTimbanganUrl,
+        totalPoin,
+        updatedAt: new Date(),
+      })
       .where(eq(setorSampah.id, id));
 
-    // Kirim notifikasi email status update (diterima) ke nasabah Warmiendo (di-await untuk menjamin pengiriman pada Vercel Serverless)
+
+    // Kirim notifikasi email status update (diterima) ke nasabah Warmindo (di-await untuk menjamin pengiriman pada Vercel Serverless)
     if (depositor?.email) {
       try {
         await sendStatusUpdateNotifToDepositor({
@@ -704,19 +751,19 @@ export async function bankSampahTerimaSetoran(
         });
       } catch (err) {
         console.error(
-          "Gagal mengirim email status update ke nasabah Warmiendo:",
+          "Gagal mengirim email status update ke nasabah Warmindo:",
           err,
         );
       }
     }
 
     revalidatePath("/setor-sampah");
-    revalidatePath("/laporan/warmiendo");
+    revalidatePath("/laporan/warmindo");
     revalidatePath("/laporan/bank-sampah");
     return {
       success: true,
       message:
-        "Setoran Warmiendo berhasil diterima dan insentif telah dikreditkan ke akun nasabah.",
+        "Setoran Warmindo berhasil diterima dan insentif telah dikreditkan ke akun nasabah.",
     };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -727,9 +774,9 @@ export async function bankSampahTerimaSetoran(
   }
 }
 
-// ── BANK SAMPAH: Ambil daftar setoran Warmiendo yang perlu dikelola ──────────
+// ── BANK SAMPAH: Ambil daftar setoran Warmindo yang perlu dikelola ──────────
 
-export async function getSetoranWarmiendoForBankSampah({
+export async function getSetoranWarmindoForBankSampah({
   page = 1,
   limit = 20,
   status = "",
@@ -747,7 +794,10 @@ export async function getSetoranWarmiendoForBankSampah({
   }
 
   const offset = (page - 1) * limit;
-  const filters: SQL[] = [eq(setorSampah.kategoriNasabah, "warmiendo")];
+  const filters: SQL[] = [
+    eq(setorSampah.kategoriNasabah, "warmindo"),
+    eq(setorSampah.bankSampahId, user.id),
+  ];
 
   if (status && status !== "Semua") {
     filters.push(
@@ -785,13 +835,13 @@ export async function getSetoranWarmiendoForBankSampah({
   };
 }
 
-// ── CLIENT: Handover / serahkan setoran Warmiendo ke ekspedisi ──────────
+// ── CLIENT: Handover / serahkan setoran Warmindo ke ekspedisi ──────────
 
 export async function handoverSetorSampahToEkspedisi(
   id: number,
 ): Promise<{ success: boolean; message: string }> {
   const user = await getCurrentUser();
-  if (!user || user.role !== "warmiendo") {
+  if (!user || user.role !== "warmindo") {
     return { success: false, message: "Akses ditolak." };
   }
 
@@ -821,7 +871,7 @@ export async function handoverSetorSampahToEkspedisi(
       .where(eq(setorSampah.id, id));
 
     revalidatePath("/setor-sampah");
-    revalidatePath("/laporan/warmiendo");
+    revalidatePath("/laporan/warmindo");
     return {
       success: true,
       message: "Berhasil menyerahkan sampah ke kurir ekspedisi.",
@@ -885,7 +935,7 @@ export async function validateFotoTimbangan(
   };
 }
 
-// ── CLIENT: Submit / create setoran dari Warmiendo / Konsumen / Bank Sampah ──────────
+// ── CLIENT: Submit / create setoran dari Warmindo / Konsumen / Bank Sampah ──────────
 
 export async function createSetorSampah(
   _prevState: ActionState,
@@ -980,7 +1030,7 @@ export async function createSetorSampah(
 
   const roleToCode: Record<string, string> = {
     "bank-sampah": "K",
-    warmiendo: "W",
+    warmindo: "W",
     konsumen: "B",
   };
   const code = roleToCode[user.role] || "B";
@@ -1049,9 +1099,9 @@ export async function createSetorSampah(
         | "diserahkan"
         | "diterima"
         | "ditolak",
-      kategoriNasabah: user.role as "konsumen" | "warmiendo" | "bank-sampah",
+      kategoriNasabah: user.role as "konsumen" | "warmindo" | "bank-sampah",
       metodeSetor:
-        user.role === "warmiendo"
+        user.role === "warmindo"
           ? (metodeSetor as "langsung" | "ekspedisi")
           : null,
     };

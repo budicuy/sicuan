@@ -3,10 +3,11 @@
 import argon2 from "argon2";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
-import { insertNasabahSchema, nasabah } from "@/db/schema";
+import { nasabah, users } from "@/db/schema";
 
 export async function getNasabah(params?: {
   page?: number;
@@ -29,8 +30,8 @@ export async function getNasabah(params?: {
   if (search) {
     whereConditions.push(
       or(
-        ilike(nasabah.name, `%${search}%`),
-        ilike(nasabah.username, `%${search}%`),
+        ilike(users.name, `%${search}%`),
+        ilike(users.username, `%${search}%`),
         ilike(nasabah.nik, `%${search}%`),
         ilike(nasabah.noTelepon, `%${search}%`),
         ilike(nasabah.alamat, `%${search}%`),
@@ -41,12 +42,12 @@ export async function getNasabah(params?: {
   if (role) {
     whereConditions.push(
       eq(
-        nasabah.role,
+        users.role,
         role as
           | "superadmin"
           | "admin"
           | "konsumen"
-          | "warmiendo"
+          | "warmindo"
           | "bank-sampah",
       ),
     );
@@ -55,20 +56,21 @@ export async function getNasabah(params?: {
   const queryCondition =
     whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
-  // Count query
+  // Count query joining users and nasabah
   const countRes = await db
     .select({ count: sql<number>`count(*)` })
-    .from(nasabah)
+    .from(users)
+    .innerJoin(nasabah, eq(users.id, nasabah.id))
     .where(queryCondition);
   const total = Number(countRes[0]?.count ?? 0);
 
   // Dynamic sorting
-  let orderColumn = sortOrder === "desc" ? desc(nasabah.id) : asc(nasabah.id);
+  let orderColumn = sortOrder === "desc" ? desc(users.id) : asc(users.id);
   if (sortBy === "name") {
-    orderColumn = sortOrder === "desc" ? desc(nasabah.name) : asc(nasabah.name);
+    orderColumn = sortOrder === "desc" ? desc(users.name) : asc(users.name);
   } else if (sortBy === "username") {
     orderColumn =
-      sortOrder === "desc" ? desc(nasabah.username) : asc(nasabah.username);
+      sortOrder === "desc" ? desc(users.username) : asc(users.username);
   } else if (sortBy === "nik") {
     orderColumn = sortOrder === "desc" ? desc(nasabah.nik) : asc(nasabah.nik);
   } else if (sortBy === "noTelepon") {
@@ -82,15 +84,15 @@ export async function getNasabah(params?: {
       sortOrder === "desc" ? desc(nasabah.jenisBank) : asc(nasabah.jenisBank);
   }
 
-  // Data query - direct query to nasabah
+  // Data query - inner join users and nasabah
   const data = await db
     .select({
-      id: nasabah.id,
-      userId: nasabah.id, // For backward compatibility with the frontend structure
-      name: nasabah.name,
-      username: nasabah.username,
-      role: nasabah.role,
-      status: nasabah.status,
+      id: users.id,
+      userId: users.id,
+      name: users.name,
+      username: users.username,
+      role: users.role,
+      status: users.status,
       nik: nasabah.nik,
       tanggalLahir: nasabah.tanggalLahir,
       noTelepon: nasabah.noTelepon,
@@ -100,13 +102,14 @@ export async function getNasabah(params?: {
       noRekening: nasabah.noRekening,
       poin: nasabah.poin,
     })
-    .from(nasabah)
+    .from(users)
+    .innerJoin(nasabah, eq(users.id, nasabah.id))
     .where(queryCondition)
     .orderBy(orderColumn)
     .limit(limit)
     .offset(offset);
 
-  // Map to frontend-friendly nested structure to keep frontend page changes minimal/safe
+  // Map to frontend-friendly nested structure
   const mappedData = data.map((d) => ({
     id: d.id,
     userId: d.userId,
@@ -130,10 +133,30 @@ export async function getNasabah(params?: {
 }
 
 // Validation Schema
-const userFormSchema = insertNasabahSchema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+const userFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Nama lengkap minimal 2 karakter" })
+    .trim(),
+  username: z
+    .string()
+    .min(3, { message: "Username minimal 3 karakter" })
+    .trim(),
+  password: z.string().min(6, { message: "Password minimal 6 karakter" }),
+  role: z.enum(["superadmin", "admin", "konsumen", "warmindo", "bank-sampah"]),
+  status: z.enum(["Aktif", "Nonaktif"]).default("Aktif"),
+  nik: z.string().nullable().optional(),
+  tanggalLahir: z.string().nullable().optional(),
+  noTelepon: z.string().nullable().optional(),
+  email: z
+    .string()
+    .email({ message: "Format email tidak valid" })
+    .nullable()
+    .optional()
+    .or(z.literal("")),
+  alamat: z.string().nullable().optional(),
+  jenisBank: z.string().nullable().optional(),
+  noRekening: z.string().nullable().optional(),
 });
 
 export async function createNasabah(
@@ -147,7 +170,7 @@ export async function createNasabah(
     | "superadmin"
     | "admin"
     | "konsumen"
-    | "warmiendo"
+    | "warmindo"
     | "bank-sampah";
   const status = formData.get("status") as string;
 
@@ -180,9 +203,9 @@ export async function createNasabah(
   }
 
   try {
-    // Check if username already exists
-    const existingUser = await db.query.nasabah.findFirst({
-      where: eq(nasabah.username, parsed.data.username),
+    // Check if username already exists in users table
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.username, parsed.data.username),
     });
 
     if (existingUser) {
@@ -195,10 +218,39 @@ export async function createNasabah(
     // Hash password
     const hashedPassword = await argon2.hash(parsed.data.password);
 
-    // Insert user langsung
-    await db.insert(nasabah).values({
-      ...parsed.data,
-      password: hashedPassword,
+    // Insert user and profile using a transaction
+    await db.transaction(async (tx) => {
+      const [usr] = await tx
+        .insert(users)
+        .values({
+          name: parsed.data.name,
+          username: parsed.data.username,
+          password: hashedPassword,
+          email: parsed.data.email || null,
+          role: parsed.data.role,
+          status: parsed.data.status as any,
+        })
+        .returning();
+
+      if (!usr) {
+        throw new Error("Gagal membuat user");
+      }
+
+      await tx.insert(nasabah).values({
+        id: usr.id,
+        name: parsed.data.name,
+        username: parsed.data.username,
+        role: parsed.data.role,
+        status: parsed.data.status as any,
+        nik: parsed.data.nik,
+        tanggalLahir: parsed.data.tanggalLahir,
+        noTelepon: parsed.data.noTelepon,
+        email: parsed.data.email,
+        alamat: parsed.data.alamat,
+        jenisBank: parsed.data.jenisBank,
+        noRekening: parsed.data.noRekening,
+        poin: parsed.data.role === "konsumen" ? 0 : null,
+      });
     });
   } catch (error) {
     console.error("Error creating nasabah:", error);
@@ -210,7 +262,7 @@ export async function createNasabah(
 }
 
 export async function updateNasabah(
-  id: number, // this is the user id now
+  id: number,
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -221,7 +273,7 @@ export async function updateNasabah(
     | "superadmin"
     | "admin"
     | "konsumen"
-    | "warmiendo"
+    | "warmindo"
     | "bank-sampah";
   const status = formData.get("status") as string;
 
@@ -255,8 +307,8 @@ export async function updateNasabah(
 
   try {
     // Check if username is taken by another user
-    const existingUser = await db.query.nasabah.findFirst({
-      where: eq(nasabah.username, parsed.data.username),
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.username, parsed.data.username),
     });
 
     if (existingUser && existingUser.id !== id) {
@@ -271,15 +323,39 @@ export async function updateNasabah(
       hashedPassword = await argon2.hash(password);
     }
 
-    // Update user langsung
-    await db
-      .update(nasabah)
-      .set({
-        ...parsed.data,
-        ...(hashedPassword ? { password: hashedPassword } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.id, id));
+    // Update user and profile using a transaction
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({
+          name: parsed.data.name,
+          username: parsed.data.username,
+          email: parsed.data.email || null,
+          role: parsed.data.role,
+          status: parsed.data.status as any,
+          ...(hashedPassword ? { password: hashedPassword } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+
+      await tx
+        .update(nasabah)
+        .set({
+          name: parsed.data.name,
+          username: parsed.data.username,
+          role: parsed.data.role,
+          status: parsed.data.status as any,
+          nik: parsed.data.nik,
+          tanggalLahir: parsed.data.tanggalLahir,
+          noTelepon: parsed.data.noTelepon,
+          email: parsed.data.email,
+          alamat: parsed.data.alamat,
+          jenisBank: parsed.data.jenisBank,
+          noRekening: parsed.data.noRekening,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, id));
+    });
   } catch (error) {
     console.error("Error updating nasabah:", error);
     return { success: false, errors: { _form: ["Terjadi kesalahan server"] } };
@@ -299,7 +375,8 @@ export async function deleteNasabah(id: number): Promise<ActionState> {
     };
   }
   try {
-    await db.delete(nasabah).where(eq(nasabah.id, id));
+    // Deleting user will cascade delete nasabah profile
+    await db.delete(users).where(eq(users.id, id));
 
     revalidatePath("/nasabah");
     return { success: true };

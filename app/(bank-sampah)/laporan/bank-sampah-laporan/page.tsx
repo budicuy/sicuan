@@ -17,14 +17,36 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getCurrentUserRole,
   getMySetoran,
   updateSetorSampahStatus,
 } from "@/app/(bank-sampah)/laporan/bank-sampah-laporan/action";
 import { DataTable } from "@/app/components/shared/DataTable";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
+
+const laporanSteps = [
+  {
+    element: "#tour-bank-sampah-laporan-summary",
+    popover: {
+      title: "Rangkuman Kartu",
+      description:
+        "Menampilkan total kali setoran yang dilakukan beserta total akumulasi berat sampah (Kg) yang Anda kontribusikan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-laporan-table",
+    popover: {
+      title: "Tabel Data Laporan Setoran",
+      description:
+        "Di sini Anda dapat melihat rincian detail seluruh riwayat setoran, memfilter berdasarkan jenis/status, serta memantau status pengiriman kurir ekspedisi.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function LaporanBankSampahPage() {
   const [data, setData] = useState<SetorSampahItem[]>([]);
@@ -33,6 +55,59 @@ export default function LaporanBankSampahPage() {
   const [_totalPoin, setTotalPoin] = useState(0);
   const [_totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [_isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = {
+      data,
+      totalItems,
+      totalBerat,
+    };
+    setIsTourActive(true);
+    setData([
+      {
+        id: 1,
+        nomorSetor: "SIMULASI-B01",
+        jenisSampah: "Karton",
+        beratKg: 15.0,
+        totalPoin: 300,
+        tanggalSetor: new Date().toISOString().split("T")[0],
+        status: "pending",
+        createdAt: new Date(),
+        fotoTimbangan: "/sampel_1.png",
+        metodeSetor: "ekspedisi",
+        catatan: "Setoran Karton Demo",
+        totalKredit: 0,
+      },
+      {
+        id: 2,
+        nomorSetor: "SIMULASI-B02",
+        jenisSampah: "Etiket",
+        beratKg: 10.0,
+        totalPoin: 200,
+        tanggalSetor: new Date().toISOString().split("T")[0],
+        status: "diterima",
+        createdAt: new Date(),
+        fotoTimbangan: "/sampel_1.png",
+        metodeSetor: "ekspedisi",
+        catatan: "Setoran Etiket Demo",
+        totalKredit: 0,
+      },
+    ]);
+    setTotalItems(2);
+    setTotalBerat(25.0);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    if (savedStateRef.current) {
+      setData(savedStateRef.current.data);
+      setTotalItems(savedStateRef.current.totalItems);
+      setTotalBerat(savedStateRef.current.totalBerat);
+    }
+  };
 
   // Table pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -360,8 +435,18 @@ export default function LaporanBankSampahPage() {
         </div>
       </div>
 
+      <TourGuide
+        pageKey="bank_sampah_laporan"
+        steps={laporanSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
       {/* Rangkuman Kartu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 max-w-3xl gap-6 mb-8 print:grid-cols-2 print:gap-4">
+      <div
+        id="tour-bank-sampah-laporan-summary"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 max-w-3xl gap-6 mb-8 print:grid-cols-2 print:gap-4"
+      >
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
             Total Setoran
@@ -388,7 +473,7 @@ export default function LaporanBankSampahPage() {
       </div>
 
       {/* DataTable */}
-      <div className="print:hidden">
+      <div id="tour-bank-sampah-laporan-table" className="print:hidden">
         {isLoading ? (
           <div className="py-24 text-center bg-white rounded-2xl border border-neutral-200 shadow-sm">
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-3" />

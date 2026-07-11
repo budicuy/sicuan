@@ -9,7 +9,7 @@ interface Setoran {
   beratKg: number;
   tanggalSetor: string;
   status: string;
-  senderType: "warmiendo" | "konsumen" | "bank-sampah";
+  senderType: "warmindo" | "konsumen" | "bank-sampah";
   senderName: string;
   senderCoords: [number, number];
   senderAlamat: string;

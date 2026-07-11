@@ -4,7 +4,7 @@ import { poinSampah } from "@/db/schema";
 export async function seedPoinSampah() {
   console.log("🌱 Seeding master poin...");
 
-  const poinData = [
+  const poinData: (typeof poinSampah.$inferInsert)[] = [
     { jenisSampah: "Paper Cup", pointPerKg: 30 },
     { jenisSampah: "Etiket", pointPerKg: 25 },
     { jenisSampah: "Karton", pointPerKg: 20 },

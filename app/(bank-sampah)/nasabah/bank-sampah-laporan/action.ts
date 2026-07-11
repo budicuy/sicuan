@@ -43,7 +43,7 @@ export async function getLaporanSetoranNasabah(params?: {
   try {
     // 1. Fetch all setoran from database
     const setoran = await db.query.setorSampah.findMany({
-      where: inArray(setorSampah.kategoriNasabah, ["konsumen", "warmiendo"]),
+      where: inArray(setorSampah.kategoriNasabah, ["konsumen", "warmindo"]),
       with: { user: true },
       orderBy: [desc(setorSampah.id)],
     });

@@ -301,10 +301,10 @@ export default function LoginPage() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span>•</span>
                       <span className="font-semibold text-neutral-800">
-                        warmiendo.demo
+                        warmindo.demo
                       </span>
                       <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase border border-amber-200">
-                        Warmiendo
+                        Warmindo
                       </span>
                       <span className="text-neutral-500 font-mono text-[9px]">
                         (Pass: Password123)
@@ -313,7 +313,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        handleUseDemo("warmiendo.demo", "Password123")
+                        handleUseDemo("warmindo.demo", "Password123")
                       }
                       className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
                     >

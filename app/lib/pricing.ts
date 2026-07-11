@@ -10,7 +10,7 @@ export async function getPoinPerKg(jenis: string): Promise<number> {
     const result = await db
       .select({ pointPerKg: poinSampah.pointPerKg })
       .from(poinSampah)
-      .where(eq(poinSampah.jenisSampah, jenis))
+      .where(eq(poinSampah.jenisSampah, jenis as any))
       .limit(1);
 
     return result[0]?.pointPerKg ?? 0;
@@ -33,7 +33,7 @@ export async function getHargaRange(
       .from(hargaSampah)
       .where(
         and(
-          eq(hargaSampah.jenisSampah, jenis),
+          eq(hargaSampah.jenisSampah, jenis as any),
           lte(hargaSampah.minBerat, berat),
           or(isNull(hargaSampah.maxBerat), gte(hargaSampah.maxBerat, berat)),
         ),
@@ -49,7 +49,7 @@ export async function getHargaRange(
 
 /**
  * Menghitung total poin dan kredit uang dari setoran sampah.
- * Kredit uang hanya diberikan untuk mitra warmiendo dan bank-sampah.
+ * Kredit uang hanya diberikan untuk mitra warmindo dan bank-sampah.
  */
 export async function calculateSetoranReward(
   jenis: string,
@@ -60,11 +60,11 @@ export async function calculateSetoranReward(
     return { totalPoin: 0, totalKredit: 0 };
   }
 
-  const isWarmiendo = role === "warmiendo";
-  const pointPerKg = isWarmiendo ? 0 : await getPoinPerKg(jenis);
-  const totalPoin = isWarmiendo ? 0 : Math.floor(berat * pointPerKg);
+  const isWarmindo = role === "warmindo";
+  const pointPerKg = isWarmindo ? 0 : await getPoinPerKg(jenis);
+  const totalPoin = isWarmindo ? 0 : Math.floor(berat * pointPerKg);
 
-  const isMoneyReward = role === "warmiendo";
+  const isMoneyReward = role === "warmindo";
   const totalKredit = isMoneyReward ? await getHargaRange(jenis, berat) : 0;
 
   return { totalPoin, totalKredit };

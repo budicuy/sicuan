@@ -37,8 +37,8 @@ export default async function KonsumenLayout({ children }: LayoutProps) {
       redirect("/dashboard/admin-dashboard");
     } else if (user.role === "bank-sampah") {
       redirect("/dashboard/bank-sampah-dashboard");
-    } else if (user.role === "warmiendo") {
-      redirect("/dashboard/warmiendo-dashboard");
+    } else if (user.role === "warmindo") {
+      redirect("/dashboard/warmindo-dashboard");
     } else {
       redirect("/login");
     }
@@ -50,12 +50,6 @@ export default async function KonsumenLayout({ children }: LayoutProps) {
     { href: "/setor-sampah", label: "Setor Sampah", icon: "ShoppingBag" },
     { href: "/tukar-kupon", label: "Tukar Kupon", icon: "Star" },
     { href: "/profil", label: "Profil Saya", icon: "User" },
-
-    {
-      href: "/user-guide/konsumen-guide",
-      label: "Panduan",
-      icon: "BookOpen",
-    },
   ];
 
   return (

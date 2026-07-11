@@ -52,7 +52,7 @@ export function FeaturesSection() {
             </h4>
             <p className="text-neutral-600 text-sm leading-relaxed">
               Skema insentif bervariasi sesuai peranan Anda. Poin belanja kupon
-              untuk individu, saldo e-wallet/bank untuk mitra Warmiendo, serta
+              untuk individu, saldo e-wallet/bank untuk mitra Warmindo, serta
               kas tunai transfer bernilai khusus untuk Bank Sampah pengolah TPS.
             </p>
             <div className="flex items-center gap-2 text-xs font-bold text-primary-600 pt-2">

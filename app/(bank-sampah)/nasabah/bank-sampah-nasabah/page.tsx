@@ -251,7 +251,7 @@ export default function BankSampahNasabahPage() {
       label: "Filter Tipe Nasabah",
       options: [
         { label: "Konsumen", value: "konsumen" },
-        { label: "Warmiendo", value: "warmiendo" },
+        { label: "Warmindo", value: "warmindo" },
       ],
       filterFn: (item, val) => item.user?.role?.toLowerCase() === val,
     },

@@ -3,14 +3,14 @@ import {
   integer,
   pgTable,
   serial,
-  text,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { jenisSampahEnum } from "@/db/schema/setor-sampah";
 
 export const hargaSampah = pgTable("harga_sampah", {
   id: serial("id").primaryKey(),
-  jenisSampah: text("jenis_sampah").notNull(), // e.g. "Paper Cup", "Etiket", "Karton"
+  jenisSampah: jenisSampahEnum("jenis_sampah").notNull(), // e.g. "Paper Cup", "Etiket", "Karton"
   minBerat: doublePrecision("berat_min").notNull(),
   maxBerat: doublePrecision("berat_max"), // null means no upper limit (e.g. > 10 kg)
   harga: integer("harga").notNull(),

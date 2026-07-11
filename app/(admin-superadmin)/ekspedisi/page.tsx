@@ -230,7 +230,7 @@ export default function EkspedisiPage() {
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
             Kelola daftar vendor penyedia jasa ekspedisi untuk pengiriman sampah
-            dari mitra Warmiendo.
+            dari mitra Warmindo.
           </p>
         </div>
       </div>

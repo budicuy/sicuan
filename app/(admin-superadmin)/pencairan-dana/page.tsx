@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   approveDisbursement,
   approveDisbursementCash,
@@ -30,11 +30,79 @@ import {
   type TableFilter,
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { DisbursementItem } from "@/app/types";
+
+const pencairanSteps = [
+  {
+    element: "#tour-admin-pencairan-header",
+    popover: {
+      title: "Halaman Verifikasi Pencairan Dana",
+      description:
+        "Di sini Admin memproses pengajuan pencairan dana dari mitra Warmindo dan Bank Sampah. Setiap pengajuan harus diverifikasi atau ditolak.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-pencairan-table",
+    popover: {
+      title: "Daftar Pengajuan Pencairan",
+      description:
+        "Tabel ini menampilkan seluruh pengajuan pencairan dana dari mitra beserta metode pembayaran (tunai/transfer), nominal, dan statusnya.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-pencairan-action",
+    popover: {
+      title: "Aksi Verifikasi",
+      description:
+        "Klik tombol 'Proses' untuk menyetujui pengajuan atau 'Tolak' untuk menolak. Pada mode tour ini adalah simulasi dan tidak akan mengubah data nyata.",
+      side: "left" as const,
+    },
+  },
+];
 
 export default function PencairanAdminPage() {
   const [items, setItems] = useState<DisbursementItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [isTourActive, setIsTourActive] = useState(false);
+  const savedItemsRef = useRef<DisbursementItem[]>([]);
+
+  const demoPencairanItem: DisbursementItem = {
+    id: 99901,
+    userId: 9901,
+    jumlah: 200000,
+    metodePembayaran: "transfer",
+    jenisBank: "BNI",
+    noRekening: "123456xxx",
+    keterangan: "Pencairan Demo Tour",
+    status: "pending",
+    buktiTransfer: null,
+    ttdPenyerahUrl: null,
+    periodeBulan: null,
+    periodeTahun: null,
+    createdAt: new Date(),
+    user: {
+      name: "Warmindo Demo",
+      username: "warmindo_demo",
+      role: "warmindo",
+    },
+  };
+
+  const handleTourStart = () => {
+    savedItemsRef.current = items;
+    setIsTourActive(true);
+    if (items.filter((i) => i.status === "pending").length === 0) {
+      setItems([demoPencairanItem, ...items]);
+    }
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    setItems(savedItemsRef.current);
+  };
 
   // Modals / Action states
   const [verifyRequest, setVerifyRequest] = useState<DisbursementItem | null>(
@@ -142,6 +210,22 @@ export default function PencairanAdminPage() {
   const handleApprove = () => {
     if (!verifyRequest) return;
 
+    // Tour mode: simulate success
+    if (isTourActive && verifyRequest.id === 99901) {
+      setItems((prev) =>
+        prev.map((i) => (i.id === 99901 ? { ...i, status: "berhasil" } : i)),
+      );
+      setVerifyRequest(null);
+      setUploadedImage(null);
+      document.dispatchEvent(new CustomEvent("close-tour-guide"));
+      showFeedback(
+        "success",
+        "[SIMULASI] Pencairan Disetujui",
+        "Ini adalah simulasi tour. Data nyata tidak berubah.",
+      );
+      return;
+    }
+
     // Cash: approve without photo
     if (verifyRequest.metodePembayaran === "tunai") {
       startTransition(async () => {
@@ -177,6 +261,21 @@ export default function PencairanAdminPage() {
 
   const handleReject = () => {
     if (!rejectRequest) return;
+
+    // Tour mode: simulate reject
+    if (isTourActive && rejectRequest.id === 99901) {
+      setItems((prev) =>
+        prev.map((i) => (i.id === 99901 ? { ...i, status: "ditolak" } : i)),
+      );
+      setRejectRequest(null);
+      document.dispatchEvent(new CustomEvent("close-tour-guide"));
+      showFeedback(
+        "success",
+        "[SIMULASI] Pencairan Ditolak",
+        "Ini adalah simulasi tour. Data nyata tidak berubah.",
+      );
+      return;
+    }
 
     startTransition(async () => {
       const res = await rejectDisbursement(rejectRequest.id);
@@ -243,7 +342,7 @@ export default function PencairanAdminPage() {
 
   const getRoleBadgeColor = (role?: string) => {
     switch (role?.toLowerCase()) {
-      case "warmiendo":
+      case "warmindo":
         return "bg-amber-50 text-amber-700 border-amber-200";
       case "bank-sampah":
         return "bg-purple-50 text-purple-700 border-purple-200";
@@ -286,7 +385,7 @@ export default function PencairanAdminPage() {
   const formatRoleName = (role?: string) => {
     if (!role) return "Mitra";
     if (role === "bank-sampah") return "Bank Sampah";
-    if (role === "warmiendo") return "Warmiendo";
+    if (role === "warmindo") return "Warmindo";
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
@@ -372,14 +471,20 @@ export default function PencairanAdminPage() {
         <div className="flex flex-wrap justify-center items-center gap-1.5">
           {item.status === "pending" ? (
             <>
-              <button
-                type="button"
-                onClick={() => handleOpenBuktiPembayaran(item)}
-                className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
+              <span
+                id={
+                  item.id === 99901 ? "tour-admin-pencairan-action" : undefined
+                }
               >
-                <CreditCard className="w-3 h-3" />
-                Proses
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenBuktiPembayaran(item)}
+                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
+                >
+                  <CreditCard className="w-3 h-3" />
+                  Proses
+                </button>
+              </span>
               <button
                 type="button"
                 onClick={() => setRejectRequest(item)}
@@ -433,7 +538,7 @@ export default function PencairanAdminPage() {
       label: "Peranan",
       options: [
         { label: "Semua Peranan", value: "" },
-        { label: "Warmiendo", value: "warmiendo" },
+        { label: "Warmindo", value: "warmindo" },
         { label: "Bank Sampah", value: "bank-sampah" },
       ],
     },
@@ -472,20 +577,30 @@ export default function PencairanAdminPage() {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+      <TourGuide
+        pageKey="admin_pencairan"
+        steps={pencairanSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
       {/* Header Title */}
-      <div>
+      <div id="tour-admin-pencairan-header">
         <h1 className="text-2xl font-extrabold text-neutral-900 tracking-tight">
           Verifikasi Pencairan Dana
         </h1>
         <p className="text-xs text-neutral-500">
-          Proses pencairan dana dari mitra Warmiendo dan Bank Sampah. Bukti foto
+          Proses pencairan dana dari mitra Warmindo dan Bank Sampah. Bukti foto
           transfer wajib dilampirkan untuk metode transfer. Untuk tunai, cukup
           setujui dan buat dokumen bukti pembayaran.
         </p>
       </div>
 
       {/* Main Table */}
-      <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden p-6">
+      <div
+        id="tour-admin-pencairan-table"
+        className="bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden p-6"
+      >
         {loading ? (
           <div className="py-24 text-center bg-white rounded-2xl">
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-3" />

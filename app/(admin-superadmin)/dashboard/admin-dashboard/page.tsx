@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -29,6 +29,46 @@ import {
 } from "recharts";
 import { getDashboardData } from "@/app/(admin-superadmin)/dashboard/admin-dashboard/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+
+const adminDashboardSteps = [
+  {
+    element: "#tour-admin-dashboard-welcome",
+    popover: {
+      title: "Portal Administrator",
+      description:
+        "Selamat datang di Portal Administrator Sicuan. Dashboard ini memvisualisasikan data monitoring volume sampah daur ulang secara real-time.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-metrics",
+    popover: {
+      title: "Metrik Kunci Kemitraan",
+      description:
+        "Mulai dari total nasabah terdaftar, total volume setoran masuk, rekap harian, hingga jumlah setoran tertunda yang menunggu verifikasi.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-distribution",
+    popover: {
+      title: "Distribusi Kategori Sampah",
+      description:
+        "Menampilkan persentase pembagian sampah global berdasarkan jenis karton, etiket, dan paper cup.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-contributors",
+    popover: {
+      title: "Peringkat Kontributor Teraktif",
+      description:
+        "Menampilkan 10 peringkat nasabah/mitra dengan total kontribusi setoran sampah terbesar.",
+      side: "top" as const,
+    },
+  },
+];
 
 interface DashboardData {
   success: boolean;
@@ -84,6 +124,65 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [_loading, setLoading] = useState(true);
 
+  const [_isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = data;
+    setIsTourActive(true);
+    setData({
+      success: true,
+      role: "admin",
+      name: "Admin Demo",
+      metrics: {
+        totalUsers: 85,
+        totalSetoranKg: 3450,
+        totalSetoranTodayKg: 120,
+        totalPendingSetoran: 5,
+        totalDitolakSetoran: 2,
+        totalNasabahCount: 85,
+        totalSetoranDiterima: 3300,
+        totalSetoranPending: 150,
+        totalPencairanBerhasil: 4500000,
+        totalPencairanPending: 800000,
+        totalKuponDitukar: 24,
+      },
+      composition: [
+        { name: "Karton", value: 1850, color: "#f59e0b" },
+        { name: "Etiket", value: 1100, color: "#10b981" },
+        { name: "Paper Cup", value: 500, color: "#3b82f6" },
+      ],
+      topContributors: [
+        {
+          rank: 1,
+          name: "Warmindo Berkah",
+          total: 450,
+          percentage: "35%",
+          color: "bg-blue-600",
+        },
+        {
+          rank: 2,
+          name: "Bank Sampah Hijau",
+          total: 320,
+          percentage: "25%",
+          color: "bg-emerald-500",
+        },
+        {
+          rank: 3,
+          name: "Konsumen Demo",
+          total: 120,
+          percentage: "10%",
+          color: "bg-amber-500",
+        },
+      ],
+    });
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    setData(savedStateRef.current);
+  };
+
   // Filters for Admin
   const [_selectedMonth, _setSelectedMonth] = useState("Juni");
   const [_selectedYear, _setSelectedYear] = useState("2026");
@@ -114,8 +213,18 @@ export default function DashboardPage() {
 
     return (
       <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+        <TourGuide
+          pageKey="admin_dashboard"
+          steps={adminDashboardSteps}
+          onStart={handleTourStart}
+          onEnd={handleTourEnd}
+        />
+
         {/* Welcome Board */}
-        <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+        <div
+          id="tour-admin-dashboard-welcome"
+          className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden"
+        >
           <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
@@ -143,7 +252,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div
+          id="tour-admin-dashboard-metrics"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+        >
           <div className="bg-linear-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
             <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
@@ -223,7 +335,10 @@ export default function DashboardPage() {
         {/* Global Distribution & Top Contributors */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Distribution (Left) */}
-          <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-87.5">
+          <div
+            id="tour-admin-dashboard-distribution"
+            className="lg:col-span-5 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-87.5"
+          >
             <h3 className="font-bold text-sm text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
               Distribusi Kategori Sampah Global
             </h3>
@@ -284,7 +399,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Top Contributors (Right) */}
-          <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between">
+          <div
+            id="tour-admin-dashboard-contributors"
+            className="lg:col-span-7 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between"
+          >
             <div className="flex justify-between items-center border-b border-neutral-100 pb-3 mb-4">
               <h3 className="font-bold text-sm text-neutral-800">
                 Top 10 Kontributor Teraktif
@@ -635,8 +753,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Render WARMIENDO / BANK SAMPAH View
-  const isWarmiendo = role === "warmiendo";
+  // Render WARMINDO / BANK SAMPAH View
+  const isWarmindo = role === "warmindo";
   const hasCompositionData =
     data?.composition?.some((c) => c.value > 0) ?? false;
   const hasHistoryData =
@@ -656,7 +774,7 @@ export default function DashboardPage() {
               Halo Mitra, <span className="text-primary-600">{name}</span>!
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Dashboard Kemitraan {isWarmiendo ? "Warmiendo" : "Bank Sampah"}{" "}
+              Dashboard Kemitraan {isWarmindo ? "Warmindo" : "Bank Sampah"}{" "}
               SICUAN — Cairkan reward tunai dari kontribusi Anda.
             </p>
           </div>

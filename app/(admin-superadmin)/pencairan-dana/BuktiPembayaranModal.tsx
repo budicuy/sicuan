@@ -71,7 +71,7 @@ export function BuktiPembayaranModal({
   const [periodeBulan, _setPeriodeBulan] = useState(thisMonth);
   const [periodeTahun, _setPeriodeTahun] = useState(thisYear);
   const [kategoriSumber, _setKategoriSumber] = useState(
-    item.user.role === "warmiendo" ? "tps-3r" : "bank-sampah-induk",
+    item.user.role === "warmindo" ? "tps-3r" : "bank-sampah-induk",
   );
   const [dataSampah, setDataSampah] = useState<DataSampahItem[]>([
     { jenis: "Karton", beratKg: 0, terlampir: true },
@@ -81,8 +81,8 @@ export function BuktiPembayaranModal({
   const [keterangan, _setKeterangan] = useState(item.keterangan ?? "");
   const [namaPenyerah, _setNamaPenyerah] = useState(item.user.name);
   const [jabatanPenyerah, _setJabatanPenyerah] = useState(
-    item.user.role === "warmiendo"
-      ? "Pengelola Warmiendo"
+    item.user.role === "warmindo"
+      ? "Pengelola Warmindo"
       : "Pimpinan Bank Sampah",
   );
   const [namaPenerima, setNamaPenerima] = useState("Admin");

@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  Bell,
   BookOpen,
   ChevronDown,
   Coins,
   FileText,
   Folder,
+  HelpCircle,
   LayoutDashboard,
   LogOut,
   type LucideIcon,
@@ -52,6 +52,9 @@ export interface MenuItem {
   label: string;
   icon: string;
   badgeCount?: number;
+  onClick?: (
+    e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>,
+  ) => void;
 }
 
 export type SidebarItem =
@@ -61,6 +64,9 @@ export type SidebarItem =
       label: string;
       icon: string;
       badgeCount?: number;
+      onClick?: (
+        e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>,
+      ) => void;
     }
   | {
       type: "group";
@@ -176,6 +182,36 @@ export function SidebarLayout({
             if (item.type === "link") {
               const isActive = pathname === item.href;
               const Icon = getIcon(item.icon);
+              const isTourGuide = item.href === "#tour-guide";
+              const clickHandler = isTourGuide
+                ? (e: React.MouseEvent) => {
+                    e.preventDefault();
+                    document.dispatchEvent(
+                      new CustomEvent("trigger-tour-guide"),
+                    );
+                  }
+                : item.onClick;
+
+              if (clickHandler) {
+                return (
+                  <button
+                    key={item.href || item.label}
+                    type="button"
+                    onClick={(e) => {
+                      clickHandler(e as any);
+                      handleLinkClick();
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50 border-0 cursor-pointer text-left bg-transparent"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Icon className="w-4.5 h-4.5 shrink-0 text-neutral-400" />
+                      </div>
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    </div>
+                  </button>
+                );
+              }
               return (
                 <Link
                   key={item.href}
@@ -287,6 +323,30 @@ export function SidebarLayout({
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = getIcon(item.icon);
+          const isTourGuide = item.href === "#tour-guide";
+          const clickHandler = isTourGuide
+            ? (e: React.MouseEvent) => {
+                e.preventDefault();
+                document.dispatchEvent(new CustomEvent("trigger-tour-guide"));
+              }
+            : item.onClick;
+
+          if (clickHandler) {
+            return (
+              <button
+                key={item.href || item.label}
+                type="button"
+                onClick={(e) => {
+                  clickHandler(e as any);
+                  handleLinkClick();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50 border-0 cursor-pointer text-left bg-transparent"
+              >
+                <Icon className="w-4.5 h-4.5 shrink-0 text-neutral-400" />
+                <span className="whitespace-nowrap">{item.label}</span>
+              </button>
+            );
+          }
           return (
             <Link
               key={item.href}
@@ -516,17 +576,6 @@ export function SidebarLayout({
               {activeTitle}
             </span>
           </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 transition-colors relative"
-              title="Notifikasi"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full animate-pulse" />
-            </button>
-          </div>
         </header>
 
         <main
@@ -539,6 +588,26 @@ export function SidebarLayout({
           {children}
         </main>
       </div>
+      {/* FLOATING TOUR GUIDE BUTTON */}
+      {(user?.role === "konsumen" ||
+        user?.role === "warmindo" ||
+        user?.role === "bank-sampah" ||
+        user?.role === "admin" ||
+        user?.role === "superadmin") && (
+        <button
+          type="button"
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("trigger-tour-guide"))
+          }
+          className="fixed bottom-6 right-6 z-[1050] flex items-center justify-center gap-2 p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group hover:pr-5 cursor-pointer border-0"
+          title="Mulai Tour Guide"
+        >
+          <HelpCircle className="w-6 h-6 animate-pulse shrink-0" />
+          <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-bold transition-all duration-300 group-hover:max-w-xs group-hover:ml-1 uppercase tracking-wider block">
+            Tour Guide
+          </span>
+        </button>
+      )}
     </div>
   );
 }

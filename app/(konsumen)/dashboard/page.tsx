@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { getDashboardData } from "@/app/(konsumen)/dashboard/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 
 interface DashboardData {
   success: boolean;
@@ -56,16 +57,127 @@ interface DashboardData {
   }[];
 }
 
+const demoDashboardData: DashboardData = {
+  success: true,
+  role: "konsumen",
+  name: "Budi Santoso (Demo)",
+  metrics: {
+    totalSetoranKg: 45.5,
+    totalSetoranPending: 10,
+    totalSetoranDiterima: 8,
+    totalPencairanBerhasil: 0,
+    totalPencairanPending: 0,
+    totalKuponDitukar: 3,
+  },
+  profile: {
+    poin: 250,
+  },
+  composition: [
+    { name: "Karton", value: 20, color: "#10b981" },
+    { name: "Etiket", value: 15, color: "#3b82f6" },
+    { name: "Paper Cup", value: 10.5, color: "#f59e0b" },
+  ],
+  setoranHistory: [
+    { date: "Mei", Volume: 15, Poin: 75 },
+    { date: "Jun", Volume: 30, Poin: 150 },
+    { date: "Jul", Volume: 45.5, Poin: 225 },
+  ],
+  recentSetoran: [
+    {
+      id: 999,
+      nomorSetor: "1/B/NDL/BJM/10/07/2026",
+      jenisSampah: "Karton",
+      beratKg: 10.5,
+      status: "pending",
+      tanggalSetor: "2026-07-10",
+    },
+    {
+      id: 998,
+      nomorSetor: "2/B/NDL/BJM/05/07/2026",
+      jenisSampah: "Etiket",
+      beratKg: 15,
+      status: "diterima",
+      tanggalSetor: "2026-07-05",
+    },
+    {
+      id: 997,
+      nomorSetor: "3/B/NDL/BJM/01/07/2026",
+      jenisSampah: "Paper Cup",
+      beratKg: 20,
+      status: "diterima",
+      tanggalSetor: "2026-07-01",
+    },
+  ],
+};
+
+const ringkasanSteps = [
+  {
+    element: "#tour-welcome-board",
+    popover: {
+      title: "Selamat Datang!",
+      description:
+        "Ini adalah Dashboard Sicuan Konsumen. Di sini Anda dapat melihat rangkuman kontribusi pengelolaan sampah Anda.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-points-card",
+    popover: {
+      title: "Saldo Poin Utama",
+      description:
+        "Jumlah poin sirkular yang Anda peroleh. Poin ini dapat ditukarkan dengan berbagai kupon reward menarik di menu Tukar Kupon.",
+      side: "right" as const,
+    },
+  },
+  {
+    element: "#tour-metrics-grid",
+    popover: {
+      title: "Rangkuman Metrik",
+      description:
+        "Statistik total berat sampah yang disetor, jumlah transaksi yang telah diterima, serta kupon yang sudah Anda tukarkan.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-composition-chart",
+    popover: {
+      title: "Komposisi Sampah",
+      description:
+        "Diagram lingkaran ini memperlihatkan proporsi sampah (Karton, Etiket, Paper Cup) yang Anda kontribusikan.",
+      side: "left" as const,
+    },
+  },
+  {
+    element: "#tour-performance-chart",
+    popover: {
+      title: "Grafik Tren Setoran",
+      description:
+        "Grafik area yang memantau perkembangan volume setoran sampah Anda dari waktu ke waktu dalam satuan kilogram.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-recent-setoran",
+    popover: {
+      title: "Setoran Sampah Terakhir",
+      description:
+        "Tabel ini menunjukkan aktivitas penyetoran terbaru beserta status verifikasi dari pihak admin.",
+      side: "top" as const,
+    },
+  },
+];
+
 export default function DashboardPage() {
   const [_mounted, setMounted] = useState(false);
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [realData, setRealData] = useState<DashboardData | null>(null);
   const [_loading, setLoading] = useState(true);
+  const [isTourActive, setIsTourActive] = useState(false);
 
   const loadData = useCallback(() => {
     setLoading(true);
     getDashboardData().then((res) => {
       if (res.success) {
-        setData(res as DashboardData);
+        setRealData(res as DashboardData);
       }
       setLoading(false);
     });
@@ -76,6 +188,8 @@ export default function DashboardPage() {
     loadData();
   }, [loadData]);
 
+  const data = isTourActive ? demoDashboardData : realData;
+
   const name = data?.name ?? "-";
   const hasCompositionData =
     data?.composition?.some((c) => c.value > 0) ?? false;
@@ -84,8 +198,17 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+      <TourGuide
+        pageKey="ringkasan"
+        steps={ringkasanSteps}
+        onStart={() => setIsTourActive(true)}
+        onEnd={() => setIsTourActive(false)}
+      />
       {/* Welcome Board */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+      <div
+        id="tour-welcome-board"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
@@ -104,8 +227,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-linear-to-br from-primary-600 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 col-span-1 sm:col-span-2 lg:col-span-1">
+      <div
+        id="tour-metrics-grid"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        <div
+          id="tour-points-card"
+          className="bg-linear-to-br from-primary-600 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 col-span-1 sm:col-span-2 lg:col-span-1"
+        >
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider block">
             Saldo Poin Utama
@@ -176,7 +305,10 @@ export default function DashboardPage() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* History Chart */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80">
+        <div
+          id="tour-performance-chart"
+          className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80"
+        >
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-4 h-4 text-primary-600" />
             Tren Setoran Sampah Terakhir (Kg)
@@ -237,7 +369,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Composition */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80">
+        <div
+          id="tour-composition-chart"
+          className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80"
+        >
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
             Komposisi Sampah Anda
           </h3>
@@ -293,7 +428,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity Table */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+      <div
+        id="tour-recent-setoran"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4"
+      >
         <h3 className="font-bold text-sm text-neutral-800 flex items-center gap-1.5 pb-2 border-b border-neutral-100">
           <Clock className="w-4.5 h-4.5 text-primary-600" />
           Setoran Sampah Terakhir

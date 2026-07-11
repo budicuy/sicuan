@@ -22,7 +22,7 @@ export interface NasabahWithUser {
 }
 
 /**
- * ProfileData — data profil pengguna (konsumen, warmiendo, bank-sampah).
+ * ProfileData — data profil pengguna (konsumen, warmindo, bank-sampah).
  * Field opsional (`null` possible) direpresentasikan dengan string karena
  * form input selalu mengembalikan string.
  */

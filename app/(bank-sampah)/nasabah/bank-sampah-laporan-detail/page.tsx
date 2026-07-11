@@ -31,7 +31,7 @@ interface NasabahSummaryItem {
   email: string | null;
   noTelepon: string | null;
   alamat: string | null;
-  poin: number;
+  poin: number | null;
   kredit: number;
   user: {
     name: string;
@@ -61,7 +61,7 @@ interface NasabahDetail {
     noTelepon: string | null;
     email: string | null;
     alamat: string | null;
-    poin: number;
+    poin: number | null;
     kredit: number;
     jenisBank: string | null;
     noRekening: string | null;

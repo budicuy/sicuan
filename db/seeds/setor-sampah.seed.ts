@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { nasabah, setorSampah } from "@/db/schema";
+import { setorSampah, users } from "@/db/schema";
 
 export async function seedSetorSampah() {
   console.log("🌱 Seeding setor sampah for unified table...");
@@ -8,161 +8,52 @@ export async function seedSetorSampah() {
   await db.delete(setorSampah);
 
   // Get active users
-  const budi = await db.query.nasabah.findFirst({
-    where: eq(nasabah.username, "budi.santoso"),
+  const budi = await db.query.users.findFirst({
+    where: eq(users.username, "budi.santoso"),
   });
-  const warmiendo = await db.query.nasabah.findFirst({
-    where: eq(nasabah.username, "warmiendo.demo"),
+  const warmindo = await db.query.users.findFirst({
+    where: eq(users.username, "warmindo.demo"),
   });
-  const bankSampah = await db.query.nasabah.findFirst({
-    where: eq(nasabah.username, "banksampah.demo"),
+  const bankSampah = await db.query.users.findFirst({
+    where: eq(users.username, "banksampah.demo"),
   });
-  const activeEkspedisi = await db.query.ekspedisi.findMany();
 
-  if (!budi || !warmiendo || !bankSampah) {
+  if (!budi || !warmindo || !bankSampah) {
     throw new Error("Mandatory users not found during setor-sampah seeding!");
   }
 
-  const jneId = activeEkspedisi[0]?.id || null;
+  // Seed real setoran: Rosiana Dwi Hastuti (NIK 50023152)
+  const rosiana = await db.query.users.findFirst({
+    where: eq(users.username, "50023152"),
+  });
 
-  // Placeholder image
-  const placeholderImage = "https://placehold.co/600x400";
-
-  // 1. Seed budi.santoso setoran (POIN) -> masuk ke setor_sampah
-  // Untuk selain warmiendo, metode setor adalah "langsung"
-  const budiSetoran = [
-    {
-      nomorSetor: "1/B/NDL/BJM/01/06/2026",
-      userId: budi.id,
-      jenisSampah: "Karton" as const,
-      beratKg: 10,
-      beratAiKg: 10,
-      tanggalSetor: "2026-06-01",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 200,
-      status: "diterima" as const,
-      kategoriNasabah: "konsumen" as const,
-      metodeSetor: "langsung" as const,
-    },
-    {
-      nomorSetor: "2/B/NDL/BJM/02/06/2026",
-      userId: budi.id,
-      jenisSampah: "Etiket" as const,
-      beratKg: 8,
-      beratAiKg: 8,
-      tanggalSetor: "2026-06-02",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 200,
-      status: "diterima" as const,
-      kategoriNasabah: "konsumen" as const,
-      metodeSetor: "langsung" as const,
-    },
-    {
-      nomorSetor: "3/B/NDL/BJM/03/06/2026",
-      userId: budi.id,
-      jenisSampah: "Paper Cup" as const,
-      beratKg: 10,
-      beratAiKg: 10,
-      tanggalSetor: "2026-06-03",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 300,
-      status: "diterima" as const,
-      kategoriNasabah: "konsumen" as const,
-      metodeSetor: "langsung" as const,
-    },
-  ];
-
-  await db.insert(setorSampah).values(budiSetoran);
-
-  // 2. Seed warmiendo.demo setoran (Kredit) -> masuk ke setor_sampah
-  // Untuk warmiendo, metode setor adalah hanya via "ekspedisi"
-  const warmiendoSetoran = [
-    {
-      nomorSetor: "4/W/NDL/BJM/01/06/2026",
-      userId: warmiendo.id,
-      jenisSampah: "Karton" as const,
-      beratKg: 10,
-      beratAiKg: 10,
-      tanggalSetor: "2026-06-01",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 0,
-      status: "diterima" as const,
-      metodeSetor: "ekspedisi" as const,
-      ekspedisiId: jneId,
-      kategoriNasabah: "warmiendo" as const,
-    },
-    {
-      nomorSetor: "5/W/NDL/BJM/02/06/2026",
-      userId: warmiendo.id,
-      jenisSampah: "Etiket" as const,
-      beratKg: 20,
-      beratAiKg: 20,
-      tanggalSetor: "2026-06-02",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 0,
-      status: "diterima" as const,
-      metodeSetor: "ekspedisi" as const,
-      ekspedisiId: jneId,
-      kategoriNasabah: "warmiendo" as const,
-    },
-    {
-      nomorSetor: "6/W/NDL/BJM/03/06/2026",
-      userId: warmiendo.id,
-      jenisSampah: "Paper Cup" as const,
-      beratKg: 15,
-      beratAiKg: 15,
-      tanggalSetor: "2026-06-03",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 0,
-      status: "diterima" as const,
-      metodeSetor: "ekspedisi" as const,
-      ekspedisiId: jneId,
-      kategoriNasabah: "warmiendo" as const,
-    },
-  ];
-
-  await db.insert(setorSampah).values(warmiendoSetoran);
-
-  // 3. Seed banksampah.demo setoran (Kredit) -> masuk ke setor_sampah
-  // Untuk selain warmiendo, metode setor adalah "langsung"
-  const bankSampahSetoran = [
-    {
-      nomorSetor: "7/K/NDL/BJM/01/06/2026",
-      userId: bankSampah.id,
-      jenisSampah: "Karton" as const,
-      beratKg: 15,
-      beratAiKg: 15,
-      tanggalSetor: "2026-06-01",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 300,
-      status: "diterima" as const,
-      kategoriNasabah: "bank-sampah" as const,
-      metodeSetor: "langsung" as const,
-    },
-    {
-      nomorSetor: "8/K/NDL/BJM/02/06/2026",
-      userId: bankSampah.id,
-      jenisSampah: "Paper Cup" as const,
-      beratKg: 20,
-      beratAiKg: 20,
-      tanggalSetor: "2026-06-02",
-      fotoTimbangan: placeholderImage,
-      fotoBuktiTambahan: [placeholderImage],
-      totalPoin: 600,
-      status: "diterima" as const,
-      kategoriNasabah: "bank-sampah" as const,
-      metodeSetor: "langsung" as const,
-    },
-  ];
-
-  await db.insert(setorSampah).values(bankSampahSetoran);
+  if (rosiana) {
+    const rosianaSetoran = [
+      {
+        nomorSetor: "1/B/NDL/BJM/09/07/2026",
+        userId: rosiana.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 0.45,
+        beratAiKg: 0.45,
+        tanggalSetor: "2026-07-09",
+        fotoTimbangan:
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/26667-b51af805-ab6a-46b7-a093-8d37652c32e9.webp",
+        fotoBuktiTambahan: [
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/26667-b51af805-ab6a-46b7-a093-8d37652c32e9.webp",
+        ],
+        totalPoin: 11,
+        status: "diterima" as const,
+        kategoriNasabah: "konsumen" as const,
+        metodeSetor: "langsung" as const,
+        createdAt: new Date("2026-07-09T07:20:53.346Z"),
+        updatedAt: new Date("2026-07-09T07:20:53.346Z"),
+      },
+    ];
+    await db.insert(setorSampah).values(rosianaSetoran);
+    console.log("✅ Seeded setoran Rosiana Dwi Hastuti (50023152)");
+  } else {
+    console.warn("⚠️ User Rosiana (50023152) tidak ditemukan, skip setoran.");
+  }
 
   console.log("✅ Seeded split setoran and pencairan successfully");
 }

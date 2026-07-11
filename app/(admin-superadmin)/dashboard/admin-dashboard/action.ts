@@ -55,14 +55,14 @@ export async function getDashboardData() {
     const countNasabahRes = await db
       .select({ count: sql<number>`count(*)` })
       .from(nasabah)
-      .where(inArray(nasabah.role, ["konsumen", "warmiendo", "bank-sampah"]));
+      .where(inArray(nasabah.role, ["konsumen", "warmindo", "bank-sampah"]));
     const totalNasabahCount = Number(countNasabahRes[0]?.count ?? 0);
 
-    // 2. Get total count of users with role in ['konsumen', 'warmiendo', 'bank-sampah']
+    // 2. Get total count of users with role in ['konsumen', 'warmindo', 'bank-sampah']
     const countUsersRes = await db
       .select({ count: sql<number>`count(*)` })
       .from(nasabah)
-      .where(inArray(nasabah.role, ["konsumen", "warmiendo", "bank-sampah"]));
+      .where(inArray(nasabah.role, ["konsumen", "warmindo", "bank-sampah"]));
     const totalUsers = Number(countUsersRes[0]?.count ?? 0);
 
     // 3. Get total weights and counts of setoran (pending/diterima/ditolak) via aggregation
@@ -236,13 +236,13 @@ export async function getDashboardData() {
       allNasabahCount: totalNasabahCount,
     };
   } else {
-    // CLIENT SIDE (KONSUMEN / WARMIENDO / BANK SAMPAH)
+    // CLIENT SIDE (KONSUMEN / WARMINDO / BANK SAMPAH)
     const mySetoran = (await db.query.setorSampah.findMany({
       where: and(
         eq(setorSampah.userId, user.id),
         eq(
           setorSampah.kategoriNasabah,
-          user.role as "konsumen" | "warmiendo" | "bank-sampah",
+          user.role as "konsumen" | "warmindo" | "bank-sampah",
         ),
       ),
       with: { ekspedisi: true },

@@ -5,7 +5,7 @@ import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
-import { insertNasabahSchema, nasabah } from "@/db/schema";
+import { insertNasabahSchema, nasabah, users } from "@/db/schema";
 
 export async function getNasabah(params?: {
   page?: number;
@@ -25,9 +25,9 @@ export async function getNasabah(params?: {
 
   const whereConditions = [];
 
-  // Enforce role is either konsumen or warmiendo for Bank Sampah view
+  // Enforce role is either konsumen or warmindo for Bank Sampah view
   whereConditions.push(
-    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmiendo")),
+    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmindo")),
   );
 
   if (search) {
@@ -42,7 +42,7 @@ export async function getNasabah(params?: {
   }
 
   if (role) {
-    whereConditions.push(eq(nasabah.role, role as "konsumen" | "warmiendo"));
+    whereConditions.push(eq(nasabah.role, role as "konsumen" | "warmindo"));
   }
 
   const queryCondition = and(...whereConditions);
@@ -120,7 +120,6 @@ const nasabahFormSchema = insertNasabahSchema.omit({
   updatedAt: true,
   name: true,
   username: true,
-  password: true,
   role: true,
   status: true,
 });
@@ -170,14 +169,33 @@ export async function createNasabah(
       Math.random().toString(36) + Math.random().toString(36);
     const hashedPassword = await argon2.hash(randomPassword);
 
-    // Create user account, defaulting to role 'konsumen'
-    await db.insert(nasabah).values({
-      name: name.trim(),
-      username: username,
-      password: hashedPassword,
-      role: "konsumen",
-      status: "Aktif",
-      ...parsed.data,
+    // Create user account and profile using transaction
+    await db.transaction(async (tx) => {
+      const [usr] = await tx
+        .insert(users)
+        .values({
+          name: name.trim(),
+          username: username,
+          password: hashedPassword,
+          email: parsed.data.email || null,
+          role: "konsumen",
+          status: "Aktif",
+        })
+        .returning();
+
+      if (!usr) {
+        throw new Error("Gagal membuat user");
+      }
+
+      await tx.insert(nasabah).values({
+        id: usr.id,
+        name: name.trim(),
+        username: username,
+        role: "konsumen",
+        status: "Aktif",
+        poin: 0, // konsumen selalu dimulai dengan 0 poin
+        ...parsed.data,
+      });
     });
   } catch (error) {
     console.error("Error creating nasabah by bank-sampah:", error);
@@ -227,15 +245,26 @@ export async function updateNasabah(
   }
 
   try {
-    // Update user account details direttament
-    await db
-      .update(nasabah)
-      .set({
-        name: name.trim(),
-        ...parsed.data,
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.id, id));
+    // Update both users and nasabah in a transaction
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({
+          name: name.trim(),
+          email: parsed.data.email || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+
+      await tx
+        .update(nasabah)
+        .set({
+          name: name.trim(),
+          ...parsed.data,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, id));
+    });
   } catch (error) {
     console.error("Error updating nasabah by bank-sampah:", error);
     return {

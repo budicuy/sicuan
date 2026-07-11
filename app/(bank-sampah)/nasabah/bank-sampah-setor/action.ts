@@ -20,9 +20,9 @@ function _formatTanggalIndo(dateStr: string): string {
 export async function getNasabahSuggestions(search = "") {
   const whereConditions = [];
 
-  // Enforce role is either konsumen or warmiendo
+  // Enforce role is either konsumen or warmindo
   whereConditions.push(
-    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmiendo")),
+    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmindo")),
   );
 
   if (search) {
@@ -111,7 +111,7 @@ export async function createSetoranNasabah(
 
     const roleToCode: Record<string, string> = {
       "bank-sampah": "K",
-      warmiendo: "W",
+      warmindo: "W",
       konsumen: "B",
     };
     const code = roleToCode[depositor.role] || "B";
@@ -137,9 +137,9 @@ export async function createSetoranNasabah(
       ...baseValues,
       kategoriNasabah: depositor.role as
         | "konsumen"
-        | "warmiendo"
+        | "warmindo"
         | "bank-sampah",
-      metodeSetor: depositor.role === "warmiendo" ? "langsung" : null,
+      metodeSetor: depositor.role === "warmindo" ? "langsung" : null,
     };
     await db.insert(setorSampah).values(setoranData);
   } catch (error) {
@@ -166,7 +166,7 @@ export async function getRiwayatSetoran(params?: {
 
   try {
     const filterConditions = [
-      inArray(setorSampah.kategoriNasabah, ["konsumen", "warmiendo"]),
+      inArray(setorSampah.kategoriNasabah, ["konsumen", "warmindo"]),
     ];
 
     if (search) {

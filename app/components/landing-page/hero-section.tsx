@@ -175,7 +175,7 @@ export function HeroSection() {
               transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
               className="text-lg text-neutral-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed"
             >
-              SICUAN menghubungkan Konsumen, Mitra Warmiendo, dan Bank Sampah di
+              SICUAN menghubungkan Konsumen, Mitra Warmindo, dan Bank Sampah di
               Banjarmasin untuk mengumpulkan kemasan produk makanan. Setor
               limbah Anda, kumpulkan poin/rupiah, dan bantu wujudkan bumi yang
               lebih hijau.

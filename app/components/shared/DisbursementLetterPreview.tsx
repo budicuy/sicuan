@@ -38,9 +38,9 @@ export function DisbursementLetterPreview({
   kategoriSumber = "bank-sampah-induk",
   ttdAdminBase64,
 }: DisbursementLetterPreviewProps) {
-  const isWarmiendo = data?.user.role === "warmiendo";
-  const labelJabatan = isWarmiendo
-    ? "Pengelola Warmiendo"
+  const isWarmindo = data?.user.role === "warmindo";
+  const labelJabatan = isWarmindo
+    ? "Pengelola Warmindo"
     : "Pimpinan Bank Sampah";
 
   return (
@@ -77,11 +77,11 @@ export function DisbursementLetterPreview({
           <tbody>
             <tr>
               <td className="w-36 py-0.5 text-neutral-500">
-                {isWarmiendo ? "Nama Warmiendo" : "Nama Bank Sampah"}
+                {isWarmindo ? "Nama Warmindo" : "Nama Bank Sampah"}
               </td>
               <td className="w-3 py-0.5 text-neutral-400">:</td>
               <td className="py-0.5 font-semibold text-neutral-800">
-                {isWarmiendo ? "Warmiendo" : "Bank Sampah"} {data?.user.name}
+                {isWarmindo ? "Warmindo" : "Bank Sampah"} {data?.user.name}
               </td>
             </tr>
             <tr>
@@ -134,7 +134,7 @@ export function DisbursementLetterPreview({
                     <input
                       type="checkbox"
                       checked={
-                        isWarmiendo
+                        isWarmindo
                           ? false
                           : kategoriSumber === "bank-sampah-induk"
                       }
@@ -146,7 +146,7 @@ export function DisbursementLetterPreview({
                   <label className="flex items-center gap-1">
                     <input
                       type="checkbox"
-                      checked={isWarmiendo ? true : kategoriSumber === "tps-3r"}
+                      checked={isWarmindo ? true : kategoriSumber === "tps-3r"}
                       readOnly
                       className="rounded"
                     />{" "}
@@ -156,7 +156,7 @@ export function DisbursementLetterPreview({
                     <input
                       type="checkbox"
                       checked={
-                        isWarmiendo
+                        isWarmindo
                           ? false
                           : kategoriSumber === "bank-sampah-unit"
                       }

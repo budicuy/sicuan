@@ -17,7 +17,6 @@ export async function getKupon(params?: {
   page?: number;
   limit?: number;
   search?: string;
-  tier?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }) {
@@ -25,7 +24,6 @@ export async function getKupon(params?: {
   const limit = params?.limit ?? 50;
   const offset = (page - 1) * limit;
   const search = params?.search ?? "";
-  const tier = params?.tier ?? "";
   const sortBy = params?.sortBy ?? "id";
   const sortOrder = params?.sortOrder ?? "desc";
 
@@ -38,10 +36,6 @@ export async function getKupon(params?: {
         ilike(kupon.deskripsi, `%${search}%`),
       ),
     );
-  }
-
-  if (tier) {
-    whereConditions.push(eq(kupon.tier, tier as "silver" | "gold" | "diamond"));
   }
 
   const queryCondition =
@@ -58,8 +52,6 @@ export async function getKupon(params?: {
     orderColumn = sortOrder === "desc" ? desc(kupon.nama) : asc(kupon.nama);
   } else if (sortBy === "poin") {
     orderColumn = sortOrder === "desc" ? desc(kupon.poin) : asc(kupon.poin);
-  } else if (sortBy === "tier") {
-    orderColumn = sortOrder === "desc" ? desc(kupon.tier) : asc(kupon.tier);
   }
 
   const data = await db
@@ -80,7 +72,6 @@ export async function createKupon(
   const nama = formData.get("nama") as string;
   const deskripsi = formData.get("deskripsi") as string;
   const poinRaw = formData.get("poin") as string;
-  const tier = formData.get("tier") as string;
 
   const poin = poinRaw ? Number.parseFloat(poinRaw) : 0;
 
@@ -88,7 +79,6 @@ export async function createKupon(
     nama,
     deskripsi,
     poin,
-    tier,
   });
 
   if (!parsed.success) {
@@ -114,7 +104,6 @@ export async function updateKupon(
   const nama = formData.get("nama") as string;
   const deskripsi = formData.get("deskripsi") as string;
   const poinRaw = formData.get("poin") as string;
-  const tier = formData.get("tier") as string;
 
   const poin = poinRaw ? Number.parseFloat(poinRaw) : 0;
 
@@ -122,7 +111,6 @@ export async function updateKupon(
     nama,
     deskripsi,
     poin,
-    tier,
   });
 
   if (!parsed.success) {

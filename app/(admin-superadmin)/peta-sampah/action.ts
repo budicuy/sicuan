@@ -74,23 +74,23 @@ export async function getAdminPetaSampahData(month?: number, year?: number) {
   const combinedSetoran = allSetoran.map((s) => {
     const u = userMap.get(s.userId);
     const defaultCoords: Record<string, [number, number]> = {
-      warmiendo: [u?.latitude ?? -3.32426, u?.longitude ?? 114.59102],
+      warmindo: [u?.latitude ?? -3.32426, u?.longitude ?? 114.59102],
       konsumen: [u?.latitude ?? -3.32, u?.longitude ?? 114.593],
       "bank-sampah": [u?.latitude ?? -3.29826, u?.longitude ?? 114.58602],
     };
     const defaultAlamat: Record<string, string> = {
-      warmiendo: u?.alamat ?? "Jl. Sultan Adam, Banjarmasin",
+      warmindo: u?.alamat ?? "Jl. Sultan Adam, Banjarmasin",
       konsumen: u?.alamat ?? "Jl. Ahmad Yani, Banjarmasin",
       "bank-sampah": u?.alamat ?? "Jl. Hasan Basry, Banjarmasin",
     };
     const senderType = s.kategoriNasabah as
       | "konsumen"
-      | "warmiendo"
+      | "warmindo"
       | "bank-sampah";
     const senderName =
       u?.name ??
-      (senderType === "warmiendo"
-        ? "Mitra Warmiendo"
+      (senderType === "warmindo"
+        ? "Mitra Warmindo"
         : senderType === "bank-sampah"
           ? "Mitra Bank Sampah"
           : "Nasabah Konsumen");

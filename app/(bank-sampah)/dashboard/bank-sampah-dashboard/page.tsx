@@ -8,7 +8,7 @@ import {
   ShoppingBag,
   TrendingUp,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -23,6 +23,64 @@ import {
 } from "recharts";
 import { getDashboardData } from "@/app/(bank-sampah)/dashboard/bank-sampah-dashboard/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+
+const dashboardSteps = [
+  {
+    element: "#tour-bank-sampah-dashboard-welcome",
+    popover: {
+      title: "Selamat Datang Mitra!",
+      description:
+        "Ini adalah Dashboard Kemitraan Bank Sampah Anda. Di sini Anda dapat memantau status setoran dan kredit saldo hasil daur ulang sampah PT. Indofood.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-dashboard-points",
+    popover: {
+      title: "Saldo Kredit Tersedia",
+      description:
+        "Menampilkan saldo uang tunai yang berhasil Anda kumpulkan dari hasil verifikasi aktual sampah oleh Bank Sampah. Saldo ini dapat Anda cairkan kapan saja.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-dashboard-metrics",
+    popover: {
+      title: "Metrik Kemitraan",
+      description:
+        "Menampilkan total volume sampah yang disetor, serta status pencairan dana Anda secara ringkas.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-dashboard-performance",
+    popover: {
+      title: "Grafik Riwayat Setoran",
+      description:
+        "Grafik ini memvisualisasikan tren volume setoran sampah (dalam kilogram) yang Anda lakukan setiap bulannya.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-dashboard-composition",
+    popover: {
+      title: "Komposisi Bahan Sampah",
+      description:
+        "Grafik lingkaran ini mengelompokkan sampah yang Anda kirimkan berdasarkan jenisnya (Karton, Etiket, Paper Cup).",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-dashboard-history",
+    popover: {
+      title: "Riwayat Transaksi Terbaru",
+      description:
+        "Tabel ini menunjukkan aktivitas pengiriman ekspedisi dan pengajuan pencairan dana terbaru Anda beserta statusnya.",
+      side: "top" as const,
+    },
+  },
+];
 
 interface DashboardData {
   success: boolean;
@@ -66,6 +124,71 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [_loading, setLoading] = useState(true);
 
+  const [_isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = data;
+    setIsTourActive(true);
+    setData({
+      success: true,
+      role: "bank-sampah",
+      name: "Bank Sampah Sejahtera (Demo)",
+      metrics: {
+        totalSetoranKg: 120,
+        totalSetoranPending: 30,
+        totalSetoranDiterima: 90,
+        totalPencairanBerhasil: 600000,
+        totalPencairanPending: 200000,
+      },
+      profile: {
+        poin: 0,
+        kredit: 450000,
+      },
+      composition: [
+        { name: "Karton", value: 60, color: "#f59e0b" },
+        { name: "Etiket", value: 40, color: "#10b981" },
+        { name: "Paper Cup", value: 20, color: "#3b82f6" },
+      ],
+      setoranHistory: [
+        { date: "Mei", Volume: 25, Poin: 0 },
+        { date: "Juni", Volume: 55, Poin: 0 },
+        { date: "Juli", Volume: 120, Poin: 0 },
+      ],
+      recentSetoran: [
+        {
+          id: 1,
+          nomorSetor: "SIMULASI-B01",
+          jenisSampah: "Karton",
+          beratKg: 15.0,
+          status: "pending",
+          tanggalSetor: new Date().toISOString().split("T")[0],
+        },
+        {
+          id: 2,
+          nomorSetor: "SIMULASI-B02",
+          jenisSampah: "Etiket",
+          beratKg: 10.0,
+          status: "diterima",
+          tanggalSetor: new Date().toISOString().split("T")[0],
+        },
+      ],
+      recentPencairan: [
+        {
+          id: 1,
+          jumlah: 200000,
+          status: "pending",
+          createdAt: new Date(),
+        },
+      ],
+    });
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    setData(savedStateRef.current);
+  };
+
   const loadData = useCallback(() => {
     setLoading(true);
     getDashboardData().then((res) => {
@@ -89,8 +212,18 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+      <TourGuide
+        pageKey="bank_sampah_dashboard"
+        steps={dashboardSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
       {/* Welcome Board */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+      <div
+        id="tour-bank-sampah-dashboard-welcome"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
@@ -109,9 +242,15 @@ export default function DashboardPage() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div
+        id="tour-bank-sampah-dashboard-metrics"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
         {/* Balance Card */}
-        <div className="bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2">
+        <div
+          id="tour-bank-sampah-dashboard-points"
+          className="bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2"
+        >
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <span className="text-[10px] font-bold text-primary-300 uppercase tracking-widest block">
             KREDIT CAIR SEBAGAI UANG
@@ -172,7 +311,10 @@ export default function DashboardPage() {
       {/* Chart Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* History Chart */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80">
+        <div
+          id="tour-bank-sampah-dashboard-performance"
+          className="lg:col-span-8 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between h-80"
+        >
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-4 h-4 text-primary-600" />
             Riwayat Volume Setoran Kemitraan (Kg)
@@ -232,7 +374,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Waste Composition */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80">
+        <div
+          id="tour-bank-sampah-dashboard-composition"
+          className="lg:col-span-4 bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col min-h-80"
+        >
           <h3 className="font-bold text-xs text-neutral-800 border-b border-neutral-100 pb-3 mb-4">
             Komposisi Bahan Disetor
           </h3>
@@ -288,7 +433,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Tables Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        id="tour-bank-sampah-dashboard-history"
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
         {/* Recent setoran */}
         <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
           <h3 className="font-bold text-xs text-neutral-850 flex items-center gap-1.5 pb-2 border-b border-neutral-100">

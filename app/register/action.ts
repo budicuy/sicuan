@@ -6,7 +6,7 @@ import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
-import { nasabah } from "@/db/schema";
+import { nasabah, users } from "@/db/schema";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -24,7 +24,7 @@ const registerSchema = z.object({
     })
     .trim(),
   password: z.string().min(6, { message: "Password minimal 6 karakter" }),
-  role: z.enum(["konsumen", "warmiendo", "bank-sampah"]),
+  role: z.enum(["konsumen", "warmindo", "bank-sampah"]),
   nik: z
     .string()
     .nullable()
@@ -100,8 +100,8 @@ export async function registerAction(
 
   try {
     // 1. Check if username already exists
-    const existingUser = await db.query.nasabah.findFirst({
-      where: eq(nasabah.username, username.toLowerCase()),
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.username, username.toLowerCase()),
     });
 
     if (existingUser) {
@@ -130,21 +130,38 @@ export async function registerAction(
     // 3. Hash password
     const hashedPassword = await argon2.hash(password);
 
-    // 4. Insert into database
-    const [insertedUser] = await db
-      .insert(nasabah)
-      .values({
+    // 4. Insert into database using a transaction
+    const insertedUser = await db.transaction(async (tx) => {
+      const [usr] = await tx
+        .insert(users)
+        .values({
+          name,
+          username: username.toLowerCase(),
+          password: hashedPassword,
+          email: email || null,
+          role,
+          status: "Aktif",
+        })
+        .returning();
+
+      if (!usr) {
+        throw new Error("Gagal membuat user");
+      }
+
+      await tx.insert(nasabah).values({
+        id: usr.id,
         name,
         username: username.toLowerCase(),
-        password: hashedPassword,
         role,
         status: "Aktif",
         nik,
         email,
         noTelepon,
-        poin: 0,
-      })
-      .returning();
+        poin: role === "konsumen" ? 0 : null,
+      });
+
+      return usr;
+    });
 
     if (!insertedUser) {
       return {

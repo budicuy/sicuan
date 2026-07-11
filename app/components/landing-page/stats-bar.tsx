@@ -47,7 +47,7 @@ export function StatsBar({ stats }: StatsBarProps) {
               {stats.partners} Mitra
             </span>
             <p className="text-xs text-neutral-400 mt-1">
-              Warmiendo &amp; Bank Sampah
+              Warmindo &amp; Bank Sampah
             </p>
           </div>
 

@@ -18,7 +18,7 @@ export async function seedHargaSampah() {
   // - 5 s/d 10 kg: 50000
   // - > 10 kg: 110000
 
-  const hargaData = [
+  const hargaData: (typeof hargaSampah.$inferInsert)[] = [
     // Karton
     { jenisSampah: "Karton", minBerat: 0, maxBerat: 5, harga: 25000 },
     { jenisSampah: "Karton", minBerat: 5, maxBerat: 10, harga: 50000 },

@@ -16,7 +16,7 @@ export async function getNasabahListWithSummaries(params?: {
 
   const whereConditions = [];
   whereConditions.push(
-    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmiendo")),
+    or(eq(nasabah.role, "konsumen"), eq(nasabah.role, "warmindo")),
   );
 
   if (search) {
@@ -93,7 +93,7 @@ export async function getNasabahListWithSummaries(params?: {
   }
 }
 
-async function getWarmiendoMonthlyCredit(userId: number): Promise<number> {
+async function getWarmindoMonthlyCredit(userId: number): Promise<number> {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-indexed
@@ -104,7 +104,7 @@ async function getWarmiendoMonthlyCredit(userId: number): Promise<number> {
   const records = await db.query.setorSampah.findMany({
     where: and(
       eq(setorSampah.userId, userId),
-      eq(setorSampah.kategoriNasabah, "warmiendo"),
+      eq(setorSampah.kategoriNasabah, "warmindo"),
       eq(setorSampah.status, "diterima"),
       gte(setorSampah.tanggalSetor, startOfMonthStr),
       lte(setorSampah.tanggalSetor, endOfMonthStr),
@@ -173,14 +173,14 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
         eq(setorSampah.userId, n.userId),
         eq(
           setorSampah.kategoriNasabah,
-          n.user.role as "konsumen" | "warmiendo" | "bank-sampah",
+          n.user.role as "konsumen" | "warmindo" | "bank-sampah",
         ),
       ),
       orderBy: [desc(setorSampah.id)],
     });
 
     const credit =
-      n.user.role === "warmiendo" ? await getWarmiendoMonthlyCredit(n.id) : 0;
+      n.user.role === "warmindo" ? await getWarmindoMonthlyCredit(n.id) : 0;
 
     return {
       profile: {

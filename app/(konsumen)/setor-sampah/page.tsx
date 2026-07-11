@@ -20,6 +20,7 @@ import {
   validateFotoTimbangan,
 } from "@/app/(konsumen)/setor-sampah/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
 
 function addWatermarkToImage(
@@ -138,6 +139,61 @@ function CameraCapture({
 }
 
 export default function KonsumenSetorSampah() {
+  const [isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = {
+      jenisSampah,
+      beratKg,
+      fotoTimbangan,
+      catatan,
+      aiValidated,
+      beratAiKg,
+      fotoBuktiList,
+      history,
+    };
+
+    setIsTourActive(true);
+    // Kosongkan form agar user bisa menginput sendiri dalam simulasi
+    setJenisSampah("Karton");
+    setBeratKg("");
+    setFotoTimbangan("/sampel_1.png");
+    setCatatan("");
+    setAiValidated(false);
+    setBeratAiKg(null);
+    setFotoBuktiList([]);
+    setHistory([
+      {
+        id: 999,
+        nomorSetor: "SIMULASI-AWAL",
+        jenisSampah: "Karton",
+        beratKg: 1.5,
+        totalPoin: 30,
+        tanggalSetor: new Date().toISOString().split("T")[0],
+        status: "diterima",
+        createdAt: new Date(),
+        fotoTimbangan: "/sampel_1.png",
+        catatan: "Setoran pertama demo",
+        totalKredit: 0,
+      },
+    ]);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    if (savedStateRef.current) {
+      setJenisSampah(savedStateRef.current.jenisSampah);
+      setBeratKg(savedStateRef.current.beratKg);
+      setFotoTimbangan(savedStateRef.current.fotoTimbangan);
+      setCatatan(savedStateRef.current.catatan);
+      setAiValidated(savedStateRef.current.aiValidated);
+      setBeratAiKg(savedStateRef.current.beratAiKg);
+      setFotoBuktiList(savedStateRef.current.fotoBuktiList);
+      setHistory(savedStateRef.current.history);
+    }
+  };
+
   const [jenisSampah, setJenisSampah] = useState("Karton");
   const [beratKg, setBeratKg] = useState("");
   const [tanggalSetor, setTanggalSetor] = useState(
@@ -173,6 +229,88 @@ export default function KonsumenSetorSampah() {
     title: string,
     message: string,
   ) => setFeedback({ isOpen: true, type, title, message });
+
+  const setorSteps = [
+    {
+      element: "#tour-setor-jenis",
+      popover: {
+        title: "Pilih Jenis Sampah",
+        description:
+          "Silakan pilih salah satu jenis sampah yang ingin disetor (Karton, Etiket, atau Paper Cup).",
+        side: "right" as const,
+      },
+    },
+    {
+      element: "#tour-setor-berat",
+      popover: {
+        title: "Masukkan Berat Sampah",
+        description:
+          "Silakan ketik estimasi berat sampah Anda dalam kilogram (contoh: 1.00) pada kolom ini.",
+        side: "right" as const,
+        onNextClick: (_element: any, _step: any, options: any) => {
+          const input = document.getElementById("beratKg") as HTMLInputElement;
+          if (!input || !input.value.trim() || Number(input.value) <= 0) {
+            setBeratKg("1.00");
+          }
+          options.driver.moveNext();
+        },
+      },
+    },
+    {
+      element: "#tour-setor-foto-timbangan",
+      popover: {
+        title: "Foto Timbangan Terisi Otomatis",
+        description:
+          "Foto timbangan contoh seberat 1.00 kg telah dimuat secara otomatis sebagai sampel.",
+        side: "right" as const,
+      },
+    },
+    {
+      element: "#tour-setor-validasi-ai",
+      popover: {
+        title: "Validasi dengan AI",
+        description:
+          "Silakan klik tombol 'Validasi Berat dengan AI' ini untuk memverifikasi foto Anda secara instan menggunakan teknologi AI.",
+        side: "top" as const,
+      },
+    },
+    {
+      element: "#tour-setor-foto-tambahan",
+      popover: {
+        title: "Tambah Foto Bukti Fisik",
+        description:
+          "Klik tombol 'Tambah' untuk menyimulasikan pengunggahan foto bukti kondisi sampah fisik Anda.",
+        side: "top" as const,
+      },
+    },
+    {
+      element: "#tour-setor-catatan",
+      popover: {
+        title: "Catatan Tambahan (Opsional)",
+        description:
+          "Tuliskan catatan tambahan mengenai setoran Anda jika ada.",
+        side: "top" as const,
+      },
+    },
+    {
+      element: "#tour-setor-submit",
+      popover: {
+        title: "Simulasi Kirim Setoran",
+        description:
+          "Setelah Anda memvalidasi berat dengan AI atau mencentang opsi manual, klik tombol ini untuk mengirim setoran. Proses ini hanya simulasi dan tidak akan masuk ke database utama.",
+        side: "top" as const,
+      },
+    },
+    {
+      element: "#tour-setor-history",
+      popover: {
+        title: "Riwayat Setoran Simulasi",
+        description:
+          "Setelah menekan kirim, Anda dapat melihat riwayat setoran hasil simulasi Anda langsung masuk ke tabel ini secara instan.",
+        side: "left" as const,
+      },
+    },
+  ];
 
   const dateParts = tanggalSetor.split("-");
   const tahun = dateParts[0] || "2026";
@@ -223,6 +361,11 @@ export default function KonsumenSetorSampah() {
     setBeratAiKg(null);
     setRequestManual(false);
 
+    if (isTourActive) {
+      setFotoTimbangan("/sampel_1.png");
+      return;
+    }
+
     const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
     const compressed = await compressImage(withWatermark, 200 * 1024);
     setFotoTimbangan(compressed);
@@ -231,13 +374,19 @@ export default function KonsumenSetorSampah() {
   const handleTimbanganFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
     setAiValidated(false);
     setAiError("");
     setBeratAiKg(null);
     setRequestManual(false);
+
+    if (isTourActive) {
+      setFotoTimbangan("/sampel_1.png");
+      if (e.target) e.target.value = "";
+      return;
+    }
+
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -266,6 +415,15 @@ export default function KonsumenSetorSampah() {
     setAiValidated(false);
     setRequestManual(false);
 
+    if (isTourActive) {
+      setTimeout(() => {
+        setIsValidatingAI(false);
+        setAiValidated(true);
+        setBeratAiKg(beratNum);
+      }, 1000);
+      return;
+    }
+
     const result = await validateFotoTimbangan(fotoTimbangan, beratNum);
     setIsValidatingAI(false);
 
@@ -279,6 +437,16 @@ export default function KonsumenSetorSampah() {
   };
 
   const handleBuktiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isTourActive) {
+      if (fotoBuktiList.length >= 3) {
+        showFeedback("error", "Batas Foto", "Maksimal 3 foto bukti tambahan.");
+        return;
+      }
+      setFotoBuktiList((prev) => [...prev, "/sampel_1.png"]);
+      if (buktiInputRef.current) buktiInputRef.current.value = "";
+      return;
+    }
+
     const files = Array.from(e.target.files ?? []);
     if (fotoBuktiList.length + files.length > 3) {
       showFeedback("error", "Batas Foto", "Maksimal 3 foto bukti tambahan.");
@@ -334,6 +502,45 @@ export default function KonsumenSetorSampah() {
       formData.append("fotoBuktiBase64[]", b64);
     });
 
+    if (isTourActive) {
+      startTransition(async () => {
+        document.dispatchEvent(new CustomEvent("close-tour-guide"));
+        showFeedback(
+          "success",
+          "Setoran Berhasil! (Simulasi)",
+          `Simulasi: Setoran sampah ${jenisSampah} (${beratKg} kg) Anda telah disimulasikan. Data Anda tidak disimpan ke database.`,
+        );
+        // Reset form
+        setBeratKg("");
+        setCatatan("");
+        setFotoTimbangan(null);
+        setFotoBuktiList([]);
+        setAiValidated(false);
+        setRequestManual(false);
+        setBeratAiKg(null);
+        setTanggalSetor(new Date().toISOString().split("T")[0]);
+
+        // Add to history in memory
+        setHistory((prev) => [
+          {
+            id: Date.now(),
+            nomorSetor: `SIMULASI-${Math.floor(1000 + Math.random() * 9000)}`,
+            jenisSampah,
+            beratKg: Number(beratKg),
+            totalPoin: Number(beratKg) * 20,
+            tanggalSetor: new Date().toISOString().split("T")[0],
+            status: "diterima",
+            createdAt: new Date(),
+            fotoTimbangan: "/sampel_1.png",
+            catatan,
+            totalKredit: 0,
+          },
+          ...prev.filter((item) => item.id !== 999), // Remove initial tour data if any
+        ]);
+      });
+      return;
+    }
+
     startTransition(async () => {
       const result = await createSetorSampah({ success: false }, formData);
       if (result.success) {
@@ -370,6 +577,12 @@ export default function KonsumenSetorSampah() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
+      <TourGuide
+        pageKey="setor"
+        steps={setorSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2.5 rounded-xl bg-primary-100">
@@ -412,7 +625,7 @@ export default function KonsumenSetorSampah() {
                 />
               </div>
 
-              <div>
+              <div id="tour-setor-jenis">
                 <label
                   htmlFor="jenisSampah"
                   className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
@@ -434,7 +647,7 @@ export default function KonsumenSetorSampah() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div id="tour-setor-berat">
                   <label
                     htmlFor="beratKg"
                     className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
@@ -485,7 +698,7 @@ export default function KonsumenSetorSampah() {
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div id="tour-setor-foto-timbangan" className="space-y-3">
                 <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                   Foto Bukti Timbangan <span className="text-red-500">*</span>
                 </span>
@@ -553,6 +766,7 @@ export default function KonsumenSetorSampah() {
                         {!requestManual && (
                           <>
                             <button
+                              id="tour-setor-validasi-ai"
                               type="button"
                               onClick={handleValidasiAI}
                               disabled={isValidatingAI || !beratKg}
@@ -630,7 +844,7 @@ export default function KonsumenSetorSampah() {
                 )}
               </div>
 
-              <div className="space-y-3">
+              <div id="tour-setor-foto-tambahan" className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                     Foto Bukti Tambahan <span className="text-red-500">*</span>
@@ -694,7 +908,7 @@ export default function KonsumenSetorSampah() {
                 )}
               </div>
 
-              <div>
+              <div id="tour-setor-catatan">
                 <label
                   htmlFor="catatan"
                   className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
@@ -713,6 +927,7 @@ export default function KonsumenSetorSampah() {
               </div>
 
               <button
+                id="tour-setor-submit"
                 type="submit"
                 disabled={
                   isPending ||
@@ -745,7 +960,10 @@ export default function KonsumenSetorSampah() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden sticky top-6">
+          <div
+            id="tour-setor-history"
+            className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden sticky top-6"
+          >
             <div className="px-6 py-4 border-b border-neutral-100 bg-primary-50/30">
               <h2 className="font-semibold text-neutral-900">
                 Riwayat Setoran

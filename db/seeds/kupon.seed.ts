@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { kupon, nasabah, penukaranKupon } from "@/db/schema";
+import { kupon, penukaranKupon, users } from "@/db/schema";
 
 export async function seedKupon() {
   console.log(
@@ -14,21 +14,18 @@ export async function seedKupon() {
       deskripsi:
         "Potongan Harga Rp. 25.000 untuk Belanja di Koperasi PT. Indofood",
       poin: 50,
-      tier: "silver" as const,
     },
     {
       nama: "Voucher 75K",
       deskripsi:
         "Potongan Harga Rp. 75.000 untuk Belanja di Koperasi PT. Indofood",
       poin: 150,
-      tier: "gold" as const,
     },
     {
       nama: "Voucher 150K",
       deskripsi:
         "Potongan Harga Rp. 150.000 untuk Belanja di Koperasi PT. Indofood",
       poin: 300,
-      tier: "diamond" as const,
     },
   ];
 
@@ -38,8 +35,8 @@ export async function seedKupon() {
   const insertedKupons = await db.insert(kupon).values(kuponData).returning();
 
   // Find Budi Santoso user
-  const budi = await db.query.nasabah.findFirst({
-    where: eq(nasabah.username, "budi.santoso"),
+  const budi = await db.query.users.findFirst({
+    where: eq(users.username, "budi.santoso"),
   });
 
   if (!budi) {
@@ -51,8 +48,8 @@ export async function seedKupon() {
     return {
       userId: budi.id,
       kuponId: k.id,
-      kodeUnik: `KPN-DEMO-${k.tier.toUpperCase()}-${index + 1}`,
-      status: "aktif",
+      kodeUnik: `KPN-DEMO-VOUCHER-${index + 1}`,
+      status: "aktif" as const,
       createdAt: new Date(),
     };
   });

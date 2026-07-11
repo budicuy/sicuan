@@ -1,6 +1,6 @@
 /**
  * setoran.ts — Types terkait setoran sampah.
- * Digunakan di semua role: admin, konsumen, warmiendo, bank-sampah.
+ * Digunakan di semua role: admin, konsumen, warmindo, bank-sampah.
  */
 
 export type JenisSampah = "Karton" | "Etiket" | "Paper Cup";
@@ -56,11 +56,11 @@ export interface SetorSampahItem {
   fotoTimbangan: string;
   fotoBuktiTambahan?: string[] | null;
   catatan: string | null;
-  /** Dipakai di laporan & setor warmiendo/bank-sampah */
+  /** Dipakai di laporan & setor warmindo/bank-sampah */
   metodeSetor?: string | null;
-  /** Dipakai di laporan warmiendo */
+  /** Dipakai di laporan warmindo */
   ekspedisiId?: number | null;
-  /** Dipakai di laporan & setor warmiendo */
+  /** Dipakai di laporan & setor warmindo */
   ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
   user?: {
     name: string;

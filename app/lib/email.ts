@@ -96,7 +96,7 @@ export async function sendPencairanNotifToAdmins(payload: {
 
   const roleLabelMap: Record<string, string> = {
     "bank-sampah": "Bank Sampah",
-    warmiendo: "Warmiendo",
+    warmindo: "Warmindo",
     konsumen: "Konsumen",
   };
   const roleLabel = roleLabelMap[nasabahRole] ?? nasabahRole;
@@ -532,7 +532,7 @@ export async function sendSetoranNotifToAdmins(payload: {
 
   const roleLabelMap: Record<string, string> = {
     "bank-sampah": "Bank Sampah",
-    warmiendo: "Warmiendo",
+    warmindo: "Warmindo",
     konsumen: "Konsumen",
   };
   const roleLabel = roleLabelMap[nasabahRole] ?? nasabahRole;
@@ -835,7 +835,7 @@ export async function sendHandoverNotifToBankSampah(payload: {
                       Sampah Siap Diterima
                     </h1>
                     <p style="margin:0;color:rgba(255,255,255,0.8);font-size:13px;">
-                      Ada setoran sampah baru dari mitra Warmiendo yang sedang dalam perjalanan ke Bank Sampah Anda.
+                      Ada setoran sampah baru dari mitra Warmindo yang sedang dalam perjalanan ke Bank Sampah Anda.
                     </p>
                   </td>
                   <td align="right" valign="middle" style="width:70px;padding-left:12px;">
@@ -869,7 +869,7 @@ export async function sendHandoverNotifToBankSampah(payload: {
                 </tr>
                 <tr style="border-top:1px solid #f1f5f9;">
                   <td style="padding:12px 0;color:#64748b;font-size:13px;">Mitra Pengirim</td>
-                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${nasabahName} (Warmiendo)</td>
+                  <td style="padding:12px 0;font-weight:700;font-size:13px;color:#0f172a;">${nasabahName} (Warmindo)</td>
                 </tr>
                 <tr style="border-top:1px solid #f1f5f9;">
                   <td style="padding:12px 0;color:#64748b;font-size:13px;">Jenis Sampah</td>
@@ -917,7 +917,7 @@ export async function sendHandoverNotifToBankSampah(payload: {
                   Harap segera lakukan konfirmasi penerimaan sampah setelah barang sampai di lokasi Bank Sampah Anda.
                 </p>
                 <div style="margin-top:16px;margin-bottom:8px;">
-                  <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://sicuan.vercel.app"}/setor-sampah/terima-setoran-warmiendo" target="_blank" style="background-color:#059669;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:12px;display:inline-block;box-shadow:0 4px 6px -1px rgba(5,150,105,0.2);font-family:'Segoe UI',Arial,sans-serif;">
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://sicuan.vercel.app"}/setor-sampah/terima-setoran-warmindo" target="_blank" style="background-color:#059669;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:12px;display:inline-block;box-shadow:0 4px 6px -1px rgba(5,150,105,0.2);font-family:'Segoe UI',Arial,sans-serif;">
                     Terima &amp; Konfirmasi Setoran
                   </a>
                 </div>
@@ -953,7 +953,7 @@ export async function sendHandoverNotifToBankSampah(payload: {
 [Bank Sampah Indofood] Notifikasi Sampah Baru Harus Diterima
 
 Nomor Setor    : ${nomorSetor}
-Mitra Pengirim : ${nasabahName} (Warmiendo)
+Mitra Pengirim : ${nasabahName} (Warmindo)
 Jenis Sampah   : ${jenisSampah}
 Berat Sampah   : ${beratKg} kg
 Tanggal Kirim  : ${tanggalSetor}
@@ -966,7 +966,7 @@ Harap segera periksa dashboard Bank Sampah Anda untuk mengonfirmasi penerimaan b
     validBankSampahs.map((bs) =>
       sendEmail({
         to: bs.email as string,
-        subject: `🚚 [Harus Diterima] Setoran Sampah Baru dari Warmiendo — ${nomorSetor}`,
+        subject: `🚚 [Harus Diterima] Setoran Sampah Baru dari Warmindo — ${nomorSetor}`,
         text,
         html,
         attachments,
@@ -983,11 +983,11 @@ Harap segera periksa dashboard Bank Sampah Anda untuk mengonfirmasi penerimaan b
   }
 }
 
-// ─── Notifikasi Penugasan Ekspedisi Ke Warmiendo ───
+// ─── Notifikasi Penugasan Ekspedisi Ke Warmindo ───
 
-export async function sendAssignmentNotifToWarmiendo(payload: {
-  warmiendoEmail: string;
-  warmiendoName: string;
+export async function sendAssignmentNotifToWarmindo(payload: {
+  warmindoEmail: string;
+  warmindoName: string;
   nomorSetor: string;
   jenisSampah: string;
   beratKg: number;
@@ -996,8 +996,8 @@ export async function sendAssignmentNotifToWarmiendo(payload: {
   vendorPhone: string;
 }) {
   const {
-    warmiendoEmail,
-    warmiendoName,
+    warmindoEmail,
+    warmindoName,
     nomorSetor,
     jenisSampah,
     beratKg,
@@ -1034,7 +1034,7 @@ export async function sendAssignmentNotifToWarmiendo(payload: {
                       Penjemputan Ditugaskan
                     </h1>
                     <p style="margin:0;color:rgba(255,255,255,0.8);font-size:13px;">
-                      Halo ${warmiendoName}, setoran sampah Anda telah diverifikasi oleh Admin dan kurir ekspedisi telah ditugaskan untuk menjemput.
+                      Halo ${warmindoName}, setoran sampah Anda telah diverifikasi oleh Admin dan kurir ekspedisi telah ditugaskan untuk menjemput.
                     </p>
                   </td>
                   <td align="right" valign="middle" style="width:70px;padding-left:12px;">
@@ -1138,7 +1138,7 @@ export async function sendAssignmentNotifToWarmiendo(payload: {
   const text = `
 [SICUAN] Penjemputan Ditugaskan ke Ekspedisi
 
-Halo ${warmiendoName}, setoran sampah Anda telah diverifikasi oleh Admin dan kurir ekspedisi telah ditugaskan untuk menjemput.
+Halo ${warmindoName}, setoran sampah Anda telah diverifikasi oleh Admin dan kurir ekspedisi telah ditugaskan untuk menjemput.
 
 Nomor Setor    : ${nomorSetor}
 Jenis Sampah   : ${jenisSampah}
@@ -1153,7 +1153,7 @@ Silakan serahkan sampah kepada kurir ekspedisi saat penjemputan dilakukan, lalu 
   `.trim();
 
   await sendEmail({
-    to: warmiendoEmail,
+    to: warmindoEmail,
     subject: `📦 [Penjemputan Ditugaskan] Setoran Sampah ${nomorSetor}`,
     text,
     html,
@@ -1186,8 +1186,8 @@ export async function sendReceiptNotifToDepositor(payload: {
   } = payload;
 
   const roleLabel =
-    role === "warmiendo"
-      ? "Warmiendo"
+    role === "warmindo"
+      ? "Warmindo"
       : role === "bank-sampah"
         ? "Bank Sampah"
         : "Konsumen";
@@ -1374,8 +1374,8 @@ export async function sendStatusUpdateNotifToDepositor(payload: {
 
   const isDiterima = status === "diterima";
   const _roleLabel =
-    role === "warmiendo"
-      ? "Warmiendo"
+    role === "warmindo"
+      ? "Warmindo"
       : role === "bank-sampah"
         ? "Bank Sampah"
         : "Konsumen";

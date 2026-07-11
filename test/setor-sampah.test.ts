@@ -97,9 +97,9 @@ import * as path from "node:path";
 import { validateFotoTimbangan as validateBankSampah } from "../app/(bank-sampah)/setor-sampah/bank-sampah-setor-sampah/action";
 // Now import actions to be tested
 import { validateFotoTimbangan as validateKonsumen } from "../app/(konsumen)/setor-sampah/action";
-import { validateFotoTimbangan as validateWarmiendo } from "../app/(warmiendo)/setor-sampah/warmiendo-setor-sampah/action";
+import { validateFotoTimbangan as validateWarmindo } from "../app/(warmindo)/setor-sampah/warmindo-setor-sampah/action";
 import {
-  sendAssignmentNotifToWarmiendo,
+  sendAssignmentNotifToWarmindo,
   sendHandoverNotifToBankSampah,
   sendReceiptNotifToDepositor,
   sendSetoranNotifToAdmins,
@@ -140,24 +140,24 @@ describe("Setor Sampah AI Validation - Konsumen Role", () => {
   });
 });
 
-describe("Setor Sampah AI Validation - Warmiendo Role", () => {
+describe("Setor Sampah AI Validation - Warmindo Role", () => {
   test("Sampel 1: Sampah mie instan Indofood valid seberat 1 kg", async () => {
     const base64 = getBase64Image("sampel_1.png");
-    const result = await validateWarmiendo(base64, 1);
+    const result = await validateWarmindo(base64, 1);
     expect(result.success).toBe(true);
     expect(result.berat).toBe(1);
   });
 
   test("Sampel 2: Sampah Indofood dengan berat tidak logis (10 kg)", async () => {
     const base64 = getBase64Image("sampel_2.png");
-    const result = await validateWarmiendo(base64, 10);
+    const result = await validateWarmindo(base64, 10);
     expect(result.success).toBe(false);
     expect(result.message).toBe("berat sampah tidak logis");
   });
 
   test("Sampel 3: Sampah bukan produk Indofood (kaleng Coca Cola)", async () => {
     const base64 = getBase64Image("sampel_3.png");
-    const result = await validateWarmiendo(base64, 1);
+    const result = await validateWarmindo(base64, 1);
     expect(result.success).toBe(false);
     expect(result.message).toBe("sampah bukan produk indofood");
   });
@@ -208,7 +208,7 @@ describe("Notifikasi Email Bank Sampah", () => {
   test("Mengirimkan email notifikasi barang siap diterima ke Bank Sampah", async () => {
     await sendHandoverNotifToBankSampah({
       nomorSetor: "TEST/HANDOVER/001",
-      nasabahName: "Warmiendo Mitra",
+      nasabahName: "Warmindo Mitra",
       jenisSampah: "Karton",
       beratKg: 5.4,
       tanggalSetor: new Date().toISOString().split("T")[0],
@@ -218,11 +218,11 @@ describe("Notifikasi Email Bank Sampah", () => {
   });
 });
 
-describe("Notifikasi Email Warmiendo", () => {
-  test("Mengirimkan email notifikasi penugasan ekspedisi ke Warmiendo", async () => {
-    await sendAssignmentNotifToWarmiendo({
-      warmiendoEmail: "warmiendo@example.com",
-      warmiendoName: "Warmiendo Mitra",
+describe("Notifikasi Email Warmindo", () => {
+  test("Mengirimkan email notifikasi penugasan ekspedisi ke Warmindo", async () => {
+    await sendAssignmentNotifToWarmindo({
+      warmindoEmail: "warmindo@example.com",
+      warmindoName: "Warmindo Mitra",
       nomorSetor: "141/W/NDL/BJM/07/07/2026",
       jenisSampah: "Karton",
       beratKg: 1,

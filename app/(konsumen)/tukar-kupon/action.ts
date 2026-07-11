@@ -62,7 +62,6 @@ export async function getRedemptionHistory() {
         nama: kupon.nama,
         deskripsi: kupon.deskripsi,
         poin: kupon.poin,
-        tier: kupon.tier,
       },
     })
     .from(penukaranKupon)
@@ -125,7 +124,7 @@ export async function redeemCoupon(kuponId: number): Promise<ActionState> {
       await db
         .update(nasabah)
         .set({
-          poin: Math.max(0, profile.poin - targetKupon.poin),
+          poin: Math.max(0, (profile.poin ?? 0) - targetKupon.poin),
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, user.id));

@@ -1,21 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
-import argon2 from "argon2";
 import { db } from "@/db";
-import { type NewNasabah, nasabah } from "@/db/schema";
+import type { NewNasabah } from "@/db/schema";
+import { nasabah } from "@/db/schema";
 
-interface CsvUser {
+interface CsvProfile {
   nik: string;
-  name: string;
-  passwordString: string;
-  tanggalLahir: string; // YYYY-MM-DD
+  tanggalLahir: string;
 }
 
-function parseCsv(): CsvUser[] {
+function parseCsvProfiles(): CsvProfile[] {
   try {
     const csvPath = path.join(process.cwd(), "db/csv/datauser.csv");
     const lines = fs.readFileSync(csvPath, "utf-8").split("\n");
-    const result: CsvUser[] = [];
+    const result: CsvProfile[] = [];
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -25,150 +23,165 @@ function parseCsv(): CsvUser[] {
       if (parts.length < 3) continue;
 
       const nik = parts[0].trim();
-      const name = parts[1].trim();
       const birthdate = parts[2].trim();
 
-      if (!nik || !name || !birthdate) continue;
+      if (!nik || !birthdate) continue;
 
-      // birthdate: MM/DD/YYYY → password: DDMMYY, tanggalLahir: YYYY-MM-DD
+      // birthdate: MM/DD/YYYY → YYYY-MM-DD
       const dateParts = birthdate.split("/");
-      let passwordString = "Password123";
       let tanggalLahir = "1990-01-01";
 
       if (dateParts.length === 3) {
         const [mm, dd, yyyy] = dateParts;
-        passwordString = `${dd.padStart(2, "0")}${mm.padStart(2, "0")}${yyyy.substring(2)}`;
         tanggalLahir = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
       }
 
-      result.push({ nik, name, passwordString, tanggalLahir });
+      result.push({ nik, tanggalLahir });
     }
 
     return result;
   } catch (error) {
-    console.error("⚠️ Error reading or parsing users CSV:", error);
+    console.error("⚠️ Error reading or parsing CSV for profiles:", error);
     return [];
   }
 }
 
 export async function seedNasabah() {
-  console.log("🌱 Seeding merged nasabah table...");
+  console.log("🌱 Seeding nasabah profiles...");
 
-  // Clear existing nasabah
   await db.delete(nasabah);
 
-  // Parse CSV
-  const csvUsers = parseCsv();
+  // Ambil semua user yang sudah ada (diinsert oleh seedUsers)
+  const allUsers = await db.query.users.findMany();
+  const userMap = new Map(allUsers.map((u) => [u.username, u]));
 
-  // Password hashes
-  const hashSuperadmin = await argon2.hash("PasswordSuper123");
-  const hashAdmin = await argon2.hash("PasswordAdmin456");
-  const hashBudi = await argon2.hash("170895"); // DDMMYY dari 17/08/1995
-  const hashDefault = await argon2.hash("Password123");
+  const profilesToInsert: NewNasabah[] = [];
 
-  // Create list of all nasabah rows
-  const dataToInsert: NewNasabah[] = [
-    {
-      name: "Superadmin Sicuan",
-      username: "superadmin.sicuan",
-      password: hashSuperadmin,
-      role: "superadmin" as const,
-      status: "Aktif",
+  // 1. Superadmin
+  const superadmin = userMap.get("superadmin.sicuan");
+  if (superadmin) {
+    profilesToInsert.push({
+      id: superadmin.id,
+      name: superadmin.name,
+      username: superadmin.username,
+      role: superadmin.role as "superadmin",
+      status: superadmin.status as "Aktif",
+      nik: null,
+      tanggalLahir: null,
+      noTelepon: null,
       email: "learning.budicuy@gmail.com",
-      nik: null,
-      tanggalLahir: null,
-      noTelepon: null,
       alamat: null,
       jenisBank: null,
       noRekening: null,
-      poin: 0,
+      poin: null,
       latitude: null,
       longitude: null,
-    },
-    {
-      name: "Admin Banjarmasin",
-      username: "admin.banjarmasin",
-      password: hashAdmin,
-      role: "admin" as const,
-      status: "Aktif",
+    });
+  }
+
+  // 2. Admin
+  const admin = userMap.get("admin.banjarmasin");
+  if (admin) {
+    profilesToInsert.push({
+      id: admin.id,
+      name: admin.name,
+      username: admin.username,
+      role: admin.role as "admin",
+      status: admin.status as "Aktif",
+      nik: null,
+      tanggalLahir: null,
+      noTelepon: null,
       email: "gaming.budicuy@gmail.com",
-      nik: null,
-      tanggalLahir: null,
-      noTelepon: null,
       alamat: null,
       jenisBank: null,
       noRekening: null,
-      poin: 0,
+      poin: null,
       latitude: null,
       longitude: null,
-    },
-    {
-      name: "Budi Santoso",
-      username: "budi.santoso",
-      password: hashBudi,
-      role: "konsumen" as const,
-      status: "Aktif",
-      email: "budi.santoso@gmail.com",
+    });
+  }
+
+  // 3. Budi Santoso (konsumen demo)
+  const budi = userMap.get("budi.santoso");
+  if (budi) {
+    profilesToInsert.push({
+      id: budi.id,
+      name: budi.name,
+      username: budi.username,
+      role: budi.role as "konsumen",
+      status: budi.status as "Aktif",
       nik: "637101000000000",
       tanggalLahir: "1995-08-17",
       noTelepon: null,
+      email: "budi.santoso@gmail.com",
       alamat: null,
       jenisBank: null,
       noRekening: null,
       poin: 0,
       latitude: -3.32,
       longitude: 114.593,
-    },
-    {
-      name: "Mitra Warmiendo Demo",
-      username: "warmiendo.demo",
-      password: hashDefault,
-      role: "warmiendo" as const,
-      status: "Aktif",
-      email: "warmiendo.demo@gmail.com",
+    });
+  }
+
+  // 4. Mitra Warmindo
+  const warmindo = userMap.get("warmindo.demo");
+  if (warmindo) {
+    profilesToInsert.push({
+      id: warmindo.id,
+      name: warmindo.name,
+      username: warmindo.username,
+      role: warmindo.role as "warmindo",
+      status: warmindo.status as "Aktif",
       nik: "637102000000000",
       tanggalLahir: "1990-08-17",
       noTelepon: null,
+      email: "warmindo.demo@gmail.com",
       alamat: null,
       jenisBank: null,
       noRekening: null,
-      poin: 0,
+      poin: null,
       latitude: -3.32426,
       longitude: 114.59102,
-    },
-    {
-      name: "Mitra Bank Sampah Demo",
-      username: "banksampah.demo",
-      password: hashDefault,
-      role: "bank-sampah" as const,
-      status: "Aktif",
-      email: "gaming.budicuy@gmail.com",
+    });
+  }
+
+  // 5. Mitra Bank Sampah
+  const bankSampah = userMap.get("banksampah.demo");
+  if (bankSampah) {
+    profilesToInsert.push({
+      id: bankSampah.id,
+      name: bankSampah.name,
+      username: bankSampah.username,
+      role: bankSampah.role as "bank-sampah",
+      status: bankSampah.status as "Aktif",
       nik: "637103000000000",
       tanggalLahir: "1985-08-17",
       noTelepon: null,
+      email: "gaming.budicuy@gmail.com",
       alamat: null,
       jenisBank: "BCA",
       noRekening: "1234567890",
-      poin: 0,
+      poin: null,
       latitude: -3.29826,
       longitude: 114.58602,
-    },
-  ];
+    });
+  }
 
-  console.log(
-    `🔑 Using single cached hash for ${csvUsers.length} consumer passwords...`,
-  );
-  for (const u of csvUsers) {
-    dataToInsert.push({
+  // 6. Profil konsumen dari CSV
+  const csvProfiles = parseCsvProfiles();
+  for (const p of csvProfiles) {
+    const u = userMap.get(p.nik);
+    if (!u) continue;
+    profilesToInsert.push({
+      id: u.id,
       name: u.name,
-      username: u.nik,
-      password: hashDefault,
-      role: "konsumen" as const,
-      status: "Aktif",
-      email: null,
-      nik: u.nik,
-      tanggalLahir: u.tanggalLahir,
+      username: u.username,
+      role: u.role as "konsumen",
+      status: u.status as "Aktif",
+      nik: p.nik,
+      tanggalLahir: p.tanggalLahir,
       noTelepon: null,
+      email: null,
       alamat: null,
       jenisBank: null,
       noRekening: null,
@@ -178,7 +191,11 @@ export async function seedNasabah() {
     });
   }
 
-  // Insert all nasabah (which now holds all profile information)
-  await db.insert(nasabah).values(dataToInsert);
-  console.log(`✅ Seeded ${dataToInsert.length} merged nasabah successfully`);
+  if (profilesToInsert.length > 0) {
+    await db.insert(nasabah).values(profilesToInsert);
+  }
+
+  console.log(
+    `✅ Seeded ${profilesToInsert.length} nasabah profiles successfully`,
+  );
 }

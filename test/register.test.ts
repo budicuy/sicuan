@@ -5,7 +5,7 @@ mock.module("../db", () => {
   return {
     db: {
       query: {
-        nasabah: {
+        users: {
           findFirst: async (options?: { where?: unknown }) => {
             const seen = new WeakSet();
             const queryStr = JSON.stringify(options || {}, (_key, value) => {
@@ -18,6 +18,19 @@ mock.module("../db", () => {
             if (queryStr.includes("existing.user")) {
               return { id: 1, username: "existing.user" };
             }
+            return null;
+          },
+        },
+        nasabah: {
+          findFirst: async (options?: { where?: unknown }) => {
+            const seen = new WeakSet();
+            const queryStr = JSON.stringify(options || {}, (_key, value) => {
+              if (typeof value === "object" && value !== null) {
+                if (seen.has(value)) return "[Circular]";
+                seen.add(value);
+              }
+              return value;
+            });
             if (queryStr.includes("1234567890123456")) {
               return {
                 id: 2,
@@ -28,6 +41,30 @@ mock.module("../db", () => {
             return null;
           },
         },
+      },
+      transaction: async (callback: any) => {
+        const tx = {
+          insert: () => {
+            return {
+              values: () => {
+                return {
+                  returning: async () => {
+                    return [
+                      {
+                        id: 99,
+                        name: "Register Test User",
+                        username: "new.user",
+                        role: "konsumen",
+                        status: "Aktif",
+                      },
+                    ];
+                  },
+                };
+              },
+            };
+          },
+        };
+        return await callback(tx);
       },
       insert: () => {
         return {

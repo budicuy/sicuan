@@ -25,9 +25,7 @@ export default function KuponPage() {
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({
-    tier: "",
-  });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [editingKupon, setEditingKupon] = useState<Kupon | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -62,14 +60,13 @@ export default function KuponPage() {
       page: currentPage,
       limit: pageSize,
       search,
-      tier: filterValues.tier,
       sortBy,
       sortOrder,
     }).then((res) => {
       setData(res.data as Kupon[]);
       setTotalItems(res.total);
     });
-  }, [currentPage, pageSize, search, filterValues, sortBy, sortOrder]);
+  }, [currentPage, pageSize, search, sortBy, sortOrder]);
 
   useEffect(() => {
     refreshData();
@@ -166,35 +163,6 @@ export default function KuponPage() {
     });
   };
 
-  const tierBadge = (tier: string) => {
-    const base =
-      "font-semibold px-2 py-0.5 rounded text-[10px] border uppercase ";
-    switch (tier) {
-      case "silver":
-        return (
-          <span className={`${base}text-gray-700 bg-gray-50 border-gray-200`}>
-            {tier}
-          </span>
-        );
-      case "gold":
-        return (
-          <span
-            className={`${base}text-amber-700 bg-amber-50 border-amber-200`}
-          >
-            {tier}
-          </span>
-        );
-      case "diamond":
-        return (
-          <span className={`${base}text-sky-700 bg-sky-50 border-sky-200`}>
-            {tier}
-          </span>
-        );
-      default:
-        return <span className={base}>{tier}</span>;
-    }
-  };
-
   const columns: Column<Kupon>[] = [
     {
       header: "Nama Kupon",
@@ -213,11 +181,6 @@ export default function KuponPage() {
       ),
     },
     {
-      header: "Tier",
-      sortKey: "tier",
-      render: (item) => tierBadge(item.tier),
-    },
-    {
       header: "Poin",
       sortKey: "poin",
       render: (item) => (
@@ -228,18 +191,7 @@ export default function KuponPage() {
     },
   ];
 
-  const filters: TableFilter<Kupon>[] = [
-    {
-      id: "tier",
-      label: "Filter Tier",
-      options: [
-        { label: "Silver", value: "silver" },
-        { label: "Gold", value: "gold" },
-        { label: "Diamond", value: "diamond" },
-      ],
-      filterFn: (item, val) => item.tier === val,
-    },
-  ];
+  const filters: TableFilter<Kupon>[] = [];
 
   return (
     <div className="space-y-6">
@@ -247,9 +199,6 @@ export default function KuponPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
             Master Data Kupon
-            <span className="text-xs text-neutral-500 font-bold ml-2">
-              TIER: SILVER • GOLD • DIAMOND
-            </span>
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
             Kelola kupon yang bisa ditukar dengan poin nasabah.
@@ -339,50 +288,25 @@ export default function KuponPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="tier-select"
-              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-            >
-              Tier
-            </label>
-            <select
-              id="tier-select"
-              name="tier"
-              required
-              defaultValue={editingKupon?.tier ?? "silver"}
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
-            >
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
-              <option value="diamond">Diamond</option>
-            </select>
-            {formErrors.tier && (
-              <p className="text-red-600 text-xs mt-1">{formErrors.tier[0]}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="poin-input"
-              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-            >
-              Poin Penukaran
-            </label>
-            <input
-              id="poin-input"
-              type="number"
-              step="any"
-              name="poin"
-              required
-              defaultValue={editingKupon?.poin ?? ""}
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
-            />
-            {formErrors.poin && (
-              <p className="text-red-600 text-xs mt-1">{formErrors.poin[0]}</p>
-            )}
-          </div>
+        <div>
+          <label
+            htmlFor="poin-input"
+            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+          >
+            Poin Penukaran
+          </label>
+          <input
+            id="poin-input"
+            type="number"
+            step="any"
+            name="poin"
+            required
+            defaultValue={editingKupon?.poin ?? ""}
+            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
+          />
+          {formErrors.poin && (
+            <p className="text-red-600 text-xs mt-1">{formErrors.poin[0]}</p>
+          )}
         </div>
       </FormModal>
 

@@ -1,16 +1,75 @@
 "use client";
 
 import { Info, Key, Loader2, Lock, Save, User } from "lucide-react";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   getProfileData,
   updatePassword,
   updateProfileData,
 } from "@/app/(konsumen)/profil/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { ProfileData } from "@/app/types";
 
+const profilSteps = [
+  {
+    element: "#tour-profil-tabs",
+    popover: {
+      title: "Tab Pengaturan",
+      description:
+        "Pilih tab 'Detail Profil' untuk mengelola data diri dan rekening bank, atau 'Ubah Password' untuk mengganti kata sandi akun.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-profil-form",
+    popover: {
+      title: "Form Data Diri & Rekening",
+      description:
+        "Lengkapi data profil diri Anda. Pastikan informasi NIK, Alamat, serta Rekening Bank terisi secara akurat untuk mempermudah proses pencairan saldo atau reward.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-profil-save",
+    popover: {
+      title: "Simpan Perubahan",
+      description:
+        "Klik tombol 'Simpan Perubahan' setelah Anda memperbarui data profil Anda agar tersimpan secara permanen di server.",
+      side: "top" as const,
+    },
+  },
+];
+
 export default function ProfilPage() {
+  const savedProfileRef = useRef<ProfileData | null>(null);
+
+  const handleTourStart = () => {
+    savedProfileRef.current = profile;
+    setActiveTab("profile");
+    setProfile({
+      id: 999,
+      name: "nama lengkap demo",
+      email: "demo@gmail.com",
+      nik: "637101xxxxxxx",
+      noTelepon: "0882022xxxxx",
+      alamat: "Jl. Sudirman No. 45, Jakarta",
+      jenisBank: "BNI",
+      noRekening: "123456xxx",
+      poin: 250,
+      kredit: 0,
+      role: "konsumen",
+      status: "aktif",
+      username: "username demo",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+  };
+
+  const handleTourEnd = () => {
+    setProfile(savedProfileRef.current);
+  };
+
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
@@ -139,7 +198,7 @@ export default function ProfilPage() {
         return "bg-red-100 text-red-700 border-red-200";
       case "admin":
         return "bg-blue-100 text-blue-700 border-blue-200";
-      case "warmiendo":
+      case "warmindo":
         return "bg-amber-100 text-amber-700 border-amber-200";
       case "bank-sampah":
         return "bg-purple-100 text-purple-700 border-purple-200";
@@ -151,7 +210,7 @@ export default function ProfilPage() {
   const formatRoleName = (role?: string) => {
     if (!role) return "Nasabah";
     if (role === "bank-sampah") return "Bank Sampah";
-    if (role === "warmiendo") return "Warmiendo";
+    if (role === "warmindo") return "Warmindo";
     if (role === "konsumen") return "Konsumen";
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
@@ -169,6 +228,12 @@ export default function ProfilPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <TourGuide
+        pageKey="profil"
+        steps={profilSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
       {/* Header Info Card */}
       <div className="relative overflow-hidden bg-linear-to-r from-primary-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
         <div className="absolute top-[-30%] right-[-10%] w-[45%] h-[150%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
@@ -196,7 +261,7 @@ export default function ProfilPage() {
       </div>
 
       {/* Tabs Layout */}
-      <div className="flex border-b border-neutral-200">
+      <div id="tour-profil-tabs" className="flex border-b border-neutral-200">
         <button
           type="button"
           onClick={() => setActiveTab("profile")}
@@ -226,6 +291,8 @@ export default function ProfilPage() {
       {/* Tab Contents */}
       {activeTab === "profile" ? (
         <form
+          key={profile ? profile.id : "loading"}
+          id="tour-profil-form"
           onSubmit={handleProfileSubmit}
           className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-200/60 space-y-6"
         >
@@ -440,6 +507,7 @@ export default function ProfilPage() {
 
           <div className="flex justify-end pt-4 border-t border-neutral-100">
             <button
+              id="tour-profil-save"
               type="submit"
               disabled={isProfilePending}
               className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/10 hover:shadow-primary-600/25 flex items-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed text-xs uppercase tracking-wider"

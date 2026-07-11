@@ -166,10 +166,10 @@ export async function getDisbursementDataForMonth(
   };
 }
 
-// Legacy getDisbursementData (untuk warmiendo compatibility)
+// Legacy getDisbursementData (untuk warmindo compatibility)
 export async function getDisbursementData() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "warmiendo" && user.role !== "bank-sampah")) {
+  if (!user || (user.role !== "warmindo" && user.role !== "bank-sampah")) {
     return { success: false, message: "Akses ditolak" };
   }
 
@@ -182,7 +182,7 @@ export async function getDisbursementData() {
     where: eq(nasabah.id, user.id),
   });
 
-  const credit = await getWarmiendoMonthlyCredit(user.id);
+  const credit = await getWarmindoMonthlyCredit(user.id);
 
   return {
     success: true,
@@ -198,7 +198,7 @@ export async function getDisbursementData() {
   };
 }
 
-async function getWarmiendoMonthlyCredit(userId: number): Promise<number> {
+async function getWarmindoMonthlyCredit(userId: number): Promise<number> {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-indexed
@@ -209,7 +209,7 @@ async function getWarmiendoMonthlyCredit(userId: number): Promise<number> {
   const records = await db.query.setorSampah.findMany({
     where: and(
       eq(setorSampah.userId, userId),
-      eq(setorSampah.kategoriNasabah, "warmiendo"),
+      eq(setorSampah.kategoriNasabah, "warmindo"),
       eq(setorSampah.status, "diterima"),
       gte(setorSampah.tanggalSetor, startOfMonthStr),
       lte(setorSampah.tanggalSetor, endOfMonthStr),
@@ -250,7 +250,7 @@ export async function requestDisbursement(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "warmiendo" && user.role !== "bank-sampah")) {
+  if (!user || (user.role !== "warmindo" && user.role !== "bank-sampah")) {
     return { success: false, message: "Akses ditolak" };
   }
 
@@ -357,8 +357,8 @@ export async function requestDisbursement(
         errors: { jumlah: ["Kredit bulan ini tidak mencukupi"] },
       };
     }
-  } else if (user.role === "warmiendo") {
-    const credit = await getWarmiendoMonthlyCredit(user.id);
+  } else if (user.role === "warmindo") {
+    const credit = await getWarmindoMonthlyCredit(user.id);
     if (credit < jumlah) {
       return {
         success: false,
@@ -387,8 +387,8 @@ export async function requestDisbursement(
         metodePembayaran !== "tunai" ? (profile.jenisBank ?? "") : null,
       noRekening:
         metodePembayaran !== "tunai" ? (profile.noRekening ?? "") : null,
-      status: "pending",
-      metodePembayaran,
+      status: "pending" as any,
+      metodePembayaran: metodePembayaran as any,
       keterangan: keterangan || null,
       ttdPenyerahUrl,
       periodeBulan: finalMonth,

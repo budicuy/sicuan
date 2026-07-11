@@ -37,7 +37,7 @@ export interface DisbursementItem {
 }
 
 /**
- * DisbursementHistoryItem — riwayat pencairan untuk tampilan nasabah/warmiendo.
+ * DisbursementHistoryItem — riwayat pencairan untuk tampilan nasabah/warmindo.
  */
 export interface DisbursementHistoryItem {
   id: number;

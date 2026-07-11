@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   createHargaSampah,
   deleteHargaSampah,
@@ -15,8 +15,30 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getCurrentUser } from "@/app/lib/auth-actions";
 import type { ActionState, HargaSampah } from "@/app/types";
+
+const hargaSteps = [
+  {
+    element: "#tour-admin-harga-header",
+    popover: {
+      title: "Master Data Harga Sampah",
+      description:
+        "Di sini Admin/Superadmin dapat mengatur skema rentang berat setoran beserta harga tebus rupiah flat yang diperoleh nasabah.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-harga-table",
+    popover: {
+      title: "Tabel Skema Harga",
+      description:
+        "Tabel ini mendaftarkan seluruh skema harga per-kategori sampah (Karton, Etiket, Paper Cup) yang aktif dalam sistem.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function HargaSampahPage() {
   const [data, setData] = useState<HargaSampah[]>([]);
@@ -24,6 +46,55 @@ export default function HargaSampahPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+
+  const [_isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = {
+      data,
+      totalItems,
+    };
+    setIsTourActive(true);
+    setData([
+      {
+        id: 1,
+        jenisSampah: "Karton",
+        minBerat: 1,
+        maxBerat: 10,
+        harga: 500,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 2,
+        jenisSampah: "Karton",
+        minBerat: 11,
+        maxBerat: 50,
+        harga: 750,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 3,
+        jenisSampah: "Etiket",
+        minBerat: 1,
+        maxBerat: 10,
+        harga: 300,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    setTotalItems(3);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    if (savedStateRef.current) {
+      setData(savedStateRef.current.data);
+      setTotalItems(savedStateRef.current.totalItems);
+    }
+  };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     jenisSampah: "",
@@ -231,7 +302,17 @@ export default function HargaSampahPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
+      <TourGuide
+        pageKey="admin_harga"
+        steps={hargaSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
+      <div
+        id="tour-admin-harga-header"
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5"
+      >
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
             Master Data Harga Sampah (Range)
@@ -244,6 +325,7 @@ export default function HargaSampahPage() {
       </div>
 
       <DataTable
+        id="tour-admin-harga-table"
         data={data}
         columns={columns}
         totalItems={totalItems}

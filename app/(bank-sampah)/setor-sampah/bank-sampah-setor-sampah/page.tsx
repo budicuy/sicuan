@@ -20,6 +20,7 @@ import {
   validateFotoTimbangan,
 } from "@/app/(bank-sampah)/setor-sampah/bank-sampah-setor-sampah/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
 
 function addWatermarkToImage(
@@ -146,6 +147,102 @@ export default function BankSampahSetorSampah() {
   );
   const [catatan, setCatatan] = useState("");
 
+  const [isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = {
+      jenisSampah,
+      beratKg,
+      fotoTimbangan,
+      catatan,
+      history,
+      fotoBuktiList,
+      aiValidated,
+      beratAiKg,
+      requestManual,
+    };
+    setIsTourActive(true);
+    setJenisSampah("Karton");
+    setBeratKg("");
+    setFotoTimbangan("/sampel_1.png");
+    setFotoBuktiList(["/sampel_1.png"]);
+    setCatatan("");
+    setAiValidated(false);
+    setBeratAiKg(null);
+    setRequestManual(false);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    if (savedStateRef.current) {
+      setJenisSampah(savedStateRef.current.jenisSampah);
+      setBeratKg(savedStateRef.current.beratKg);
+      setFotoTimbangan(savedStateRef.current.fotoTimbangan);
+      setCatatan(savedStateRef.current.catatan);
+      setHistory(savedStateRef.current.history);
+      setFotoBuktiList(savedStateRef.current.fotoBuktiList);
+      setAiValidated(savedStateRef.current.aiValidated);
+      setBeratAiKg(savedStateRef.current.beratAiKg);
+      setRequestManual(savedStateRef.current.requestManual);
+    }
+  };
+
+  const setorSteps = [
+    {
+      element: "#tour-bank-sampah-setor-jenis",
+      popover: {
+        title: "Pilih Jenis Sampah",
+        description:
+          "Pilih jenis sampah Indofood yang ingin disetor (Karton, Etiket, atau Paper Cup).",
+        side: "right" as const,
+      },
+    },
+    {
+      element: "#tour-bank-sampah-setor-berat",
+      popover: {
+        title: "Masukkan Berat Estimasi",
+        description:
+          "Masukkan estimasi berat sampah Anda dalam satuan kilogram (Kg). Jika dibiarkan kosong saat menekan 'Lanjut', sistem akan otomatis mengisi dengan angka default 1.00 kg.",
+        side: "right" as const,
+        onNextClick: (_element: any, _step: any, options: any) => {
+          const input = document.getElementById("beratKg") as HTMLInputElement;
+          if (!input || !input.value.trim() || Number(input.value) <= 0) {
+            setBeratKg("1.00");
+          }
+          options.driver.moveNext();
+        },
+      },
+    },
+    {
+      element: "#tour-bank-sampah-setor-foto",
+      popover: {
+        title: "Validasi Foto Timbangan",
+        description:
+          "Untuk validasi AI instan, silakan klik tombol 'Validasi Berat dengan AI' setelah foto timbangan termuat.",
+        side: "right" as const,
+      },
+    },
+    {
+      element: "#tour-bank-sampah-setor-submit",
+      popover: {
+        title: "Simulasi Kirim Setoran",
+        description:
+          "Klik tombol ini untuk mengirim setoran secara simulasi. Alur akan dialihkan ke mode pengiriman langsung tanpa masuk ke database riil.",
+        side: "top" as const,
+      },
+    },
+    {
+      element: "#tour-bank-sampah-setor-history",
+      popover: {
+        title: "Riwayat Setoran Saya",
+        description:
+          "Setelah Anda menyimulasikan setoran, detail pengajuan baru Anda beserta status verifikasinya akan langsung muncul di panel ini.",
+        side: "left" as const,
+      },
+    },
+  ];
+
   const [showCamera, setShowCamera] = useState(false);
   const [fotoTimbangan, setFotoTimbangan] = useState<string | null>(null);
   const [isValidatingAI, setIsValidatingAI] = useState(false);
@@ -250,7 +347,7 @@ export default function BankSampahSetorSampah() {
 
   const handleValidasiAI = async () => {
     if (!fotoTimbangan) return;
-    const beratNum = Number.parseFloat(beratKg);
+    const beratNum = Number.parseFloat(beratKg || "1.00");
     if (Number.isNaN(beratNum) || beratNum <= 0) {
       showFeedback(
         "error",
@@ -263,6 +360,15 @@ export default function BankSampahSetorSampah() {
     setIsValidatingAI(true);
     setAiValidated(false);
     setRequestManual(false);
+
+    if (isTourActive) {
+      setTimeout(() => {
+        setIsValidatingAI(false);
+        setAiValidated(true);
+        setBeratAiKg(beratNum);
+      }, 1000);
+      return;
+    }
 
     const result = await validateFotoTimbangan(fotoTimbangan, beratNum);
     setIsValidatingAI(false);
@@ -305,6 +411,40 @@ export default function BankSampahSetorSampah() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormErrors({});
+
+    if (isTourActive) {
+      document.dispatchEvent(new CustomEvent("close-tour-guide"));
+      showFeedback(
+        "success",
+        "Setoran Berhasil! (Simulasi)",
+        `Simulasi: Setoran sampah ${jenisSampah} (${beratKg || "1.00"} kg) Anda berhasil dicatat. Data Anda tidak disimpan ke database.`,
+      );
+      setBeratKg("");
+      setCatatan("");
+      setFotoTimbangan(null);
+      setFotoBuktiList([]);
+      setAiValidated(false);
+      setRequestManual(false);
+      setBeratAiKg(null);
+      setHistory((prev) => [
+        {
+          id: Date.now(),
+          nomorSetor: `SIMULASI-B-${Math.floor(1000 + Math.random() * 9000)}`,
+          jenisSampah,
+          beratKg: Number(beratKg) || 1.0,
+          totalPoin: 0,
+          tanggalSetor: new Date().toISOString().split("T")[0],
+          status: "pending",
+          createdAt: new Date(),
+          metodeSetor: "langsung",
+          catatan,
+          totalKredit: (Number(beratKg) || 1.0) * 1000,
+          fotoTimbangan: "/sampel_1.png",
+        },
+        ...prev,
+      ]);
+      return;
+    }
 
     if (!fotoTimbangan) {
       setFormErrors({ fotoTimbangan: ["Wajib mengambil foto timbangan."] });
@@ -389,6 +529,12 @@ export default function BankSampahSetorSampah() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
+      <TourGuide
+        pageKey="bank_sampah_setor"
+        steps={setorSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2.5 rounded-xl bg-primary-100">
@@ -432,7 +578,7 @@ export default function BankSampahSetorSampah() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div id="tour-bank-sampah-setor-jenis">
                   <label
                     htmlFor="jenisSampah"
                     className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
@@ -474,7 +620,7 @@ export default function BankSampahSetorSampah() {
                 </div>
               </div>
 
-              <div>
+              <div id="tour-bank-sampah-setor-berat">
                 <label
                   htmlFor="beratKg"
                   className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
@@ -504,7 +650,7 @@ export default function BankSampahSetorSampah() {
               </div>
 
               {/* ── FOTO TIMBANGAN & AI VALIDATION ── */}
-              <div className="space-y-3">
+              <div id="tour-bank-sampah-setor-foto" className="space-y-3">
                 <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                   Foto Timbangan (Wajib)
                 </span>
@@ -717,6 +863,7 @@ export default function BankSampahSetorSampah() {
               </div>
 
               <button
+                id="tour-bank-sampah-setor-submit"
                 type="submit"
                 disabled={isPending}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm shadow-sm transition-all"
@@ -738,7 +885,10 @@ export default function BankSampahSetorSampah() {
         </div>
 
         {/* ── RIWAYAT SETORAN SAYA ── */}
-        <div className="lg:col-span-2 space-y-4">
+        <div
+          id="tour-bank-sampah-setor-history"
+          className="lg:col-span-2 space-y-4"
+        >
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
             <h2 className="font-bold text-neutral-900 mb-1">Riwayat Setoran</h2>
             <p className="text-xs text-neutral-500 mb-4">

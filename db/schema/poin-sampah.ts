@@ -1,9 +1,10 @@
-import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { jenisSampahEnum } from "@/db/schema/setor-sampah";
 
 export const poinSampah = pgTable("poin_sampah", {
   id: serial("id").primaryKey(),
-  jenisSampah: text("jenis_sampah").notNull().unique(), // e.g. "Paper Cup", "Etiket", "Karton"
+  jenisSampah: jenisSampahEnum("jenis_sampah").notNull().unique(), // e.g. "Paper Cup", "Etiket", "Karton"
   pointPerKg: integer("point_per_kg").notNull(),
 
   createdAt: timestamp("created_at", { withTimezone: true })

@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { getBuktiPembayaranPdfBase64 } from "@/app/(admin-superadmin)/pencairan-dana/action";
 import {
   getDisbursementDataForMonth,
@@ -36,6 +36,46 @@ import {
 } from "@/app/components/shared/DataTable";
 import { DisbursementLetterPreview } from "@/app/components/shared/DisbursementLetterPreview";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+
+const pencairanSteps = [
+  {
+    element: "#tour-bank-sampah-pencairan-saldo",
+    popover: {
+      title: "Informasi Saldo Kredit",
+      description:
+        "Menampilkan total kredit daur ulang sampah Anda yang tersedia untuk bulan ini yang siap dicairkan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-pencairan-form",
+    popover: {
+      title: "Form Pengajuan Pencairan",
+      description:
+        "Masukkan nominal uang dan metode pencairan (transfer bank/tunai), lalu pratinjau dan ajukan.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-pencairan-submit",
+    popover: {
+      title: "Pratinjau & Ajukan",
+      description:
+        "Tekan tombol ini untuk meninjau surat bukti pembayaran sebelum melakukan pengiriman pengajuan pencairan simulasi.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-pencairan-history",
+    popover: {
+      title: "Tabel Riwayat Pencairan",
+      description:
+        "Detail riwayat transaksi penarikan dana beserta status persetujuan dari Admin (Pending, Berhasil, Ditolak) dapat dipantau di sini.",
+      side: "top" as const,
+    },
+  },
+];
 
 interface DisbursementHistoryItem {
   id: number;
@@ -123,6 +163,54 @@ export default function PencairanDanaPage() {
   const [data, setData] = useState<UserData | null>(null);
   const [history, setHistory] = useState<DisbursementHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = {
+      data,
+      customAmount,
+      metode,
+      keterangan,
+      history,
+    };
+    setIsTourActive(true);
+    setMetode("transfer");
+    setCustomAmount("500000");
+    setKeterangan("Pengajuan Kredit Kemitraan (Demo)");
+
+    if (data) {
+      setData({
+        ...data,
+        kredit: 1250000,
+        isCurrentMonth: false,
+        sudahDicairkan: false,
+        pencairanAktif: null,
+      });
+    } else {
+      setData({
+        kredit: 1250000,
+        isCurrentMonth: false,
+        sudahDicairkan: false,
+        pencairanAktif: null,
+        jenisBank: "BNI",
+        noRekening: "123456xxx",
+        user: { id: 999, name: "Bank Sampah Sejahtera", role: "bank-sampah" },
+      });
+    }
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    if (savedStateRef.current) {
+      setData(savedStateRef.current.data);
+      setCustomAmount(savedStateRef.current.customAmount);
+      setMetode(savedStateRef.current.metode);
+      setKeterangan(savedStateRef.current.keterangan);
+      setHistory(savedStateRef.current.history);
+    }
+  };
 
   // Step 1 form state
   const [customAmount, setCustomAmount] = useState("");
@@ -280,6 +368,10 @@ export default function PencairanDanaPage() {
   const handleOpenConfirm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
+    if (isTourActive) {
+      setShowConfirmModal(true);
+      return;
+    }
     if (!ttdBase64) {
       setTtdError("Tanda tangan wajib diunggah sebelum mengajukan.");
       return;
@@ -289,6 +381,36 @@ export default function PencairanDanaPage() {
 
   // Step 2: confirmed → submit to server
   const handleConfirmSubmit = () => {
+    if (isTourActive) {
+      setShowConfirmModal(false);
+      document.dispatchEvent(new CustomEvent("close-tour-guide"));
+      showFeedback(
+        "success",
+        "Pencairan Berhasil Diajukan (Simulasi)",
+        `Simulasi: Pengajuan pencairan dana sebesar Rp ${Number(customAmount).toLocaleString("id-ID")} berhasil diajukan.`,
+      );
+      setCustomAmount("");
+      setMetode("transfer");
+      setKeterangan("");
+      setTtdBase64(null);
+      setHistory((prev) => [
+        {
+          id: Date.now(),
+          userId: 999,
+          jumlah: Number(customAmount) || 500000,
+          jenisBank: "BNI",
+          noRekening: "123456xxx",
+          status: "pending",
+          metodePembayaran: metode,
+          buktiTransfer: null,
+          createdAt: new Date(),
+          buktiPembayaranId: null,
+        },
+        ...prev,
+      ]);
+      return;
+    }
+
     if (!ttdBase64) return;
     const formData = new FormData();
     formData.set("jumlah", customAmount);
@@ -473,6 +595,12 @@ export default function PencairanDanaPage() {
   // ── Main render ────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5 animate-in fade-in duration-300 pb-12 max-w-4xl mx-auto">
+      <TourGuide
+        pageKey="bank_sampah_pencairan"
+        steps={pencairanSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
       {/* ── HEADER ── */}
       <div>
         <h1 className="text-2xl font-black text-neutral-900 tracking-tight flex items-center gap-2.5">
@@ -487,7 +615,10 @@ export default function PencairanDanaPage() {
       </div>
 
       {/* ── KREDIT SUMMARY CARD ── */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-900 via-primary-950 to-emerald-900 text-white p-6 shadow-xl">
+      <div
+        id="tour-bank-sampah-pencairan-saldo"
+        className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-900 via-primary-950 to-emerald-900 text-white p-6 shadow-xl"
+      >
         {/* decorative blobs */}
         <div className="absolute -top-8 -right-8 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-10 -left-6 w-40 h-40 bg-primary-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -568,7 +699,10 @@ export default function PencairanDanaPage() {
       </div>
 
       {/* ── FORM CARD (period picker + rekening + form) ── */}
-      <div className="bg-white border border-neutral-200 rounded-3xl shadow-sm overflow-hidden">
+      <div
+        id="tour-bank-sampah-pencairan-form"
+        className="bg-white border border-neutral-200 rounded-3xl shadow-sm overflow-hidden"
+      >
         {/* Period Picker — header card yang mencolok */}
         <div className="relative overflow-hidden bg-linear-to-br from-primary-900 via-primary-800 to-slate-800 px-5 py-5">
           {/* decorative */}
@@ -956,6 +1090,7 @@ export default function PencairanDanaPage() {
               {/* Submit */}
               <div className="pt-2">
                 <button
+                  id="tour-bank-sampah-pencairan-submit"
                   type="submit"
                   disabled={
                     isCompressingTtd ||
@@ -978,7 +1113,10 @@ export default function PencairanDanaPage() {
       </div>
 
       {/* ── RIWAYAT ── */}
-      <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+      <div
+        id="tour-bank-sampah-pencairan-history"
+        className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden"
+      >
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-2">
           <Clock className="w-4 h-4 text-primary-600" />
           <h2 className="text-sm font-bold text-neutral-800">
@@ -1041,7 +1179,7 @@ export default function PencairanDanaPage() {
                 customAmount={customAmount}
                 metode={metode}
                 keterangan={keterangan}
-                ttdBase64={ttdBase64}
+                ttdBase64={ttdBase64 || "/sampel_1.png"}
                 kategoriSumber={kategoriSumber}
               />
             </div>

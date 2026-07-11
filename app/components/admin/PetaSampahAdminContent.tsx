@@ -36,7 +36,7 @@ interface Setoran {
   beratKg: number;
   tanggalSetor: string;
   status: string;
-  senderType: "warmiendo" | "konsumen" | "bank-sampah";
+  senderType: "warmindo" | "konsumen" | "bank-sampah";
   senderName: string;
   senderCoords: [number, number];
   senderAlamat: string;
@@ -115,7 +115,7 @@ export function PetaSampahAdminContent({
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   // Checkbox states for filtering by sender type
-  const [showWarmiendo, setShowWarmiendo] = useState<boolean>(true);
+  const [showWarmindo, setShowWarmindo] = useState<boolean>(true);
   const [showKonsumen, setShowKonsumen] = useState<boolean>(true);
   const [showBankSampah, setShowBankSampah] = useState<boolean>(true);
 
@@ -145,12 +145,12 @@ export function PetaSampahAdminContent({
   // Client-side filtering based on role checkboxes - wrapped in useMemo to prevent reference changes on render
   const filteredSetoran = useMemo(() => {
     return setoranList.filter((s) => {
-      if (s.senderType === "warmiendo" && !showWarmiendo) return false;
+      if (s.senderType === "warmindo" && !showWarmindo) return false;
       if (s.senderType === "konsumen" && !showKonsumen) return false;
       if (s.senderType === "bank-sampah" && !showBankSampah) return false;
       return true;
     });
-  }, [setoranList, showWarmiendo, showKonsumen, showBankSampah]);
+  }, [setoranList, showWarmindo, showKonsumen, showBankSampah]);
 
   const selectedSetoran =
     filteredSetoran.find((s) => s.id === selectedSetorId) ||
@@ -201,18 +201,18 @@ export function PetaSampahAdminContent({
   // Helper function to create beautiful div icon
   const getMarkerIcon = (
     type: "sender" | "banksampah" | "trash" | "indofood",
-    senderType?: "warmiendo" | "konsumen" | "bank-sampah",
+    senderType?: "warmindo" | "konsumen" | "bank-sampah",
     status?: string,
   ) => {
     let color = "#3b82f6"; // Blue
     let iconHtml = "";
 
     if (type === "sender") {
-      if (senderType === "warmiendo") {
+      if (senderType === "warmindo") {
         color = "#3560f4"; // Sleek Dark Blue
         iconHtml = `
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <title>Mitra Warmiendo Icon</title>
+            <title>Mitra Warmindo Icon</title>
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
@@ -341,12 +341,12 @@ export function PetaSampahAdminContent({
     }
   };
 
-  const getSenderBadge = (type: "warmiendo" | "konsumen" | "bank-sampah") => {
+  const getSenderBadge = (type: "warmindo" | "konsumen" | "bank-sampah") => {
     switch (type) {
-      case "warmiendo":
+      case "warmindo":
         return (
           <span className="px-2 py-0.5 rounded-md text-[8px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider flex items-center gap-1">
-            <ShoppingBag className="w-2.5 h-2.5" /> Warmiendo
+            <ShoppingBag className="w-2.5 h-2.5" /> Warmindo
           </span>
         );
       case "bank-sampah":
@@ -474,14 +474,14 @@ export function PetaSampahAdminContent({
               <label className="flex items-center gap-1.5 cursor-pointer font-bold text-neutral-600 hover:text-neutral-900 transition-colors">
                 <input
                   type="checkbox"
-                  checked={showWarmiendo && showKonsumen && showBankSampah}
+                  checked={showWarmindo && showKonsumen && showBankSampah}
                   onChange={() => {
                     const nextState = !(
-                      showWarmiendo &&
+                      showWarmindo &&
                       showKonsumen &&
                       showBankSampah
                     );
-                    setShowWarmiendo(nextState);
+                    setShowWarmindo(nextState);
                     setShowKonsumen(nextState);
                     setShowBankSampah(nextState);
                   }}
@@ -492,11 +492,11 @@ export function PetaSampahAdminContent({
               <label className="flex items-center gap-1.5 cursor-pointer font-bold text-neutral-600 hover:text-neutral-900 transition-colors">
                 <input
                   type="checkbox"
-                  checked={showWarmiendo}
-                  onChange={() => setShowWarmiendo(!showWarmiendo)}
+                  checked={showWarmindo}
+                  onChange={() => setShowWarmindo(!showWarmindo)}
                   className="rounded text-blue-600 focus:ring-blue-500 border-neutral-300 w-3.5 h-3.5 cursor-pointer"
                 />
-                Warmiendo
+                Warmindo
               </label>
               <label className="flex items-center gap-1.5 cursor-pointer font-bold text-neutral-600 hover:text-neutral-900 transition-colors">
                 <input
@@ -779,12 +779,12 @@ export function PetaSampahAdminContent({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <title>Warmiendo Icon</title>
+                <title>Warmindo Icon</title>
                 <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               </svg>
             </span>
             <span className="text-neutral-600 font-medium">
-              Mitra Warmiendo (Asal)
+              Mitra Warmindo (Asal)
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -910,7 +910,7 @@ export function PetaSampahAdminContent({
         <div className="block sm:hidden absolute bottom-3 left-3 right-3 z-[1000] bg-white/90 backdrop-blur-xs border border-neutral-200 px-3 py-1.5 rounded-lg shadow-md text-[8px] flex items-center justify-between gap-1 overflow-x-auto scrollbar-none animate-fade-in">
           <div className="flex items-center gap-1 shrink-0">
             <span className="w-2 h-2 rounded-xs bg-primary-600"></span>
-            <span className="text-neutral-500 font-bold">Warmiendo</span>
+            <span className="text-neutral-500 font-bold">Warmindo</span>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <span className="w-2 h-2 rounded-xs bg-purple-500"></span>

@@ -45,7 +45,7 @@ export interface ReportSegment {
   }[];
   rankings: {
     Konsumen: RankingPoint[];
-    Warmiendo: RankingPoint[];
+    Warmindo: RankingPoint[];
     "Bank Sampah": RankingPoint[];
   };
 }

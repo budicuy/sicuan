@@ -31,6 +31,7 @@ export interface TableFilter<T> {
 }
 
 interface DataTableProps<T> {
+  id?: string;
   data: T[];
   columns: Column<T>[];
   totalItems: number;
@@ -62,6 +63,7 @@ interface DataTableProps<T> {
 }
 
 export function DataTable<T extends { id: number }>({
+  id,
   data,
   columns,
   totalItems,
@@ -283,7 +285,7 @@ export function DataTable<T extends { id: number }>({
     : columns;
 
   return (
-    <div className="space-y-4">
+    <div id={id} className="space-y-4">
       {/* Search, Filter & Action Bar */}
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
         <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3">

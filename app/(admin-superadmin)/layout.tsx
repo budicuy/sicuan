@@ -39,8 +39,8 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       redirect("/dashboard");
     } else if (user.role === "bank-sampah") {
       redirect("/dashboard/bank-sampah-dashboard");
-    } else if (user.role === "warmiendo") {
-      redirect("/dashboard/warmiendo-dashboard");
+    } else if (user.role === "warmindo") {
+      redirect("/dashboard/warmindo-dashboard");
     } else {
       redirect("/login");
     }
@@ -57,12 +57,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       ),
     );
 
-  const [pendingWarmiendo] = await db
+  const [pendingWarmindo] = await db
     .select({ count: count() })
     .from(setorSampah)
     .where(
       and(
-        eq(setorSampah.kategoriNasabah, "warmiendo"),
+        eq(setorSampah.kategoriNasabah, "warmindo"),
         or(
           eq(setorSampah.status, "pending"),
           eq(setorSampah.status, "diserahkan"),
@@ -81,9 +81,9 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
     );
 
   const countBankSampah = pendingBankSampah?.count ?? 0;
-  const countWarmiendo = pendingWarmiendo?.count ?? 0;
+  const countWarmindo = pendingWarmindo?.count ?? 0;
   const countKonsumen = pendingKonsumen?.count ?? 0;
-  const totalPending = countBankSampah + countWarmiendo + countKonsumen;
+  const totalPending = countBankSampah + countWarmindo + countKonsumen;
 
   // Fetch pending pencairan dana count
   const [pendingPencairan] = await db
@@ -134,10 +134,10 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
             badgeCount: countBankSampah,
           },
           {
-            href: "/laporan/warmiendo",
-            label: "Setoran Warmiendo",
+            href: "/laporan/warmindo",
+            label: "Setoran Warmindo",
             icon: "ShoppingBag",
-            badgeCount: countWarmiendo,
+            badgeCount: countWarmindo,
           },
           {
             href: "/laporan/konsumen",
@@ -152,13 +152,6 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         href: "/laporan/raw-material",
         label: "Laporan Setoran",
         icon: "Recycle",
-      },
-
-      {
-        type: "link",
-        href: "/user-guide",
-        label: "User Guide",
-        icon: "BookOpen",
       },
     ];
 

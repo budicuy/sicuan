@@ -28,7 +28,7 @@ export const statusSetorEnum = pgEnum("status_setor", [
 
 export const kategoriNasabahEnum = pgEnum("kategori_nasabah", [
   "konsumen",
-  "warmiendo",
+  "warmindo",
   "bank-sampah",
 ]);
 
@@ -42,15 +42,18 @@ export const setorSampah = pgTable("setor_sampah", {
   beratKg: doublePrecision("berat_kg").notNull(),
   beratAiKg: doublePrecision("berat_ai_kg"),
   tanggalSetor: date("tanggal_setor").notNull(),
-  fotoTimbangan: text("foto_timbangan").notNull(),
+  fotoTimbangan: text("foto_timbangan"),
   fotoBuktiTambahan: text("foto_bukti_tambahan").array().notNull().default([]),
   catatan: text("catatan"),
   totalPoin: integer("total_poin").notNull().default(0),
   status: statusSetorEnum("status").notNull().default("diterima"),
 
-  // Optional fields for warmiendo category
+  // Optional fields for warmindo category
   metodeSetor: text("metode_setor"), // "ekspedisi" | "langsung"
   ekspedisiId: integer("ekspedisi_id").references(() => ekspedisi.id, {
+    onDelete: "set null",
+  }),
+  bankSampahId: integer("bank_sampah_id").references(() => nasabah.id, {
     onDelete: "set null",
   }),
 

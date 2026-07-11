@@ -2,20 +2,7 @@
  * raw-material.ts — Types terkait data raw material dan laporan raw material.
  */
 
-/** Data raw material dari DB (1 baris per bulan) */
-export interface RawMaterial {
-  id: number;
-  periode: string;
-  etiketNnGram: number;
-  etiketGnGram: number;
-  etiketCnGram: number;
-  kartonNnGram: number;
-  kartonGnGram: number;
-  kartonCnGram: number;
-  cupCnGram: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { RawMaterial } from "@/db/schema/raw-material";
 
 /** Baris tampilan hasil expand 1 DB row → 7 display rows */
 export interface DisplayRow {

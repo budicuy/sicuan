@@ -136,8 +136,8 @@ export async function getRawMaterialReport(
     source:
       r.kategoriNasabah === "konsumen"
         ? "Konsumen"
-        : r.kategoriNasabah === "warmiendo"
-          ? "Warmiendo"
+        : r.kategoriNasabah === "warmindo"
+          ? "Warmindo"
           : "Bank Sampah",
   }));
 
@@ -249,7 +249,7 @@ export async function getRawMaterialReport(
       };
     });
 
-    const byRole = ["Konsumen", "Warmiendo", "Bank Sampah"].map((role) => {
+    const byRole = ["Konsumen", "Warmindo", "Bank Sampah"].map((role) => {
       const roleDeposits = filteredDeposits.filter((d) => d.source === role);
       const totalWeight = roleDeposits.reduce((sum, d) => sum + d.beratKg, 0);
       const sharePercentage =
@@ -287,7 +287,7 @@ export async function getRawMaterialReport(
 
     const rankings = {
       Konsumen: getRankings(filteredDeposits, "Konsumen"),
-      Warmiendo: getRankings(filteredDeposits, "Warmiendo"),
+      Warmindo: getRankings(filteredDeposits, "Warmindo"),
       "Bank Sampah": getRankings(filteredDeposits, "Bank Sampah"),
     };
 

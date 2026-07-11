@@ -85,8 +85,8 @@ export const ROLES = [
     ],
   },
   {
-    id: "warmiendo",
-    name: "Mitra Warmiendo",
+    id: "warmindo",
+    name: "Mitra Warmindo",
     icon: UtensilsIcon,
     desc: "Warung makan mitra resmi yang menghasilkan limbah kemasan mie instan dalam jumlah besar.",
     rewardType: "Saldo Rekening",
@@ -128,18 +128,18 @@ export const FAQS = [
   },
   {
     q: "Siapa saja yang bisa bergabung?",
-    a: "Siapa saja bisa bergabung! Kami memiliki program khusus untuk Konsumen Individu, pemilik warung mitra (Warmiendo), serta pengelola komunitas/TPS (Bank Sampah) dengan skema reward yang disesuaikan masing-masing peran.",
+    a: "Siapa saja bisa bergabung! Kami memiliki program khusus untuk Konsumen Individu, pemilik warung mitra (Warmindo), serta pengelola komunitas/TPS (Bank Sampah) dengan skema reward yang disesuaikan masing-masing peran.",
   },
   {
     q: "Bagaimana cara menyetorkan sampah?",
-    a: "Anda bisa menyetorkan secara langsung ke kantor divisi terdekat (untuk konsumen & Warmiendo), mengirim via ekspedisi mitra terdaftar (khusus Warmiendo), atau mendaftarkan penjemputan berkala bagi volume besar (khusus Bank Sampah).",
+    a: "Anda bisa menyetorkan secara langsung ke kantor divisi terdekat (untuk konsumen & Warmindo), mengirim via ekspedisi mitra terdaftar (khusus Warmindo), atau mendaftarkan penjemputan berkala bagi volume besar (khusus Bank Sampah).",
   },
   {
     q: "Bagaimana cara kerja penukaran poin konsumen?",
     a: "Setiap kilogram sampah anorganik yang Anda setorkan akan bernilai poin. Poin tersebut diakumulasikan dalam akun Anda. Setelah mencapai batas minimal tertentu, Anda bisa langsung menukarkannya dengan kupon potongan harga belanja produk makanan langsung di aplikasi.",
   },
   {
-    q: "Berapa lama proses pencairan saldo Warmiendo dan Bank Sampah?",
+    q: "Berapa lama proses pencairan saldo Warmindo dan Bank Sampah?",
     a: "Setelah setoran Anda divalidasi oleh petugas Admin kami di gudang penyimpanan, nominal saldo Rupiah akan masuk ke akun Anda. Anda dapat mengajukan penarikan dana di dashboard, dan dana akan ditransfer ke rekening bank Anda dalam 1-2 hari kerja.",
   },
 ];
@@ -163,9 +163,9 @@ export interface MiniCardData {
 
 export const MINI_CARDS: MiniCardData[] = [
   {
-    id: "warmiendo",
+    id: "warmindo",
     type: "stats",
-    title: "Warmiendo Ipul",
+    title: "Warmindo Ipul",
     subtitle: "Mitra #W-29402",
     value: "412.5 Kg",
     trend: "+12.4% bln ini",

@@ -10,7 +10,7 @@ import {
   Ticket,
   TrendingUp,
 } from "lucide-react";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   getAvailableCoupons,
   getKonsumenPoints,
@@ -21,7 +21,56 @@ import {
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { QrModal } from "@/app/components/shared/QrModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { Kupon } from "@/app/types";
+
+const tukarSteps = [
+  {
+    element: "#tour-tukar-poin-header",
+    popover: {
+      title: "Poin Anda",
+      description:
+        "Menampilkan total perolehan poin aktif Anda yang siap ditukarkan dengan kupon reward.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-tukar-tabs",
+    popover: {
+      title: "Tab Penukaran & Kupon Saya",
+      description:
+        "Pilih tab 'Kupon Tersedia' untuk melihat kupon baru, atau 'Kupon Saya' untuk mengakses kode unik kupon yang telah Anda klaim sebelumnya.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-tukar-search",
+    popover: {
+      title: "Cari Kupon",
+      description:
+        "Gunakan bar pencarian ini untuk mencari kupon berdasarkan nama atau deskripsinya secara instan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-tukar-grid",
+    popover: {
+      title: "Katalog Kupon Reward",
+      description:
+        "Daftar kupon belanja, koperasi, atau voucher lain yang disediakan PT. Indofood untuk ditukarkan dengan poin Anda.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-tukar-card-0",
+    popover: {
+      title: "Tombol Penukaran",
+      description:
+        "Jika poin Anda mencukupi, tombol 'Tukarkan Sekarang' akan aktif. Klik tombol ini untuk mendapatkan kode unik kupon.",
+      side: "top" as const,
+    },
+  },
+];
 
 interface RedemptionHistoryItem {
   id: number;
@@ -33,11 +82,47 @@ interface RedemptionHistoryItem {
     nama: string;
     deskripsi: string;
     poin: number;
-    tier: "silver" | "gold" | "diamond";
   };
 }
 
 export default function TukarKuponPage() {
+  const savedPointsRef = useRef<number>(0);
+  const savedCouponsRef = useRef<Kupon[]>([]);
+
+  const handleTourStart = () => {
+    savedPointsRef.current = points;
+    savedCouponsRef.current = coupons;
+    setPoints(500);
+
+    if (coupons.length === 0) {
+      setCoupons([
+        {
+          id: 999,
+          nama: "Voucher Koperasi Indofood 50K",
+          deskripsi:
+            "Voucher belanja di koperasi karyawan PT. Indofood senilai Rp 50.000.",
+          poin: 100,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 998,
+          nama: "Voucher Koperasi Indofood 100K",
+          deskripsi:
+            "Voucher belanja di koperasi karyawan PT. Indofood senilai Rp 100.000.",
+          poin: 200,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+    }
+  };
+
+  const handleTourEnd = () => {
+    setPoints(savedPointsRef.current);
+    setCoupons(savedCouponsRef.current);
+  };
+
   const [points, setPoints] = useState(0);
   const [coupons, setCoupons] = useState<Kupon[]>([]);
   const [history, setHistory] = useState<RedemptionHistoryItem[]>([]);
@@ -49,7 +134,6 @@ export default function TukarKuponPage() {
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTier, setSelectedTier] = useState<string>("all");
   const [affordableOnly, setAffordableOnly] = useState(false);
 
   const [selectedKupon, setSelectedKupon] = useState<Kupon | null>(null);
@@ -122,42 +206,15 @@ export default function TukarKuponPage() {
     });
   };
 
-  const getTierDetails = (tier: string) => {
-    switch (tier) {
-      case "diamond":
-        return {
-          gradient: "from-cyan-500 via-blue-600 to-indigo-700",
-          shadow: "shadow-cyan-500/20",
-          badge: "bg-cyan-50 text-cyan-700 border-cyan-200",
-          iconColor: "text-cyan-400",
-        };
-      case "gold":
-        return {
-          gradient: "from-amber-400 via-orange-500 to-yellow-600",
-          shadow: "shadow-amber-500/20",
-          badge: "bg-amber-50 text-amber-700 border-amber-200",
-          iconColor: "text-amber-300",
-        };
-      default:
-        return {
-          gradient: "from-slate-400 via-neutral-500 to-slate-600",
-          shadow: "shadow-slate-500/20",
-          badge: "bg-slate-50 text-slate-700 border-slate-200",
-          iconColor: "text-slate-300",
-        };
-    }
-  };
-
   // Filter Logic for Penukaran Coupons list
   const filteredCoupons = coupons.filter((item) => {
     const matchesSearch =
       item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.deskripsi.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesTier = selectedTier === "all" || item.tier === selectedTier;
     const matchesAffordable = !affordableOnly || points >= item.poin;
 
-    return matchesSearch && matchesTier && matchesAffordable;
+    return matchesSearch && matchesAffordable;
   });
 
   // Filter Logic for Kupon Saya list (history)
@@ -166,10 +223,7 @@ export default function TukarKuponPage() {
       item.kupon.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.kupon.deskripsi.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesTier =
-      selectedTier === "all" || item.kupon.tier === selectedTier;
-
-    return matchesSearch && matchesTier;
+    return matchesSearch;
   });
 
   if (loading) {
@@ -183,7 +237,7 @@ export default function TukarKuponPage() {
     );
   }
 
-  if (role === "warmiendo" || role === "bank-sampah") {
+  if (role === "warmindo" || role === "bank-sampah") {
     return (
       <div className="max-w-md mx-auto text-center py-12 space-y-4">
         <div className="p-6 bg-white border border-neutral-200 rounded-3xl flex flex-col items-center gap-3 shadow-sm">
@@ -196,10 +250,8 @@ export default function TukarKuponPage() {
           <p className="text-xs text-neutral-500 leading-relaxed">
             Halaman penukaran kupon hanya dapat diakses oleh user dengan peranan{" "}
             <strong>Konsumen</strong>. Sebagai mitra{" "}
-            <strong>
-              {role === "warmiendo" ? "Warmiendo" : "Bank Sampah"}
-            </strong>
-            , reward Anda adalah saldo tunai yang dapat dicairkan melalui menu{" "}
+            <strong>{role === "warmindo" ? "Warmindo" : "Bank Sampah"}</strong>,
+            reward Anda adalah saldo tunai yang dapat dicairkan melalui menu{" "}
             <strong>Pencairan Dana</strong>.
           </p>
         </div>
@@ -209,6 +261,12 @@ export default function TukarKuponPage() {
 
   return (
     <div className="space-y-6 pb-16 font-sans">
+      <TourGuide
+        pageKey="tukar"
+        steps={tukarSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
       {/* Top Header Card */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3">
         <div>
@@ -223,7 +281,10 @@ export default function TukarKuponPage() {
       </div>
 
       {/* Points Display Widget */}
-      <div className="bg-linear-to-r from-orange-500 via-orange-600 to-red-600 rounded-2xl p-5 text-white flex items-center gap-4 shadow-md border border-orange-600 max-w-lg">
+      <div
+        id="tour-tukar-poin-header"
+        className="bg-linear-to-r from-orange-500 via-orange-600 to-red-600 rounded-2xl p-5 text-white flex items-center gap-4 shadow-md border border-orange-600 max-w-lg"
+      >
         <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg text-white">
           <Award className="w-6 h-6 animate-pulse" />
         </div>
@@ -239,13 +300,15 @@ export default function TukarKuponPage() {
       </div>
 
       {/* Tabs Controller */}
-      <div className="flex border-b border-neutral-200 bg-neutral-100/60 p-1 rounded-xl w-fit gap-1">
+      <div
+        id="tour-tukar-tabs"
+        className="flex border-b border-neutral-200 bg-neutral-100/60 p-1 rounded-xl w-fit gap-1"
+      >
         <button
           type="button"
           onClick={() => {
             setActiveTab("penukaran");
             setSearchQuery("");
-            setSelectedTier("all");
             setAffordableOnly(false);
           }}
           className={`py-2 px-5 text-xs font-bold transition-all rounded-lg cursor-pointer flex items-center gap-2 border-0 ${
@@ -262,7 +325,6 @@ export default function TukarKuponPage() {
           onClick={() => {
             setActiveTab("kupon-saya");
             setSearchQuery("");
-            setSelectedTier("all");
             setAffordableOnly(false);
           }}
           className={`py-2 px-5 text-xs font-bold transition-all rounded-lg cursor-pointer flex items-center gap-2 border-0 relative ${
@@ -282,7 +344,7 @@ export default function TukarKuponPage() {
       </div>
 
       {/* SEARCH BAR */}
-      <div className="relative max-w-full">
+      <div id="tour-tukar-search" className="relative max-w-full">
         <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
           <Search className="w-4 h-4" />
         </span>
@@ -309,28 +371,26 @@ export default function TukarKuponPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredCoupons.map((item) => {
-                const details = getTierDetails(item.tier);
+            <div
+              id="tour-tukar-grid"
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
+            >
+              {filteredCoupons.map((item, index) => {
                 const isAffordable = points >= item.poin;
 
                 return (
                   <div
                     key={item.id}
+                    id={index === 0 ? "tour-tukar-card-0" : undefined}
                     className={`bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300 ${!isAffordable ? "opacity-75" : ""}`}
                   >
                     {/* Coupon Card Top Gradient Header */}
-                    <div
-                      className={`bg-linear-to-br ${details.gradient} p-5 text-white relative min-h-25 flex flex-col justify-between`}
-                    >
+                    <div className="bg-linear-to-br from-slate-700 via-neutral-800 to-zinc-900 p-5 text-white relative min-h-25 flex flex-col justify-between">
                       <div className="absolute right-3 top-3 opacity-15">
                         <Ticket className="w-20 h-20 rotate-12" />
                       </div>
 
-                      <div className="flex justify-between items-start z-10">
-                        <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/15">
-                          {item.tier} TIER
-                        </span>
+                      <div className="flex justify-end items-start z-10 w-full">
                         <span className="text-xs font-mono font-semibold flex items-center gap-1">
                           <TrendingUp className="w-3.5 h-3.5" />
                           {item.poin.toLocaleString("id-ID")} Poin

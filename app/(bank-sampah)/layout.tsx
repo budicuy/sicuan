@@ -39,8 +39,8 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
       redirect("/dashboard");
     } else if (user.role === "admin" || user.role === "superadmin") {
       redirect("/dashboard/admin-dashboard");
-    } else if (user.role === "warmiendo") {
-      redirect("/dashboard/warmiendo-dashboard");
+    } else if (user.role === "warmindo") {
+      redirect("/dashboard/warmindo-dashboard");
     } else {
       redirect("/login");
     }
@@ -51,8 +51,11 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
     .from(setorSampah)
     .where(
       and(
-        eq(setorSampah.kategoriNasabah, "warmiendo"),
-        eq(setorSampah.status, "diserahkan"),
+        eq(setorSampah.kategoriNasabah, "warmindo"),
+        sql`(
+          ${setorSampah.status} = 'diserahkan'
+          OR (${setorSampah.status} = 'pending' AND ${setorSampah.metodeSetor} = 'langsung')
+        )`,
       ),
     )
     .then((res) => Number(res[0]?.count ?? 0));
@@ -65,7 +68,7 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
         label: "Ringkasan",
         icon: "LayoutDashboard",
       },
-      {
+      /* {
         type: "group",
         label: "Nasabah Bank Sampah",
         icon: "Users",
@@ -91,7 +94,7 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
             icon: "FileText",
           },
         ],
-      },
+      }, */
       {
         type: "link",
         href: "/laporan/bank-sampah-laporan",
@@ -106,8 +109,8 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
       },
       {
         type: "link",
-        href: "/setor-sampah/terima-setoran-warmiendo",
-        label: "Terima Setoran Warmiendo",
+        href: "/setor-sampah/terima-setoran-warmindo",
+        label: "Terima Setoran Warmindo",
         icon: "Truck",
         badgeCount: waitingSetoranCount,
       },
@@ -122,12 +125,6 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
         href: "/profil/bank-sampah-profil",
         label: "Profil Saya",
         icon: "User",
-      },
-      {
-        type: "link",
-        href: "/user-guide/bank-sampah-guide",
-        label: "Panduan",
-        icon: "BookOpen",
       },
     ];
 

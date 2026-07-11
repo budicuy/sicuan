@@ -68,7 +68,7 @@ export function CalculatorSection({
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: "konsumen", name: "Konsumen" },
-                    { id: "warmiendo", name: "Warmiendo" },
+                    { id: "warmindo", name: "Warmindo" },
                     { id: "bank-sampah", name: "Bank Sampah" },
                   ].map((role) => (
                     <button

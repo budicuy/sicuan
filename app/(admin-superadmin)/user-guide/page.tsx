@@ -70,7 +70,7 @@ export default function UserGuidePage() {
     },
     {
       q: "Bagaimana sistem menghitung persentase sirkularitas raw material Indofood?",
-      a: "Rasio sirkularitas dihitung dengan membagi total berat sampah yang berhasil dikumpulkan (disetorkan) oleh seluruh aktor (Konsumen + Warmiendo + Bank Sampah) dengan total berat raw material yang dirilis oleh pabrik Indofood untuk kategori & periode yang bersangkutan.",
+      a: "Rasio sirkularitas dihitung dengan membagi total berat sampah yang berhasil dikumpulkan (disetorkan) oleh seluruh aktor (Konsumen + Warmindo + Bank Sampah) dengan total berat raw material yang dirilis oleh pabrik Indofood untuk kategori & periode yang bersangkutan.",
     },
   ];
 
@@ -207,7 +207,7 @@ export default function UserGuidePage() {
                     </div>
                     <div className="bg-white p-3 rounded-lg border border-neutral-200/60 shadow-2xs">
                       <p className="text-[11px] font-bold text-neutral-800">
-                        2. Warmiendo
+                        2. Warmindo
                       </p>
                       <p className="text-[10px] text-neutral-500 mt-1">
                         Mitra usaha warung makan. Penyetoran sampah hanya
@@ -350,9 +350,9 @@ export default function UserGuidePage() {
 
                 <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/20 text-xs text-neutral-600 leading-relaxed">
                   💡 <strong>Catatan Penting</strong>: Saldo kredit uang tunai
-                  (untuk Warmiendo & Bank Sampah) dan Poin (untuk Konsumen &
-                  Bank Sampah) baru akan ditambahkan secara resmi ke akun
-                  pengguna setelah status setoran berhasil diubah menjadi{" "}
+                  (untuk Warmindo & Bank Sampah) dan Poin (untuk Konsumen & Bank
+                  Sampah) baru akan ditambahkan secara resmi ke akun pengguna
+                  setelah status setoran berhasil diubah menjadi{" "}
                   <strong>&quot;diterima&quot;</strong> (baik melalui validasi
                   AI instan maupun validasi manual Admin).
                 </div>
@@ -374,7 +374,7 @@ export default function UserGuidePage() {
 
                 <div className="space-y-4 text-xs text-neutral-650 leading-relaxed">
                   <p>
-                    Mitra usaha (Warmiendo & Bank Sampah) dapat menukarkan saldo
+                    Mitra usaha (Warmindo & Bank Sampah) dapat menukarkan saldo
                     kredit uang tunai yang mereka kumpulkan dari setoran sampah
                     dengan mengajukan permohonan pencairan dana. Langkah
                     penanganan bagi Admin:
@@ -473,7 +473,7 @@ export default function UserGuidePage() {
                       </h5>
                       <p className="text-neutral-500 leading-relaxed text-[11px]">
                         Menampilkan top 3 nasabah pengumpul volume sampah
-                        terbesar di setiap peran (Konsumen, Warmiendo, Bank
+                        terbesar di setiap peran (Konsumen, Warmindo, Bank
                         Sampah) berdasarkan filter tanggal yang sedang aktif.
                       </p>
                     </div>

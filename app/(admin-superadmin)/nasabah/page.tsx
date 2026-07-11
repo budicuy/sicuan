@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   createNasabah,
   deleteNasabah,
@@ -15,8 +15,30 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getCurrentUser } from "@/app/lib/auth-actions";
 import type { ActionState, NasabahWithUser } from "@/app/types";
+
+const nasabahSteps = [
+  {
+    element: "#tour-admin-nasabah-header",
+    popover: {
+      title: "Master Data Nasabah",
+      description:
+        "Halaman ini digunakan untuk mengelola seluruh akun login dan data diri profil nasabah/mitra (Konsumen, Warmindo, Bank Sampah).",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-nasabah-table",
+    popover: {
+      title: "Tabel Data Nasabah",
+      description:
+        "Anda dapat melihat, mencari, memfilter berdasarkan role, menambah nasabah baru, mengedit, atau menghapus data nasabah melalui tabel terintegrasi ini.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function NasabahPage() {
   const [data, setData] = useState<NasabahWithUser[]>([]);
@@ -24,6 +46,64 @@ export default function NasabahPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+
+  const [_isTourActive, setIsTourActive] = useState(false);
+  const savedStateRef = useRef<any>(null);
+
+  const handleTourStart = () => {
+    savedStateRef.current = {
+      data,
+      totalItems,
+    };
+    setIsTourActive(true);
+    setData([
+      {
+        id: 1,
+        userId: 101,
+        nik: "637101xxxxxxx",
+        tanggalLahir: "1995-05-12",
+        noTelepon: "0882022xxxxx",
+        email: "demo-nasabah1@gmail.com",
+        alamat: "Jl. Melati No. 12 (Demo)",
+        jenisBank: "BCA",
+        noRekening: "872615xxx",
+        poin: 120,
+        user: {
+          name: "Nasabah Konsumen Demo",
+          username: "nasabah_demo",
+          role: "konsumen",
+          status: "Aktif",
+        },
+      },
+      {
+        id: 2,
+        userId: 102,
+        nik: "637102xxxxxxx",
+        tanggalLahir: "1990-01-01",
+        noTelepon: "0882022yyyyy",
+        email: "demo-warmindo1@gmail.com",
+        alamat: "Jl. Mawar No. 45 (Demo)",
+        jenisBank: "BNI",
+        noRekening: "123456xxx",
+        poin: 0,
+        user: {
+          name: "Warmindo Demo",
+          username: "warmindo_demo",
+          role: "warmindo",
+          status: "Aktif",
+        },
+      },
+    ]);
+    setTotalItems(2);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+    if (savedStateRef.current) {
+      setData(savedStateRef.current.data);
+      setTotalItems(savedStateRef.current.totalItems);
+    }
+  };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     role: "",
@@ -100,7 +180,7 @@ export default function NasabahPage() {
         return "bg-red-50 text-red-700 border-red-200";
       case "admin":
         return "bg-blue-50 text-blue-700 border-blue-200";
-      case "warmiendo":
+      case "warmindo":
         return "bg-amber-50 text-amber-700 border-amber-200";
       case "bank-sampah":
         return "bg-purple-50 text-purple-700 border-purple-200";
@@ -269,7 +349,7 @@ export default function NasabahPage() {
       label: "Filter Role",
       options: [
         { label: "Konsumen", value: "konsumen" },
-        { label: "Warmiendo", value: "warmiendo" },
+        { label: "Warmindo", value: "warmindo" },
         { label: "Bank Sampah", value: "bank-sampah" },
         { label: "Admin", value: "admin" },
         { label: "Superadmin", value: "superadmin" },
@@ -280,7 +360,17 @@ export default function NasabahPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
+      <TourGuide
+        pageKey="admin_nasabah"
+        steps={nasabahSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
+      <div
+        id="tour-admin-nasabah-header"
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5"
+      >
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
             Master Data Nasabah
@@ -293,6 +383,7 @@ export default function NasabahPage() {
       </div>
 
       <DataTable
+        id="tour-admin-nasabah-table"
         data={data}
         columns={columns}
         totalItems={totalItems}
@@ -435,7 +526,7 @@ export default function NasabahPage() {
                   <option value="superadmin">Superadmin</option>
                   <option value="admin">Admin</option>
                   <option value="konsumen">Konsumen</option>
-                  <option value="warmiendo">Warmiendo</option>
+                  <option value="warmindo">Warmindo</option>
                   <option value="bank-sampah">Bank Sampah</option>
                 </select>
                 {formErrors.role && (

@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
-import { nasabah } from "@/db/schema";
+import { nasabah, users } from "@/db/schema";
 
 const profileSchema = z.object({
   name: z
@@ -92,29 +92,45 @@ export async function getProfileData() {
   try {
     const userId = await getAuthenticatedUserId();
 
-    const user = await db.query.nasabah.findFirst({
-      where: eq(nasabah.id, userId),
-    });
+    const [profileData] = await db
+      .select({
+        id: nasabah.id,
+        name: users.name,
+        username: users.username,
+        role: users.role,
+        status: users.status,
+        email: users.email,
+        nik: nasabah.nik,
+        tanggalLahir: nasabah.tanggalLahir,
+        noTelepon: nasabah.noTelepon,
+        alamat: nasabah.alamat,
+        jenisBank: nasabah.jenisBank,
+        noRekening: nasabah.noRekening,
+      })
+      .from(users)
+      .innerJoin(nasabah, eq(nasabah.id, users.id))
+      .where(eq(users.id, userId))
+      .limit(1);
 
-    if (!user) {
+    if (!profileData) {
       throw new Error("User tidak ditemukan");
     }
 
     return {
       success: true,
       data: {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        role: user.role,
-        status: user.status,
-        nik: user.nik || "",
-        tanggalLahir: user.tanggalLahir || "",
-        noTelepon: user.noTelepon || "",
-        alamat: user.alamat || "",
-        jenisBank: user.jenisBank || "",
-        noRekening: user.noRekening || "",
-        email: user.email || "",
+        id: profileData.id,
+        name: profileData.name,
+        username: profileData.username,
+        role: profileData.role,
+        status: profileData.status,
+        nik: profileData.nik || "",
+        tanggalLahir: profileData.tanggalLahir || "",
+        noTelepon: profileData.noTelepon || "",
+        alamat: profileData.alamat || "",
+        jenisBank: profileData.jenisBank || "",
+        noRekening: profileData.noRekening || "",
+        email: profileData.email || "",
       },
     };
   } catch (error) {
@@ -154,20 +170,31 @@ export async function updateProfileData(
       };
     }
 
-    await db
-      .update(nasabah)
-      .set({
-        name: parsed.data.name,
-        nik: parsed.data.nik,
-        tanggalLahir: parsed.data.tanggalLahir,
-        noTelepon: parsed.data.noTelepon,
-        alamat: parsed.data.alamat,
-        jenisBank: parsed.data.jenisBank,
-        noRekening: parsed.data.noRekening,
-        email: parsed.data.email,
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.id, userId));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({
+          name: parsed.data.name,
+          email: parsed.data.email || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+      await tx
+        .update(nasabah)
+        .set({
+          name: parsed.data.name,
+          nik: parsed.data.nik,
+          tanggalLahir: parsed.data.tanggalLahir,
+          noTelepon: parsed.data.noTelepon,
+          alamat: parsed.data.alamat,
+          jenisBank: parsed.data.jenisBank,
+          noRekening: parsed.data.noRekening,
+          email: parsed.data.email,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, userId));
+    });
 
     revalidatePath("/dashboard/profil");
     return {
@@ -207,8 +234,8 @@ export async function updatePassword(
     }
 
     // Get current user from db to verify old password
-    const user = await db.query.nasabah.findFirst({
-      where: eq(nasabah.id, userId),
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
     });
 
     if (!user) {
@@ -238,12 +265,12 @@ export async function updatePassword(
 
     // Update in database
     await db
-      .update(nasabah)
+      .update(users)
       .set({
         password: hashedPassword,
         updatedAt: new Date(),
       })
-      .where(eq(nasabah.id, userId));
+      .where(eq(users.id, userId));
 
     return {
       success: true,

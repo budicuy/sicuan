@@ -115,7 +115,7 @@ interface LaporanNasabahData {
     nik: string | null;
     noTelepon: string | null;
     alamat: string | null;
-    poin: number;
+    poin: number | null;
     user: {
       name: string;
       role: string;
