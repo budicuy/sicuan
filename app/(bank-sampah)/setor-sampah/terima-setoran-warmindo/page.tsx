@@ -171,7 +171,7 @@ export default function TerimaSetoranWarmindoPage() {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const result = ev.target?.result as string;
-        const compressed = await compressImage(result, 200 * 1024);
+        const compressed = await compressImage(result, 100 * 1024);
         setFotoBuktiList((prev) => [...prev, compressed]);
       };
       reader.readAsDataURL(file);
@@ -623,7 +623,7 @@ export default function TerimaSetoranWarmindoPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div
             id="tour-bank-sampah-terima-modal"
-            className="bg-white rounded-2xl border border-neutral-200 shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl border border-neutral-200 shadow-xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
           >
             <div className="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex items-center justify-between">
               <h3 className="font-bold text-neutral-900 text-sm uppercase tracking-wider">
@@ -637,7 +637,7 @@ export default function TerimaSetoranWarmindoPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
               <div>
                 <label
                   htmlFor="modalJenisSampah"
@@ -689,12 +689,13 @@ export default function TerimaSetoranWarmindoPage() {
                   </span>
                   {fotoTimbangan ? (
                     <div className="space-y-3">
-                      <div className="relative rounded-xl overflow-hidden border border-neutral-200 aspect-video bg-neutral-50 max-h-48">
+                      <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
                         <Image
                           src={fotoTimbangan}
                           alt="Timbangan verifikasi"
-                          className="w-full h-full object-contain"
-                          fill
+                          className="w-full h-auto block rounded-xl"
+                          width={800}
+                          height={600}
                           unoptimized
                         />
                         <button
@@ -703,27 +704,68 @@ export default function TerimaSetoranWarmindoPage() {
                             setFotoTimbangan(null);
                             setAiValidated(false);
                             setBeratAiKg(null);
+                            setRequestManual(false);
                           }}
                           className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white border-0 cursor-pointer"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleValidasiAI}
-                        disabled={isValidatingAI || aiValidated || !beratAktual}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 text-xs font-bold transition-all cursor-pointer"
-                      >
-                        {isValidatingAI ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                        )}
-                        {aiValidated
-                          ? "✓ Tervalidasi AI"
-                          : "Validasi Berat dengan AI"}
-                      </button>
+
+                      {aiValidated ? (
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-50 border border-primary-200">
+                          <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
+                          <p className="text-xs text-primary-700 font-medium">
+                            Berat tervalidasi AI: {beratAiKg} kg ✓
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                            <input
+                              id="requestManual"
+                              type="checkbox"
+                              checked={requestManual}
+                              onChange={(e) =>
+                                setRequestManual(e.target.checked)
+                              }
+                              className="mt-1 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-600 cursor-pointer"
+                            />
+                            <label
+                              htmlFor="requestManual"
+                              className="text-xs text-amber-805 leading-normal cursor-pointer select-none font-semibold text-amber-800"
+                            >
+                              Ajukan validasi manual oleh Admin
+                              <span className="block text-[10px] text-amber-700 font-normal mt-0.5">
+                                Pilih jika pembacaan AI terus gagal atau gambar
+                                timbangan tidak terbaca dengan baik.
+                              </span>
+                            </label>
+                          </div>
+
+                          {!requestManual && (
+                            <button
+                              type="button"
+                              onClick={handleValidasiAI}
+                              disabled={isValidatingAI || !beratAktual}
+                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors border-0 cursor-pointer"
+                            >
+                              {isValidatingAI ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  Memvalidasi dengan AI...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  Validasi Berat dengan AI
+                                  {!beratAktual && " (Isi berat dulu)"}
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div>
@@ -751,7 +793,7 @@ export default function TerimaSetoranWarmindoPage() {
                             const result = ev.target?.result as string;
                             const compressed = await compressImage(
                               result,
-                              200 * 1024,
+                              100 * 1024,
                             );
                             setFotoTimbangan(compressed);
                             setAiValidated(false);
@@ -823,26 +865,6 @@ export default function TerimaSetoranWarmindoPage() {
                       {formErrors.fotoBukti[0]}
                     </p>
                   )}
-                </div>
-
-                <div className="flex items-start gap-2 pt-4 border-t border-neutral-100">
-                  <input
-                    id="requestManual"
-                    type="checkbox"
-                    checked={requestManual}
-                    onChange={(e) => setRequestManual(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-600 cursor-pointer"
-                  />
-                  <label
-                    htmlFor="requestManual"
-                    className="text-xs text-neutral-600 leading-normal cursor-pointer select-none font-medium"
-                  >
-                    Ajukan validasi manual oleh Admin
-                    <span className="block text-[10px] text-neutral-400 font-normal">
-                      Pilih jika pembacaan AI terus gagal atau gambar timbangan
-                      tidak terbaca dengan baik.
-                    </span>
-                  </label>
                 </div>
               </div>
             </div>

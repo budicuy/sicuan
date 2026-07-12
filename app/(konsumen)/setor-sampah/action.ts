@@ -5,6 +5,7 @@ import { and, asc, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
 import {
   sendReceiptNotifToDepositor,
@@ -1032,51 +1033,6 @@ export async function createSetorSampah(
 
     await db.insert(setorSampah).values(baseValues);
 
-    // Kirim notifikasi email ke admin (di-await untuk menjamin pengiriman pada Vercel Serverless)
-    try {
-      await sendSetoranNotifToAdmins({
-        nomorSetor,
-        nasabahName: user.name,
-        nasabahRole: user.role,
-        jenisSampah,
-        beratKg,
-        tanggalSetor,
-        catatan,
-        status: baseValues.status,
-        fotoTimbanganBase64,
-        fotoBuktiBase64List,
-      });
-    } catch (err) {
-      console.error("Gagal mengirim email notifikasi setoran ke admin:", err);
-    }
-
-    // Ambil data detail nasabah untuk mendapatkan email
-    const userDetail = await db.query.nasabah.findFirst({
-      where: eq(nasabah.id, user.id),
-    });
-
-    // Kirim notifikasi email tanda terima ke nasabah (di-await untuk menjamin pengiriman pada Vercel Serverless)
-    if (userDetail?.email) {
-      try {
-        await sendReceiptNotifToDepositor({
-          email: userDetail.email,
-          name: user.name,
-          role: user.role,
-          nomorSetor,
-          jenisSampah,
-          beratKg,
-          tanggalSetor,
-          catatan: catatan || undefined,
-          status: baseValues.status,
-        });
-      } catch (err) {
-        console.error(
-          "Gagal mengirim email tanda terima setoran ke nasabah:",
-          err,
-        );
-      }
-    }
-
     if (!isPending) {
       // Update nasabah balance directly
       await db
@@ -1087,6 +1043,54 @@ export async function createSetorSampah(
         })
         .where(eq(nasabah.id, user.id));
     }
+
+    // Ambil data detail nasabah untuk mendapatkan email
+    const userDetail = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, user.id),
+    });
+
+    // Kirim notifikasi email secara asinkron di latar belakang menggunakan Next.js after()
+    after(async () => {
+      // Kirim notifikasi email ke admin
+      try {
+        await sendSetoranNotifToAdmins({
+          nomorSetor,
+          nasabahName: user.name,
+          nasabahRole: user.role,
+          jenisSampah,
+          beratKg,
+          tanggalSetor,
+          catatan,
+          status: baseValues.status,
+          fotoTimbanganBase64,
+          fotoBuktiBase64List,
+        });
+      } catch (err) {
+        console.error("Gagal mengirim email notifikasi setoran ke admin:", err);
+      }
+
+      // Kirim notifikasi email tanda terima ke nasabah
+      if (userDetail?.email) {
+        try {
+          await sendReceiptNotifToDepositor({
+            email: userDetail.email,
+            name: user.name,
+            role: user.role,
+            nomorSetor,
+            jenisSampah,
+            beratKg,
+            tanggalSetor,
+            catatan: catatan || undefined,
+            status: baseValues.status,
+          });
+        } catch (err) {
+          console.error(
+            "Gagal mengirim email tanda terima setoran ke nasabah:",
+            err,
+          );
+        }
+      }
+    });
   } catch (err) {
     console.error("Insert setor sampah atau update nasabah gagal:", err);
     return {
