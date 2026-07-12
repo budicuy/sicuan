@@ -13,7 +13,7 @@ interface AnimatedCounterProps {
 export function AnimatedCounter({
   value,
   duration = 1000,
-  decimals = 0,
+  decimals,
   prefix = "",
   suffix = "",
 }: AnimatedCounterProps) {
@@ -47,9 +47,13 @@ export function AnimatedCounter({
     return () => window.cancelAnimationFrame(animationFrameId);
   }, [value, duration]);
 
+  const hasDecimals = value % 1 !== 0;
+  const resolvedDecimals =
+    decimals !== undefined ? decimals : hasDecimals ? 2 : 0;
+
   const formatted = count.toLocaleString("id-ID", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+    minimumFractionDigits: resolvedDecimals,
+    maximumFractionDigits: resolvedDecimals,
   });
 
   return (

@@ -17,7 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getCurrentUserRole,
   getMySetoran,
@@ -76,49 +76,13 @@ export default function LaporanBankSampahPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: SetorSampahItem[];
-    totalItems: number;
-    totalBerat: number;
-  } | null>(null);
-
-  const demoSetoranBankSampah: SetorSampahItem = {
-    id: 99902,
-    nomorSetor: "SIMULASI-BS-01",
-    jenisSampah: "Karton",
-    beratKg: 50,
-    totalKredit: 25000,
-    totalPoin: 0,
-    status: "pending",
-    tanggalSetor: new Date().toISOString().split("T")[0],
-    catatan: "Setoran simulasi demo tour",
-    fotoTimbangan: "/sampel_1.png",
-    createdAt: new Date(),
-    user: {
-      name: "Bank Sampah Demo",
-      username: "bank_sampah_demo",
-      role: "bank-sampah",
-    },
-  };
 
   const handleTourStart = () => {
-    savedStateRef.current = { data, totalItems, totalBerat };
     setIsTourActive(true);
-    const hasPending = data.some((d) => d.status === "pending");
-    if (!hasPending) {
-      setData([demoSetoranBankSampah, ...data]);
-      setTotalItems((prev) => prev + 1);
-      setTotalBerat((prev) => prev + 50);
-    }
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-      setTotalBerat(savedStateRef.current.totalBerat);
-    }
   };
 
   // Table pagination state
@@ -348,7 +312,9 @@ export default function LaporanBankSampahPage() {
           return (
             <span
               id={
-                item.id === 99902 ? "tour-admin-setoran-bank-action" : undefined
+                item.id === data[0]?.id
+                  ? "tour-admin-setoran-bank-action"
+                  : undefined
               }
             >
               <button

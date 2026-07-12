@@ -350,8 +350,9 @@ export default function RawMaterialPage() {
             Daftar Berat Standar
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Kelola dan pantau berat standardisasi bahan baku hasil daur ulang
-            limbah anorganik per periode.
+            Kelola Data Master Raw Material Bahan Baku untuk setiap periode
+            (bulan &amp; tahun). Data ini digunakan sebagai acuan berat sampah
+            yang di keluarkan oleh perusahaan.
           </p>
         </div>
       </div>

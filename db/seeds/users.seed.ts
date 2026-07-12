@@ -106,6 +106,24 @@ export async function seedUsers() {
       role: "bank-sampah",
       status: "Aktif",
     },
+    // New Bank Sampah 1
+    {
+      name: "Bank Sampah Banjarbaru / TPS 3R Gotong Royong",
+      username: "banksampah.banjarbaru",
+      password: hashDefault,
+      email: "banksampah.banjarbaru@gmail.com",
+      role: "bank-sampah",
+      status: "Aktif",
+    },
+    // New Bank Sampah 2
+    {
+      name: "TPS 3R Sidoarjo",
+      username: "banksampah.sidoarjo",
+      password: hashDefault,
+      email: "banksampah.sidoarjo@gmail.com",
+      role: "bank-sampah",
+      status: "Aktif",
+    },
     // 6. CSV consumers
     ...csvUsers.map((u) => ({
       name: u.name,

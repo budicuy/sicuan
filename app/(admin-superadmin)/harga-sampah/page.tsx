@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createHargaSampah,
   deleteHargaSampah,
@@ -48,55 +48,13 @@ export default function HargaSampahPage() {
   const [search, setSearch] = useState("");
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: HargaSampah[];
-    totalItems: number;
-  } | null>(null);
 
   const handleTourStart = () => {
-    savedStateRef.current = {
-      data,
-      totalItems,
-    };
     setIsTourActive(true);
-    setData([
-      {
-        id: 1,
-        jenisSampah: "Karton",
-        minBerat: 1,
-        maxBerat: 10,
-        harga: 500,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 2,
-        jenisSampah: "Karton",
-        minBerat: 11,
-        maxBerat: 50,
-        harga: 750,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 3,
-        jenisSampah: "Etiket",
-        minBerat: 1,
-        maxBerat: 10,
-        harga: 300,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ]);
-    setTotalItems(3);
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-    }
   };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({

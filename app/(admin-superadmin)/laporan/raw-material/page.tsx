@@ -22,11 +22,97 @@ import {
 } from "recharts";
 import { getRawMaterialReport } from "@/app/(admin-superadmin)/laporan/raw-material/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { ReportData } from "@/app/types";
+
+const rawMaterialSteps = [
+  {
+    element: "#tour-raw-material-header",
+    popover: {
+      title: "Laporan Kontribusi Setoran Sampah",
+      description:
+        "Halaman ini menampilkan visualisasi data raw material yang dikeluarkan Indofood dibandingkan dengan hasil sampah yang berhasil dikumpulkan kembali.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-raw-material-filters",
+    popover: {
+      title: "Penyaringan & Periode Laporan",
+      description:
+        "Gunakan tab Mingguan, Bulanan, atau Tahunan, serta filter dropdown untuk mengubah rentang periode data laporan konversi.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-raw-material-metrics",
+    popover: {
+      title: "Rangkuman Metrik Utama",
+      description:
+        "Menampilkan total data raw material dari master data Indofood, total sampah nyata yang disetorkan, dan efektivitas persentase kontribusi sirkularitas.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-raw-material-chart",
+    popover: {
+      title: "Grafik Perbandingan Real-time",
+      description:
+        "Visualisasi komparatif grafik batang antara jumlah bahan baku produksi (Raw Material) dengan volume sampah sirkular yang berhasil dikumpulkan kembali.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-raw-material-categories",
+    popover: {
+      title: "Rasio Kontribusi Kategori",
+      description:
+        "Menampilkan rasio kontribusi penyusutan sampah daur ulang per kategori utama (Karton, Etiket, Paper Cup) untuk melihat efisiensi sirkularitas.",
+      side: "left" as const,
+    },
+  },
+  {
+    element: "#tour-raw-material-breakdown",
+    popover: {
+      title: "Detail Kategori & Klasifikasi",
+      description:
+        "Menampilkan pembagian data bahan baku (Raw Material) dan setoran nyata berdasarkan klasifikasi produk secara terperinci.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-raw-material-roles",
+    popover: {
+      title: "Kontribusi Berdasarkan Aktor",
+      description:
+        "Menganalisis performa pengumpulan dan persentase kontribusi sirkularitas dari masing-masing tipe aktor (Konsumen, Warmindo, dan Bank Sampah).",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-raw-material-rankings",
+    popover: {
+      title: "Peringkat Kontributor Teraktif",
+      description:
+        "Menampilkan daftar peringkat 3 nasabah/mitra teratas untuk masing-masing peran (Konsumen, Warmindo, Bank Sampah) berdasarkan volume sampah yang disetorkan.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function LaporanRawMaterialPage() {
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [_isTourActive, setIsTourActive] = useState(false);
+
+  const handleTourStart = () => {
+    setIsTourActive(true);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+  };
+
   const [activeTab, setActiveTab] = useState<"weekly" | "monthly" | "yearly">(
     "weekly",
   );
@@ -141,8 +227,18 @@ export default function LaporanRawMaterialPage() {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+      <TourGuide
+        pageKey="admin_laporan_raw_material"
+        steps={rawMaterialSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
       {/* Header Board */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+      <div
+        id="tour-raw-material-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
@@ -163,7 +259,10 @@ export default function LaporanRawMaterialPage() {
         </div>
 
         {/* Global Filters & Dropdowns */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0 w-full md:w-auto">
+        <div
+          id="tour-raw-material-filters"
+          className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0 w-full md:w-auto"
+        >
           {/* Global Filter Switcher */}
           <div className="flex bg-neutral-100 p-1 rounded-xl border border-neutral-200 shrink-0 shadow-inner">
             <button
@@ -256,7 +355,10 @@ export default function LaporanRawMaterialPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div
+        id="tour-raw-material-metrics"
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+      >
         <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm hover:scale-[1.01] transition-transform flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
@@ -327,7 +429,10 @@ export default function LaporanRawMaterialPage() {
       {/* Main Charts & Rankings Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Charts Container */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-105">
+        <div
+          id="tour-raw-material-chart"
+          className="lg:col-span-8 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-105"
+        >
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-neutral-100 pb-4 mb-6">
             <h3 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary-600" />
@@ -395,7 +500,10 @@ export default function LaporanRawMaterialPage() {
         </div>
 
         {/* Top Recycle Categories Ranking */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between">
+        <div
+          id="tour-raw-material-categories"
+          className="lg:col-span-4 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between"
+        >
           <div>
             <h3 className="font-bold text-sm text-neutral-800 border-b border-neutral-100 pb-3 mb-4 flex items-center gap-1.5">
               <Award className="w-4 h-4 text-primary-600" />
@@ -414,9 +522,9 @@ export default function LaporanRawMaterialPage() {
                     <span className="text-neutral-500 font-mono text-[11px]">
                       <AnimatedCounter
                         value={item.depositedWeight}
-                        decimals={1}
+                        decimals={2}
                       />{" "}
-                      / <AnimatedCounter value={item.rawWeight} decimals={1} />{" "}
+                      / <AnimatedCounter value={item.rawWeight} decimals={2} />{" "}
                       Kg
                     </span>
                   </div>
@@ -456,7 +564,10 @@ export default function LaporanRawMaterialPage() {
       </div>
 
       {/* Category & Classification Breakdown Card */}
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+      <div
+        id="tour-raw-material-breakdown"
+        className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden"
+      >
         <div className="px-6 py-4 border-b border-neutral-100 bg-neutral-50/50">
           <h3 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
             <Layers className="w-4.5 h-4.5 text-primary-600" />
@@ -507,7 +618,7 @@ export default function LaporanRawMaterialPage() {
                   <p className="font-bold text-neutral-800 mt-0.5">
                     <AnimatedCounter
                       value={cat.rawWeight}
-                      decimals={1}
+                      decimals={2}
                       suffix=" Kg"
                     />
                   </p>
@@ -519,7 +630,7 @@ export default function LaporanRawMaterialPage() {
                   <p className="font-bold text-emerald-600 mt-0.5">
                     <AnimatedCounter
                       value={cat.depositedWeight}
-                      decimals={1}
+                      decimals={2}
                       suffix=" Kg"
                     />
                   </p>
@@ -541,7 +652,7 @@ export default function LaporanRawMaterialPage() {
                       <span className="font-semibold text-neutral-900">
                         <AnimatedCounter
                           value={cls.weight}
-                          decimals={1}
+                          decimals={2}
                           suffix=" Kg"
                         />
                       </span>
@@ -555,7 +666,10 @@ export default function LaporanRawMaterialPage() {
       </div>
 
       {/* Role Contribution Breakdown */}
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+      <div
+        id="tour-raw-material-roles"
+        className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden"
+      >
         <div className="px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
           <h3 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
             <Award className="w-4.5 h-4.5 text-primary-600" />
@@ -599,7 +713,7 @@ export default function LaporanRawMaterialPage() {
                   <p className="font-bold text-neutral-800 mt-0.5">
                     <AnimatedCounter
                       value={roleData.totalWeight}
-                      decimals={1}
+                      decimals={2}
                       suffix=" Kg"
                     />
                   </p>
@@ -655,7 +769,7 @@ export default function LaporanRawMaterialPage() {
                       <span className="font-semibold text-neutral-900">
                         <AnimatedCounter
                           value={cat.weight}
-                          decimals={1}
+                          decimals={2}
                           suffix=" Kg"
                         />
                       </span>
@@ -669,7 +783,10 @@ export default function LaporanRawMaterialPage() {
       </div>
 
       {/* Top 3 Nasabah/Mitra Rankings per Role */}
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+      <div
+        id="tour-raw-material-rankings"
+        className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden"
+      >
         <div className="px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <h3 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
@@ -743,7 +860,7 @@ export default function LaporanRawMaterialPage() {
                             <span className="text-xs font-black text-primary-600 shrink-0 font-mono">
                               <AnimatedCounter
                                 value={rank.totalWeight}
-                                decimals={1}
+                                decimals={2}
                                 suffix=" Kg"
                               />
                             </span>

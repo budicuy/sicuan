@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createNasabah,
   deleteNasabah,
@@ -48,64 +48,13 @@ export default function NasabahPage() {
   const [search, setSearch] = useState("");
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: NasabahWithUser[];
-    totalItems: number;
-  } | null>(null);
 
   const handleTourStart = () => {
-    savedStateRef.current = {
-      data,
-      totalItems,
-    };
     setIsTourActive(true);
-    setData([
-      {
-        id: 1,
-        userId: 101,
-        nik: "637101xxxxxxx",
-        tanggalLahir: "1995-05-12",
-        noTelepon: "0882022xxxxx",
-        email: "demo-nasabah1@gmail.com",
-        alamat: "Jl. Melati No. 12 (Demo)",
-        jenisBank: "BCA",
-        noRekening: "872615xxx",
-        poin: 120,
-        user: {
-          name: "Nasabah Konsumen Demo",
-          username: "nasabah_demo",
-          role: "konsumen",
-          status: "Aktif",
-        },
-      },
-      {
-        id: 2,
-        userId: 102,
-        nik: "637102xxxxxxx",
-        tanggalLahir: "1990-01-01",
-        noTelepon: "0882022yyyyy",
-        email: "demo-warmindo1@gmail.com",
-        alamat: "Jl. Mawar No. 45 (Demo)",
-        jenisBank: "BNI",
-        noRekening: "123456xxx",
-        poin: 0,
-        user: {
-          name: "Warmindo Demo",
-          username: "warmindo_demo",
-          role: "warmindo",
-          status: "Aktif",
-        },
-      },
-    ]);
-    setTotalItems(2);
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-    }
   };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({

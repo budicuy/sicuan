@@ -2,7 +2,6 @@
 
 import {
   AlertTriangle,
-  Calendar,
   CheckCircle2,
   Clock,
   Coins,
@@ -14,7 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -46,8 +45,17 @@ const adminDashboardSteps = [
     popover: {
       title: "Metrik Kunci Kemitraan",
       description:
-        "Mulai dari total nasabah terdaftar, total volume setoran masuk, rekap harian, hingga jumlah setoran tertunda yang menunggu verifikasi.",
+        "Menampilkan total nasabah terdaftar, total volume setoran masuk harian & bulanan, rekap kupon ditukarkan, hingga dana berhasil dicairkan.",
       side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-unverified",
+    popover: {
+      title: "Setoran Menunggu Validasi",
+      description:
+        "Daftar setoran sampah masuk terbaru yang memerlukan verifikasi atau validasi dari Bank Sampah / Admin. Klik 'Validasi Data' untuk memproses.",
+      side: "top" as const,
     },
   },
   {
@@ -86,6 +94,9 @@ interface DashboardData {
     totalPencairanBerhasil?: number;
     totalPencairanPending?: number;
     totalKuponDitukar?: number;
+    totalSetoranMonthKg?: number;
+    totalSetoranYearKg?: number;
+    totalPencairanDana?: number;
   };
   profile?: {
     poin: number;
@@ -117,6 +128,19 @@ interface DashboardData {
     status: string;
     createdAt: string | Date;
   }[];
+  unverifiedSubmissions?: {
+    id: number;
+    nomorSetor: string;
+    name: string;
+    role: string;
+    jenisSampah: string;
+    beratKg: number;
+    status: string;
+    createdAt: string | Date;
+  }[];
+  weeklyTrends?: { name: string; Volume: number }[];
+  monthlyTrends?: { name: string; Volume: number }[];
+  yearlyTrends?: { name: string; Volume: number }[];
 }
 
 export default function DashboardPage() {
@@ -125,77 +149,32 @@ export default function DashboardPage() {
   const [_loading, setLoading] = useState(true);
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<typeof data | null>(null);
 
   const handleTourStart = () => {
-    savedStateRef.current = data;
     setIsTourActive(true);
-    setData({
-      success: true,
-      role: "admin",
-      name: "Admin Demo",
-      metrics: {
-        totalUsers: 85,
-        totalSetoranKg: 3450,
-        totalSetoranTodayKg: 120,
-        totalPendingSetoran: 5,
-        totalDitolakSetoran: 2,
-        totalNasabahCount: 85,
-        totalSetoranDiterima: 3300,
-        totalSetoranPending: 150,
-        totalPencairanBerhasil: 4500000,
-        totalPencairanPending: 800000,
-        totalKuponDitukar: 24,
-      },
-      composition: [
-        { name: "Karton", value: 1850, color: "#f59e0b" },
-        { name: "Etiket", value: 1100, color: "#10b981" },
-        { name: "Paper Cup", value: 500, color: "#3b82f6" },
-      ],
-      topContributors: [
-        {
-          rank: 1,
-          name: "Warmindo Berkah",
-          total: 450,
-          percentage: "35%",
-          color: "bg-blue-600",
-        },
-        {
-          rank: 2,
-          name: "Bank Sampah Hijau",
-          total: 320,
-          percentage: "25%",
-          color: "bg-emerald-500",
-        },
-        {
-          rank: 3,
-          name: "Konsumen Demo",
-          total: 120,
-          percentage: "10%",
-          color: "bg-amber-500",
-        },
-      ],
-    });
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    setData(savedStateRef.current as typeof data);
   };
 
   // Filters for Admin
-  const [_selectedMonth, _setSelectedMonth] = useState("Juni");
-  const [_selectedYear, _setSelectedYear] = useState("2026");
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    () => new Date().getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(() =>
+    new Date().getFullYear(),
+  );
 
   const loadData = useCallback(() => {
     setLoading(true);
-    getDashboardData().then((res) => {
+    getDashboardData(selectedMonth, selectedYear).then((res) => {
       if (res.success && res.role) {
         setData(res as DashboardData);
       }
       setLoading(false);
     });
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
     setMounted(true);
@@ -210,6 +189,22 @@ export default function DashboardPage() {
   if (isMgmt) {
     const hasCompositionData =
       data?.composition?.some((c) => c.value > 0) ?? false;
+
+    const monthNamesIndo = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+    const selectedMonthName = monthNamesIndo[selectedMonth - 1] ?? "";
 
     return (
       <div className="space-y-6 animate-in fade-in duration-300 pb-12">
@@ -249,85 +244,182 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
+
+          {/* Month & Year Selectors */}
+          <div className="flex items-center gap-3 bg-neutral-50 p-2 rounded-2xl border border-neutral-200 shrink-0 w-full md:w-auto">
+            <div className="flex flex-col gap-0.5 min-w-28">
+              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block pl-1">
+                Bulan Laporan
+              </span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="bg-white border border-neutral-200 rounded-xl text-xs font-bold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer text-neutral-700 shadow-2xs"
+              >
+                {[
+                  "Januari",
+                  "Februari",
+                  "Maret",
+                  "April",
+                  "Mei",
+                  "Juni",
+                  "Juli",
+                  "Agustus",
+                  "September",
+                  "Oktober",
+                  "November",
+                  "Desember",
+                ].map((mName, idx) => (
+                  <option key={mName} value={idx + 1}>
+                    {mName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-0.5 min-w-20">
+              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block pl-1">
+                Tahun
+              </span>
+              <input
+                type="number"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-white border border-neutral-200 rounded-xl text-xs font-bold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 text-neutral-750 shadow-2xs text-center w-full font-mono"
+                min={2020}
+                max={2100}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Metrics Grid */}
-        <div
-          id="tour-admin-dashboard-metrics"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
-        >
-          <div className="bg-linear-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
-            <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
-              Total Nasabah / Mitra
-            </span>
-            <div className="flex justify-between items-center mt-3">
-              <h2 className="text-3xl font-black tracking-tight">
-                <AnimatedCounter value={data?.metrics?.totalUsers ?? 0} />
-              </h2>
-              <Users className="w-8 h-8 text-blue-200/80" />
+        <div id="tour-admin-dashboard-metrics" className="space-y-4">
+          {/* Row 1 Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-linear-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
+                Total Nasabah / Mitra
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-3xl font-black tracking-tight">
+                  <AnimatedCounter value={data?.metrics?.totalUsers ?? 0} />
+                </h2>
+                <Users className="w-8 h-8 text-blue-200/80" />
+              </div>
+            </div>
+
+            <div className="bg-linear-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider block">
+                Total Setoran Sampah
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-3xl font-black tracking-tight">
+                  <AnimatedCounter
+                    value={data?.metrics?.totalSetoranKg ?? 0}
+                    suffix=" Kg"
+                  />
+                </h2>
+                <Scale className="w-8 h-8 text-emerald-100/80" />
+              </div>
+            </div>
+
+            <div className="bg-linear-to-br from-cyan-600 to-cyan-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-cyan-200 uppercase tracking-wider block">
+                Setoran {selectedMonthName} {selectedYear}
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-3xl font-black tracking-tight">
+                  <AnimatedCounter
+                    value={data?.metrics?.totalSetoranMonthKg ?? 0}
+                    suffix=" Kg"
+                  />
+                </h2>
+                <TrendingUp className="w-8 h-8 text-cyan-200/80" />
+              </div>
+            </div>
+
+            <div className="bg-linear-to-br from-teal-600 to-teal-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-teal-200 uppercase tracking-wider block">
+                Setoran Tahun {selectedYear}
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-3xl font-black tracking-tight">
+                  <AnimatedCounter
+                    value={data?.metrics?.totalSetoranYearKg ?? 0}
+                    suffix=" Kg"
+                  />
+                </h2>
+                <TrendingUp className="w-8 h-8 text-teal-200/80" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
-            <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider block">
-              Total Setoran Sampah
-            </span>
-            <div className="flex justify-between items-center mt-3">
-              <h2 className="text-3xl font-black tracking-tight">
-                <AnimatedCounter
-                  value={data?.metrics?.totalSetoranKg ?? 0}
-                  suffix=" Kg"
-                />
-              </h2>
-              <Scale className="w-8 h-8 text-emerald-100/80" />
+          {/* Row 2 Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-linear-to-br from-violet-600 to-indigo-850 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-indigo-200 uppercase tracking-wider block">
+                Menunggu Verifikasi
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-3xl font-black tracking-tight">
+                  <AnimatedCounter
+                    value={data?.metrics?.totalPendingSetoran ?? 0}
+                  />
+                </h2>
+                <Clock className="w-8 h-8 text-indigo-200/80" />
+              </div>
             </div>
-          </div>
 
-          <div className="bg-linear-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
-            <span className="text-[10px] font-bold text-amber-100 uppercase tracking-wider block">
-              Setoran Hari Ini
-            </span>
-            <div className="flex justify-between items-center mt-3">
-              <h2 className="text-3xl font-black tracking-tight">
-                <AnimatedCounter
-                  value={data?.metrics?.totalSetoranTodayKg ?? 0}
-                  suffix=" Kg"
-                />
-              </h2>
-              <Calendar className="w-8 h-8 text-amber-105/80" />
+            <div className="bg-linear-to-br from-red-600 to-rose-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-red-200 uppercase tracking-wider block">
+                Setoran Ditolak
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-3xl font-black tracking-tight">
+                  <AnimatedCounter
+                    value={data?.metrics?.totalDitolakSetoran ?? 0}
+                  />
+                </h2>
+                <AlertTriangle className="w-8 h-8 text-red-200/80" />
+              </div>
             </div>
-          </div>
 
-          <div className="bg-linear-to-br from-indigo-600 to-violet-850 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
-            <span className="text-[10px] font-bold text-indigo-200 uppercase tracking-wider block">
-              Menunggu Verifikasi
-            </span>
-            <div className="flex justify-between items-center mt-3">
-              <h2 className="text-3xl font-black tracking-tight">
-                <AnimatedCounter
-                  value={data?.metrics?.totalPendingSetoran ?? 0}
-                />
-              </h2>
-              <Clock className="w-8 h-8 text-indigo-200/80" />
+            <div className="bg-linear-to-br from-purple-600 to-fuchsia-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-purple-200 uppercase tracking-wider block">
+                Kupon Reward Ditukar
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-3xl font-black tracking-tight">
+                  <AnimatedCounter
+                    value={data?.metrics?.totalKuponDitukar ?? 0}
+                  />
+                </h2>
+                <ShoppingBag className="w-8 h-8 text-purple-200/80" />
+              </div>
             </div>
-          </div>
 
-          <div className="bg-linear-to-br from-red-600 to-rose-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
-            <span className="text-[10px] font-bold text-red-200 uppercase tracking-wider block">
-              Setoran Ditolak
-            </span>
-            <div className="flex justify-between items-center mt-3">
-              <h2 className="text-3xl font-black tracking-tight">
-                <AnimatedCounter
-                  value={data?.metrics?.totalDitolakSetoran ?? 0}
-                />
-              </h2>
-              <AlertTriangle className="w-8 h-8 text-red-200/80" />
+            <div className="bg-linear-to-br from-pink-600 to-rose-700 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <span className="text-[10px] font-bold text-pink-200 uppercase tracking-wider block">
+                Dana Dicairkan (Berhasil)
+              </span>
+              <div className="flex justify-between items-center mt-3">
+                <h2 className="text-2xl font-black tracking-tight">
+                  Rp{" "}
+                  <AnimatedCounter
+                    value={data?.metrics?.totalPencairanDana ?? 0}
+                  />
+                </h2>
+                <Coins className="w-8 h-8 text-pink-200/80" />
+              </div>
             </div>
           </div>
         </div>
@@ -445,6 +537,343 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Three Temporal Statistic Cards: Mingguan, Bulanan, Tahunan */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Card Mingguan */}
+          <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90">
+            <div>
+              <div className="flex justify-between items-start border-b border-neutral-100 pb-3 mb-4">
+                <div>
+                  <h3 className="font-extrabold text-sm text-neutral-800">
+                    Card Mingguan (1 Bulan)
+                  </h3>
+                  <p className="text-[10px] text-neutral-500 mt-0.5">
+                    Bulan {selectedMonth} - {selectedYear}
+                  </p>
+                </div>
+                <span className="text-[10px] bg-primary-50 text-primary-700 font-bold px-2 py-0.5 rounded-full border border-primary-200">
+                  Total: {data?.metrics?.totalSetoranMonthKg ?? 0} Kg
+                </span>
+              </div>
+
+              <div className="w-full h-48 mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={data?.weeklyTrends}
+                    margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="colorWeekly"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#2563eb"
+                          stopOpacity={0.15}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#2563eb"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#f1f5f9"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#94a3b8"
+                      fontSize={9}
+                      tickLine={false}
+                    />
+                    <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "10px",
+                        fontSize: "10px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                      formatter={(value) => [`${value} Kg`, "Volume"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Volume"
+                      stroke="#2563eb"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorWeekly)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Bulanan */}
+          <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90">
+            <div>
+              <div className="flex justify-between items-start border-b border-neutral-100 pb-3 mb-4">
+                <div>
+                  <h3 className="font-extrabold text-sm text-neutral-800">
+                    Card Bulanan
+                  </h3>
+                  <p className="text-[10px] text-neutral-500 mt-0.5">
+                    Tahun {selectedYear}
+                  </p>
+                </div>
+                <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                  Total: {data?.metrics?.totalSetoranYearKg ?? 0} Kg
+                </span>
+              </div>
+
+              <div className="w-full h-48 mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={data?.monthlyTrends}
+                    margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="colorMonthly"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#10b981"
+                          stopOpacity={0.15}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#10b981"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#f1f5f9"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#94a3b8"
+                      fontSize={9}
+                      tickLine={false}
+                    />
+                    <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "10px",
+                        fontSize: "10px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                      formatter={(value) => [`${value} Kg`, "Volume"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Volume"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorMonthly)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Tahunan */}
+          <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90">
+            <div>
+              <div className="flex justify-between items-start border-b border-neutral-100 pb-3 mb-4">
+                <div>
+                  <h3 className="font-extrabold text-sm text-neutral-800">
+                    Card Tahunan
+                  </h3>
+                  <p className="text-[10px] text-neutral-500 mt-0.5">
+                    5 Tahun Terakhir
+                  </p>
+                </div>
+                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
+                  Total: {data?.metrics?.totalSetoranKg ?? 0} Kg
+                </span>
+              </div>
+
+              <div className="w-full h-48 mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={data?.yearlyTrends}
+                    margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="colorYearly"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#6366f1"
+                          stopOpacity={0.15}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#6366f1"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#f1f5f9"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#94a3b8"
+                      fontSize={9}
+                      tickLine={false}
+                    />
+                    <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "10px",
+                        fontSize: "10px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                      formatter={(value) => [`${value} Kg`, "Volume"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Volume"
+                      stroke="#6366f1"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorYearly)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Unverified Submissions Notification Section */}
+        <div
+          id="tour-admin-dashboard-unverified"
+          className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm"
+        >
+          <div className="flex items-center justify-between border-b border-neutral-100 pb-4 mb-4">
+            <h3 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
+              <Clock className="w-4.5 h-4.5 text-amber-500 animate-pulse" />
+              Pemberitahuan Setoran Baru (Menunggu Validasi)
+            </h3>
+            <span className="text-xs text-neutral-400 font-semibold">
+              Menampilkan 5 setoran terbaru
+            </span>
+          </div>
+
+          {data?.unverifiedSubmissions &&
+          data.unverifiedSubmissions.length > 0 ? (
+            <div className="divide-y divide-neutral-100">
+              {data.unverifiedSubmissions.map((item) => {
+                const isBS = item.role === "bank-sampah";
+                const isWM = item.role === "warmindo";
+
+                const badgeColor =
+                  item.status === "pending"
+                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : item.status === "diverifikasi"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-neutral-50 text-neutral-600 border-neutral-200";
+
+                const roleBadgeColor = isBS
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                  : isWM
+                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+                // Redirect link based on role
+                const redirectPath = isBS
+                  ? `/laporan/bank-sampah`
+                  : `/laporan/warmindo`;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-3 hover:bg-neutral-50/50 px-2 rounded-xl transition-all"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-xs text-neutral-800">
+                          {item.nomorSetor}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}
+                        >
+                          {item.status}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleBadgeColor}`}
+                        >
+                          {item.role === "bank-sampah"
+                            ? "Bank Sampah"
+                            : item.role === "warmindo"
+                              ? "Mitra Warmindo"
+                              : "Konsumen"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-500">
+                        Oleh:{" "}
+                        <strong className="text-neutral-700">
+                          {item.name}
+                        </strong>{" "}
+                        • Jenis:{" "}
+                        <span className="font-semibold text-neutral-700">
+                          {item.jenisSampah}
+                        </span>{" "}
+                        ({item.beratKg} Kg)
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                      <span className="text-[10px] text-neutral-450 font-medium shrink-0">
+                        {new Date(item.createdAt).toLocaleString("id-ID", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                      <a
+                        href={redirectPath}
+                        className="px-3.5 py-1.5 bg-neutral-100 hover:bg-primary-600 hover:text-white text-neutral-700 text-xs font-bold rounded-lg border border-neutral-200 transition-all cursor-pointer shadow-xs"
+                      >
+                        Validasi Data
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-10 text-xs text-neutral-400 font-medium">
+              🎉 Semua setoran sampah telah terverifikasi dan divalidasi!
+            </div>
+          )}
         </div>
       </div>
     );

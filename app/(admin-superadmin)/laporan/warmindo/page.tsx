@@ -18,7 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getAllActiveEkspedisi } from "@/app/(admin-superadmin)/ekspedisi/action";
 import {
   getCurrentUserRole,
@@ -78,49 +78,13 @@ export default function LaporanWarmindoPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: SetorSampahItem[];
-    totalItems: number;
-    totalBerat: number;
-  } | null>(null);
-
-  const demoSetoranWarmindo: SetorSampahItem = {
-    id: 99903,
-    nomorSetor: "SIMULASI-W-ADM-01",
-    jenisSampah: "Etiket",
-    beratKg: 30,
-    totalKredit: 9000,
-    totalPoin: 0,
-    status: "pending",
-    tanggalSetor: new Date().toISOString().split("T")[0],
-    catatan: "Setoran simulasi demo tour admin",
-    fotoTimbangan: "/sampel_1.png",
-    createdAt: new Date(),
-    user: {
-      name: "Warmindo Demo",
-      username: "warmindo_demo",
-      role: "warmindo",
-    },
-  };
 
   const handleTourStart = () => {
-    savedStateRef.current = { data, totalItems, totalBerat };
     setIsTourActive(true);
-    const hasPending = data.some((d) => d.status === "pending");
-    if (!hasPending) {
-      setData([demoSetoranWarmindo, ...data]);
-      setTotalItems((prev) => prev + 1);
-      setTotalBerat((prev) => prev + 30);
-    }
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-      setTotalBerat(savedStateRef.current.totalBerat);
-    }
   };
 
   // Table pagination state
@@ -396,7 +360,7 @@ export default function LaporanWarmindoPage() {
         return (
           <span
             id={
-              item.id === 99903
+              item.id === data[0]?.id
                 ? "tour-admin-setoran-warmindo-action"
                 : undefined
             }
