@@ -162,7 +162,7 @@ export async function getDashboardData() {
       kredit: profile ? await getBankSampahMonthlyCredit(profile.id) : 0,
     },
     metrics: {
-      totalSetoranKg: Math.round(totalSetoranKg * 10) / 10,
+      totalSetoranKg: Math.round(totalSetoranKg * 100) / 100,
       totalSetoranPending,
       totalSetoranDiterima,
       totalPencairanBerhasil,
@@ -171,17 +171,17 @@ export async function getDashboardData() {
     composition: [
       {
         name: "Karton",
-        value: Math.round(composition.Karton * 10) / 10,
+        value: Math.round(composition.Karton * 100) / 100,
         color: "#f59e0b",
       },
       {
         name: "Etiket (Plastik)",
-        value: Math.round(composition.Etiket * 10) / 10,
+        value: Math.round(composition.Etiket * 100) / 100,
         color: "#2563eb",
       },
       {
         name: "Paper Cup",
-        value: Math.round(composition["Paper Cup"] * 10) / 10,
+        value: Math.round(composition["Paper Cup"] * 100) / 100,
         color: "#10b981",
       },
     ],
