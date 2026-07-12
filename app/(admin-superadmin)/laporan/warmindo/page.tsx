@@ -117,6 +117,13 @@ export default function LaporanWarmindoPage() {
     string | null
   >(null);
 
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    () => new Date().getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(() =>
+    new Date().getFullYear(),
+  );
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -129,6 +136,8 @@ export default function LaporanWarmindoPage() {
         sortBy,
         sortOrder,
         roleTarget: "warmindo",
+        selectedMonth,
+        selectedYear,
       });
       setData(res.data as SetorSampahItem[]);
       setTotalItems(res.total);
@@ -140,7 +149,16 @@ export default function LaporanWarmindoPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, pageSize, searchQuery, filterValues, sortBy, sortOrder]);
+  }, [
+    currentPage,
+    pageSize,
+    searchQuery,
+    filterValues,
+    sortBy,
+    sortOrder,
+    selectedMonth,
+    selectedYear,
+  ]);
 
   const loadUserRole = useCallback(async () => {
     try {
@@ -419,7 +437,7 @@ export default function LaporanWarmindoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <TourGuide
         pageKey="admin_setoran_warmindo"
         steps={warmindoSteps}
@@ -430,27 +448,75 @@ export default function LaporanWarmindoPage() {
       {/* Header */}
       <div
         id="tour-admin-setoran-warmindo-header"
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 print:hidden"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-primary-100">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
             <FileText className="w-6 h-6 text-primary-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900">
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
               Laporan Setoran Warmindo
             </h1>
-            <p className="text-sm text-neutral-500">
+            <p className="text-xs text-neutral-500 mt-0.5">
               Historis dan verifikasi aktivitas setoran sampah kategori Warmindo
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Month & Year Selectors */}
+          <div className="flex items-center gap-3 bg-neutral-50 p-2 rounded-2xl border border-neutral-200 shrink-0 w-full md:w-auto">
+            <div className="flex flex-col gap-0.5 min-w-28">
+              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block pl-1">
+                Bulan Laporan
+              </span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="bg-white border border-neutral-200 rounded-xl text-xs font-bold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer text-neutral-700 shadow-2xs"
+              >
+                {[
+                  "Januari",
+                  "Februari",
+                  "Maret",
+                  "April",
+                  "Mei",
+                  "Juni",
+                  "Juli",
+                  "Agustus",
+                  "September",
+                  "Oktober",
+                  "November",
+                  "Desember",
+                ].map((mName, idx) => (
+                  <option key={mName} value={idx + 1}>
+                    {mName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-0.5 min-w-20">
+              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block pl-1">
+                Tahun
+              </span>
+              <input
+                type="number"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-white border border-neutral-200 rounded-xl text-xs font-bold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 text-neutral-750 shadow-2xs text-center w-full font-mono"
+                min={2020}
+                max={2100}
+              />
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-sm transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-sm transition-colors cursor-pointer shadow-2xs h-[52px]"
           >
             <Printer className="w-4 h-4" />
             Cetak Laporan

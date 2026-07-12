@@ -289,6 +289,8 @@ export async function getMySetoran(params: {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   roleTarget?: "konsumen" | "warmindo" | "bank-sampah";
+  selectedMonth?: number;
+  selectedYear?: number;
 }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -310,6 +312,13 @@ export async function getMySetoran(params: {
   const isAdmin = user.role === "admin" || user.role === "superadmin";
 
   const filters: SQL[] = [eq(setorSampah.kategoriNasabah, roleTarget)];
+
+  if (params?.selectedMonth && params?.selectedYear) {
+    filters.push(
+      sql`extract(month from ${setorSampah.createdAt}) = ${params.selectedMonth}`,
+      sql`extract(year from ${setorSampah.createdAt}) = ${params.selectedYear}`,
+    );
+  }
 
   if (!isAdmin) {
     filters.push(eq(setorSampah.userId, user.id));
@@ -390,8 +399,20 @@ export async function getMySetoran(params: {
     db.query.setorSampah.findMany({
       where: combinedWhere,
       with: {
-        user: true,
-        ekspedisi: true,
+        user: {
+          columns: {
+            id: true,
+            name: true,
+            username: true,
+            role: true,
+          },
+        },
+        ekspedisi: {
+          columns: {
+            id: true,
+            namaVendor: true,
+          },
+        },
       },
       orderBy: [orderColumn],
       limit,

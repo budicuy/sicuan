@@ -50,15 +50,6 @@ const adminDashboardSteps = [
     },
   },
   {
-    element: "#tour-admin-dashboard-unverified",
-    popover: {
-      title: "Setoran Menunggu Validasi",
-      description:
-        "Daftar setoran sampah masuk terbaru yang memerlukan verifikasi atau validasi dari Bank Sampah / Admin. Klik 'Validasi Data' untuk memproses.",
-      side: "top" as const,
-    },
-  },
-  {
     element: "#tour-admin-dashboard-distribution",
     popover: {
       title: "Distribusi Kategori Sampah",
@@ -73,6 +64,42 @@ const adminDashboardSteps = [
       title: "Peringkat Kontributor Teraktif",
       description:
         "Menampilkan 10 peringkat nasabah/mitra dengan total kontribusi setoran sampah terbesar.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-trend-weekly",
+    popover: {
+      title: "Tren Setoran Mingguan (1 Bulan)",
+      description:
+        "Menampilkan akumulasi setoran per minggu di bulan yang terpilih untuk memantau fluktuasi jangka pendek.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-trend-monthly",
+    popover: {
+      title: "Tren Setoran Bulanan",
+      description:
+        "Menampilkan perbandingan volume setoran dari bulan ke bulan dalam tahun yang terpilih.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-trend-yearly",
+    popover: {
+      title: "Tren Setoran Tahunan",
+      description:
+        "Menampilkan perkembangan volume setoran tahunan untuk memantau sirkularitas sampah jangka panjang (5 tahun terakhir).",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-dashboard-unverified",
+    popover: {
+      title: "Setoran Menunggu Validasi",
+      description:
+        "Daftar setoran sampah masuk terbaru yang memerlukan verifikasi atau validasi dari Bank Sampah / Admin. Klik 'Validasi Data' untuk memproses.",
       side: "top" as const,
     },
   },
@@ -542,12 +569,15 @@ export default function DashboardPage() {
         {/* Three Temporal Statistic Cards: Mingguan, Bulanan, Tahunan */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Card Mingguan */}
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90">
+          <div
+            id="tour-admin-dashboard-trend-weekly"
+            className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90"
+          >
             <div>
               <div className="flex justify-between items-start border-b border-neutral-100 pb-3 mb-4">
                 <div>
                   <h3 className="font-extrabold text-sm text-neutral-800">
-                    Card Mingguan (1 Bulan)
+                    Tren Mingguan (1 Bulan)
                   </h3>
                   <p className="text-[10px] text-neutral-500 mt-0.5">
                     Bulan {selectedMonth} - {selectedYear}
@@ -619,12 +649,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Card Bulanan */}
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90">
+          <div
+            id="tour-admin-dashboard-trend-monthly"
+            className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90"
+          >
             <div>
               <div className="flex justify-between items-start border-b border-neutral-100 pb-3 mb-4">
                 <div>
                   <h3 className="font-extrabold text-sm text-neutral-800">
-                    Card Bulanan
+                    Tren Bulanan
                   </h3>
                   <p className="text-[10px] text-neutral-500 mt-0.5">
                     Tahun {selectedYear}
@@ -696,12 +729,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Card Tahunan */}
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90">
+          <div
+            id="tour-admin-dashboard-trend-yearly"
+            className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between min-h-90"
+          >
             <div>
               <div className="flex justify-between items-start border-b border-neutral-100 pb-3 mb-4">
                 <div>
                   <h3 className="font-extrabold text-sm text-neutral-800">
-                    Card Tahunan
+                    Tren Tahunan
                   </h3>
                   <p className="text-[10px] text-neutral-500 mt-0.5">
                     5 Tahun Terakhir
