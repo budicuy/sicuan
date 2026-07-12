@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { setorSampah, users } from "@/db/schema";
+import { nasabah } from "@/db/schema/nasabah";
 
 export async function seedSetorSampah() {
   console.log("🌱 Seeding setor sampah for unified table...");
@@ -50,7 +51,18 @@ export async function seedSetorSampah() {
       },
     ];
     await db.insert(setorSampah).values(rosianaSetoran);
-    console.log("✅ Seeded setoran Rosiana Dwi Hastuti (50023152)");
+
+    // Sync points to nasabah table
+    await db
+      .update(nasabah)
+      .set({
+        poin: sql`${nasabah.poin} + 11`,
+      })
+      .where(eq(nasabah.id, rosiana.id));
+
+    console.log(
+      "✅ Seeded setoran Rosiana Dwi Hastuti (50023152) & disinkronkan 11 poin",
+    );
   } else {
     console.warn("⚠️ User Rosiana (50023152) tidak ditemukan, skip setoran.");
   }
@@ -71,9 +83,14 @@ export async function seedSetorSampah() {
         beratKg: 2.0,
         beratAiKg: 2.0,
         tanggalSetor: "2026-05-01",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampling produk 1 dus | Tarif Dasar Rp25.000 | Tunai",
+        fotoTimbangan:
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/8139-7dd34e57-069c-4a5d-9bd9-1dd2dcc9fc25.webp",
+        fotoBuktiTambahan: [
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/8139-1df2f2c9-c943-4a9a-ac95-cff35a0eb59d-1.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/8139-1df2f2c9-c943-4a9a-ac95-cff35a0eb59d-2.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/8139-1df2f2c9-c943-4a9a-ac95-cff35a0eb59d-3.webp",
+        ],
+        catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,
@@ -106,9 +123,14 @@ export async function seedSetorSampah() {
         beratKg: 14.98,
         beratAiKg: 14.98,
         tanggalSetor: "2026-05-01",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampling produk 1 dus | Plastik Kemasan",
+        fotoTimbangan:
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/9766-3c0f792a-f9c0-4793-b982-fdb2a2f76c80.webp",
+        fotoBuktiTambahan: [
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-1.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-2.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-3.webp",
+        ],
+        catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,
@@ -123,9 +145,14 @@ export async function seedSetorSampah() {
         beratKg: 15.01,
         beratAiKg: 15.01,
         tanggalSetor: "2026-05-01",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampling produk 1 dus | Paper Cup",
+        fotoTimbangan:
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/9766-3c0f792a-f9c0-4793-b982-fdb2a2f76c80.webp",
+        fotoBuktiTambahan: [
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-1.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-2.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-3.webp",
+        ],
+        catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,
@@ -140,9 +167,14 @@ export async function seedSetorSampah() {
         beratKg: 1.5,
         beratAiKg: 1.5,
         tanggalSetor: "2026-05-01",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampling produk 1 dus | Sampah Karton",
+        fotoTimbangan:
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/9766-3c0f792a-f9c0-4793-b982-fdb2a2f76c80.webp",
+        fotoBuktiTambahan: [
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-1.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-2.webp",
+          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-3.webp",
+        ],
+        catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,

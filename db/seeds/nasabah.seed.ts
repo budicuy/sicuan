@@ -154,7 +154,7 @@ export async function seedNasabah() {
       username: bankSampah.username,
       role: bankSampah.role as "bank-sampah",
       status: bankSampah.status as "Aktif",
-      nik: "637103000000000",
+      nik: null,
       tanggalLahir: "1985-08-17",
       noTelepon: null,
       email: "gaming.budicuy@gmail.com",

@@ -67,4 +67,9 @@ export interface SetorSampahItem {
     username: string;
     role: string;
   } | null;
+  bankSampah?: {
+    id: number;
+    name: string;
+    alamat: string | null;
+  } | null;
 }

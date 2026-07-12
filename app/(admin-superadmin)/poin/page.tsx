@@ -220,7 +220,7 @@ export default function PoinPage() {
           setCurrentPage(1);
         }}
         searchPlaceholder="Cari berdasarkan jenis sampah..."
-        onAdd={handleOpenAddModal}
+        onAdd={userRole === "superadmin" ? handleOpenAddModal : undefined}
         addLabel="Tambah Master Poin"
         onEdit={handleOpenEditModal}
         onDelete={userRole === "superadmin" ? handleDelete : undefined}

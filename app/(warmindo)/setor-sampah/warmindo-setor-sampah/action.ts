@@ -16,7 +16,7 @@ import {
   validateBeratTolerance,
 } from "@/app/lib/gemini-weight-reader";
 import { calculateSetoranReward } from "@/app/lib/pricing";
-import { uploadImageToR2 } from "@/app/lib/r2";
+import { deleteFromR2, uploadImageToR2 } from "@/app/lib/r2";
 import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
@@ -354,6 +354,7 @@ export async function getMySetoran(params: {
       with: {
         user: true,
         ekspedisi: true,
+        bankSampah: true,
       },
       orderBy: [orderColumn],
       limit,
@@ -407,6 +408,13 @@ export async function getMySetoran(params: {
             name: s.user.name,
             username: s.user.username,
             role: s.user.role,
+          }
+        : null,
+      bankSampah: s.bankSampah
+        ? {
+            id: s.bankSampah.id,
+            name: s.bankSampah.name,
+            alamat: s.bankSampah.alamat,
           }
         : null,
       totalKredit: kreditVal,
@@ -1164,4 +1172,51 @@ export async function createSetorSampah(
 
   revalidatePath("/setor-sampah");
   return { success: true };
+}
+
+export async function cancelSetorSampah(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "warmindo") {
+    return { success: false, message: "Akses ditolak." };
+  }
+
+  try {
+    const setoran = await db.query.setorSampah.findFirst({
+      where: and(eq(setorSampah.id, id), eq(setorSampah.userId, user.id)),
+    });
+
+    if (!setoran) {
+      return { success: false, message: "Setoran tidak ditemukan." };
+    }
+
+    if (setoran.status !== "pending") {
+      return {
+        success: false,
+        message:
+          "Setoran tidak bisa dibatalkan karena sedang/telah diproses oleh admin/kurir.",
+      };
+    }
+
+    if (setoran.fotoTimbangan) {
+      await deleteFromR2(setoran.fotoTimbangan);
+    }
+    if (setoran.fotoBuktiTambahan && setoran.fotoBuktiTambahan.length > 0) {
+      for (const foto of setoran.fotoBuktiTambahan) {
+        await deleteFromR2(foto);
+      }
+    }
+
+    await db.delete(setorSampah).where(eq(setorSampah.id, id));
+
+    revalidatePath("/setor-sampah");
+    return { success: true, message: "Setoran berhasil dibatalkan." };
+  } catch (error) {
+    console.error("Gagal membatalkan setoran:", error);
+    return {
+      success: false,
+      message: "Gagal membatalkan setoran karena kesalahan server.",
+    };
+  }
 }

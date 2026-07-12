@@ -25,8 +25,10 @@ interface DisbursementLetterPreviewProps {
   metode: string;
   keterangan: string;
   ttdBase64: string | null;
-  kategoriSumber?: KategoriSumber;
+  kategoriSumber?: KategoriSumber | KategoriSumber[];
   ttdAdminBase64?: string | null;
+  biayaTambahan?: number;
+  catatanBiayaTambahan?: string | null;
 }
 
 export function DisbursementLetterPreview({
@@ -37,11 +39,24 @@ export function DisbursementLetterPreview({
   ttdBase64,
   kategoriSumber = "bank-sampah-induk",
   ttdAdminBase64,
+  biayaTambahan = 0,
+  catatanBiayaTambahan = null,
 }: DisbursementLetterPreviewProps) {
   const isWarmindo = data?.user.role === "warmindo";
   const labelJabatan = isWarmindo
     ? "Pengelola Warmindo"
     : "Pimpinan Bank Sampah";
+
+  const hasCategory = (cat: KategoriSumber) => {
+    if (isWarmindo) {
+      return cat === "tps-3r";
+    }
+    if (!kategoriSumber) return false;
+    if (Array.isArray(kategoriSumber)) {
+      return kategoriSumber.includes(cat);
+    }
+    return kategoriSumber === cat;
+  };
 
   return (
     <div className="border border-neutral-200 rounded-xl p-4 sm:p-6 bg-neutral-50/50 font-serif text-[11px] text-neutral-800 space-y-4 overflow-x-auto">
@@ -133,11 +148,7 @@ export function DisbursementLetterPreview({
                   <label className="flex items-center gap-1">
                     <input
                       type="checkbox"
-                      checked={
-                        isWarmindo
-                          ? false
-                          : kategoriSumber === "bank-sampah-induk"
-                      }
+                      checked={hasCategory("bank-sampah-induk")}
                       readOnly
                       className="rounded"
                     />{" "}
@@ -146,7 +157,7 @@ export function DisbursementLetterPreview({
                   <label className="flex items-center gap-1">
                     <input
                       type="checkbox"
-                      checked={isWarmindo ? true : kategoriSumber === "tps-3r"}
+                      checked={hasCategory("tps-3r")}
                       readOnly
                       className="rounded"
                     />{" "}
@@ -155,11 +166,7 @@ export function DisbursementLetterPreview({
                   <label className="flex items-center gap-1">
                     <input
                       type="checkbox"
-                      checked={
-                        isWarmindo
-                          ? false
-                          : kategoriSumber === "bank-sampah-unit"
-                      }
+                      checked={hasCategory("bank-sampah-unit")}
                       readOnly
                       className="rounded"
                     />{" "}
@@ -242,17 +249,31 @@ export function DisbursementLetterPreview({
               </td>
               <td className="w-3 py-0.5 text-neutral-400">:</td>
               <td className="py-0.5 font-mono text-neutral-800">
-                Rp {(Number(customAmount) || 0).toLocaleString("id-ID")}
+                Rp{" "}
+                {Math.max(
+                  0,
+                  (Number(customAmount) || 0) - biayaTambahan,
+                ).toLocaleString("id-ID")}
                 ,00
               </td>
             </tr>
             <tr>
-              <td className="py-0.5 text-neutral-500">
-                Biaya Tambahan Per Kg/Ton
-              </td>
+              <td className="py-0.5 text-neutral-500">Biaya Tambahan</td>
               <td className="py-0.5 text-neutral-400">:</td>
-              <td className="py-0.5 font-mono text-neutral-800">Rp 0,00</td>
+              <td className="py-0.5 font-mono text-neutral-800">
+                Rp {biayaTambahan.toLocaleString("id-ID")},00
+              </td>
             </tr>
+            {biayaTambahan > 0 && catatanBiayaTambahan && (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="text-[10px] text-neutral-500 italic py-0.5 pl-2"
+                >
+                  * Catatan: {catatanBiayaTambahan}
+                </td>
+              </tr>
+            )}
             <tr className="border-t border-neutral-300 font-bold">
               <td className="py-1 text-neutral-700">TOTAL TAGIHAN</td>
               <td className="py-1 text-neutral-400">:</td>

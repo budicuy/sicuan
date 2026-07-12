@@ -76,8 +76,10 @@ export function BuktiPembayaranModal({
   const [dataSampah, setDataSampah] = useState<DataSampahItem[]>([
     { jenis: "Karton", beratKg: 0, terlampir: true },
   ]);
-  const [tarifDasar, _setTarifDasar] = useState(item.jumlah);
-  const [biayaTambahan, _setBiayaTambahan] = useState(0);
+  const initialBiayaTambahan = item.biayaTambahan || 0;
+  const initialTarifDasar = item.jumlah - initialBiayaTambahan;
+  const [tarifDasar, _setTarifDasar] = useState(initialTarifDasar);
+  const [biayaTambahan, _setBiayaTambahan] = useState(initialBiayaTambahan);
   const [keterangan, _setKeterangan] = useState(item.keterangan ?? "");
   const [namaPenyerah, _setNamaPenyerah] = useState(item.user.name);
   const [jabatanPenyerah, _setJabatanPenyerah] = useState(
@@ -470,12 +472,14 @@ export function BuktiPembayaranModal({
                     })),
                     totalBeratKg,
                   }}
-                  customAmount={tarifDasar.toString()}
+                  customAmount={(tarifDasar + biayaTambahan).toString()}
                   metode={item.metodePembayaran}
                   keterangan={keterangan}
                   ttdBase64={item.ttdPenyerahUrl}
                   kategoriSumber={letterKategori}
                   ttdAdminBase64={ttdAdminBase64}
+                  biayaTambahan={biayaTambahan}
+                  catatanBiayaTambahan={item.catatanBiayaTambahan}
                 />
               </div>
             </div>

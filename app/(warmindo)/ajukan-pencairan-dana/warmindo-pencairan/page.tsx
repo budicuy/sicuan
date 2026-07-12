@@ -757,9 +757,15 @@ export default function PencairanDanaPage() {
                     <Clock className="w-2.5 h-2.5" /> Sedang Berjalan
                   </span>
                 ) : sudahDicairkan ? (
-                  <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/25 text-amber-200 border border-amber-400/30 rounded-full px-2.5 py-1">
-                    <LockKeyhole className="w-2.5 h-2.5" /> Sudah Dicairkan
-                  </span>
+                  pencairanAktif?.status === "pending" ? (
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/25 text-amber-200 border border-amber-400/30 rounded-full px-2.5 py-1">
+                      <Clock className="w-2.5 h-2.5" /> Pending
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30 rounded-full px-2.5 py-1">
+                      <LockKeyhole className="w-2.5 h-2.5" /> Sudah Dicairkan
+                    </span>
+                  )
                 ) : currentKredit > 0 ? (
                   <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30 rounded-full px-2.5 py-1">
                     <CheckCircle2 className="w-2.5 h-2.5" /> Siap Dicairkan
@@ -923,6 +929,8 @@ export default function PencairanDanaPage() {
                     ttdBase64={pencairanAktif.ttdPenyerahUrl || null}
                     kategoriSumber={kategoriSumber}
                     ttdAdminBase64={pencairanAktif.ttdPenerimaUrl || null}
+                    biayaTambahan={pencairanAktif.biayaTambahan || 0}
+                    catatanBiayaTambahan={pencairanAktif.catatanBiayaTambahan}
                   />
                 </div>
               </div>
@@ -1237,6 +1245,12 @@ export default function PencairanDanaPage() {
                 keterangan={keterangan}
                 ttdBase64={ttdBase64}
                 kategoriSumber={kategoriSumber}
+                biayaTambahan={
+                  showBiayaTambahanForm ? Number(biayaTambahan) || 0 : 0
+                }
+                catatanBiayaTambahan={
+                  showBiayaTambahanForm ? catatanBiayaTambahan : null
+                }
               />
             </div>
 

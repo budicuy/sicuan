@@ -114,7 +114,7 @@ export default function LaporanRawMaterialPage() {
   };
 
   const [activeTab, setActiveTab] = useState<"weekly" | "monthly" | "yearly">(
-    "weekly",
+    "monthly",
   );
   const [selectedYear, setSelectedYear] = useState<number>(() =>
     new Date().getFullYear(),

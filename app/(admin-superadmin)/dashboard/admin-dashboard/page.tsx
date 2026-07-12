@@ -99,7 +99,7 @@ const adminDashboardSteps = [
     popover: {
       title: "Setoran Menunggu Validasi",
       description:
-        "Daftar setoran sampah masuk terbaru yang memerlukan verifikasi atau validasi dari Bank Sampah / Admin. Klik 'Validasi Data' untuk memproses.",
+        "Daftar setoran sampah masuk terbaru yang memerlukan verifikasi atau validasi dari Admin. Klik 'Validasi Data' untuk memproses.",
       side: "top" as const,
     },
   },
@@ -327,7 +327,7 @@ export default function DashboardPage() {
             <div className="bg-linear-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
               <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
               <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider block">
-                Total Nasabah / Mitra
+                Total Nasabah
               </span>
               <div className="flex justify-between items-center mt-3">
                 <h2 className="text-3xl font-black tracking-tight">

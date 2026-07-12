@@ -1,5 +1,6 @@
 "use client";
 
+import imageCompression from "browser-image-compression";
 import {
   CheckCircle2,
   Clock,
@@ -107,17 +108,36 @@ export default function LaporanKonsumenPage() {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditForm((f) => ({
-        ...f,
-        fotoTimbanganBase64: reader.result as string,
-      }));
-    };
-    reader.readAsDataURL(file);
+
+    try {
+      const options = {
+        maxSizeMB: 0.1,
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+      };
+      const compressed = await imageCompression(file, options);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditForm((f) => ({
+          ...f,
+          fotoTimbanganBase64: reader.result as string,
+        }));
+      };
+      reader.readAsDataURL(compressed);
+    } catch (err) {
+      console.error("Gagal mengompres gambar:", err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditForm((f) => ({
+          ...f,
+          fotoTimbanganBase64: reader.result as string,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAdditionalFilesChange = (
@@ -130,13 +150,29 @@ export default function LaporanKonsumenPage() {
       const base64s: string[] = [
         ...(editForm.newFotoBuktiTambahanBase64 || []),
       ];
+      const options = {
+        maxSizeMB: 0.1,
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+      };
       for (const file of Array.from(files)) {
-        const base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-        base64s.push(base64);
+        try {
+          const compressed = await imageCompression(file, options);
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(compressed);
+          });
+          base64s.push(base64);
+        } catch (err) {
+          console.error("Gagal mengompres gambar tambahan:", err);
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+          base64s.push(base64);
+        }
       }
       setEditForm((f) => ({ ...f, newFotoBuktiTambahanBase64: base64s }));
     };
@@ -364,6 +400,15 @@ export default function LaporanKonsumenPage() {
       render: (item: SetorSampahItem) => (
         <span className="font-semibold text-neutral-700 whitespace-nowrap">
           {item.user ? item.user.name : "Saya"}
+        </span>
+      ),
+    },
+    {
+      header: "Kategori Sampah",
+      sortKey: "jenisSampah",
+      render: (item: SetorSampahItem) => (
+        <span className="font-semibold text-neutral-700">
+          {item.jenisSampah}
         </span>
       ),
     },

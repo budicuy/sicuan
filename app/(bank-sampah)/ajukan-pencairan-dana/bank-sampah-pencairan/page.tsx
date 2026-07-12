@@ -42,36 +42,36 @@ const pencairanSteps = [
   {
     element: "#tour-bank-sampah-pencairan-saldo",
     popover: {
-      title: "Informasi Saldo Kredit",
+      title: "Mekanisme Akumulasi Kredit",
       description:
-        "Menampilkan total kredit daur ulang sampah Anda yang tersedia untuk bulan ini yang siap dicairkan.",
+        "Kredit terkumpul secara otomatis berdasarkan berat bersih dari seluruh setoran sampah Anda yang telah diverifikasi (status Diterima) pada periode bulan terpilih. Sistem mengacu pada tarif berjenjang PT Indofood. Hanya diperbolehkan melakukan 1 kali pencairan untuk setiap bulan.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-form",
     popover: {
-      title: "Form Pengajuan Pencairan",
+      title: "Cara Mengisi Formulir Pengajuan",
       description:
-        "Masukkan nominal uang dan metode pencairan (transfer bank/tunai), lalu pratinjau dan ajukan.",
+        "Tentukan periode bulan yang ingin dicairkan, centang minimal satu Kategori Bank Sampah (bisa multi-select), pilih rekening bank tujuan, masukkan nominal pencairan (maksimal sebesar Saldo Kredit Tersedia), dan bubuhkan tanda tangan elektronik Anda pada pad tanda tangan di bagian bawah.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-submit",
     popover: {
-      title: "Pratinjau & Ajukan",
+      title: "Prosedur Verifikasi & Pengajuan",
       description:
-        "Tekan tombol ini untuk meninjau surat bukti pembayaran sebelum melakukan pengiriman pengajuan pencairan simulasi.",
+        "Setelah data lengkap dan ditandatangani, klik tombol 'Pratinjau Pengajuan' untuk meninjau rancangan surat Bukti Pembayaran secara detail. Jika semua data sesuai, klik kirim untuk mengajukan. Status pengajuan Anda akan berubah menjadi 'Pending'.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-history",
     popover: {
-      title: "Tabel Riwayat Pencairan",
+      title: "Alur Persetujuan & Riwayat Pencairan",
       description:
-        "Detail riwayat transaksi penarikan dana beserta status persetujuan dari Admin (Pending, Berhasil, Ditolak) dapat dipantau di sini.",
+        "Pengajuan berstatus Pending akan diperiksa oleh Admin/Superadmin. Setelah disetujui, admin akan melakukan transfer dana dan mengunggah foto bukti transfer sehingga status berubah menjadi 'Berhasil'. Anda dapat memantau status serta mencetak dokumen PDF bukti pembayaran resmi melalui tabel riwayat ini.",
       side: "top" as const,
     },
   },
@@ -210,8 +210,19 @@ export default function PencairanDanaPage() {
     setCustomAmount((base + extra).toString());
   }, [data?.kredit, biayaTambahan, showBiayaTambahanForm]);
 
-  const [kategoriSumber, setKategoriSumber] =
-    useState<KategoriSumber>("bank-sampah-induk");
+  const [kategoriSumber, setKategoriSumber] = useState<KategoriSumber[]>([
+    "bank-sampah-induk",
+  ]);
+
+  const toggleKategori = (val: KategoriSumber) => {
+    setKategoriSumber((prev) => {
+      if (prev.includes(val)) {
+        if (prev.length === 1) return prev; // Pertahankan minimal 1 terpilih
+        return prev.filter((item) => item !== val);
+      }
+      return [...prev, val];
+    });
+  };
   const [ttdBase64, setTtdBase64] = useState<string | null>(null);
   const [ttdError, setTtdError] = useState("");
   const [isCompressingTtd, setIsCompressingTtd] = useState(false);
@@ -441,7 +452,7 @@ export default function PencairanDanaPage() {
         setCatatanBiayaTambahan("");
         setShowBiayaTambahanForm(false);
         setTtdBase64(null);
-        setKategoriSumber("bank-sampah-induk");
+        setKategoriSumber(["bank-sampah-induk"]);
         loadMonthData(selectedYear, selectedMonth);
       } else {
         if (res.errors) setErrors(res.errors);
@@ -755,9 +766,15 @@ export default function PencairanDanaPage() {
                     <Clock className="w-2.5 h-2.5" /> Sedang Berjalan
                   </span>
                 ) : sudahDicairkan ? (
-                  <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/25 text-amber-200 border border-amber-400/30 rounded-full px-2.5 py-1">
-                    <LockKeyhole className="w-2.5 h-2.5" /> Sudah Dicairkan
-                  </span>
+                  pencairanAktif?.status === "pending" ? (
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/25 text-amber-200 border border-amber-400/30 rounded-full px-2.5 py-1">
+                      <Clock className="w-2.5 h-2.5" /> Pending
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30 rounded-full px-2.5 py-1">
+                      <LockKeyhole className="w-2.5 h-2.5" /> Sudah Dicairkan
+                    </span>
+                  )
                 ) : currentKredit > 0 ? (
                   <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30 rounded-full px-2.5 py-1">
                     <CheckCircle2 className="w-2.5 h-2.5" /> Siap Dicairkan
@@ -921,6 +938,8 @@ export default function PencairanDanaPage() {
                     ttdBase64={pencairanAktif.ttdPenyerahUrl || null}
                     kategoriSumber={kategoriSumber}
                     ttdAdminBase64={pencairanAktif.ttdPenerimaUrl || null}
+                    biayaTambahan={pencairanAktif.biayaTambahan || 0}
+                    catatanBiayaTambahan={pencairanAktif.catatanBiayaTambahan}
                   />
                 </div>
               </div>
@@ -1087,14 +1106,31 @@ export default function PencairanDanaPage() {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setKategoriSumber(opt.value)}
-                      className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold transition-all cursor-pointer text-center ${
-                        kategoriSumber === opt.value
-                          ? "bg-primary-600 border-primary-600 text-white shadow-md shadow-primary-600/20"
+                      onClick={() => toggleKategori(opt.value)}
+                      className={`py-3 px-3 rounded-xl border-2 text-[11px] font-bold flex items-center justify-start gap-2 transition-all cursor-pointer ${
+                        kategoriSumber.includes(opt.value)
+                          ? "bg-primary-50/50 border-primary-600 text-primary-900 shadow-xs"
                           : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300"
                       }`}
                     >
-                      {opt.label}
+                      <div
+                        className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all shrink-0 ${
+                          kategoriSumber.includes(opt.value)
+                            ? "bg-primary-600 border-primary-600 text-white"
+                            : "border-neutral-300 bg-white"
+                        }`}
+                      >
+                        {kategoriSumber.includes(opt.value) && (
+                          <svg
+                            className="w-2.5 h-2.5 fill-current"
+                            viewBox="0 0 20 20"
+                          >
+                            <title>Checkmark</title>
+                            <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="truncate">{opt.label}</span>
                     </button>
                   ))}
                 </div>
@@ -1267,6 +1303,12 @@ export default function PencairanDanaPage() {
                 keterangan={keterangan}
                 ttdBase64={ttdBase64 || "/sampel_1.png"}
                 kategoriSumber={kategoriSumber}
+                biayaTambahan={
+                  showBiayaTambahanForm ? Number(biayaTambahan) || 0 : 0
+                }
+                catatanBiayaTambahan={
+                  showBiayaTambahanForm ? catatanBiayaTambahan : null
+                }
               />
             </div>
 

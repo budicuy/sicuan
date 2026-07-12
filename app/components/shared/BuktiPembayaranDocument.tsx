@@ -337,6 +337,7 @@ export interface BuktiPembayaranData {
   // Pembayaran
   tarifDasar: number;
   biayaTambahan: number;
+  catatanBiayaTambahan?: string | null;
   totalTagihan: number;
   metodePembayaran: string; // "tunai" | "transfer" | "qris"
   keterangan?: string | null;
@@ -564,12 +565,26 @@ export function BuktiPembayaranDocument({
             <Text style={styles.payValue}>{formatRupiah(data.tarifDasar)}</Text>
           </View>
           <View style={styles.payRow}>
-            <Text style={styles.payLabel}>Biaya Tambahan Per Kg/Ton</Text>
+            <Text style={styles.payLabel}>Biaya Tambahan</Text>
             <Text style={styles.payColon}>:</Text>
             <Text style={styles.payValue}>
               {formatRupiah(data.biayaTambahan)}
             </Text>
           </View>
+          {data.biayaTambahan > 0 && data.catatanBiayaTambahan ? (
+            <View style={[styles.payRow, { marginTop: -2 }]}>
+              <Text
+                style={[
+                  styles.payLabel,
+                  { fontSize: 7.5, color: "#666", fontStyle: "italic" },
+                ]}
+              >
+                * Catatan: {data.catatanBiayaTambahan}
+              </Text>
+              <Text style={styles.payColon}></Text>
+              <Text style={styles.payValue}></Text>
+            </View>
+          ) : null}
           <View
             style={[
               styles.payRow,
