@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { Users } from "lucide-react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createNasabah,
   deleteNasabah,
@@ -48,64 +49,13 @@ export default function NasabahPage() {
   const [search, setSearch] = useState("");
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: NasabahWithUser[];
-    totalItems: number;
-  } | null>(null);
 
   const handleTourStart = () => {
-    savedStateRef.current = {
-      data,
-      totalItems,
-    };
     setIsTourActive(true);
-    setData([
-      {
-        id: 1,
-        userId: 101,
-        nik: "637101xxxxxxx",
-        tanggalLahir: "1995-05-12",
-        noTelepon: "0882022xxxxx",
-        email: "demo-nasabah1@gmail.com",
-        alamat: "Jl. Melati No. 12 (Demo)",
-        jenisBank: "BCA",
-        noRekening: "872615xxx",
-        poin: 120,
-        user: {
-          name: "Nasabah Konsumen Demo",
-          username: "nasabah_demo",
-          role: "konsumen",
-          status: "Aktif",
-        },
-      },
-      {
-        id: 2,
-        userId: 102,
-        nik: "637102xxxxxxx",
-        tanggalLahir: "1990-01-01",
-        noTelepon: "0882022yyyyy",
-        email: "demo-warmindo1@gmail.com",
-        alamat: "Jl. Mawar No. 45 (Demo)",
-        jenisBank: "BNI",
-        noRekening: "123456xxx",
-        poin: 0,
-        user: {
-          name: "Warmindo Demo",
-          username: "warmindo_demo",
-          role: "warmindo",
-          status: "Aktif",
-        },
-      },
-    ]);
-    setTotalItems(2);
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-    }
   };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
@@ -372,16 +322,22 @@ export default function NasabahPage() {
 
       <div
         id="tour-admin-nasabah-header"
-        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
       >
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-            Master Data Nasabah
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Kelola akun login dan profil nasabah secara bersamaan dalam satu
-            tampilan.
-          </p>
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
+            <Users className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+              Master Data Nasabah
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Kelola akun login dan profil nasabah secara bersamaan dalam satu
+              tampilan
+            </p>
+          </div>
         </div>
       </div>
 

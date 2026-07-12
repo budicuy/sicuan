@@ -6,19 +6,26 @@ import {
   Eye,
   FileText,
   Loader2,
+  Pencil,
   Printer,
+  Trash2,
   X,
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import type { UpdateSetorPayload } from "@/app/(admin-superadmin)/laporan/konsumen/action";
 import {
+  deleteSetorSampah,
   getCurrentUserRole,
   getMySetoran,
+  updateSetorSampah,
   updateSetorSampahStatus,
 } from "@/app/(admin-superadmin)/laporan/konsumen/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
+import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import { DataTable } from "@/app/components/shared/DataTable";
+import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import type { SetorSampahItem } from "@/app/types";
 
 export default function LaporanKonsumenPage() {
@@ -52,6 +59,162 @@ export default function LaporanKonsumenPage() {
     string | null
   >(null);
 
+  const [selectedYear, setSelectedYear] = useState<number>(() =>
+    new Date().getFullYear(),
+  );
+
+  // Superadmin: Edit & Delete
+  const [deleteRequest, setDeleteRequest] = useState<SetorSampahItem | null>(
+    null,
+  );
+  const [editRequest, setEditRequest] = useState<SetorSampahItem | null>(null);
+  const [editForm, setEditForm] = useState<UpdateSetorPayload>({});
+  const [isTimbanganCleared, setIsTimbanganCleared] = useState(false);
+  const [isDeletePending, startDeleteTransition] = useTransition();
+  const [isEditPending, startEditTransition] = useTransition();
+  const [feedback, setFeedback] = useState<{
+    isOpen: boolean;
+    type: "success" | "error";
+    title: string;
+    message: string;
+  }>({ isOpen: false, type: "success", title: "", message: "" });
+
+  const showFeedback = (
+    type: "success" | "error",
+    title: string,
+    message: string,
+  ) => setFeedback({ isOpen: true, type, title, message });
+
+  const handleOpenEdit = (item: SetorSampahItem) => {
+    setEditRequest(item);
+    setIsTimbanganCleared(false);
+    setEditForm({
+      jenisSampah: item.jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+      beratKg: item.beratKg,
+      tanggalSetor: item.tanggalSetor,
+      catatan: item.catatan,
+      status: item.status as "pending" | "diterima" | "ditolak",
+      fotoBuktiTambahanUrls: item.fotoBuktiTambahan || [],
+      newFotoBuktiTambahanBase64: [],
+    });
+  };
+
+  const handleRemoveFotoTimbangan = () => {
+    setIsTimbanganCleared(true);
+    setEditForm((f) => ({
+      ...f,
+      fotoTimbanganBase64: undefined,
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditForm((f) => ({
+        ...f,
+        fotoTimbanganBase64: reader.result as string,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAdditionalFilesChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const readFiles = async () => {
+      const base64s: string[] = [
+        ...(editForm.newFotoBuktiTambahanBase64 || []),
+      ];
+      for (const file of Array.from(files)) {
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        base64s.push(base64);
+      }
+      setEditForm((f) => ({ ...f, newFotoBuktiTambahanBase64: base64s }));
+    };
+    readFiles();
+  };
+
+  const handleRemoveExistingBukti = (url: string) => {
+    setEditForm((f) => ({
+      ...f,
+      fotoBuktiTambahanUrls: (f.fotoBuktiTambahanUrls || []).filter(
+        (u) => u !== url,
+      ),
+    }));
+  };
+
+  const handleRemoveNewBukti = (idx: number) => {
+    setEditForm((f) => ({
+      ...f,
+      newFotoBuktiTambahanBase64: (f.newFotoBuktiTambahanBase64 || []).filter(
+        (_, i) => i !== idx,
+      ),
+    }));
+  };
+
+  const handleEdit = () => {
+    if (!editRequest) return;
+    const hasTimbangan =
+      editForm.fotoTimbanganBase64 ||
+      (!isTimbanganCleared && editRequest?.fotoTimbangan);
+    if (!hasTimbangan) {
+      showFeedback("error", "Validasi Gagal", "Foto timbangan wajib diunggah.");
+      return;
+    }
+    const totalAdditional =
+      (editForm.fotoBuktiTambahanUrls?.length || 0) +
+      (editForm.newFotoBuktiTambahanBase64?.length || 0);
+    if (totalAdditional < 1) {
+      showFeedback(
+        "error",
+        "Validasi Gagal",
+        "Foto bukti tambahan minimal harus 1 gambar.",
+      );
+      return;
+    }
+    if (totalAdditional > 3) {
+      showFeedback(
+        "error",
+        "Validasi Gagal",
+        "Foto bukti tambahan maksimal 3 gambar.",
+      );
+      return;
+    }
+    startEditTransition(async () => {
+      const res = await updateSetorSampah(editRequest.id, editForm);
+      setEditRequest(null);
+      if (res.success) {
+        showFeedback("success", "Berhasil Diperbarui", res.message);
+        loadData();
+      } else {
+        showFeedback("error", "Gagal", res.message);
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deleteRequest) return;
+    startDeleteTransition(async () => {
+      const res = await deleteSetorSampah(deleteRequest.id);
+      setDeleteRequest(null);
+      if (res.success) {
+        showFeedback("success", "Berhasil Dihapus", res.message);
+        loadData();
+      } else {
+        showFeedback("error", "Gagal", res.message);
+      }
+    });
+  };
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -64,6 +227,7 @@ export default function LaporanKonsumenPage() {
         sortBy,
         sortOrder,
         roleTarget: "konsumen",
+        selectedYear,
       });
       setData(res.data as SetorSampahItem[]);
       setTotalItems(res.total);
@@ -75,7 +239,15 @@ export default function LaporanKonsumenPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, pageSize, searchQuery, filterValues, sortBy, sortOrder]);
+  }, [
+    currentPage,
+    pageSize,
+    searchQuery,
+    filterValues,
+    sortBy,
+    sortOrder,
+    selectedYear,
+  ]);
 
   const loadUserRole = useCallback(async () => {
     try {
@@ -291,6 +463,42 @@ export default function LaporanKonsumenPage() {
     },
   ];
 
+  // Superadmin aksi tambahan (edit & hapus) dirender terpisah per-baris via wrapper
+  const renderSuperadminActions = (item: SetorSampahItem) =>
+    userRole === "superadmin" ? (
+      <div className="flex gap-1 mt-1.5 pt-1.5 border-t border-neutral-100">
+        <button
+          type="button"
+          onClick={() => handleOpenEdit(item)}
+          className="flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold border border-amber-200 cursor-pointer transition-all"
+        >
+          <Pencil className="w-3 h-3" /> Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => setDeleteRequest(item)}
+          className="flex items-center gap-1 px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-[10px] font-bold border border-red-200 cursor-pointer transition-all"
+        >
+          <Trash2 className="w-3 h-3" /> Hapus
+        </button>
+      </div>
+    ) : null;
+
+  // Wrap kolom Aksi agar superadmin lihat tombol tambahan
+  const columnsWithSuperadmin = columns.map((col) =>
+    col.header !== "Aksi"
+      ? col
+      : {
+          ...col,
+          render: (item: SetorSampahItem) => (
+            <div>
+              {col.render(item)}
+              {renderSuperadminActions(item)}
+            </div>
+          ),
+        },
+  );
+
   const filters = [
     {
       id: "jenisSampah",
@@ -331,28 +539,46 @@ export default function LaporanKonsumenPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 print:hidden">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-primary-100">
+      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
             <FileText className="w-6 h-6 text-primary-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900">
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
               Laporan Setoran Konsumen
             </h1>
-            <p className="text-sm text-neutral-500">
+            <p className="text-xs text-neutral-500 mt-0.5">
               Historis dan verifikasi aktivitas setoran sampah kategori Konsumen
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Year Selector Only */}
+          <div className="flex items-center gap-3 bg-neutral-50 p-2 rounded-2xl border border-neutral-200 shrink-0 w-full md:w-auto">
+            <div className="flex flex-col gap-0.5 min-w-20">
+              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block pl-1">
+                Tahun
+              </span>
+              <input
+                type="number"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-white border border-neutral-200 rounded-xl text-xs font-bold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 text-neutral-750 shadow-2xs text-center w-full font-mono"
+                min={2020}
+                max={2100}
+              />
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-sm transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-sm transition-colors cursor-pointer shadow-2xs h-[52px]"
           >
             <Printer className="w-4 h-4" />
             Cetak Laporan
@@ -411,7 +637,7 @@ export default function LaporanKonsumenPage() {
         ) : (
           <DataTable
             data={data}
-            columns={columns}
+            columns={columnsWithSuperadmin}
             totalItems={totalItems}
             currentPage={currentPage}
             pageSize={pageSize}
@@ -682,6 +908,306 @@ export default function LaporanKonsumenPage() {
           </div>
         </div>
       )}
+
+      {/* SUPERADMIN: Modal Edit Setoran */}
+      {editRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-neutral-100 p-6 relative animate-in zoom-in-95 duration-200 space-y-4">
+            <button
+              type="button"
+              onClick={() => setEditRequest(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all border-0 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2.5 pb-2 border-b border-neutral-100">
+              <Pencil className="w-5 h-5 text-amber-600" />
+              <h3 className="text-base font-bold text-neutral-800">
+                Edit Setoran
+              </h3>
+              <span className="ml-auto text-[10px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full border border-amber-200">
+                SUPERADMIN
+              </span>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div>
+                <label
+                  htmlFor="edit-setor-jenis"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Jenis Sampah
+                </label>
+                <select
+                  id="edit-setor-jenis"
+                  value={editForm.jenisSampah ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      jenisSampah: e.target.value as
+                        | "Karton"
+                        | "Etiket"
+                        | "Paper Cup",
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                >
+                  <option value="Karton">Karton</option>
+                  <option value="Etiket">Etiket</option>
+                  <option value="Paper Cup">Paper Cup</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-setor-berat"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Berat (kg)
+                </label>
+                <input
+                  id="edit-setor-berat"
+                  type="number"
+                  step="0.01"
+                  value={editForm.beratKg ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      beratKg: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-setor-tanggal"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Tanggal Setor
+                </label>
+                <input
+                  id="edit-setor-tanggal"
+                  type="date"
+                  value={editForm.tanggalSetor ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, tanggalSetor: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-setor-status-k"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Status
+                </label>
+                <select
+                  id="edit-setor-status-k"
+                  value={editForm.status ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      status: e.target.value as
+                        | "pending"
+                        | "diterima"
+                        | "ditolak",
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="diterima">Diterima</option>
+                  <option value="ditolak">Ditolak</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-setor-foto"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Foto Timbangan
+                </label>
+                <div className="space-y-2">
+                  {editForm.fotoTimbanganBase64 ? (
+                    <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-48 shadow-xs group">
+                      <Image
+                        src={editForm.fotoTimbanganBase64}
+                        alt="Preview baru"
+                        fill
+                        className="object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveFotoTimbangan}
+                        className="absolute top-1.5 right-1.5 bg-red-650/90 text-white hover:bg-red-750 rounded-full p-1 shadow-sm border-0 cursor-pointer"
+                        aria-label="Hapus foto timbangan baru"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : !isTimbanganCleared && editRequest?.fotoTimbangan ? (
+                    <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-48 shadow-xs group">
+                      <Image
+                        src={editRequest.fotoTimbangan}
+                        alt="Preview sekarang"
+                        fill
+                        className="object-contain"
+                        unoptimized
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveFotoTimbangan}
+                        className="absolute top-1.5 right-1.5 bg-red-650/90 text-white hover:bg-red-750 rounded-full p-1 shadow-sm border-0 cursor-pointer"
+                        aria-label="Hapus foto timbangan sekarang"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <input
+                      id="edit-setor-foto"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="block w-full text-xs text-neutral-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
+                    />
+                  )}
+                </div>
+              </div>
+              {/* Foto Bukti Tambahan */}
+              <div>
+                <label
+                  htmlFor="edit-setor-foto-tambahan"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Foto Tambahan
+                </label>
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {/* Foto Tambahan Lama (Existing) */}
+                  {(editForm.fotoBuktiTambahanUrls || []).map((url) => (
+                    <div
+                      key={url}
+                      className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-24 shadow-xs group"
+                    >
+                      <Image
+                        src={url}
+                        alt="Bukti tambahan"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingBukti(url)}
+                        className="absolute top-1 right-1 bg-red-650/90 text-white hover:bg-red-750 rounded-full p-1 shadow-sm border-0 cursor-pointer"
+                        aria-label="Hapus foto tambahan"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Foto Tambahan Baru (Base64) */}
+                  {(editForm.newFotoBuktiTambahanBase64 || []).map(
+                    (base64, idx) => (
+                      <div
+                        key={`new-${base64.substring(0, 30)}-${idx}`}
+                        className="relative aspect-video w-full rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-24 shadow-xs group"
+                      >
+                        <Image
+                          src={base64}
+                          alt="Bukti tambahan baru"
+                          fill
+                          className="object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveNewBukti(idx)}
+                          className="absolute top-1 right-1 bg-red-650/90 text-white hover:bg-red-750 rounded-full p-1 shadow-sm border-0 cursor-pointer"
+                          aria-label="Batalkan foto tambahan baru"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ),
+                  )}
+                </div>
+                {(editForm.fotoBuktiTambahanUrls || []).length +
+                  (editForm.newFotoBuktiTambahanBase64 || []).length <
+                  3 && (
+                  <input
+                    id="edit-setor-foto-tambahan"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleAdditionalFilesChange}
+                    className="block w-full text-xs text-neutral-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="edit-setor-catatan"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Catatan
+                </label>
+                <textarea
+                  id="edit-setor-catatan"
+                  value={editForm.catatan ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, catatan: e.target.value }))
+                  }
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setEditRequest(null)}
+                className="flex-1 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-600 hover:bg-neutral-50 cursor-pointer bg-white"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleEdit}
+                disabled={isEditPending}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border-0 cursor-pointer"
+              >
+                {isEditPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Pencil className="w-4 h-4" />
+                )}
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUPERADMIN: ConfirmModal Hapus */}
+      <ConfirmModal
+        isOpen={!!deleteRequest}
+        onClose={() => setDeleteRequest(null)}
+        onConfirm={handleDelete}
+        message={`Hapus setoran "${deleteRequest?.nomorSetor}" milik "${deleteRequest?.user?.name ?? "nasabah"}" secara permanen? Tindakan ini tidak dapat dibatalkan.`}
+        isPending={isDeletePending}
+        variant="danger"
+      />
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={feedback.isOpen}
+        onClose={() => setFeedback((p) => ({ ...p, isOpen: false }))}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+      />
     </div>
   );
 }

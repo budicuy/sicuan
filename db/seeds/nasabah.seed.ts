@@ -167,6 +167,52 @@ export async function seedNasabah() {
     });
   }
 
+  // New Bank Sampah 1 (Gotong Royong)
+  const bsBanjarbaru = userMap.get("banksampah.banjarbaru");
+  if (bsBanjarbaru) {
+    profilesToInsert.push({
+      id: bsBanjarbaru.id,
+      name: bsBanjarbaru.name,
+      username: bsBanjarbaru.username,
+      role: "bank-sampah",
+      status: "Aktif",
+      nik: null,
+      tanggalLahir: null,
+      noTelepon: "081521617747",
+      email: "banksampah.banjarbaru@gmail.com",
+      alamat:
+        "Jl. Trikora RT. 05 RW. 04 Kelurahan Loktabat Selatan Kec. Banjarbaru Selatan, Banjarbaru Kalimantan Selatan",
+      jenisBank: "BNI",
+      noRekening: "6123456789",
+      poin: null,
+      latitude: null,
+      longitude: null,
+    });
+  }
+
+  // New Bank Sampah 2 (Sidoarjo)
+  const bsSidoarjo = userMap.get("banksampah.sidoarjo");
+  if (bsSidoarjo) {
+    profilesToInsert.push({
+      id: bsSidoarjo.id,
+      name: bsSidoarjo.name,
+      username: bsSidoarjo.username,
+      role: "bank-sampah",
+      status: "Aktif",
+      nik: null,
+      tanggalLahir: null,
+      noTelepon: null,
+      email: "banksampah.sidoarjo@gmail.com",
+      alamat:
+        "Jl. Sidoarjo RT. 30 RW. 06 Kel. Syamsudin Noor Kec. Landasan Ulin Kota Banjarbaru Kalimantan Selatan",
+      jenisBank: "BCA",
+      noRekening: "923441123",
+      poin: null,
+      latitude: null,
+      longitude: null,
+    });
+  }
+
   // 6. Profil konsumen dari CSV
   const csvProfiles = parseCsvProfiles();
   for (const p of csvProfiles) {

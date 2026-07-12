@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { Coins } from "lucide-react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createHargaSampah,
   deleteHargaSampah,
@@ -48,55 +49,13 @@ export default function HargaSampahPage() {
   const [search, setSearch] = useState("");
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: HargaSampah[];
-    totalItems: number;
-  } | null>(null);
 
   const handleTourStart = () => {
-    savedStateRef.current = {
-      data,
-      totalItems,
-    };
     setIsTourActive(true);
-    setData([
-      {
-        id: 1,
-        jenisSampah: "Karton",
-        minBerat: 1,
-        maxBerat: 10,
-        harga: 500,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 2,
-        jenisSampah: "Karton",
-        minBerat: 11,
-        maxBerat: 50,
-        harga: 750,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 3,
-        jenisSampah: "Etiket",
-        minBerat: 1,
-        maxBerat: 10,
-        harga: 300,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ]);
-    setTotalItems(3);
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-    }
   };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
@@ -314,16 +273,22 @@ export default function HargaSampahPage() {
 
       <div
         id="tour-admin-harga-header"
-        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
       >
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-            Master Data Harga Sampah (Range)
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Kelola data master rentang berat setoran beserta harga tebus rupiah
-            flat yang didapatkan nasabah.
-          </p>
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
+            <Coins className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+              Master Data Harga Sampah (Range)
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Kelola data master rentang berat setoran beserta harga tebus
+              rupiah flat yang didapatkan nasabah
+            </p>
+          </div>
         </div>
       </div>
 

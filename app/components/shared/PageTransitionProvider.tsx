@@ -128,7 +128,7 @@ export default function PageTransitionProvider({
                   </span>
                 </div>
                 <p className="text-[10px] text-primary-300 font-bold tracking-wider uppercase mt-1.5 leading-none">
-                  PT. INDOFOOD CBP SUKSES MAKMUR TBK
+                  PT. INDOFOOD SUKSES MAKMUR TBK
                 </p>
               </div>
             </div>

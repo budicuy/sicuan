@@ -1,5 +1,6 @@
 "use client";
 
+import { Truck } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createEkspedisi,
@@ -223,15 +224,21 @@ export default function EkspedisiPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-            Master Data Ekspedisi
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Kelola daftar vendor penyedia jasa ekspedisi untuk pengiriman sampah
-            dari mitra Warmindo.
-          </p>
+      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
+            <Truck className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+              Master Data Ekspedisi
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Kelola daftar vendor penyedia jasa ekspedisi untuk pengiriman
+              sampah dari mitra Warmindo
+            </p>
+          </div>
         </div>
       </div>
 

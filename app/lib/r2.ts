@@ -1,6 +1,10 @@
 "use server";
 
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
 const r2Client = new S3Client({
@@ -11,6 +15,33 @@ const r2Client = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
   },
 });
+
+/**
+ * Hapus object dari Cloudflare R2 berdasarkan URL atau key.
+ */
+export async function deleteFromR2(urlOrKey: string): Promise<boolean> {
+  try {
+    let key = urlOrKey;
+    const endpoint = process.env.R2_ENDPOINT ?? "";
+    if (urlOrKey.startsWith(endpoint)) {
+      key = urlOrKey.substring(endpoint.length).replace(/^\//, "");
+    } else if (urlOrKey.startsWith("http")) {
+      const url = new URL(urlOrKey);
+      key = url.pathname.replace(/^\//, "");
+    }
+
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME ?? "",
+      Key: key,
+    });
+
+    await r2Client.send(command);
+    return true;
+  } catch (error) {
+    console.error("Gagal menghapus file dari R2:", error);
+    return false;
+  }
+}
 
 /**
  * Optimasi gambar sebelum upload:

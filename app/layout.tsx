@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SICUAN — Sistem Informasi Cerdas Ubah Anorganik Jadi Nilai",
   description:
-    "Kelola setoran sampah anorganik Anda bersama PT. Indofood CBP Sukses Makmur Tbk untuk mendapatkan poin reward menarik dan saldo kredit.",
+    "Kelola setoran sampah anorganik Anda bersama PT. Indofood  Sukses Makmur Tbk untuk mendapatkan poin reward menarik dan saldo kredit.",
 };
 
 export default function RootLayout({

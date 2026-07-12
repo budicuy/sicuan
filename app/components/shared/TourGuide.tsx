@@ -55,17 +55,44 @@ export function TourGuide({ pageKey, steps, onStart, onEnd }: TourGuideProps) {
       prevBtnText: "← Kembali",
       doneBtnText: "Selesai ✔",
       steps: stepsRef.current.map((s) => {
-        const stepConfig = {
-          element: s.element,
-          popover: {
-            title: s.popover.title,
-            description: s.popover.description,
-            side: s.popover.side,
-            align: s.popover.align,
-            onNextClick: s.popover.onNextClick,
-          },
-          onHighlighted: s.onHighlighted,
+        const popoverConfig: {
+          title: string;
+          description: string;
+          side?: "top" | "right" | "bottom" | "left";
+          align?: "start" | "center" | "end";
+          onNextClick?: (
+            element: Element | undefined,
+            step: unknown,
+            options: unknown,
+          ) => void;
+        } = {
+          title: s.popover.title,
+          description: s.popover.description,
+          side: s.popover.side,
+          align: s.popover.align,
         };
+
+        if (s.popover.onNextClick) {
+          popoverConfig.onNextClick = s.popover.onNextClick;
+        }
+
+        const stepConfig: {
+          element?: string | Element;
+          popover: typeof popoverConfig;
+          onHighlighted?: (
+            element: Element | undefined,
+            step: unknown,
+            options: unknown,
+          ) => void;
+        } = {
+          element: s.element,
+          popover: popoverConfig,
+        };
+
+        if (s.onHighlighted) {
+          stepConfig.onHighlighted = s.onHighlighted;
+        }
+
         return stepConfig;
       }),
       onDestroyed: () => {

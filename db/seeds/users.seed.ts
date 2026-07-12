@@ -31,7 +31,7 @@ function parseCsv(): CsvUser[] {
 
       // birthdate: MM/DD/YYYY → password: DDMMYY
       const dateParts = birthdate.split("/");
-      let passwordString = "Password123";
+      let passwordString = "  ";
 
       if (dateParts.length === 3) {
         const [mm, dd, yyyy] = dateParts;
@@ -103,6 +103,24 @@ export async function seedUsers() {
       username: "banksampah.demo",
       password: hashDefault,
       email: "gaming.budicuy@gmail.com",
+      role: "bank-sampah",
+      status: "Aktif",
+    },
+    // New Bank Sampah 1
+    {
+      name: "Bank Sampah Banjarbaru / TPS 3R Gotong Royong",
+      username: "banksampah.banjarbaru",
+      password: hashDefault,
+      email: "banksampah.banjarbaru@gmail.com",
+      role: "bank-sampah",
+      status: "Aktif",
+    },
+    // New Bank Sampah 2
+    {
+      name: "TPS 3R Sidoarjo",
+      username: "banksampah.sidoarjo",
+      password: hashDefault,
+      email: "banksampah.sidoarjo@gmail.com",
       role: "bank-sampah",
       status: "Aktif",
     },

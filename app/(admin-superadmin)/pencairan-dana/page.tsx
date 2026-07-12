@@ -9,6 +9,8 @@ import {
   Eye,
   FileText,
   Loader2,
+  Pencil,
+  Trash2,
   User,
   X,
 } from "lucide-react";
@@ -17,10 +19,14 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   approveDisbursement,
   approveDisbursementCash,
+  deletePencairan,
   getAllDisbursementsForAdmin,
   getBuktiPembayaranByPencairanId,
   getBuktiPembayaranPdfBase64,
+  getCurrentUserRole,
   rejectDisbursement,
+  type UpdatePencairanPayload,
+  updatePencairan,
 } from "@/app/(admin-superadmin)/pencairan-dana/action";
 import { BuktiPembayaranModal } from "@/app/(admin-superadmin)/pencairan-dana/BuktiPembayaranModal";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
@@ -66,6 +72,7 @@ const pencairanSteps = [
 export default function PencairanAdminPage() {
   const [items, setItems] = useState<DisbursementItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>("");
 
   const [isTourActive, setIsTourActive] = useState(false);
   const savedItemsRef = useRef<DisbursementItem[]>([]);
@@ -115,6 +122,15 @@ export default function PencairanAdminPage() {
   const [buktiPembayaranItem, setBuktiPembayaranItem] =
     useState<DisbursementItem | null>(null);
   const [existingDocId, setExistingDocId] = useState<number | null>(null);
+
+  // Superadmin: Edit & Delete states
+  const [deleteRequest, setDeleteRequest] = useState<DisbursementItem | null>(
+    null,
+  );
+  const [editRequest, setEditRequest] = useState<DisbursementItem | null>(null);
+  const [editForm, setEditForm] = useState<UpdatePencairanPayload>({});
+  const [isEditPending, startEditTransition] = useTransition();
+  const [isDeletePending, startDeleteTransition] = useTransition();
 
   // File upload state for approval
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -168,6 +184,53 @@ export default function PencairanAdminPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Fetch role user untuk guard superadmin di client
+  useEffect(() => {
+    getCurrentUserRole().then((role) => {
+      if (role) setUserRole(role);
+    });
+  }, []);
+
+  const handleOpenEditModal = (item: DisbursementItem) => {
+    setEditRequest(item);
+    setEditForm({
+      jumlah: item.jumlah,
+      metodePembayaran: item.metodePembayaran as "transfer" | "tunai" | "qris",
+      jenisBank: item.jenisBank,
+      noRekening: item.noRekening,
+      keterangan: item.keterangan,
+      status: item.status as "pending" | "berhasil" | "ditolak",
+    });
+  };
+
+  const handleEdit = () => {
+    if (!editRequest) return;
+    startEditTransition(async () => {
+      const res = await updatePencairan(editRequest.id, editForm);
+      if (res.success) {
+        showFeedback("success", "Berhasil Diperbarui", res.message);
+        setEditRequest(null);
+        loadData();
+      } else {
+        showFeedback("error", "Gagal Memperbarui", res.message);
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deleteRequest) return;
+    startDeleteTransition(async () => {
+      const res = await deletePencairan(deleteRequest.id);
+      if (res.success) {
+        showFeedback("success", "Berhasil Dihapus", res.message);
+        setDeleteRequest(null);
+        loadData();
+      } else {
+        showFeedback("error", "Gagal Menghapus", res.message);
+      }
+    });
+  };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -446,9 +509,26 @@ export default function PencairanAdminPage() {
     {
       header: "Nominal",
       render: (item) => (
-        <span className="font-extrabold text-neutral-800 text-sm">
-          Rp {item.jumlah.toLocaleString("id-ID")}
-        </span>
+        <div>
+          <span className="font-extrabold text-neutral-800 text-sm block">
+            Rp {item.jumlah.toLocaleString("id-ID")}
+          </span>
+          {item.biayaTambahan && item.biayaTambahan > 0 ? (
+            <>
+              <div className="text-[10px] text-amber-600 font-bold mt-0.5">
+                + Tambahan: Rp {item.biayaTambahan.toLocaleString("id-ID")}
+              </div>
+              {item.catatanBiayaTambahan && (
+                <div
+                  className="text-[9px] text-neutral-400 italic max-w-32 truncate"
+                  title={item.catatanBiayaTambahan}
+                >
+                  ({item.catatanBiayaTambahan})
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
       ),
     },
     {
@@ -468,54 +548,83 @@ export default function PencairanAdminPage() {
     {
       header: "Aksi / Dokumen",
       render: (item) => (
-        <div className="flex flex-wrap justify-center items-center gap-1.5">
-          {item.status === "pending" ? (
-            <>
-              <span
-                id={
-                  item.id === 99901 ? "tour-admin-pencairan-action" : undefined
-                }
-              >
+        <div className="flex flex-col items-center gap-1.5">
+          {/* Tombol aksi utama (semua role admin) */}
+          <div className="flex flex-wrap justify-center items-center gap-1.5">
+            {item.status === "pending" ? (
+              <>
+                <span
+                  id={
+                    item.id === 99901
+                      ? "tour-admin-pencairan-action"
+                      : undefined
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleOpenBuktiPembayaran(item)}
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
+                  >
+                    <CreditCard className="w-3 h-3" />
+                    Proses
+                  </button>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setRejectRequest(item)}
+                  className="px-2.5 py-1.5 bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer"
+                >
+                  Tolak
+                </button>
+              </>
+            ) : item.status === "berhasil" ? (
+              <>
+                {item.buktiTransfer && (
+                  <button
+                    type="button"
+                    onClick={() => setViewProofUrl(item.buktiTransfer ?? null)}
+                    className="px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Bukti
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => handleOpenBuktiPembayaran(item)}
-                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
+                  className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border-0"
                 >
-                  <CreditCard className="w-3 h-3" />
-                  Proses
+                  <FileText className="w-3 h-3" />
+                  Cetak PDF
                 </button>
+              </>
+            ) : (
+              <span className="text-neutral-400 italic text-[11px]">
+                Ditolak
               </span>
+            )}
+          </div>
+
+          {/* Tombol Edit & Hapus — khusus superadmin */}
+          {userRole === "superadmin" && item.id !== 99901 && (
+            <div className="flex items-center gap-1 pt-1 border-t border-neutral-100 w-full justify-center">
               <button
                 type="button"
-                onClick={() => setRejectRequest(item)}
-                className="px-2.5 py-1.5 bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer"
+                onClick={() => handleOpenEditModal(item)}
+                className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
               >
-                Tolak
+                <Pencil className="w-2.5 h-2.5" />
+                Edit
               </button>
-            </>
-          ) : item.status === "berhasil" ? (
-            <>
-              {item.buktiTransfer && (
-                <button
-                  type="button"
-                  onClick={() => setViewProofUrl(item.buktiTransfer ?? null)}
-                  className="px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <Eye className="w-3 h-3" />
-                  Bukti
-                </button>
-              )}
               <button
                 type="button"
-                onClick={() => handleOpenBuktiPembayaran(item)}
-                className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border-0"
+                onClick={() => setDeleteRequest(item)}
+                className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
               >
-                <FileText className="w-3 h-3" />
-                Cetak PDF
+                <Trash2 className="w-2.5 h-2.5" />
+                Hapus
               </button>
-            </>
-          ) : (
-            <span className="text-neutral-400 italic text-[11px]">Ditolak</span>
+            </div>
           )}
         </div>
       ),
@@ -872,6 +981,203 @@ export default function PencairanAdminPage() {
         type={feedback.type}
         title={feedback.title}
         message={feedback.message}
+      />
+
+      {/* ── SUPERADMIN: Modal Edit Pencairan ─────────────────────────── */}
+      {editRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-neutral-100 overflow-hidden p-6 relative animate-in zoom-in-95 duration-200 space-y-5">
+            <button
+              type="button"
+              onClick={() => setEditRequest(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all border-0 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2.5 pb-2 border-b border-neutral-150">
+              <Pencil className="w-5 h-5 text-amber-600" />
+              <h3 className="text-base font-bold text-neutral-800">
+                Edit Data Pencairan
+              </h3>
+              <span className="ml-auto text-[10px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full border border-amber-200">
+                SUPERADMIN
+              </span>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              {/* Jumlah */}
+              <div>
+                <label
+                  htmlFor="edit-jumlah"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Jumlah (Rp)
+                </label>
+                <input
+                  id="edit-jumlah"
+                  type="number"
+                  value={editForm.jumlah ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      jumlah: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                />
+              </div>
+
+              {/* Metode Pembayaran */}
+              <div>
+                <label
+                  htmlFor="edit-metode"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Metode Pembayaran
+                </label>
+                <select
+                  id="edit-metode"
+                  value={editForm.metodePembayaran ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      metodePembayaran: e.target.value as
+                        | "transfer"
+                        | "tunai"
+                        | "qris",
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                >
+                  <option value="transfer">Transfer</option>
+                  <option value="tunai">Tunai</option>
+                </select>
+              </div>
+
+              {/* Jenis Bank */}
+              <div>
+                <label
+                  htmlFor="edit-jenis-bank"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Jenis Bank
+                </label>
+                <input
+                  id="edit-jenis-bank"
+                  type="text"
+                  value={editForm.jenisBank ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, jenisBank: e.target.value }))
+                  }
+                  placeholder="Contoh: BCA, BNI, Mandiri"
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                />
+              </div>
+
+              {/* No. Rekening */}
+              <div>
+                <label
+                  htmlFor="edit-no-rekening"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  No. Rekening
+                </label>
+                <input
+                  id="edit-no-rekening"
+                  type="text"
+                  value={editForm.noRekening ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, noRekening: e.target.value }))
+                  }
+                  placeholder="Nomor rekening tujuan"
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                />
+              </div>
+
+              {/* Status */}
+              <div>
+                <label
+                  htmlFor="edit-status"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Status
+                </label>
+                <select
+                  id="edit-status"
+                  value={editForm.status ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      status: e.target.value as
+                        | "pending"
+                        | "berhasil"
+                        | "ditolak",
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="berhasil">Berhasil</option>
+                  <option value="ditolak">Ditolak</option>
+                </select>
+              </div>
+
+              {/* Keterangan */}
+              <div>
+                <label
+                  htmlFor="edit-keterangan"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Keterangan
+                </label>
+                <textarea
+                  id="edit-keterangan"
+                  value={editForm.keterangan ?? ""}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, keterangan: e.target.value }))
+                  }
+                  rows={2}
+                  placeholder="Keterangan tambahan (opsional)"
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setEditRequest(null)}
+                className="flex-1 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-600 hover:bg-neutral-50 cursor-pointer bg-white"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleEdit}
+                disabled={isEditPending}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 border-0 cursor-pointer"
+              >
+                {isEditPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Pencil className="w-4 h-4" />
+                )}
+                Simpan Perubahan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SUPERADMIN: Confirm Hapus Pencairan ──────────────────────── */}
+      <ConfirmModal
+        isOpen={!!deleteRequest}
+        onClose={() => setDeleteRequest(null)}
+        onConfirm={handleDelete}
+        message={`Apakah Anda yakin ingin menghapus data pencairan senilai Rp ${deleteRequest?.jumlah.toLocaleString("id-ID")} milik "${deleteRequest?.user.name}" secara permanen? Tindakan ini tidak dapat dibatalkan.`}
+        isPending={isDeletePending}
       />
     </div>
   );

@@ -146,6 +146,8 @@ export async function getDisbursementDataForMonth(
             metodePembayaran: pencairanAktif.metodePembayaran,
             createdAt: pencairanAktif.createdAt,
             keterangan: pencairanAktif.keterangan || "",
+            biayaTambahan: pencairanAktif.biayaTambahan,
+            catatanBiayaTambahan: pencairanAktif.catatanBiayaTambahan,
             ttdPenyerahUrl: pencairanAktif.ttdPenyerahUrl || null,
             ttdPenerimaUrl: ttdPenerimaUrl,
           }
@@ -259,6 +261,12 @@ export async function requestDisbursement(
   const metodePembayaran =
     (formData.get("metodePembayaran") as string) || "transfer";
   const keterangan = (formData.get("keterangan") as string) || "";
+  const biayaTambahanStr = formData.get("biayaTambahan") as string;
+  const biayaTambahan = biayaTambahanStr
+    ? Number.parseInt(biayaTambahanStr, 10)
+    : 0;
+  const catatanBiayaTambahan =
+    (formData.get("catatanBiayaTambahan") as string) || null;
   const ttdPenyerahBase64 = (formData.get("ttdPenyerah") as string) || "";
   const selectedYear = Number.parseInt(
     (formData.get("selectedYear") as string) || "0",
@@ -350,7 +358,8 @@ export async function requestDisbursement(
       selectedYear,
       selectedMonth,
     );
-    if (kredit < jumlah) {
+    const baseKredit = jumlah - biayaTambahan;
+    if (kredit < baseKredit) {
       return {
         success: false,
         message: `Kredit bulan ini tidak mencukupi. Total kredit bulan ini Rp ${kredit.toLocaleString("id-ID")}`,
@@ -359,7 +368,8 @@ export async function requestDisbursement(
     }
   } else if (user.role === "warmindo") {
     const credit = await getWarmindoMonthlyCredit(user.id);
-    if (credit < jumlah) {
+    const baseKredit = jumlah - biayaTambahan;
+    if (credit < baseKredit) {
       return {
         success: false,
         message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${credit.toLocaleString("id-ID")}`,
@@ -390,6 +400,8 @@ export async function requestDisbursement(
       status: "pending" as "pending" | "berhasil" | "ditolak",
       metodePembayaran: metodePembayaran as "tunai" | "transfer",
       keterangan: keterangan || null,
+      biayaTambahan,
+      catatanBiayaTambahan,
       ttdPenyerahUrl,
       periodeBulan: finalMonth,
       periodeTahun: finalYear,
@@ -456,6 +468,8 @@ export async function getDisbursementHistory() {
       status: pencairanDana.status,
       metodePembayaran: pencairanDana.metodePembayaran,
       keterangan: pencairanDana.keterangan,
+      biayaTambahan: pencairanDana.biayaTambahan,
+      catatanBiayaTambahan: pencairanDana.catatanBiayaTambahan,
       ttdPenyerahUrl: pencairanDana.ttdPenyerahUrl,
       buktiTransfer: pencairanDana.buktiTransfer,
       createdAt: pencairanDana.createdAt,

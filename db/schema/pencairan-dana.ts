@@ -37,6 +37,8 @@ export const pencairanDana = pgTable(
       .notNull()
       .default("transfer"),
     keterangan: text("keterangan"), // catatan tambahan
+    biayaTambahan: integer("biaya_tambahan").default(0).notNull(),
+    catatanBiayaTambahan: text("catatan_biaya_tambahan"),
     ttdPenyerahUrl: text("ttd_penyerah_url"), // TTD mitra (uploaded when submitting)
     buktiTransfer: text("bukti_transfer"), // proof photo uploaded by admin (only for transfer/qris)
     periodeBulan: integer("periode_bulan"), // 1-indexed month (1-12) for the billing period

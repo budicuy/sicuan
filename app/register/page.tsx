@@ -72,7 +72,7 @@ export default function RegisterPage() {
                 </span>
               </span>
               <p className="text-[9px] text-primary-300 font-medium tracking-wider uppercase leading-none mt-0.5">
-                PT. Indofood CBP Sukses Makmur Tbk
+                PT. Indofood Sukses Makmur Tbk
               </p>
             </div>
           </TransitionLink>
@@ -131,7 +131,7 @@ export default function RegisterPage() {
 
         {/* Bottom copyright */}
         <div className="relative z-10 text-xs text-primary-300/80">
-          &copy; {new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk —
+          &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk —
           Noodle Division Banjarmasin. All rights reserved.
         </div>
       </div>
@@ -380,7 +380,7 @@ export default function RegisterPage() {
 
         {/* Bottom mobile disclaimer */}
         <div className="text-[10px] text-neutral-400 text-center w-full max-w-xs mx-auto lg:hidden pt-4">
-          &copy; {new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk.
+          &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk.
         </div>
       </div>
     </div>
