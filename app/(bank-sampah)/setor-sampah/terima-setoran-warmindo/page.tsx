@@ -78,7 +78,10 @@ export default function TerimaSetoranWarmindoPage() {
   const [isPending, startTransition] = useTransition();
 
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<{
+    warmindoSetoran: WarmindoSetoranItem[];
+    warmindoFilterStatus: string;
+  } | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = {

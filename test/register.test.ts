@@ -42,7 +42,7 @@ mock.module("../db", () => {
           },
         },
       },
-      transaction: async (callback: any) => {
+      transaction: async (callback: (tx: unknown) => Promise<unknown>) => {
         const tx = {
           insert: () => {
             return {

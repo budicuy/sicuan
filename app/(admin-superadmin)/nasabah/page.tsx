@@ -48,7 +48,10 @@ export default function NasabahPage() {
   const [search, setSearch] = useState("");
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<{
+    data: NasabahWithUser[];
+    totalItems: number;
+  } | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = {

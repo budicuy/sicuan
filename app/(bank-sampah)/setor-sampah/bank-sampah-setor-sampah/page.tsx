@@ -148,7 +148,17 @@ export default function BankSampahSetorSampah() {
   const [catatan, setCatatan] = useState("");
 
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<{
+    jenisSampah: string;
+    beratKg: string;
+    fotoTimbangan: string | null;
+    catatan: string;
+    history: SetorSampahItem[];
+    fotoBuktiList: string[];
+    aiValidated: boolean;
+    beratAiKg: number | null;
+    requestManual: boolean;
+  } | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = {
@@ -205,12 +215,16 @@ export default function BankSampahSetorSampah() {
         description:
           "Masukkan estimasi berat sampah Anda dalam satuan kilogram (Kg). Jika dibiarkan kosong saat menekan 'Lanjut', sistem akan otomatis mengisi dengan angka default 1.00 kg.",
         side: "right" as const,
-        onNextClick: (_element: any, _step: any, options: any) => {
+        onNextClick: (
+          _element: Element | undefined,
+          _step: unknown,
+          options: unknown,
+        ) => {
           const input = document.getElementById("beratKg") as HTMLInputElement;
           if (!input || !input.value.trim() || Number(input.value) <= 0) {
             setBeratKg("1.00");
           }
-          options.driver.moveNext();
+          (options as { driver: { moveNext: () => void } }).driver.moveNext();
         },
       },
     },

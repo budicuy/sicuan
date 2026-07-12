@@ -56,14 +56,11 @@ export default function ProfilPage() {
       alamat: "Jl. Sudirman No. 45, Jakarta",
       jenisBank: "BNI",
       noRekening: "123456xxx",
-      poin: 250,
-      kredit: 0,
       role: "konsumen",
       status: "aktif",
       username: "username demo",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any);
+      tanggalLahir: "1995-01-01",
+    });
   };
 
   const handleTourEnd = () => {

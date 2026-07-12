@@ -57,7 +57,11 @@ export default function LaporanBankSampahPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<{
+    data: SetorSampahItem[];
+    totalItems: number;
+    totalBerat: number;
+  } | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = {

@@ -129,7 +129,14 @@ export default function PencairanDanaPage() {
   const [loading, setLoading] = useState(true);
 
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<{
+    data: UserData | null;
+    history: DisbursementHistoryItem[];
+    customAmount: string;
+    metode: MetodePembayaran;
+    keterangan: string;
+    ttdBase64: string | null;
+  } | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = {

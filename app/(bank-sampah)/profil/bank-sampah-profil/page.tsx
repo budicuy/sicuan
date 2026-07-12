@@ -46,7 +46,7 @@ export default function ProfilPage() {
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<typeof profile | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = profile;
@@ -69,7 +69,7 @@ export default function ProfilPage() {
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    setProfile(savedStateRef.current);
+    setProfile(savedStateRef.current as typeof profile);
   };
 
   // Transition hooks for server actions

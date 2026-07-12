@@ -228,7 +228,7 @@ export async function createNasabah(
           password: hashedPassword,
           email: parsed.data.email || null,
           role: parsed.data.role,
-          status: parsed.data.status as any,
+          status: parsed.data.status as "Aktif" | "Nonaktif",
         })
         .returning();
 
@@ -241,7 +241,7 @@ export async function createNasabah(
         name: parsed.data.name,
         username: parsed.data.username,
         role: parsed.data.role,
-        status: parsed.data.status as any,
+        status: parsed.data.status as "Aktif" | "Nonaktif",
         nik: parsed.data.nik,
         tanggalLahir: parsed.data.tanggalLahir,
         noTelepon: parsed.data.noTelepon,
@@ -332,7 +332,7 @@ export async function updateNasabah(
           username: parsed.data.username,
           email: parsed.data.email || null,
           role: parsed.data.role,
-          status: parsed.data.status as any,
+          status: parsed.data.status as "Aktif" | "Nonaktif",
           ...(hashedPassword ? { password: hashedPassword } : {}),
           updatedAt: new Date(),
         })
@@ -344,7 +344,7 @@ export async function updateNasabah(
           name: parsed.data.name,
           username: parsed.data.username,
           role: parsed.data.role,
-          status: parsed.data.status as any,
+          status: parsed.data.status as "Aktif" | "Nonaktif",
           nik: parsed.data.nik,
           tanggalLahir: parsed.data.tanggalLahir,
           noTelepon: parsed.data.noTelepon,

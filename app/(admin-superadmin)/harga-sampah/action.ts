@@ -42,7 +42,12 @@ export async function getHargaSampah(params?: {
   }
 
   if (jenisSampah) {
-    whereConditions.push(eq(hargaSampah.jenisSampah, jenisSampah as any));
+    whereConditions.push(
+      eq(
+        hargaSampah.jenisSampah,
+        jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+      ),
+    );
   }
 
   const queryCondition =
@@ -158,7 +163,7 @@ export async function createHargaSampah(
     }
 
     const insertData = categories.map((cat) => ({
-      jenisSampah: cat as any,
+      jenisSampah: cat as "Karton" | "Etiket" | "Paper Cup",
       minBerat,
       maxBerat,
       harga,
@@ -212,7 +217,10 @@ export async function updateHargaSampah(
       .from(hargaSampah)
       .where(
         and(
-          eq(hargaSampah.jenisSampah, jenisSampah as any),
+          eq(
+            hargaSampah.jenisSampah,
+            jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+          ),
           ne(hargaSampah.id, id),
           maxBerat !== null ? lt(hargaSampah.minBerat, maxBerat) : undefined,
           or(isNull(hargaSampah.maxBerat), gt(hargaSampah.maxBerat, minBerat)),

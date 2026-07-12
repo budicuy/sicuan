@@ -125,7 +125,7 @@ export default function DashboardPage() {
   const [_loading, setLoading] = useState(true);
 
   const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<typeof data | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = data;
@@ -186,7 +186,7 @@ export default function DashboardPage() {
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    setData(savedStateRef.current);
+    setData(savedStateRef.current as typeof data);
   };
 
   const loadData = useCallback(() => {

@@ -278,8 +278,8 @@ export async function requestDisbursement(
         metodePembayaran !== "tunai" ? (profile.jenisBank ?? "") : null,
       noRekening:
         metodePembayaran !== "tunai" ? (profile.noRekening ?? "") : null,
-      status: "pending" as any,
-      metodePembayaran: metodePembayaran as any,
+      status: "pending" as "pending" | "berhasil" | "ditolak",
+      metodePembayaran: metodePembayaran as "tunai" | "transfer",
       keterangan: keterangan || null,
       ttdPenyerahUrl,
     });

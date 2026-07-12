@@ -11,9 +11,17 @@ interface TourStep {
     description: string;
     side?: "top" | "right" | "bottom" | "left";
     align?: "start" | "center" | "end";
-    onNextClick?: (element: any, step: any, options: any) => void;
+    onNextClick?: (
+      element: Element | undefined,
+      step: unknown,
+      options: unknown,
+    ) => void;
   };
-  onHighlighted?: (element: any, step: any, options: any) => void;
+  onHighlighted?: (
+    element: Element | undefined,
+    step: unknown,
+    options: unknown,
+  ) => void;
 }
 
 interface TourGuideProps {
@@ -47,21 +55,17 @@ export function TourGuide({ pageKey, steps, onStart, onEnd }: TourGuideProps) {
       prevBtnText: "← Kembali",
       doneBtnText: "Selesai ✔",
       steps: stepsRef.current.map((s) => {
-        const stepConfig: any = {
+        const stepConfig = {
           element: s.element,
           popover: {
             title: s.popover.title,
             description: s.popover.description,
             side: s.popover.side,
             align: s.popover.align,
+            onNextClick: s.popover.onNextClick,
           },
+          onHighlighted: s.onHighlighted,
         };
-        if (s.popover.onNextClick) {
-          stepConfig.popover.onNextClick = s.popover.onNextClick;
-        }
-        if (s.onHighlighted) {
-          stepConfig.onHighlighted = s.onHighlighted;
-        }
         return stepConfig;
       }),
       onDestroyed: () => {

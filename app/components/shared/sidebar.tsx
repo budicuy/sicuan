@@ -198,7 +198,11 @@ export function SidebarLayout({
                     key={item.href || item.label}
                     type="button"
                     onClick={(e) => {
-                      clickHandler(e as any);
+                      clickHandler(
+                        e as React.MouseEvent<
+                          HTMLAnchorElement | HTMLButtonElement
+                        >,
+                      );
                       handleLinkClick();
                     }}
                     className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm transition-all text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50 border-0 cursor-pointer text-left bg-transparent"
@@ -337,7 +341,11 @@ export function SidebarLayout({
                 key={item.href || item.label}
                 type="button"
                 onClick={(e) => {
-                  clickHandler(e as any);
+                  clickHandler(
+                    e as React.MouseEvent<
+                      HTMLAnchorElement | HTMLButtonElement
+                    >,
+                  );
                   handleLinkClick();
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50 border-0 cursor-pointer text-left bg-transparent"

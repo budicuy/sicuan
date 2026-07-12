@@ -21,7 +21,13 @@ export default function WarmindoSetorSampah() {
   const [catatan, setCatatan] = useState("");
 
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<{
+    jenisSampah: string;
+    beratKg: string;
+    selectedBankSampahId: string;
+    catatan: string;
+    history: SetorSampahItem[];
+  } | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = {
@@ -62,31 +68,6 @@ export default function WarmindoSetorSampah() {
   };
 
   const setorSteps = [
-    {
-      element: "#tour-warmindo-setor-jenis",
-      popover: {
-        title: "Pilih Jenis Sampah",
-        description:
-          "Pilih jenis sampah Indofood yang ingin disetor (Karton, Etiket, atau Paper Cup).",
-        side: "right" as const,
-      },
-    },
-    {
-      element: "#tour-warmindo-setor-berat",
-      popover: {
-        title: "Masukkan Berat Estimasi",
-        description:
-          "Masukkan estimasi berat sampah Anda dalam satuan kilogram (Kg). Jika dibiarkan kosong saat menekan 'Lanjut', sistem akan otomatis mengisi dengan angka default 10.00 kg.",
-        side: "right" as const,
-        onNextClick: (_element: any, _step: any, options: any) => {
-          const input = document.getElementById("beratKg") as HTMLInputElement;
-          if (!input || !input.value.trim() || Number(input.value) <= 0) {
-            setBeratKg("10.00");
-          }
-          options.driver.moveNext();
-        },
-      },
-    },
     {
       element: "#tour-warmindo-setor-tujuan",
       popover: {

@@ -10,7 +10,9 @@ export async function getPoinPerKg(jenis: string): Promise<number> {
     const result = await db
       .select({ pointPerKg: poinSampah.pointPerKg })
       .from(poinSampah)
-      .where(eq(poinSampah.jenisSampah, jenis as any))
+      .where(
+        eq(poinSampah.jenisSampah, jenis as "Karton" | "Etiket" | "Paper Cup"),
+      )
       .limit(1);
 
     return result[0]?.pointPerKg ?? 0;
@@ -33,7 +35,10 @@ export async function getHargaRange(
       .from(hargaSampah)
       .where(
         and(
-          eq(hargaSampah.jenisSampah, jenis as any),
+          eq(
+            hargaSampah.jenisSampah,
+            jenis as "Karton" | "Etiket" | "Paper Cup",
+          ),
           lte(hargaSampah.minBerat, berat),
           or(isNull(hargaSampah.maxBerat), gte(hargaSampah.maxBerat, berat)),
         ),

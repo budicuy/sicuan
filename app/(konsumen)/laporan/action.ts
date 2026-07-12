@@ -80,7 +80,7 @@ export async function updateSetorSampahStatus(
       where: eq(nasabah.id, item.userId),
     });
 
-    const { totalPoin, totalKredit } = await calculateSetoranReward(
+    const { totalPoin } = await calculateSetoranReward(
       item.jenisSampah,
       item.beratKg,
       depositor?.role ?? "konsumen",
@@ -481,7 +481,7 @@ export async function submitSetorSampah(
       }
     }
 
-    const { totalPoin, totalKredit } = await calculateSetoranReward(
+    const { totalPoin } = await calculateSetoranReward(
       jenisSampah,
       beratKg,
       user.role,
@@ -659,7 +659,7 @@ export async function bankSampahTerimaSetoran(
       where: eq(nasabah.id, item.userId),
     });
 
-    const { totalPoin, totalKredit } = await calculateSetoranReward(
+    const { totalPoin } = await calculateSetoranReward(
       item.jenisSampah,
       item.beratKg,
       depositor?.role ?? "warmindo",
@@ -929,7 +929,7 @@ export async function createSetorSampah(
   }
 
   // Hitung poin & kredit berdasarkan harga & poin aktif
-  const { totalPoin, totalKredit } = await calculateSetoranReward(
+  const { totalPoin } = await calculateSetoranReward(
     jenisSampah,
     beratKg,
     user.role,

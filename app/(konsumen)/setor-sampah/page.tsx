@@ -140,7 +140,16 @@ function CameraCapture({
 
 export default function KonsumenSetorSampah() {
   const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<any>(null);
+  const savedStateRef = useRef<{
+    jenisSampah: string;
+    beratKg: string;
+    fotoTimbangan: string | null;
+    catatan: string;
+    aiValidated: boolean;
+    beratAiKg: number | null;
+    fotoBuktiList: string[];
+    history: SetorSampahItem[];
+  } | null>(null);
 
   const handleTourStart = () => {
     savedStateRef.current = {
@@ -247,12 +256,16 @@ export default function KonsumenSetorSampah() {
         description:
           "Silakan ketik estimasi berat sampah Anda dalam kilogram (contoh: 1.00) pada kolom ini.",
         side: "right" as const,
-        onNextClick: (_element: any, _step: any, options: any) => {
+        onNextClick: (
+          _element: Element | undefined,
+          _step: unknown,
+          options: unknown,
+        ) => {
           const input = document.getElementById("beratKg") as HTMLInputElement;
           if (!input || !input.value.trim() || Number(input.value) <= 0) {
             setBeratKg("1.00");
           }
-          options.driver.moveNext();
+          (options as { driver: { moveNext: () => void } }).driver.moveNext();
         },
       },
     },
