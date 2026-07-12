@@ -31,7 +31,7 @@ function parseCsv(): CsvUser[] {
 
       // birthdate: MM/DD/YYYY → password: DDMMYY
       const dateParts = birthdate.split("/");
-      let passwordString = "Password123";
+      let passwordString = "  ";
 
       if (dateParts.length === 3) {
         const [mm, dd, yyyy] = dateParts;

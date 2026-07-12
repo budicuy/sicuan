@@ -12,7 +12,7 @@ import {
   validateBeratTolerance,
 } from "@/app/lib/gemini-weight-reader";
 import { calculateSetoranReward } from "@/app/lib/pricing";
-import { uploadImageToR2 } from "@/app/lib/r2";
+import { deleteFromR2, uploadImageToR2 } from "@/app/lib/r2";
 import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
@@ -272,9 +272,8 @@ export async function getMySetoran(params: {
 
   const filters: SQL[] = [eq(setorSampah.kategoriNasabah, roleTarget)];
 
-  if (params?.selectedMonth && params?.selectedYear) {
+  if (params?.selectedYear) {
     filters.push(
-      sql`extract(month from ${setorSampah.createdAt}) = ${params.selectedMonth}`,
       sql`extract(year from ${setorSampah.createdAt}) = ${params.selectedYear}`,
     );
   }
@@ -1090,4 +1089,176 @@ export async function createSetorSampah(
 
   revalidatePath("/setor-sampah");
   return { success: true };
+}
+
+// ── SUPERADMIN ONLY: Edit & Hapus Setoran ────────────────────────────────────
+
+export interface UpdateSetorPayload {
+  jenisSampah?: "Karton" | "Etiket" | "Paper Cup";
+  beratKg?: number;
+  tanggalSetor?: string;
+  catatan?: string | null;
+  status?: "pending" | "diverifikasi" | "diserahkan" | "diterima" | "ditolak";
+  fotoTimbanganBase64?: string;
+  fotoBuktiTambahanUrls?: string[];
+  newFotoBuktiTambahanBase64?: string[];
+}
+
+/**
+ * Hapus setoran sampah secara permanen.
+ * Bank Sampah tidak punya poin — tidak ada rollback.
+ * Guard: superadmin only.
+ */
+export async function deleteSetorSampah(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "superadmin") {
+    return { success: false, message: "Akses ditolak. Hanya superadmin." };
+  }
+
+  try {
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
+    });
+
+    if (!item) {
+      return { success: false, message: "Data setoran tidak ditemukan." };
+    }
+
+    // Hapus foto timbangan dari R2
+    if (item.fotoTimbangan) {
+      await deleteFromR2(item.fotoTimbangan);
+    }
+    // Hapus foto bukti tambahan jika ada
+    if (item.fotoBuktiTambahan && Array.isArray(item.fotoBuktiTambahan)) {
+      for (const foto of item.fotoBuktiTambahan) {
+        if (foto) {
+          await deleteFromR2(foto);
+        }
+      }
+    }
+
+    await db.delete(setorSampah).where(eq(setorSampah.id, id));
+
+    revalidatePath("/laporan/bank-sampah");
+    return { success: true, message: "Setoran berhasil dihapus." };
+  } catch (error) {
+    console.error("Gagal menghapus setoran:", error);
+    return { success: false, message: "Terjadi kesalahan server." };
+  }
+}
+
+/**
+ * Edit data setoran sampah bank sampah.
+ * Guard: superadmin only.
+ */
+export async function updateSetorSampah(
+  id: number,
+  payload: UpdateSetorPayload,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "superadmin") {
+    return { success: false, message: "Akses ditolak. Hanya superadmin." };
+  }
+
+  try {
+    const item = await db.query.setorSampah.findFirst({
+      where: eq(setorSampah.id, id),
+    });
+
+    if (!item) {
+      return { success: false, message: "Data setoran tidak ditemukan." };
+    }
+
+    let newFotoTimbanganUrl = item.fotoTimbangan;
+    if (
+      payload.fotoTimbanganBase64 &&
+      payload.fotoTimbanganBase64.trim() !== ""
+    ) {
+      // Hapus foto timbangan lama dari R2
+      if (item.fotoTimbangan) {
+        await deleteFromR2(item.fotoTimbangan);
+      }
+      // Upload foto timbangan baru ke R2
+      const uuid = randomUUID();
+      newFotoTimbanganUrl = await uploadImageToR2(
+        payload.fotoTimbanganBase64,
+        "setoran-timbangan",
+        `${item.userId}-${uuid}`,
+      );
+    }
+
+    // ── KELOLA FOTO BUKTI TAMBAHAN ───────────────────────────────────────────
+    const remainingUrls =
+      payload.fotoBuktiTambahanUrls !== undefined
+        ? payload.fotoBuktiTambahanUrls
+        : item.fotoBuktiTambahan || [];
+    const newPhotosCount = payload.newFotoBuktiTambahanBase64?.length || 0;
+    const finalPhotosCount = remainingUrls.length + newPhotosCount;
+
+    if (finalPhotosCount < 1 || finalPhotosCount > 3) {
+      return {
+        success: false,
+        message: "Foto bukti tambahan harus minimal 1 dan maksimal 3 gambar.",
+      };
+    }
+
+    let currentBuktiUrls = item.fotoBuktiTambahan || [];
+
+    // 1. Hapus foto yang dihapus superadmin dari R2
+    if (payload.fotoBuktiTambahanUrls !== undefined) {
+      const urlsToDelete = currentBuktiUrls.filter(
+        (u) => !remainingUrls.includes(u),
+      );
+      for (const url of urlsToDelete) {
+        await deleteFromR2(url);
+      }
+      currentBuktiUrls = remainingUrls;
+    }
+
+    // 2. Upload foto tambahan baru ke R2 jika ada
+    if (
+      payload.newFotoBuktiTambahanBase64 &&
+      payload.newFotoBuktiTambahanBase64.length > 0
+    ) {
+      const uuid = randomUUID();
+      let count = currentBuktiUrls.length + 1;
+      for (const base64 of payload.newFotoBuktiTambahanBase64) {
+        if (base64 && base64.trim() !== "") {
+          const url = await uploadImageToR2(
+            base64,
+            "setoran-bukti-tambahan",
+            `${item.userId}-${uuid}-${count}`,
+          );
+          currentBuktiUrls.push(url);
+          count++;
+        }
+      }
+    }
+
+    await db
+      .update(setorSampah)
+      .set({
+        ...(payload.jenisSampah !== undefined && {
+          jenisSampah: payload.jenisSampah,
+        }),
+        ...(payload.beratKg !== undefined && { beratKg: payload.beratKg }),
+        ...(payload.tanggalSetor !== undefined && {
+          tanggalSetor: payload.tanggalSetor,
+        }),
+        ...(payload.catatan !== undefined && { catatan: payload.catatan }),
+        ...(payload.status !== undefined && { status: payload.status }),
+        fotoTimbangan: newFotoTimbanganUrl,
+        fotoBuktiTambahan: currentBuktiUrls,
+        updatedAt: new Date(),
+      })
+      .where(eq(setorSampah.id, id));
+
+    revalidatePath("/laporan/bank-sampah");
+    return { success: true, message: "Setoran berhasil diperbarui." };
+  } catch (error) {
+    console.error("Gagal memperbarui setoran:", error);
+    return { success: false, message: "Terjadi kesalahan server." };
+  }
 }

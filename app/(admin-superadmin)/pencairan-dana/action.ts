@@ -347,6 +347,8 @@ export async function getAllDisbursementsForAdmin() {
       status: pencairanDana.status,
       metodePembayaran: pencairanDana.metodePembayaran,
       keterangan: pencairanDana.keterangan,
+      biayaTambahan: pencairanDana.biayaTambahan,
+      catatanBiayaTambahan: pencairanDana.catatanBiayaTambahan,
       ttdPenyerahUrl: pencairanDana.ttdPenyerahUrl,
       buktiTransfer: pencairanDana.buktiTransfer,
       periodeBulan: pencairanDana.periodeBulan,
@@ -546,6 +548,101 @@ export async function rejectDisbursement(
     return {
       success: false,
       message: "Terjadi kesalahan server saat menolak pencairan.",
+    };
+  }
+}
+
+// ── SUPERADMIN ACTIONS ────────────────────────────────────────────────────────
+
+export async function getCurrentUserRole(): Promise<string | null> {
+  const user = await getCurrentUser();
+  return user?.role ?? null;
+}
+
+export async function deletePencairan(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "superadmin") {
+    return { success: false, message: "Akses ditolak. Hanya superadmin." };
+  }
+
+  try {
+    const existing = await db.query.pencairanDana.findFirst({
+      where: eq(pencairanDana.id, id),
+    });
+
+    if (!existing) {
+      return { success: false, message: "Data pencairan tidak ditemukan." };
+    }
+
+    await db.delete(pencairanDana).where(eq(pencairanDana.id, id));
+
+    revalidatePath("/pencairan-dana");
+    return { success: true, message: "Data pencairan berhasil dihapus." };
+  } catch (error) {
+    console.error("Error deleting pencairan:", error);
+    return {
+      success: false,
+      message: "Terjadi kesalahan server saat menghapus data.",
+    };
+  }
+}
+
+export interface UpdatePencairanPayload {
+  jumlah?: number;
+  metodePembayaran?: "transfer" | "tunai" | "qris";
+  jenisBank?: string | null;
+  noRekening?: string | null;
+  keterangan?: string | null;
+  status?: "pending" | "berhasil" | "ditolak";
+}
+
+export async function updatePencairan(
+  id: number,
+  payload: UpdatePencairanPayload,
+): Promise<{ success: boolean; message: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "superadmin") {
+    return { success: false, message: "Akses ditolak. Hanya superadmin." };
+  }
+
+  try {
+    const existing = await db.query.pencairanDana.findFirst({
+      where: eq(pencairanDana.id, id),
+    });
+
+    if (!existing) {
+      return { success: false, message: "Data pencairan tidak ditemukan." };
+    }
+
+    await db
+      .update(pencairanDana)
+      .set({
+        ...(payload.jumlah !== undefined && { jumlah: payload.jumlah }),
+        ...(payload.metodePembayaran !== undefined && {
+          metodePembayaran: payload.metodePembayaran,
+        }),
+        ...(payload.jenisBank !== undefined && {
+          jenisBank: payload.jenisBank,
+        }),
+        ...(payload.noRekening !== undefined && {
+          noRekening: payload.noRekening,
+        }),
+        ...(payload.keterangan !== undefined && {
+          keterangan: payload.keterangan,
+        }),
+        ...(payload.status !== undefined && { status: payload.status }),
+      })
+      .where(eq(pencairanDana.id, id));
+
+    revalidatePath("/pencairan-dana");
+    return { success: true, message: "Data pencairan berhasil diperbarui." };
+  } catch (error) {
+    console.error("Error updating pencairan:", error);
+    return {
+      success: false,
+      message: "Terjadi kesalahan server saat memperbarui data.",
     };
   }
 }

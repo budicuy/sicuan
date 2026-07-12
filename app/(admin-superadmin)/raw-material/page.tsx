@@ -353,7 +353,7 @@ export default function RawMaterialPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-              Master Data Raw Material (Bahan Baku)
+              Master Data Raw Material
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
               Kelola acuan berat standar pengeluaran bahan baku pabrik Indofood

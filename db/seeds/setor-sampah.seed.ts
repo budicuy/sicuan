@@ -30,7 +30,7 @@ export async function seedSetorSampah() {
   if (rosiana) {
     const rosianaSetoran = [
       {
-        nomorSetor: "1/B/NDL/BJM/09/07/2026",
+        nomorSetor: "1/K/NDL/BJM/09/07/2026",
         userId: rosiana.id,
         jenisSampah: "Etiket" as const,
         beratKg: 0.45,
@@ -53,6 +53,111 @@ export async function seedSetorSampah() {
     console.log("✅ Seeded setoran Rosiana Dwi Hastuti (50023152)");
   } else {
     console.warn("⚠️ User Rosiana (50023152) tidak ditemukan, skip setoran.");
+  }
+
+  // ── DATA REAL: TPS 3R Sidoarjo (SPK-001) ──────────────────────────────────
+  // Dokumen: Mei 2026 | Tunai | Sampling produk 1 dus
+  // Plastik Kemasan: 2 kg → Total Tagihan: Rp25.000
+  const bsSidoarjo = await db.query.nasabah.findFirst({
+    where: (nasabah, { eq }) => eq(nasabah.username, "banksampah.sidoarjo"),
+  });
+
+  if (bsSidoarjo) {
+    await db.insert(setorSampah).values([
+      {
+        nomorSetor: "2/B/NDL/BJM/01/05/2026",
+        userId: bsSidoarjo.id,
+        jenisSampah: "Etiket" as const, // Plastik Kemasan (Etiket = jenis plastik di enum)
+        beratKg: 2.0,
+        beratAiKg: 2.0,
+        tanggalSetor: "2026-05-01",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampling produk 1 dus | Tarif Dasar Rp25.000 | Tunai",
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: "langsung",
+        createdAt: new Date("2026-05-01T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T08:00:00.000Z"),
+      },
+    ]);
+    console.log("✅ Seeded setoran TPS 3R Sidoarjo (SPK-001) — Mei 2026");
+  } else {
+    console.warn(
+      "⚠️ User banksampah.sidoarjo tidak ditemukan, skip setoran SPK-001.",
+    );
+  }
+
+  // ── DATA REAL: Bank Sampah Banjarbaru / TPS 3R Gotong Royong (SPK-002) ────
+  // Dokumen: Mei 2026 | Tunai | Sampling produk 1 dus
+  // Plastik Kemasan: 14.98 kg | Paper Cup: 15.01 kg | Karton: 1.50 kg
+  // Total: 31.49 kg → Total Tagihan: Rp200.000
+  const bsBanjarbaru = await db.query.nasabah.findFirst({
+    where: (nasabah, { eq }) => eq(nasabah.username, "banksampah.banjarbaru"),
+  });
+
+  if (bsBanjarbaru) {
+    await db.insert(setorSampah).values([
+      {
+        nomorSetor: "3/B/NDL/BJM/01/05/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Etiket" as const, // Plastik Kemasan
+        beratKg: 14.98,
+        beratAiKg: 14.98,
+        tanggalSetor: "2026-05-01",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampling produk 1 dus | Plastik Kemasan",
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: "langsung",
+        createdAt: new Date("2026-05-01T08:00:00.000Z"),
+        updatedAt: new Date("2026-05-01T08:00:00.000Z"),
+      },
+      {
+        nomorSetor: "4/B/NDL/BJM/01/05/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Paper Cup" as const,
+        beratKg: 15.01,
+        beratAiKg: 15.01,
+        tanggalSetor: "2026-05-01",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampling produk 1 dus | Paper Cup",
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: "langsung",
+        createdAt: new Date("2026-05-01T08:10:00.000Z"),
+        updatedAt: new Date("2026-05-01T08:10:00.000Z"),
+      },
+      {
+        nomorSetor: "5/B/NDL/BJM/01/05/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 1.5,
+        beratAiKg: 1.5,
+        tanggalSetor: "2026-05-01",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampling produk 1 dus | Sampah Karton",
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: "langsung",
+        createdAt: new Date("2026-05-01T08:20:00.000Z"),
+        updatedAt: new Date("2026-05-01T08:20:00.000Z"),
+      },
+    ]);
+    console.log(
+      "✅ Seeded setoran Bank Sampah Banjarbaru (SPK-002) — Mei 2026 (3 item: Plastik 14.98kg + Paper Cup 15.01kg + Karton 1.50kg)",
+    );
+  } else {
+    console.warn(
+      "⚠️ User banksampah.banjarbaru tidak ditemukan, skip setoran SPK-002.",
+    );
   }
 
   console.log("✅ Seeded split setoran and pencairan successfully");

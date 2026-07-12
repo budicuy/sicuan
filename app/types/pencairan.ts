@@ -21,6 +21,8 @@ export interface DisbursementItem {
   status: string;
   metodePembayaran: string;
   keterangan: string | null;
+  biayaTambahan?: number | null;
+  catatanBiayaTambahan?: string | null;
   ttdPenyerahUrl: string | null;
   /** Hanya ada di tabel admin page */
   buktiTransfer?: string | null;
@@ -48,6 +50,8 @@ export interface DisbursementHistoryItem {
   status: string;
   metodePembayaran: string;
   buktiTransfer: string | null;
+  biayaTambahan?: number | null;
+  catatanBiayaTambahan?: string | null;
   createdAt: string | Date;
   buktiPembayaranId: number | null;
 }
@@ -67,6 +71,8 @@ export interface PencairanAktif {
   metodePembayaran: string;
   createdAt: string | Date;
   keterangan?: string;
+  biayaTambahan?: number | null;
+  catatanBiayaTambahan?: string | null;
   ttdPenyerahUrl?: string | null;
   ttdPenerimaUrl?: string | null;
 }

@@ -682,7 +682,7 @@ export function BuktiPembayaranDocument({
                   { fontWeight: "bold", textDecoration: "underline" },
                 ]}
               >
-                (PT. Indofood CBP Sukses Makmur Tbk,)
+                (PT. Indofood Sukses Makmur Tbk,)
               </Text>
               <Text style={styles.ttdJabatan}>Pimpinan Perusahaan</Text>
             </View>
@@ -818,8 +818,8 @@ export function BuktiPembayaranDocument({
                 fontStyle: "italic",
               }}
             >
-              Dokumentasi bukti transfer bank resmi PT. Indofood CBP Sukses
-              Makmur Tbk.
+              Dokumentasi bukti transfer bank resmi PT. Indofood Sukses Makmur
+              Tbk.
             </Text>
           </View>
           <Text

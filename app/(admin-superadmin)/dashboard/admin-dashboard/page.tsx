@@ -70,7 +70,7 @@ const adminDashboardSteps = [
   {
     element: "#tour-admin-dashboard-trend-weekly",
     popover: {
-      title: "Tren Setoran Mingguan (1 Bulan)",
+      title: "Tren Setoran Mingguan",
       description:
         "Menampilkan akumulasi setoran per minggu di bulan yang terpilih untuk memantau fluktuasi jangka pendek.",
       side: "top" as const,
@@ -577,7 +577,7 @@ export default function DashboardPage() {
               <div className="flex justify-between items-start border-b border-neutral-100 pb-3 mb-4">
                 <div>
                   <h3 className="font-extrabold text-sm text-neutral-800">
-                    Tren Mingguan (1 Bulan)
+                    Tren Mingguan
                   </h3>
                   <p className="text-[10px] text-neutral-500 mt-0.5">
                     Bulan {selectedMonth} - {selectedYear}

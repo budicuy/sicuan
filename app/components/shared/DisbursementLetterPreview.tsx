@@ -340,7 +340,7 @@ export function DisbursementLetterPreview({
           </div>
           <div className="mt-1" />
           <p className="font-bold underline text-[10px] text-neutral-800">
-            (PT. Indofood CBP Sukses Makmur Tbk,)
+            (PT. Indofood Sukses Makmur Tbk,)
           </p>
           <p className="text-[9px] text-neutral-500 leading-tight">
             Pimpinan Perusahaan

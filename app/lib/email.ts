@@ -250,7 +250,7 @@ export async function sendPencairanNotifToAdmins(payload: {
           <tr>
             <td style="padding:20px 0;text-align:center;">
               <p style="margin:0;font-size:11px;color:#94a3b8;">
-                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+                © ${new Date().getFullYear()} PT. Indofood  Sukses Makmur Tbk — Bank Sampah
               </p>
             </td>
           </tr>
@@ -453,7 +453,7 @@ Terima kasih atas kontribusi Anda dalam menjaga lingkungan!
 
               <p style="margin:28px 0 0;text-align:center;font-size:10.5px;color:#94a3b8;">
                 Email ini dikirim secara otomatis oleh sistem SICUAN.<br/>
-                © PT. Indofood CBP Sukses Makmur Tbk
+                © PT. Indofood  Sukses Makmur Tbk
               </p>
 
             </td>
@@ -712,7 +712,7 @@ export async function sendSetoranNotifToAdmins(payload: {
           <tr>
             <td style="padding:20px 0;text-align:center;">
               <p style="margin:0;font-size:11px;color:#94a3b8;">
-                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+                © ${new Date().getFullYear()} PT. Indofood  Sukses Makmur Tbk — Bank Sampah
               </p>
             </td>
           </tr>
@@ -936,7 +936,7 @@ export async function sendHandoverNotifToBankSampah(payload: {
           <tr>
             <td style="padding:20px 0;text-align:center;">
               <p style="margin:0;font-size:11px;color:#94a3b8;">
-                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+                © ${new Date().getFullYear()} PT. Indofood  Sukses Makmur Tbk — Bank Sampah
               </p>
             </td>
           </tr>
@@ -1122,7 +1122,7 @@ export async function sendAssignmentNotifToWarmindo(payload: {
           <tr>
             <td style="padding:20px 0;text-align:center;">
               <p style="margin:0;font-size:11px;color:#94a3b8;">
-                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+                © ${new Date().getFullYear()} PT. Indofood  Sukses Makmur Tbk — Bank Sampah
               </p>
             </td>
           </tr>
@@ -1309,7 +1309,7 @@ export async function sendReceiptNotifToDepositor(payload: {
           <tr>
             <td style="padding:20px 0;text-align:center;">
               <p style="margin:0;font-size:11px;color:#94a3b8;">
-                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+                © ${new Date().getFullYear()} PT. Indofood  Sukses Makmur Tbk — Bank Sampah
               </p>
             </td>
           </tr>
@@ -1513,7 +1513,7 @@ export async function sendStatusUpdateNotifToDepositor(payload: {
           <tr>
             <td style="padding:20px 0;text-align:center;">
               <p style="margin:0;font-size:11px;color:#94a3b8;">
-                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+                © ${new Date().getFullYear()} PT. Indofood  Sukses Makmur Tbk — Bank Sampah
               </p>
             </td>
           </tr>
@@ -1691,7 +1691,7 @@ export async function sendPencairanPengajuanNotifToUser(payload: {
           <tr>
             <td style="padding:20px 0;text-align:center;">
               <p style="margin:0;font-size:11px;color:#94a3b8;">
-                © ${new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk — Bank Sampah
+                © ${new Date().getFullYear()} PT. Indofood  Sukses Makmur Tbk — Bank Sampah
               </p>
             </td>
           </tr>

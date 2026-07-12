@@ -76,6 +76,7 @@ Tujuan dari project ini adalah untuk mempermudah pengelolaan sampah yang dihasil
 6. ketika kamu membuat penjelasan tolong gunakan bahasa indonesia yang mudah dipahami dan jelas.
 7. Selalu jalankan linting menggunakan bun lint setelah melakukan perubahan kode agar kode yang ditulis tidak mengandung error, warning, atau bug.
 8. Selalu perbaiki fitur tour guide ketika ada perubahan pada halaman agar fitur tour guide tetap berjalan dengan baik.
+9. Selalu bikin planning sebelum melakukan perubahan atau fitur yang besar.
 
 
 

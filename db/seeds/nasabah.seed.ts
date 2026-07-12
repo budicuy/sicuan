@@ -182,8 +182,8 @@ export async function seedNasabah() {
       email: "banksampah.banjarbaru@gmail.com",
       alamat:
         "Jl. Trikora RT. 05 RW. 04 Kelurahan Loktabat Selatan Kec. Banjarbaru Selatan, Banjarbaru Kalimantan Selatan",
-      jenisBank: null,
-      noRekening: null,
+      jenisBank: "BNI",
+      noRekening: "6123456789",
       poin: null,
       latitude: null,
       longitude: null,
@@ -205,8 +205,8 @@ export async function seedNasabah() {
       email: "banksampah.sidoarjo@gmail.com",
       alamat:
         "Jl. Sidoarjo RT. 30 RW. 06 Kel. Syamsudin Noor Kec. Landasan Ulin Kota Banjarbaru Kalimantan Selatan",
-      jenisBank: null,
-      noRekening: null,
+      jenisBank: "BCA",
+      noRekening: "923441123",
       poin: null,
       latitude: null,
       longitude: null,

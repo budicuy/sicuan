@@ -87,7 +87,7 @@ export function BuktiPembayaranModal({
   );
   const [namaPenerima, setNamaPenerima] = useState("Admin");
   const [jabatanPenerima, _setJabatanPenerima] = useState(
-    "PT. Indofood CBP Sukses Makmur Tbk,",
+    "PT. Indofood  Sukses Makmur Tbk,",
   );
 
   // Admin TTD upload

@@ -82,7 +82,7 @@ export default function LoginPage() {
                 </span>
               </span>
               <p className="text-[9px] text-primary-300 font-medium tracking-wider uppercase leading-none mt-0.5">
-                PT. Indofood CBP Sukses Makmur Tbk
+                PT. Indofood Sukses Makmur Tbk
               </p>
             </div>
           </TransitionLink>
@@ -141,7 +141,7 @@ export default function LoginPage() {
 
         {/* Bottom copyright */}
         <div className="relative z-10 text-xs text-primary-300/80">
-          &copy; {new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk —
+          &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk —
           Noodle Division Banjarmasin. All rights reserved.
         </div>
       </div>
@@ -269,28 +269,6 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => handleUseDemo("budi.santoso", "170895")}
-                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
-                    >
-                      Gunakan ini
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span>•</span>
-                      <span className="font-semibold text-neutral-800">
-                        200032 (Martin)
-                      </span>
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase border border-emerald-200">
-                        Nasabah CSV
-                      </span>
-                      <span className="text-neutral-500 font-mono text-[9px]">
-                        (Lahir: 240368)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleUseDemo("200032", "240368")}
                       className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
                     >
                       Gunakan ini
@@ -473,7 +451,7 @@ export default function LoginPage() {
 
         {/* Bottom mobile disclaimer */}
         <div className="text-[10px] text-neutral-400 text-center w-full max-w-xs mx-auto lg:hidden pt-4 border-t border-neutral-100">
-          &copy; {new Date().getFullYear()} PT. Indofood CBP Sukses Makmur Tbk.
+          &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk.
         </div>
       </div>
     </div>

@@ -135,6 +135,9 @@ export default function PencairanDanaPage() {
     customAmount: string;
     metode: MetodePembayaran;
     keterangan: string;
+    biayaTambahan: string;
+    catatanBiayaTambahan: string;
+    showBiayaTambahanForm: boolean;
     ttdBase64: string | null;
   } | null>(null);
 
@@ -145,12 +148,18 @@ export default function PencairanDanaPage() {
       customAmount,
       metode,
       keterangan,
+      biayaTambahan,
+      catatanBiayaTambahan,
+      showBiayaTambahanForm,
       ttdBase64,
     };
     setIsTourActive(true);
     setCustomAmount("");
     setMetode("transfer");
     setKeterangan("");
+    setBiayaTambahan("");
+    setCatatanBiayaTambahan("");
+    setShowBiayaTambahanForm(false);
     setTtdBase64(null);
   };
 
@@ -162,6 +171,9 @@ export default function PencairanDanaPage() {
       setCustomAmount(savedStateRef.current.customAmount);
       setMetode(savedStateRef.current.metode);
       setKeterangan(savedStateRef.current.keterangan);
+      setBiayaTambahan(savedStateRef.current.biayaTambahan);
+      setCatatanBiayaTambahan(savedStateRef.current.catatanBiayaTambahan);
+      setShowBiayaTambahanForm(savedStateRef.current.showBiayaTambahanForm);
       setTtdBase64(savedStateRef.current.ttdBase64);
     }
   };
@@ -170,6 +182,19 @@ export default function PencairanDanaPage() {
   const [customAmount, setCustomAmount] = useState("");
   const [metode, setMetode] = useState<MetodePembayaran>("transfer");
   const [keterangan, setKeterangan] = useState("");
+  const [biayaTambahan, setBiayaTambahan] = useState("");
+  const [catatanBiayaTambahan, setCatatanBiayaTambahan] = useState("");
+  const [showBiayaTambahanForm, setShowBiayaTambahanForm] = useState(false);
+
+  // Sync customAmount automatically when data.kredit or additional fees change
+  useEffect(() => {
+    const base = data?.kredit || 0;
+    const extra = showBiayaTambahanForm
+      ? Number.parseInt(biayaTambahan, 10) || 0
+      : 0;
+    setCustomAmount((base + extra).toString());
+  }, [data?.kredit, biayaTambahan, showBiayaTambahanForm]);
+
   const [kategoriSumber, _setKategoriSumber] =
     useState<KategoriSumber>("tps-3r");
   const [ttdBase64, setTtdBase64] = useState<string | null>(null);
@@ -359,6 +384,9 @@ export default function PencairanDanaPage() {
       setCustomAmount("");
       setMetode("transfer");
       setKeterangan("");
+      setBiayaTambahan("");
+      setCatatanBiayaTambahan("");
+      setShowBiayaTambahanForm(false);
       setTtdBase64(null);
       return;
     }
@@ -367,6 +395,11 @@ export default function PencairanDanaPage() {
     formData.set("jumlah", customAmount);
     formData.set("metodePembayaran", metode);
     formData.set("keterangan", keterangan);
+    formData.set("biayaTambahan", showBiayaTambahanForm ? biayaTambahan : "0");
+    formData.set(
+      "catatanBiayaTambahan",
+      showBiayaTambahanForm ? catatanBiayaTambahan : "",
+    );
     formData.set("ttdPenyerah", ttdBase64);
     formData.set("selectedYear", selectedYear.toString());
     formData.set("selectedMonth", selectedMonth.toString());
@@ -386,6 +419,9 @@ export default function PencairanDanaPage() {
         setCustomAmount("");
         setMetode("transfer");
         setKeterangan("");
+        setBiayaTambahan("");
+        setCatatanBiayaTambahan("");
+        setShowBiayaTambahanForm(false);
         setTtdBase64(null);
         loadMonthData(selectedYear, selectedMonth);
       } else {
@@ -471,9 +507,26 @@ export default function PencairanDanaPage() {
     {
       header: "Jumlah",
       render: (item) => (
-        <span className="text-sm font-black text-neutral-800">
-          {formatRp(item.jumlah)}
-        </span>
+        <div>
+          <span className="text-sm font-black text-neutral-800 block">
+            {formatRp(item.jumlah)}
+          </span>
+          {item.biayaTambahan && item.biayaTambahan > 0 ? (
+            <>
+              <div className="text-[10px] text-amber-600 font-bold mt-0.5">
+                + Tambahan: {formatRp(item.biayaTambahan)}
+              </div>
+              {item.catatanBiayaTambahan && (
+                <div
+                  className="text-[9px] text-neutral-400 italic max-w-32 truncate"
+                  title={item.catatanBiayaTambahan}
+                >
+                  ({item.catatanBiayaTambahan})
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
       ),
     },
     {
@@ -940,17 +993,81 @@ export default function PencairanDanaPage() {
                     Total Pencairan
                   </p>
                   <p className="text-2xl font-black text-emerald-800 mt-0.5 tracking-tight">
-                    {formatRp(currentKredit)}
+                    {formatRp(Number(customAmount) || 0)}
                   </p>
                   <p className="text-[10px] text-emerald-600/70 mt-1 flex items-center gap-1">
                     <Coins className="w-3 h-3" />
-                    Seluruh kredit bulan {BULAN_ID[selectedMonth - 1]}{" "}
-                    {selectedYear} akan dicairkan
+                    Kredit utama: {formatRp(currentKredit)}
                   </p>
                 </div>
                 <div className="p-3 bg-emerald-100 rounded-2xl border border-emerald-200 shrink-0">
                   <Coins className="w-6 h-6 text-emerald-600" />
                 </div>
+              </div>
+
+              {/* Button & Input Biaya Tambahan */}
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowBiayaTambahanForm(!showBiayaTambahanForm)
+                  }
+                  className={`px-4 py-2.5 rounded-xl border-2 text-xs font-bold transition-all cursor-pointer ${
+                    showBiayaTambahanForm
+                      ? "bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200"
+                      : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                  }`}
+                >
+                  {showBiayaTambahanForm
+                    ? "✕ Hapus Biaya Tambahan"
+                    : "+ Tambah Biaya Tambahan"}
+                </button>
+
+                {showBiayaTambahanForm && (
+                  <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/70 space-y-3">
+                    <div>
+                      <label
+                        htmlFor="biaya-tambahan"
+                        className="text-xs font-bold text-neutral-600 uppercase tracking-wider block mb-1.5"
+                      >
+                        Nominal Biaya Tambahan (Rp)
+                      </label>
+                      <input
+                        id="biaya-tambahan"
+                        type="number"
+                        min="0"
+                        value={biayaTambahan}
+                        onChange={(e) => setBiayaTambahan(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-white border-2 border-neutral-200 text-sm focus:outline-none focus:border-amber-400 transition-colors placeholder:text-neutral-400"
+                        placeholder="Contoh: 50000"
+                      />
+                      {biayaTambahan && (
+                        <span className="text-xs text-amber-700 font-semibold mt-1 block">
+                          Format: {formatRp(Number(biayaTambahan))}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="catatan-biaya-tambahan"
+                        className="text-xs font-bold text-neutral-600 uppercase tracking-wider block mb-1.5"
+                      >
+                        Catatan Biaya Tambahan
+                      </label>
+                      <input
+                        id="catatan-biaya-tambahan"
+                        type="text"
+                        value={catatanBiayaTambahan}
+                        onChange={(e) =>
+                          setCatatanBiayaTambahan(e.target.value)
+                        }
+                        className="w-full px-4 py-3 rounded-xl bg-white border-2 border-neutral-200 text-sm focus:outline-none focus:border-amber-400 transition-colors placeholder:text-neutral-400"
+                        placeholder="Uang tambahan untuk apa..."
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Keterangan */}
