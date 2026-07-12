@@ -1647,3 +1647,121 @@ Status         : Pending Verifikasi
     html,
   });
 }
+
+export async function sendResetPasswordEmail(payload: {
+  email: string;
+  name: string;
+  resetLink: string;
+}) {
+  const { email, name, resetLink } = payload;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Reset Password Akun SICUAN</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);border-radius:20px 20px 0 0;padding:36px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="display:inline-block;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:8px 14px;margin-bottom:16px;">
+                      <span style="color:#38bdf8;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SICUAN</span>
+                    </div>
+                    <h1 style="margin:0 0 6px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                      Permintaan Reset Password
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="background:#ffffff;border-radius:0 0 20px 20px;padding:40px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -1px rgba(0,0,0,0.03);">
+              <p style="margin:0 0 16px;font-size:16px;color:#334155;line-height:1.6;">
+                Halo <strong>${name}</strong>,
+              </p>
+              <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.6;">
+                Kami menerima permintaan untuk mereset password akun SICUAN Anda. Klik tombol di bawah ini untuk mengganti password Anda:
+              </p>
+
+              <!-- Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 32px;">
+                <tr>
+                  <td align="center">
+                    <a href="${resetLink}" style="display:inline-block;background:#0284c7;color:#ffffff;font-weight:700;font-size:14px;text-decoration:none;padding:14px 28px;border-radius:12px;box-shadow:0 4px 6px -1px rgba(2,132,199,0.2);">
+                      Reset Password Saya
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 16px;font-size:13px;color:#64748b;line-height:1.6;background:#f8fafc;padding:16px;border-radius:12px;border:1px dashed #cbd5e1;">
+                <strong>Penting:</strong> Link reset password ini hanya berlaku selama <strong>1 jam</strong> dan hanya dapat digunakan <strong>satu kali</strong>. Jika Anda tidak meminta reset password ini, abaikan email ini dengan aman.
+              </p>
+
+              <div style="height:1px;background:#e2e8f0;margin:32px 0 24px;"></div>
+
+              <p style="margin:0 0 6px;font-size:13px;color:#475569;">
+                Terima kasih,<br/>
+                <strong>Tim SICUAN</strong>
+              </p>
+
+              <!-- Footer note -->
+              <p style="margin:32px 0 0;text-align:center;font-size:11px;color:#94a3b8;">
+                Email ini dikirim otomatis oleh sistem Portal Sicuan Bank Sampah Indofood.<br/>
+                Harap jangan membalas email ini.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer brand -->
+          <tr>
+            <td style="padding:20px 0;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;">
+                © ${new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk — Bank Sampah
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+[SICUAN] Permintaan Reset Password
+
+Halo ${name},
+
+Kami menerima permintaan untuk mereset password akun SICUAN Anda.
+Silakan klik link di bawah ini untuk mengganti password Anda:
+
+${resetLink}
+
+Penting: Link reset password ini hanya berlaku selama 1 jam dan hanya dapat digunakan satu kali. Jika Anda tidak meminta reset password ini, abaikan email ini dengan aman.
+
+Terima kasih,
+Tim SICUAN
+  `.trim();
+
+  await sendEmail({
+    to: email,
+    subject: "🔐 Reset Password Akun SICUAN",
+    text,
+    html,
+  });
+}

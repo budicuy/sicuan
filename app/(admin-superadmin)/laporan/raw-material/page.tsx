@@ -253,7 +253,7 @@ export default function LaporanRawMaterialPage() {
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
               Perbandingan data raw material yang dikeluarkan Indofood dengan
-              hasil sampah yang disetorkan (Konsumen + Warmindo + Bank Sampah).
+              hasil sampah yang disetorkan.
             </p>
           </div>
         </div>

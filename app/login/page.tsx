@@ -359,13 +359,12 @@ export default function LoginPage() {
                   >
                     Tanggal Lahir / Kata Sandi
                   </label>
-                  <button
-                    type="button"
-                    onClick={(e) => e.preventDefault()}
+                  <TransitionLink
+                    href="/forgot-password"
                     className="text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors cursor-pointer bg-transparent border-0 p-0"
                   >
                     Lupa Password?
-                  </button>
+                  </TransitionLink>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">

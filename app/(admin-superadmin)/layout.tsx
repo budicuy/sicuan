@@ -153,6 +153,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         label: "Laporan Setoran",
         icon: "Recycle",
       },
+      {
+        type: "link",
+        href: "/profil/admin-profil",
+        label: "Profil Saya",
+        icon: "User",
+      },
     ];
 
   return (

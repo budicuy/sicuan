@@ -34,6 +34,8 @@ export const users = pgTable(
     email: text("email"),
     role: userRoleEnum("role").notNull(),
     status: statusUserEnum("status").notNull().default("Aktif"),
+    resetToken: text("reset_token"),
+    resetTokenExpires: timestamp("reset_token_expires", { withTimezone: true }),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
