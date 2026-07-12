@@ -890,33 +890,40 @@ export default function LaporanWarmindoPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
-                        <Layers className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="text-xs text-neutral-500 block">
-                          Jenis Sampah
-                        </span>
-                        <span className="font-semibold text-neutral-800 text-sm leading-tight">
-                          {selectedItem.jenisSampah}
-                        </span>
-                      </div>
-                    </div>
+                    {!(
+                      selectedItem.metodeSetor === "ekspedisi" &&
+                      selectedItem.status === "pending"
+                    ) && (
+                      <>
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs text-neutral-500 block">
+                              Jenis Sampah
+                            </span>
+                            <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                              {selectedItem.jenisSampah}
+                            </span>
+                          </div>
+                        </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
-                        <Scale className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="text-xs text-neutral-500 block">
-                          Berat Sampah
-                        </span>
-                        <span className="font-extrabold text-neutral-900 text-base">
-                          {selectedItem.beratKg} kg
-                        </span>
-                      </div>
-                    </div>
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                            <Scale className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs text-neutral-500 block">
+                              Berat Sampah
+                            </span>
+                            <span className="font-extrabold text-neutral-900 text-base">
+                              {selectedItem.beratKg} kg
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
 
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
@@ -980,70 +987,80 @@ export default function LaporanWarmindoPage() {
                 {/* Right Side: Foto-foto Bukti & Panel Aksi (7 cols) */}
                 <div className="md:col-span-7 space-y-5">
                   {/* Foto Timbangan */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
-                      Foto Bukti Timbangan
-                    </span>
-                    {selectedItem.fotoTimbangan ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedImageLightBox(selectedItem.fotoTimbangan)
-                        }
-                        className="relative aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group shadow-xs hover:border-primary-400 hover:shadow-sm transition-all"
-                        title="Klik zoom foto timbangan"
-                      >
-                        <Image
-                          src={selectedItem.fotoTimbangan}
-                          alt="Foto timbangan detail"
-                          fill
-                          className="object-contain group-hover:scale-102 transition-all duration-300"
-                          unoptimized
-                        />
-                      </button>
-                    ) : (
-                      <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
-                        <span className="text-sm text-neutral-400">
-                          Tidak ada foto bukti timbangan.
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {!(
+                    selectedItem.metodeSetor === "ekspedisi" &&
+                    selectedItem.status === "pending"
+                  ) && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
+                        Foto Bukti Timbangan
+                      </span>
+                      {selectedItem.fotoTimbangan ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedImageLightBox(selectedItem.fotoTimbangan)
+                          }
+                          className="relative aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 max-h-64 cursor-zoom-in block p-0 group shadow-xs hover:border-primary-400 hover:shadow-sm transition-all"
+                          title="Klik zoom foto timbangan"
+                        >
+                          <Image
+                            src={selectedItem.fotoTimbangan}
+                            alt="Foto timbangan detail"
+                            fill
+                            className="object-contain group-hover:scale-102 transition-all duration-300"
+                            unoptimized
+                          />
+                        </button>
+                      ) : (
+                        <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
+                          <span className="text-sm text-neutral-400">
+                            Tidak ada foto bukti timbangan.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Foto Bukti Tambahan */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
-                      Foto Bukti Tambahan
-                    </span>
-                    {selectedItem.fotoBuktiTambahan &&
-                    selectedItem.fotoBuktiTambahan.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-3">
-                        {selectedItem.fotoBuktiTambahan.map((imgUrl, idx) => (
-                          <button
-                            key={imgUrl}
-                            type="button"
-                            onClick={() => setSelectedImageLightBox(imgUrl)}
-                            className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 cursor-zoom-in p-0 block group shadow-2xs hover:border-primary-400 hover:shadow-xs transition-all"
-                            title="Klik zoom foto bukti tambahan"
-                          >
-                            <Image
-                              src={imgUrl}
-                              alt={`Bukti Tambahan ${idx + 1}`}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-all duration-300"
-                              unoptimized
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
-                        <span className="text-sm text-neutral-400">
-                          Tidak ada foto bukti tambahan.
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {!(
+                    selectedItem.metodeSetor === "ekspedisi" &&
+                    selectedItem.status === "pending"
+                  ) && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
+                        Foto Bukti Tambahan
+                      </span>
+                      {selectedItem.fotoBuktiTambahan &&
+                      selectedItem.fotoBuktiTambahan.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-3">
+                          {selectedItem.fotoBuktiTambahan.map((imgUrl, idx) => (
+                            <button
+                              key={imgUrl}
+                              type="button"
+                              onClick={() => setSelectedImageLightBox(imgUrl)}
+                              className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 cursor-zoom-in p-0 block group shadow-2xs hover:border-primary-400 hover:shadow-xs transition-all"
+                              title="Klik zoom foto bukti tambahan"
+                            >
+                              <Image
+                                src={imgUrl}
+                                alt={`Bukti Tambahan ${idx + 1}`}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-all duration-300"
+                                unoptimized
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-2xl">
+                          <span className="text-sm text-neutral-400">
+                            Tidak ada foto bukti tambahan.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Ekspedisi Verification Actions for Admin */}
                   {(userRole === "admin" || userRole === "superadmin") &&

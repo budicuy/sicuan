@@ -468,29 +468,14 @@ export default function LaporanKonsumenPage() {
 
         if (isPending) {
           return (
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                disabled={updatingId === item.id}
-                onClick={() => handleStatusUpdate(item.id, "diterima")}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
-              >
-                {updatingId === item.id ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                )}
-                Terima
-              </button>
-              <button
-                type="button"
-                disabled={updatingId === item.id}
-                onClick={() => handleStatusUpdate(item.id, "ditolak")}
-                className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg border-0 cursor-pointer disabled:opacity-50 transition-all"
-              >
-                Tolak
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedItem(item)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-lg shadow-xs border-0 transition-all cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Validasi
+            </button>
           );
         }
 
@@ -790,33 +775,7 @@ export default function LaporanKonsumenPage() {
                     Status Verifikasi
                   </span>
                   <div className="mt-1">
-                    {userRole === "admin" || userRole === "superadmin" ? (
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={selectedItem.status}
-                          disabled={updatingId === selectedItem.id}
-                          onChange={(e) =>
-                            handleStatusUpdate(
-                              selectedItem.id,
-                              e.target.value as
-                                | "pending"
-                                | "diterima"
-                                | "ditolak",
-                            )
-                          }
-                          className="px-2.5 py-1 border border-neutral-200 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:border-primary-600 text-neutral-800 cursor-pointer"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="diterima">Diterima</option>
-                          <option value="ditolak">Ditolak</option>
-                        </select>
-                        {updatingId === selectedItem.id && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-600" />
-                        )}
-                      </div>
-                    ) : (
-                      getStatusBadge(selectedItem.status)
-                    )}
+                    {getStatusBadge(selectedItem.status)}
                   </div>
                 </div>
                 <div>
@@ -911,14 +870,63 @@ export default function LaporanKonsumenPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold text-sm rounded-xl transition-colors cursor-pointer"
-              >
-                Tutup
-              </button>
+            <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
+              {selectedItem.status === "pending" &&
+              (userRole === "admin" || userRole === "superadmin") ? (
+                <>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={updatingId === selectedItem.id}
+                      onClick={async () => {
+                        await handleStatusUpdate(selectedItem.id, "diterima");
+                        setSelectedItem(null);
+                      }}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl border-0 cursor-pointer disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                    >
+                      {updatingId === selectedItem.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                      Terima Setoran
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updatingId === selectedItem.id}
+                      onClick={async () => {
+                        await handleStatusUpdate(selectedItem.id, "ditolak");
+                        setSelectedItem(null);
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl border-0 cursor-pointer disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                    >
+                      {updatingId === selectedItem.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                      Tolak
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItem(null)}
+                    className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold text-sm rounded-xl transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                </>
+              ) : (
+                <div className="flex justify-end w-full">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItem(null)}
+                    className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold text-sm rounded-xl transition-colors cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
