@@ -25,9 +25,19 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
     redirect("/login");
   }
 
-  let user: { name: string; role: string; username: string } | null = null;
+  let user: {
+    id: number;
+    name: string;
+    role: string;
+    username: string;
+  } | null = null;
   try {
-    user = decodeJwt(token) as { name: string; role: string; username: string };
+    user = decodeJwt(token) as {
+      id: number;
+      name: string;
+      role: string;
+      username: string;
+    };
   } catch (error) {
     console.error("JWT decoding failed in bank-sampah layout:", error);
     redirect("/login");
@@ -52,6 +62,7 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
     .where(
       and(
         eq(setorSampah.kategoriNasabah, "warmindo"),
+        eq(setorSampah.bankSampahId, user.id),
         sql`(
           ${setorSampah.status} = 'diserahkan'
           OR (${setorSampah.status} = 'pending' AND ${setorSampah.metodeSetor} = 'langsung')

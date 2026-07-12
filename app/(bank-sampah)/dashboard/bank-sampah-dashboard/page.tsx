@@ -38,7 +38,7 @@ const dashboardSteps = [
   {
     element: "#tour-bank-sampah-dashboard-points",
     popover: {
-      title: "Saldo Kredit Tersedia",
+      title: "Saldo Kredit Tersedia Bulan Ini",
       description:
         "Menampilkan saldo uang tunai yang berhasil Anda kumpulkan dari hasil verifikasi aktual sampah oleh Bank Sampah. Saldo ini dapat Anda cairkan kapan saja.",
       side: "bottom" as const,
@@ -258,7 +258,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-end mt-4">
             <div>
               <span className="text-[9px] text-primary-200">
-                Saldo Kredit Tersedia
+                Saldo Kredit Tersedia Bulan Ini
               </span>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-0.5">
                 <AnimatedCounter

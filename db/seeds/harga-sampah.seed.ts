@@ -4,7 +4,6 @@ import { hargaSampah } from "@/db/schema";
 export async function seedHargaSampah() {
   console.log("🌱 Seeding range harga sampah...");
 
-
   const hargaData: (typeof hargaSampah.$inferInsert)[] = [
     // Karton
     { jenisSampah: "Karton", minBerat: 1, maxBerat: 5, harga: 25000 },
@@ -23,7 +22,6 @@ export async function seedHargaSampah() {
     { jenisSampah: "Etiket", minBerat: 20, maxBerat: 25, harga: 125000 },
     { jenisSampah: "Etiket", minBerat: 25, maxBerat: 30, harga: 150000 },
     { jenisSampah: "Etiket", minBerat: 30, maxBerat: null, harga: 200000 },
-
 
     // Paper Cup
     { jenisSampah: "Paper Cup", minBerat: 1, maxBerat: 5, harga: 25000 },

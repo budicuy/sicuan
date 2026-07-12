@@ -99,7 +99,7 @@ const adminDashboardSteps = [
     popover: {
       title: "Setoran Menunggu Validasi",
       description:
-        "Daftar setoran sampah masuk terbaru yang memerlukan verifikasi atau validasi dari Bank Sampah / Admin. Klik 'Validasi Data' untuk memproses.",
+        "Daftar setoran sampah masuk terbaru yang memerlukan verifikasi atau validasi dari Admin. Klik 'Validasi Data' untuk memproses.",
       side: "top" as const,
     },
   },

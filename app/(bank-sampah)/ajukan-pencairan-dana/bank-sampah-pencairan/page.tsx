@@ -42,36 +42,36 @@ const pencairanSteps = [
   {
     element: "#tour-bank-sampah-pencairan-saldo",
     popover: {
-      title: "Informasi Saldo Kredit",
+      title: "Mekanisme Akumulasi Kredit",
       description:
-        "Menampilkan total kredit daur ulang sampah Anda yang tersedia untuk bulan ini yang siap dicairkan.",
+        "Kredit terkumpul secara otomatis berdasarkan berat bersih dari seluruh setoran sampah Anda yang telah diverifikasi (status Diterima) pada periode bulan terpilih. Sistem mengacu pada tarif berjenjang PT Indofood. Hanya diperbolehkan melakukan 1 kali pencairan untuk setiap bulan.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-form",
     popover: {
-      title: "Form Pengajuan Pencairan",
+      title: "Cara Mengisi Formulir Pengajuan",
       description:
-        "Masukkan nominal uang dan metode pencairan (transfer bank/tunai), lalu pratinjau dan ajukan.",
+        "Tentukan periode bulan yang ingin dicairkan, centang minimal satu Kategori Bank Sampah (bisa multi-select), pilih rekening bank tujuan, masukkan nominal pencairan (maksimal sebesar Saldo Kredit Tersedia), dan bubuhkan tanda tangan elektronik Anda pada pad tanda tangan di bagian bawah.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-submit",
     popover: {
-      title: "Pratinjau & Ajukan",
+      title: "Prosedur Verifikasi & Pengajuan",
       description:
-        "Tekan tombol ini untuk meninjau surat bukti pembayaran sebelum melakukan pengiriman pengajuan pencairan simulasi.",
+        "Setelah data lengkap dan ditandatangani, klik tombol 'Pratinjau Pengajuan' untuk meninjau rancangan surat Bukti Pembayaran secara detail. Jika semua data sesuai, klik kirim untuk mengajukan. Status pengajuan Anda akan berubah menjadi 'Pending'.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-history",
     popover: {
-      title: "Tabel Riwayat Pencairan",
+      title: "Alur Persetujuan & Riwayat Pencairan",
       description:
-        "Detail riwayat transaksi penarikan dana beserta status persetujuan dari Admin (Pending, Berhasil, Ditolak) dapat dipantau di sini.",
+        "Pengajuan berstatus Pending akan diperiksa oleh Admin/Superadmin. Setelah disetujui, admin akan melakukan transfer dana dan mengunggah foto bukti transfer sehingga status berubah menjadi 'Berhasil'. Anda dapat memantau status serta mencetak dokumen PDF bukti pembayaran resmi melalui tabel riwayat ini.",
       side: "top" as const,
     },
   },

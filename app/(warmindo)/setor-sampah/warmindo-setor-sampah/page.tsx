@@ -3,11 +3,13 @@
 import { Clock, Loader2, Recycle, Truck, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
+  cancelSetorSampah,
   createSetorSampah,
   getBankSampahList,
   getMySetoran,
   handoverSetorSampahToEkspedisi,
 } from "@/app/(warmindo)/setor-sampah/warmindo-setor-sampah/action";
+import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
@@ -125,6 +127,8 @@ export default function WarmindoSetorSampah() {
     message: string;
   }>({ isOpen: false, type: "success", title: "", message: "" });
 
+  const [cancelId, setCancelId] = useState<number | null>(null);
+
   const showFeedback = (
     type: "success" | "error",
     title: string,
@@ -230,6 +234,39 @@ export default function WarmindoSetorSampah() {
     });
   };
 
+  const handleCancel = (id: number) => {
+    setCancelId(id);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (cancelId === null) return;
+    const id = cancelId;
+
+    if (isTourActive) {
+      startTransition(async () => {
+        showFeedback(
+          "success",
+          "Berhasil!",
+          "Simulasi: Setoran berhasil dibatalkan.",
+        );
+        setHistory((prev) => prev.filter((item) => item.id !== id));
+        setCancelId(null);
+      });
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await cancelSetorSampah(id);
+      setCancelId(null);
+      if (res.success) {
+        showFeedback("success", "Berhasil!", res.message);
+        loadData();
+      } else {
+        showFeedback("error", "Gagal!", res.message);
+      }
+    });
+  };
+
   const formatTanggal = (dateStr: string) =>
     new Date(`${dateStr}T00:00:00`).toLocaleDateString("id-ID", {
       day: "numeric",
@@ -289,15 +326,34 @@ export default function WarmindoSetorSampah() {
               <div className="p-6 space-y-6">
                 <div className="bg-primary-50/50 border border-primary-100 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in duration-300">
                   <Truck className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-xs font-bold text-neutral-800">
-                      Ada Pengiriman Ekspedisi Aktif
-                    </h4>
-                    <p className="text-[11px] text-neutral-500 mt-1">
-                      Anda sedang memiliki setoran via ekspedisi yang sedang
-                      diproses. Form pengajuan baru akan dikunci hingga proses
-                      selesai.
-                    </p>
+                  <div className="space-y-3 w-full">
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-800">
+                        Ada Pengiriman Ekspedisi Aktif
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 mt-1">
+                        Anda sedang memiliki setoran via ekspedisi yang sedang
+                        diproses. Form pengajuan baru akan dikunci hingga proses
+                        selesai.
+                      </p>
+                    </div>
+                    {activeEkspedisiSetoran.status === "pending" && (
+                      <div className="pt-2.5 border-t border-primary-200/60">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCancel(activeEkspedisiSetoran.id)
+                          }
+                          disabled={isPending}
+                          className="px-3 py-1.5 bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-650 hover:text-red-700 border border-red-200 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          {isPending && (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          )}
+                          Batalkan Pengajuan
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -409,16 +465,47 @@ export default function WarmindoSetorSampah() {
             ) : activeLangsungSetoran ? (
               // Panel: Datang langsung — menunggu konfirmasi penerimaan Bank Sampah
               <div className="p-6 space-y-5 animate-in fade-in duration-300">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3 w-full">
                   <Upload className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
+                  <div className="space-y-2 w-full">
                     <h4 className="text-xs font-bold text-neutral-800">
                       Setoran Datang Langsung Diajukan
                     </h4>
-                    <p className="text-[11px] text-neutral-500 mt-1">
+                    <p className="text-[11px] text-neutral-500">
                       Harap datang langsung ke Bank Sampah tujuan dengan membawa
                       sampah Anda. Tidak ada kurir yang perlu dijadwalkan.
                     </p>
+                    {activeLangsungSetoran.bankSampah && (
+                      <div className="pt-2 border-t border-emerald-200/60 mt-2 space-y-1">
+                        <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                          Bank Sampah Tujuan:
+                        </p>
+                        <p className="text-xs font-black text-neutral-800">
+                          {activeLangsungSetoran.bankSampah.name}
+                        </p>
+                        {activeLangsungSetoran.bankSampah.alamat && (
+                          <p className="text-[11px] text-neutral-600">
+                            <span className="font-bold text-neutral-700">
+                              Alamat:
+                            </span>{" "}
+                            {activeLangsungSetoran.bankSampah.alamat}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <div className="pt-2.5 border-t border-emerald-200/60 mt-2.5">
+                      <button
+                        type="button"
+                        onClick={() => handleCancel(activeLangsungSetoran.id)}
+                        disabled={isPending}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-650 hover:text-red-700 border border-red-200 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        {isPending && (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        )}
+                        Batalkan Pengajuan
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -433,9 +520,21 @@ export default function WarmindoSetorSampah() {
                         Pengajuan Dikirim
                       </p>
                       <p className="text-neutral-500 mt-0.5">
-                        Setoran Anda telah tercatat. Datanglah ke Bank Sampah
-                        dengan membawa sampah secara langsung.
+                        Setoran Anda telah tercatat. Silakan datang langsung ke{" "}
+                        <span className="font-bold text-neutral-850">
+                          {activeLangsungSetoran.bankSampah?.name ||
+                            "Bank Sampah tujuan"}
+                        </span>{" "}
+                        dengan membawa sampah Anda.
                       </p>
+                      {activeLangsungSetoran.bankSampah?.alamat && (
+                        <p className="text-[11px] text-neutral-500 mt-1">
+                          <span className="font-bold text-neutral-700">
+                            Alamat:
+                          </span>{" "}
+                          {activeLangsungSetoran.bankSampah.alamat}
+                        </p>
+                      )}
                       <p className="text-[10px] text-neutral-400 mt-1">
                         Diajukan:{" "}
                         {new Date(
@@ -741,6 +840,17 @@ export default function WarmindoSetorSampah() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={cancelId !== null}
+        onClose={() => setCancelId(null)}
+        onConfirm={handleCancelConfirm}
+        isPending={isPending}
+        variant="danger"
+        title="Batalkan Setoran"
+        message="Apakah Anda yakin ingin membatalkan pengajuan setoran sampah ini? Tindakan ini akan menghapus data setoran secara permanen."
+        confirmLabel="Ya, Batalkan"
+      />
 
       <FeedbackModal
         isOpen={feedback.isOpen}

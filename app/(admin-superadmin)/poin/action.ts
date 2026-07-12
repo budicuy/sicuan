@@ -86,6 +86,17 @@ export async function createPoinSampah(
     return { success: false, errors: parsed.error.flatten().fieldErrors };
   }
 
+  if (!(await verifyIsSuperadmin())) {
+    return {
+      success: false,
+      errors: {
+        _form: [
+          "Akses ditolak. Hanya Superadmin yang dapat menambah master poin.",
+        ],
+      },
+    };
+  }
+
   try {
     // Check if configuration already exists for this jenis sampah
     const existing = await db.query.poinSampah.findFirst({
