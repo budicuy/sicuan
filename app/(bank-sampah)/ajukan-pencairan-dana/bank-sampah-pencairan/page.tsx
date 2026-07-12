@@ -210,8 +210,19 @@ export default function PencairanDanaPage() {
     setCustomAmount((base + extra).toString());
   }, [data?.kredit, biayaTambahan, showBiayaTambahanForm]);
 
-  const [kategoriSumber, setKategoriSumber] =
-    useState<KategoriSumber>("bank-sampah-induk");
+  const [kategoriSumber, setKategoriSumber] = useState<KategoriSumber[]>([
+    "bank-sampah-induk",
+  ]);
+
+  const toggleKategori = (val: KategoriSumber) => {
+    setKategoriSumber((prev) => {
+      if (prev.includes(val)) {
+        if (prev.length === 1) return prev; // Pertahankan minimal 1 terpilih
+        return prev.filter((item) => item !== val);
+      }
+      return [...prev, val];
+    });
+  };
   const [ttdBase64, setTtdBase64] = useState<string | null>(null);
   const [ttdError, setTtdError] = useState("");
   const [isCompressingTtd, setIsCompressingTtd] = useState(false);
@@ -441,7 +452,7 @@ export default function PencairanDanaPage() {
         setCatatanBiayaTambahan("");
         setShowBiayaTambahanForm(false);
         setTtdBase64(null);
-        setKategoriSumber("bank-sampah-induk");
+        setKategoriSumber(["bank-sampah-induk"]);
         loadMonthData(selectedYear, selectedMonth);
       } else {
         if (res.errors) setErrors(res.errors);
@@ -755,9 +766,15 @@ export default function PencairanDanaPage() {
                     <Clock className="w-2.5 h-2.5" /> Sedang Berjalan
                   </span>
                 ) : sudahDicairkan ? (
-                  <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/25 text-amber-200 border border-amber-400/30 rounded-full px-2.5 py-1">
-                    <LockKeyhole className="w-2.5 h-2.5" /> Sudah Dicairkan
-                  </span>
+                  pencairanAktif?.status === "pending" ? (
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-400/25 text-amber-200 border border-amber-400/30 rounded-full px-2.5 py-1">
+                      <Clock className="w-2.5 h-2.5" /> Pending
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30 rounded-full px-2.5 py-1">
+                      <LockKeyhole className="w-2.5 h-2.5" /> Sudah Dicairkan
+                    </span>
+                  )
                 ) : currentKredit > 0 ? (
                   <span className="flex items-center gap-1 text-[9px] font-bold bg-emerald-400/25 text-emerald-200 border border-emerald-400/30 rounded-full px-2.5 py-1">
                     <CheckCircle2 className="w-2.5 h-2.5" /> Siap Dicairkan
@@ -921,6 +938,8 @@ export default function PencairanDanaPage() {
                     ttdBase64={pencairanAktif.ttdPenyerahUrl || null}
                     kategoriSumber={kategoriSumber}
                     ttdAdminBase64={pencairanAktif.ttdPenerimaUrl || null}
+                    biayaTambahan={pencairanAktif.biayaTambahan || 0}
+                    catatanBiayaTambahan={pencairanAktif.catatanBiayaTambahan}
                   />
                 </div>
               </div>
@@ -1087,14 +1106,31 @@ export default function PencairanDanaPage() {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setKategoriSumber(opt.value)}
-                      className={`py-2.5 px-3 rounded-xl border-2 text-xs font-bold transition-all cursor-pointer text-center ${
-                        kategoriSumber === opt.value
-                          ? "bg-primary-600 border-primary-600 text-white shadow-md shadow-primary-600/20"
+                      onClick={() => toggleKategori(opt.value)}
+                      className={`py-3 px-3 rounded-xl border-2 text-[11px] font-bold flex items-center justify-start gap-2 transition-all cursor-pointer ${
+                        kategoriSumber.includes(opt.value)
+                          ? "bg-primary-50/50 border-primary-600 text-primary-900 shadow-xs"
                           : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300"
                       }`}
                     >
-                      {opt.label}
+                      <div
+                        className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all shrink-0 ${
+                          kategoriSumber.includes(opt.value)
+                            ? "bg-primary-600 border-primary-600 text-white"
+                            : "border-neutral-300 bg-white"
+                        }`}
+                      >
+                        {kategoriSumber.includes(opt.value) && (
+                          <svg
+                            className="w-2.5 h-2.5 fill-current"
+                            viewBox="0 0 20 20"
+                          >
+                            <title>Checkmark</title>
+                            <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="truncate">{opt.label}</span>
                     </button>
                   ))}
                 </div>
@@ -1267,6 +1303,12 @@ export default function PencairanDanaPage() {
                 keterangan={keterangan}
                 ttdBase64={ttdBase64 || "/sampel_1.png"}
                 kategoriSumber={kategoriSumber}
+                biayaTambahan={
+                  showBiayaTambahanForm ? Number(biayaTambahan) || 0 : 0
+                }
+                catatanBiayaTambahan={
+                  showBiayaTambahanForm ? catatanBiayaTambahan : null
+                }
               />
             </div>
 

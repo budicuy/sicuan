@@ -1089,6 +1089,7 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     totalBeratKg: doc.totalBeratKg,
     tarifDasar: doc.tarifDasar,
     biayaTambahan: doc.biayaTambahan,
+    catatanBiayaTambahan: pencairan?.catatanBiayaTambahan || null,
     totalTagihan: doc.totalTagihan,
     metodePembayaran: doc.metodePembayaran,
     keterangan: doc.keterangan,

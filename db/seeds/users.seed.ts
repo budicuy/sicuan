@@ -63,7 +63,7 @@ export async function seedUsers() {
   const usersToInsert: NewUser[] = [
     // 1. Superadmin
     {
-      name: "Superadmin Sicuan",
+      name: "SUPERADMIN SICUAN",
       username: "superadmin.sicuan",
       password: hashSuperadmin,
       email: "learning.budicuy@gmail.com",
@@ -72,7 +72,7 @@ export async function seedUsers() {
     },
     // 2. Admin
     {
-      name: "Admin Banjarmasin",
+      name: "ADMIN SICUAN",
       username: "admin.banjarmasin",
       password: hashAdmin,
       email: "gaming.budicuy@gmail.com",
