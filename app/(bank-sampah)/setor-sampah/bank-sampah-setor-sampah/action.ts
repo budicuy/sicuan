@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
 import {
+  sendAssignmentNotifToWarmindo,
   sendReceiptNotifToDepositor,
   sendSetoranNotifToAdmins,
   sendStatusUpdateNotifToDepositor,
@@ -621,6 +622,39 @@ export async function bankSampahVerifySetoran(
       .update(setorSampah)
       .set({ status: "diverifikasi", ekspedisiId, updatedAt: new Date() })
       .where(eq(setorSampah.id, id));
+
+    // Kirim notifikasi email ke Warmindo bahwa ekspedisi penjemput sudah ditugaskan
+    const depositor = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, item.userId),
+    });
+    if (depositor?.email) {
+      // Ambil data ekspedisi dari fungsi helper yang sudah ada
+      const semuaEkspedisi = await getEkspedisiFn();
+      const eksp = semuaEkspedisi.find((e) => e.id === ekspedisiId);
+      const vendorName = eksp?.namaVendor ?? "Ekspedisi Penjemput";
+      const vendorPhone = eksp?.noTelepon ?? "-";
+      const dep = depositor;
+      const itm = item;
+      after(async () => {
+        try {
+          await sendAssignmentNotifToWarmindo({
+            warmindoEmail: dep.email ?? "",
+            warmindoName: dep.name,
+            nomorSetor: itm.nomorSetor,
+            jenisSampah: itm.jenisSampah,
+            beratKg: itm.beratKg,
+            tanggalSetor: itm.tanggalSetor,
+            vendorName,
+            vendorPhone,
+          });
+        } catch (emailErr) {
+          console.error(
+            "Gagal mengirim email penugasan ekspedisi ke Warmindo:",
+            emailErr,
+          );
+        }
+      });
+    }
 
     revalidatePath("/setor-sampah");
     revalidatePath("/laporan/warmindo");

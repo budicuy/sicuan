@@ -380,7 +380,7 @@ export default function KonsumenSetorSampah() {
     }
 
     const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
-    const compressed = await compressImage(withWatermark, 200 * 1024);
+    const compressed = await compressImage(withWatermark, 100 * 1024);
     setFotoTimbangan(compressed);
   };
 
@@ -405,7 +405,7 @@ export default function KonsumenSetorSampah() {
     reader.onload = async (ev) => {
       const rawDataUrl = ev.target?.result as string;
       const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
-      const compressed = await compressImage(withWatermark, 200 * 1024);
+      const compressed = await compressImage(withWatermark, 100 * 1024);
       setFotoTimbangan(compressed);
     };
     reader.readAsDataURL(file);

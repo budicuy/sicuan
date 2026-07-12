@@ -5,8 +5,13 @@ import { and, asc, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { getAllActiveEkspedisi as getEkspedisiFn } from "@/app/(admin-superadmin)/ekspedisi/action";
-import { sendStatusUpdateNotifToDepositor } from "@/app/lib/email";
+import {
+  sendReceiptNotifToDepositor,
+  sendSetoranNotifToAdmins,
+  sendStatusUpdateNotifToDepositor,
+} from "@/app/lib/email";
 import {
   readWeightFromImage,
   validateBeratTolerance,
@@ -1078,6 +1083,61 @@ export async function createSetorSampah(
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, user.id));
+    }
+
+    // Kirim notifikasi email ke admin dan nasabah (via after agar tidak block response)
+    const userWithEmail = await db.query.nasabah.findFirst({
+      where: eq(nasabah.id, user.id),
+      columns: { email: true },
+    });
+    if (userWithEmail?.email) {
+      const userSnap = {
+        email: userWithEmail.email,
+        name: user.name,
+        role: user.role,
+        nomorSetor,
+        jenisSampah,
+        beratKg,
+        tanggalSetor,
+        status: isPending ? "pending" : "diterima",
+      };
+      after(async () => {
+        try {
+          await sendSetoranNotifToAdmins({
+            nasabahName: userSnap.name,
+            nasabahRole: userSnap.role,
+            nomorSetor: userSnap.nomorSetor,
+            jenisSampah: userSnap.jenisSampah,
+            beratKg: userSnap.beratKg,
+            tanggalSetor: userSnap.tanggalSetor,
+            status: userSnap.status,
+          });
+        } catch (err) {
+          console.error(
+            "Gagal kirim email notif admin (createSetorSampah bank-sampah):",
+            err,
+          );
+        }
+      });
+      after(async () => {
+        try {
+          await sendReceiptNotifToDepositor({
+            email: userSnap.email,
+            name: userSnap.name,
+            role: userSnap.role,
+            nomorSetor: userSnap.nomorSetor,
+            jenisSampah: userSnap.jenisSampah,
+            beratKg: userSnap.beratKg,
+            tanggalSetor: userSnap.tanggalSetor,
+            status: userSnap.status,
+          });
+        } catch (err) {
+          console.error(
+            "Gagal kirim email tanda terima ke depositor (createSetorSampah bank-sampah):",
+            err,
+          );
+        }
+      });
     }
   } catch (err) {
     console.error("Insert setor sampah atau update nasabah gagal:", err);
