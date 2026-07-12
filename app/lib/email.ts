@@ -499,8 +499,8 @@ export async function sendSetoranNotifToAdmins(payload: {
   tanggalSetor: string;
   catatan?: string | null;
   status: string;
-  fotoTimbanganBase64: string;
-  fotoBuktiBase64List: string[];
+  fotoTimbanganBase64?: string;
+  fotoBuktiBase64List?: string[];
 }) {
   // Ambil semua admin saja (superadmin dikecualikan) yang punya email
   const admins = await db.query.nasabah.findMany({
@@ -526,8 +526,6 @@ export async function sendSetoranNotifToAdmins(payload: {
     tanggalSetor,
     catatan,
     status,
-    fotoTimbanganBase64,
-    fotoBuktiBase64List,
   } = payload;
 
   const roleLabelMap: Record<string, string> = {
@@ -536,29 +534,6 @@ export async function sendSetoranNotifToAdmins(payload: {
     konsumen: "Konsumen",
   };
   const roleLabel = roleLabelMap[nasabahRole] ?? nasabahRole;
-
-  // Siapkan attachments
-  const attachments: EmailAttachment[] = [];
-  const cleanBase64 = (b64: string) =>
-    b64.replace(/^data:image\/\w+;base64,/, "");
-
-  if (fotoTimbanganBase64) {
-    attachments.push({
-      filename: "bukti-timbangan.jpg",
-      content: Buffer.from(cleanBase64(fotoTimbanganBase64), "base64"),
-      cid: "foto_timbangan",
-    });
-  }
-
-  fotoBuktiBase64List.forEach((b64, idx) => {
-    if (b64 && b64.trim() !== "") {
-      attachments.push({
-        filename: `foto-bukti-tambahan-${idx + 1}.jpg`,
-        content: Buffer.from(cleanBase64(b64), "base64"),
-        cid: `foto_bukti_tambahan_${idx}`,
-      });
-    }
-  });
 
   const isVerified = status === "diverifikasi" || status === "diterima";
   const statusBadge = isVerified
@@ -661,36 +636,6 @@ export async function sendSetoranNotifToAdmins(payload: {
                 }
               </table>
 
-              <!-- Foto Timbangan -->
-              <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:20px;">
-                <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f172a;">Foto Bukti Timbangan:</p>
-                <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#f8fafc;padding:12px;text-align:center;">
-                  <img src="cid:foto_timbangan" alt="Bukti Timbangan" style="max-width:100%;max-height:300px;border-radius:8px;display:block;margin:0 auto;"/>
-                </div>
-              </div>
-
-              <!-- Foto Bukti Tambahan -->
-              ${
-                fotoBuktiBase64List.length > 0
-                  ? `<div style="margin-top:24px;">
-                <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f172a;">Foto Bukti Tambahan:</p>
-                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-                  <tr>
-                    ${fotoBuktiBase64List
-                      .map(
-                        (_, idx) => `
-                    <td style="padding:4px;width:${100 / fotoBuktiBase64List.length}%;">
-                      <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#f8fafc;padding:8px;text-align:center;">
-                        <img src="cid:foto_bukti_tambahan_${idx}" alt="Bukti Tambahan ${idx + 1}" style="max-width:100%;max-height:150px;border-radius:8px;display:block;margin:0 auto;"/>
-                      </div>
-                    </td>`,
-                      )
-                      .join("")}
-                  </tr>
-                </table>
-              </div>`
-                  : ""
-              }
 
               <!-- Button Lihat Setoran -->
               <div style="margin:32px 0 20px;text-align:center;">
@@ -735,8 +680,7 @@ Berat Sampah   : ${beratKg} kg
 Tanggal Setor  : ${tanggalSetor}
 Status Validasi: ${status.toUpperCase()}
 ${catatan ? `Catatan        : ${catatan}\n` : ""}
-Foto bukti timbangan dan bukti tambahan telah dilampirkan pada email ini.
-Silakan masuk ke dashboard admin untuk memeriksa detailnya.
+Silakan masuk ke dashboard admin untuk memeriksa detail dan berkas bukti setoran.
   `.trim();
 
   const results = await Promise.allSettled(
@@ -746,7 +690,6 @@ Silakan masuk ke dashboard admin untuk memeriksa detailnya.
         subject: `♻️ Setoran Sampah Baru — ${nomorSetor} (${nasabahName})`,
         text,
         html,
-        attachments,
       }),
     ),
   );
@@ -793,19 +736,7 @@ export async function sendHandoverNotifToBankSampah(payload: {
     beratKg,
     tanggalSetor,
     catatan,
-    fotoTimbanganUrl,
   } = payload;
-
-  // Siapkan attachments
-  const attachments: EmailAttachment[] = [];
-
-  if (fotoTimbanganUrl) {
-    attachments.push({
-      filename: "bukti-timbangan.jpg",
-      path: fotoTimbanganUrl,
-      cid: "foto_timbangan",
-    });
-  }
 
   const html = `
 <!DOCTYPE html>
@@ -899,17 +830,6 @@ export async function sendHandoverNotifToBankSampah(payload: {
                 }
               </table>
 
-              <!-- Foto Timbangan -->
-              ${
-                fotoTimbanganUrl
-                  ? `<div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:20px;">
-                <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f172a;">Foto Bukti Timbangan:</p>
-                <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#f8fafc;padding:12px;text-align:center;">
-                  <img src="cid:foto_timbangan" alt="Bukti Timbangan" style="max-width:100%;max-height:300px;border-radius:8px;display:block;margin:0 auto;"/>
-                </div>
-              </div>`
-                  : ""
-              }
 
               <!-- Tindakan -->
               <div style="margin-top:32px;text-align:center;">
@@ -969,7 +889,6 @@ Harap segera periksa dashboard Bank Sampah Anda untuk mengonfirmasi penerimaan b
         subject: `🚚 [Harus Diterima] Setoran Sampah Baru dari Warmindo — ${nomorSetor}`,
         text,
         html,
-        attachments,
       }),
     ),
   );
