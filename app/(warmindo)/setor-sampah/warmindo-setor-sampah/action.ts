@@ -915,12 +915,16 @@ export async function createSetorSampah(
   }
 
   // Ambil data form
-  const jenisSampah = formData.get("jenisSampah") as string;
-  const beratKgRaw = formData.get("beratKg") as string;
+  const isWarmindo = user.role === "warmindo";
+
+  const jenisSampah = isWarmindo
+    ? "Karton"
+    : (formData.get("jenisSampah") as string);
+  const beratKgRaw = isWarmindo ? "1.0" : (formData.get("beratKg") as string);
   const tanggalSetor = formData.get("tanggalSetor") as string;
   const catatan = (formData.get("catatan") as string) || null;
   const fotoTimbanganBase64 = formData.get("fotoTimbanganBase64") as string;
-  const beratAiKgRaw = formData.get("beratAiKg") as string; // sudah divalidasi di client
+  const beratAiKgRaw = formData.get("beratAiKg") as string;
   const fotoBuktiBase64List = formData.getAll("fotoBuktiBase64[]") as string[];
   const metodeSetor = (formData.get("metodeSetor") as string) || "langsung";
   const requestManualValidation =
@@ -929,8 +933,6 @@ export async function createSetorSampah(
   const bankSampahId = bankSampahIdRaw
     ? Number.parseInt(bankSampahIdRaw, 10)
     : null;
-
-  const isWarmindo = user.role === "warmindo";
 
   // Validasi
   if (
@@ -944,7 +946,7 @@ export async function createSetorSampah(
   }
 
   const beratKg = Number.parseFloat(beratKgRaw);
-  if (Number.isNaN(beratKg) || beratKg <= 0) {
+  if (!isWarmindo && (Number.isNaN(beratKg) || beratKg <= 0)) {
     return {
       success: false,
       errors: { beratKg: ["Berat harus lebih dari 0 kg"] },

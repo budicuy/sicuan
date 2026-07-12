@@ -1,7 +1,10 @@
+import { and, eq, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SidebarLayout } from "@/app/components/shared/sidebar";
+import { db } from "@/db";
+import { setorSampah } from "@/db/schema";
 
 async function logoutAction() {
   "use server";
@@ -22,9 +25,19 @@ export default async function WarmindoLayout({ children }: LayoutProps) {
     redirect("/login");
   }
 
-  let user: { name: string; role: string; username: string } | null = null;
+  let user: {
+    id: number;
+    name: string;
+    role: string;
+    username: string;
+  } | null = null;
   try {
-    user = decodeJwt(token) as { name: string; role: string; username: string };
+    user = decodeJwt(token) as {
+      id: number;
+      name: string;
+      role: string;
+      username: string;
+    };
   } catch (error) {
     console.error("JWT decoding failed in warmindo layout:", error);
     redirect("/login");
@@ -43,6 +56,18 @@ export default async function WarmindoLayout({ children }: LayoutProps) {
     }
   }
 
+  // Ambil jumlah setoran dengan status "diverifikasi" (menunggu penyerahan ke kurir)
+  const pendingHandoverCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(setorSampah)
+    .where(
+      and(
+        eq(setorSampah.userId, user.id),
+        eq(setorSampah.status, "diverifikasi"),
+      ),
+    )
+    .then((res) => Number(res[0]?.count ?? 0));
+
   const menuItems = [
     {
       href: "/dashboard/warmindo-dashboard",
@@ -58,6 +83,7 @@ export default async function WarmindoLayout({ children }: LayoutProps) {
       href: "/setor-sampah/warmindo-setor-sampah",
       label: "Setor Sampah",
       icon: "ShoppingBag",
+      badgeCount: pendingHandoverCount,
     },
     {
       href: "/ajukan-pencairan-dana/warmindo-pencairan",

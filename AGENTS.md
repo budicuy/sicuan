@@ -74,6 +74,7 @@ Tujuan dari project ini adalah untuk mempermudah pengelolaan sampah yang dihasil
 4. Selalu jalanakn testing menggunak bun lint untuk memastikan kode yang ditulis tidak mengandung error atau bug ketika sudah selesai melekukan perubahan kode.
 5. Jangan  jalankan bun run build dan juga commit kode ke github jika saya belum menyuruh untuk melakukannya, karena saya akan melakukan review terlebih dahulu sebelum kode di commit ke github.
 6. ketika kamu membuat penjelasan tolong gunakan bahasa indonesia yang mudah dipahami dan jelas.
+7. Selalu jalankan linting menggunakan bun lint setelah melakukan perubahan kode agar kode yang ditulis tidak mengandung error, warning, atau bug.
 
 
 

@@ -4,9 +4,9 @@ import imageCompression from "browser-image-compression";
 import {
   Camera,
   CheckCircle2,
-  Clock,
   Loader2,
   Package,
+  Plus,
   Recycle,
   ShieldCheck,
   Truck,
@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   bankSampahTerimaSetoran,
   getSetoranWarmindoForBankSampah,
+  validateFotoTimbangan,
 } from "@/app/(bank-sampah)/setor-sampah/bank-sampah-setor-sampah/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { TourGuide } from "@/app/components/shared/TourGuide";
@@ -146,8 +147,37 @@ export default function TerimaSetoranWarmindoPage() {
   const [beratAktual, setBeratAktual] = useState("");
   const [jenisSampahAktual, setJenisSampahAktual] = useState("Karton");
   const [fotoTimbangan, setFotoTimbangan] = useState<string | null>(null);
+  const [fotoBuktiList, setFotoBuktiList] = useState<string[]>([]);
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const buktiInputRef = useRef<HTMLInputElement>(null);
+
+  const [aiValidated, setAiValidated] = useState(false);
+  const [beratAiKg, setBeratAiKg] = useState<number | null>(null);
+  const [requestManual, setRequestManual] = useState(false);
+  const [isValidatingAI, setIsValidatingAI] = useState(false);
+
+  const handleBuktiChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const limit = 3 - fotoBuktiList.length;
+    const filesToProcess = Array.from(files).slice(0, limit);
+
+    for (const file of filesToProcess) {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const result = ev.target?.result as string;
+        const compressed = await compressImage(result, 200 * 1024);
+        setFotoBuktiList((prev) => [...prev, compressed]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeBukti = (index: number) => {
+    setFotoBuktiList((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const [feedback, setFeedback] = useState<{
     isOpen: boolean;
@@ -206,14 +236,46 @@ export default function TerimaSetoranWarmindoPage() {
 
   const handleOpenTerimaModal = (item: WarmindoSetoranItem) => {
     setSelectedItemForTerima(item);
-    setBeratAktual(String(item.beratKg));
+    setBeratAktual("");
     setJenisSampahAktual(item.jenisSampah);
+    setAiValidated(false);
+    setBeratAiKg(null);
+    setRequestManual(false);
+    setIsValidatingAI(false);
     if (isTourActive) {
       setFotoTimbangan("/sampel_1.png");
+      setFotoBuktiList(["/sampel_1.png"]);
+      setAiValidated(true);
+      setBeratAiKg(10.0);
+      setBeratAktual("10.0");
     } else {
       setFotoTimbangan(null);
+      setFotoBuktiList([]);
     }
     setFormErrors({});
+  };
+
+  const handleValidasiAI = async () => {
+    if (!fotoTimbangan || !beratAktual) return;
+    setIsValidatingAI(true);
+    setFormErrors({});
+    try {
+      const res = await validateFotoTimbangan(
+        fotoTimbangan,
+        Number(beratAktual),
+      );
+      if (res.success) {
+        setAiValidated(true);
+        setBeratAiKg(res.berat);
+      } else {
+        setFormErrors({ fotoTimbangan: [res.message] });
+      }
+    } catch (err) {
+      console.error(err);
+      setFormErrors({ fotoTimbangan: ["Terjadi kesalahan saat memvalidasi."] });
+    } finally {
+      setIsValidatingAI(false);
+    }
   };
 
   const handleTerimaWarmindo = async () => {
@@ -235,6 +297,13 @@ export default function TerimaSetoranWarmindoPage() {
       return;
     }
 
+    if (fotoBuktiList.length === 0) {
+      setFormErrors({
+        fotoBukti: ["Minimal 1 foto bukti tambahan wajib dilampirkan."],
+      });
+      return;
+    }
+
     setProcessingId(selectedItemForTerima.id);
     if (isTourActive) {
       setTimeout(() => {
@@ -242,7 +311,14 @@ export default function TerimaSetoranWarmindoPage() {
         setWarmindoSetoran((prev) =>
           prev.map((item) =>
             item.id === selectedItemForTerima.id
-              ? { ...item, status: "diterima", beratKg: beratNum, jenisSampah: jenisSampahAktual }
+              ? {
+                  ...item,
+                  status: requestManual ? "pending" : "diterima",
+                  beratKg: beratNum,
+                  jenisSampah: jenisSampahAktual,
+                  fotoTimbangan: fotoTimbangan,
+                  fotoBuktiTambahan: fotoBuktiList,
+                }
               : item,
           ),
         );
@@ -251,7 +327,9 @@ export default function TerimaSetoranWarmindoPage() {
         showFeedback(
           "success",
           "Berhasil!",
-          `Simulasi: Sukses melakukan verifikasi dan menerima setoran ${selectedItemForTerima.nomorSetor} (${jenisSampahAktual}) seberat ${beratNum} kg.`,
+          requestManual
+            ? `Simulasi: Sukses mengajukan verifikasi manual setoran ${selectedItemForTerima.nomorSetor}.`
+            : `Simulasi: Sukses melakukan verifikasi dan menerima setoran ${selectedItemForTerima.nomorSetor} (${jenisSampahAktual}) seberat ${beratNum} kg.`,
         );
       }, 1000);
       return;
@@ -263,6 +341,9 @@ export default function TerimaSetoranWarmindoPage() {
         beratNum,
         fotoTimbangan,
         jenisSampahAktual,
+        fotoBuktiList,
+        requestManual,
+        beratAiKg || undefined,
       );
       setProcessingId(null);
       if (res.success) {
@@ -328,7 +409,6 @@ export default function TerimaSetoranWarmindoPage() {
       </div>
 
       <div className="space-y-5">
-        {/* Filter & Header */}
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -382,7 +462,6 @@ export default function TerimaSetoranWarmindoPage() {
           </div>
         </div>
 
-        {/* Workflow Info Banner */}
         <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex gap-3 items-start">
           <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
           <div className="text-xs text-sky-800 space-y-1">
@@ -412,7 +491,6 @@ export default function TerimaSetoranWarmindoPage() {
           </div>
         </div>
 
-        {/* List Setoran */}
         {isLoadingWarmindo ? (
           <div className="bg-white rounded-2xl border border-neutral-200 p-12 flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
@@ -440,7 +518,6 @@ export default function TerimaSetoranWarmindoPage() {
                 key={item.id}
                 className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col"
               >
-                {/* Card Header */}
                 <div className="px-4 pt-4 pb-3 border-b border-neutral-100">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -460,7 +537,6 @@ export default function TerimaSetoranWarmindoPage() {
                   </div>
                 </div>
 
-                {/* Card Body */}
                 <div className="px-4 py-3 flex-1 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-neutral-500">Jenis Sampah</span>
@@ -494,7 +570,6 @@ export default function TerimaSetoranWarmindoPage() {
                   )}
                 </div>
 
-                {/* Card Actions */}
                 {item.status === "pending" &&
                   item.metodeSetor === "langsung" && (
                     <div className="px-4 pb-4">
@@ -513,25 +588,6 @@ export default function TerimaSetoranWarmindoPage() {
                       </button>
                     </div>
                   )}
-
-                {item.status === "pending" &&
-                  item.metodeSetor !== "langsung" && (
-                    <div className="px-4 pb-4">
-                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-700">
-                        <Clock className="w-4 h-4 shrink-0" />
-                        <span>Menunggu verifikasi admin &amp; ekspedisi</span>
-                      </div>
-                    </div>
-                  )}
-
-                {item.status === "diverifikasi" && (
-                  <div className="px-4 pb-4">
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-700">
-                      <Clock className="w-4 h-4 shrink-0" />
-                      <span>Menunggu konfirmasi penyerahan dari Warmindo</span>
-                    </div>
-                  </div>
-                )}
 
                 {item.status === "diserahkan" && (
                   <div className="px-4 pb-4 space-y-2">
@@ -552,16 +608,6 @@ export default function TerimaSetoranWarmindoPage() {
                       )}
                       Validasi
                     </button>
-                  </div>
-                )}
-
-                {item.status === "diterima" && (
-                  <div className="px-4 pb-4">
-                    <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-semibold">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      Sampah diterima &middot; Tercatat dalam rekap akumulasi
-                      bulanan
-                    </div>
                   </div>
                 )}
               </div>
@@ -588,90 +634,27 @@ export default function TerimaSetoranWarmindoPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-6">
               <div>
-                <p className="text-xs text-neutral-500 font-medium">
-                  Nomor Setoran
-                </p>
-                <p className="text-sm font-bold text-neutral-800">
-                  {selectedItemForTerima.nomorSetor}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="modalJenisSampah"
-                    className="block text-xs font-semibold text-neutral-700 uppercase mb-1.5"
-                  >
-                    Jenis Sampah <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="modalJenisSampah"
-                    value={jenisSampahAktual}
-                    onChange={(e) => setJenisSampahAktual(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-semibold"
-                  >
-                    <option value="Karton">Karton</option>
-                    <option value="Etiket">Etiket</option>
-                    <option value="Paper Cup">Paper Cup</option>
-                  </select>
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500 font-medium">
-                    Estimasi Berat (Mitra)
-                  </p>
-                  <p className="text-sm font-bold text-neutral-800 mt-2">
-                    {selectedItemForTerima.beratKg} kg
-                  </p>
-                </div>
+                <label
+                  htmlFor="modalJenisSampah"
+                  className="block text-xs font-semibold text-neutral-700 uppercase mb-1.5"
+                >
+                  Jenis Sampah <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="modalJenisSampah"
+                  value={jenisSampahAktual}
+                  onChange={(e) => setJenisSampahAktual(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-semibold"
+                >
+                  <option value="Karton">Karton</option>
+                  <option value="Etiket">Etiket</option>
+                  <option value="Paper Cup">Paper Cup</option>
+                </select>
               </div>
 
-              {/* Bukti Setoran dari Warmindo */}
-              <div className="border-t border-neutral-100 pt-4 space-y-3">
-                <p className="text-xs font-bold text-neutral-600 uppercase tracking-wider">
-                  Foto Bukti dari Mitra Warmindo
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] text-neutral-400 font-bold mb-1">FOTO TIMBANGAN (MITRA)</p>
-                    {selectedItemForTerima.fotoTimbangan ? (
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50">
-                        <Image
-                          src={selectedItemForTerima.fotoTimbangan}
-                          alt="Foto timbangan mitra"
-                          className="object-contain"
-                          fill
-                          unoptimized
-                        />
-                      </div>
-                    ) : (
-                      <div className="py-4 text-center text-xs text-neutral-400 bg-neutral-50 rounded-lg border border-dashed">
-                        Tidak ada foto
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-neutral-400 font-bold mb-1">BUKTI TAMBAHAN (MITRA)</p>
-                    {selectedItemForTerima.fotoBuktiTambahan && selectedItemForTerima.fotoBuktiTambahan.length > 0 ? (
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50">
-                        <Image
-                          src={selectedItemForTerima.fotoBuktiTambahan[0]}
-                          alt="Foto bukti tambahan"
-                          className="object-contain"
-                          fill
-                          unoptimized
-                        />
-                      </div>
-                    ) : (
-                      <div className="py-4 text-center text-xs text-neutral-400 bg-neutral-50 rounded-lg border border-dashed">
-                        Tidak ada foto
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-neutral-100 pt-4 space-y-4">
+              <div className="space-y-4">
                 <div>
                   <label
                     htmlFor="modalBeratAktual"
@@ -696,29 +679,47 @@ export default function TerimaSetoranWarmindoPage() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <label
-                    htmlFor="modalFotoTimbangan"
-                    className="block text-xs font-semibold text-neutral-700 uppercase"
-                  >
+                <div className="border-t border-neutral-100 pt-4 space-y-3">
+                  <span className="block text-xs font-semibold text-neutral-700 uppercase">
                     Foto Timbangan Verifikasi{" "}
                     <span className="text-red-500">*</span>
-                  </label>
+                  </span>
                   {fotoTimbangan ? (
-                    <div className="relative rounded-xl overflow-hidden border border-neutral-200 aspect-video bg-neutral-50">
-                      <Image
-                        src={fotoTimbangan}
-                        alt="Timbangan verifikasi"
-                        className="w-full h-full object-contain"
-                        fill
-                        unoptimized
-                      />
+                    <div className="space-y-3">
+                      <div className="relative rounded-xl overflow-hidden border border-neutral-200 aspect-video bg-neutral-50 max-h-48">
+                        <Image
+                          src={fotoTimbangan}
+                          alt="Timbangan verifikasi"
+                          className="w-full h-full object-contain"
+                          fill
+                          unoptimized
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFotoTimbangan(null);
+                            setAiValidated(false);
+                            setBeratAiKg(null);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white border-0 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setFotoTimbangan(null)}
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white border-0 cursor-pointer"
+                        onClick={handleValidasiAI}
+                        disabled={isValidatingAI || aiValidated || !beratAktual}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 text-xs font-bold transition-all cursor-pointer"
                       >
-                        <X className="w-4 h-4" />
+                        {isValidatingAI ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                        )}
+                        {aiValidated
+                          ? "✓ Tervalidasi AI"
+                          : "Validasi Berat dengan AI"}
                       </button>
                     </div>
                   ) : (
@@ -750,6 +751,8 @@ export default function TerimaSetoranWarmindoPage() {
                               200 * 1024,
                             );
                             setFotoTimbangan(compressed);
+                            setAiValidated(false);
+                            setBeratAiKg(null);
                           };
                           reader.readAsDataURL(file);
                         }}
@@ -757,10 +760,86 @@ export default function TerimaSetoranWarmindoPage() {
                     </div>
                   )}
                   {formErrors.fotoTimbangan && (
-                    <p className="text-red-500 text-xs">
+                    <p className="text-red-500 text-xs mt-1">
                       {formErrors.fotoTimbangan[0]}
                     </p>
                   )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="block text-xs font-semibold text-neutral-700 uppercase">
+                      Foto Bukti Tambahan Verifikasi{" "}
+                      <span className="text-red-500">*</span>
+                    </span>
+                    <span className="text-xs text-neutral-400">
+                      {fotoBuktiList.length}/3 foto
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {fotoBuktiList.map((imgB64, idx) => (
+                      <div
+                        key={imgB64}
+                        className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-black group"
+                      >
+                        <Image
+                          src={imgB64}
+                          alt={`Bukti tambahan ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeBukti(idx)}
+                          className="absolute top-2 right-2 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors border-0 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {fotoBuktiList.length < 3 && (
+                      <div className="relative aspect-square flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-400 text-neutral-500 transition-all cursor-pointer">
+                        <Plus className="w-6 h-6 text-neutral-400" />
+                        <span className="text-xs font-semibold">Tambah</span>
+                        <input
+                          ref={buktiInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleBuktiChange}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {formErrors.fotoBukti && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {formErrors.fotoBukti[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-2 pt-4 border-t border-neutral-100">
+                  <input
+                    id="requestManual"
+                    type="checkbox"
+                    checked={requestManual}
+                    onChange={(e) => setRequestManual(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-600 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="requestManual"
+                    className="text-xs text-neutral-600 leading-normal cursor-pointer select-none font-medium"
+                  >
+                    Ajukan validasi manual oleh Admin
+                    <span className="block text-[10px] text-neutral-400 font-normal">
+                      Pilih jika pembacaan AI terus gagal atau gambar timbangan
+                      tidak terbaca dengan baik.
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -775,7 +854,13 @@ export default function TerimaSetoranWarmindoPage() {
               </button>
               <button
                 type="button"
-                disabled={isPending || !beratAktual || !fotoTimbangan}
+                disabled={
+                  isPending ||
+                  !beratAktual ||
+                  !fotoTimbangan ||
+                  fotoBuktiList.length === 0 ||
+                  (!aiValidated && !requestManual)
+                }
                 onClick={handleTerimaWarmindo}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 border-0 cursor-pointer"
               >

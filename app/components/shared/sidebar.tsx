@@ -342,7 +342,14 @@ export function SidebarLayout({
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50 border-0 cursor-pointer text-left bg-transparent"
               >
-                <Icon className="w-4.5 h-4.5 shrink-0 text-neutral-400" />
+                <div className="relative">
+                  <Icon className="w-4.5 h-4.5 shrink-0 text-neutral-400" />
+                  {item.badgeCount && item.badgeCount > 0 ? (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-extrabold min-w-4 h-4 px-1 flex items-center justify-center rounded-full shrink-0">
+                      {item.badgeCount}
+                    </span>
+                  ) : null}
+                </div>
                 <span className="whitespace-nowrap">{item.label}</span>
               </button>
             );
@@ -358,9 +365,16 @@ export function SidebarLayout({
                   : "text-neutral-600 hover:text-primary-600 hover:bg-primary-50/50"
               }`}
             >
-              <Icon
-                className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
-              />
+              <div className="relative">
+                <Icon
+                  className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-primary-600" : "text-neutral-400"}`}
+                />
+                {item.badgeCount && item.badgeCount > 0 ? (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-extrabold min-w-4 h-4 px-1 flex items-center justify-center rounded-full shrink-0">
+                    {item.badgeCount}
+                  </span>
+                ) : null}
+              </div>
               <span className="whitespace-nowrap">{item.label}</span>
             </Link>
           );

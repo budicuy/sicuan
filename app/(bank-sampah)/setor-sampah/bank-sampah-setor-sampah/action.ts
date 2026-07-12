@@ -73,6 +73,14 @@ export async function updateSetorSampahStatus(
       };
     }
 
+    if (status === "diterima" && item.kategoriNasabah === "warmindo") {
+      return {
+        success: false,
+        message:
+          "Setoran Warmindo hanya dapat diterima & divalidasi secara fisik oleh pihak Bank Sampah tujuan.",
+      };
+    }
+
     if (item.status === "diterima") {
       return {
         success: false,
@@ -630,13 +638,16 @@ export async function bankSampahVerifySetoran(
   }
 }
 
-// ── BANK SAMPAH: Terima dan finalisasi setoran Warmindo ─────────────────────
+// ── BANK SAMPAH: Terima dan finalisasi setoran ─────────────────────
 
 export async function bankSampahTerimaSetoran(
   id: number,
   beratAktual: number,
   fotoTimbanganBase64: string,
   jenisSampah?: string,
+  fotoBuktiBase64List?: string[],
+  requestManual?: boolean,
+  beratAiKg?: number,
 ): Promise<{ success: boolean; message: string }> {
   const user = await getCurrentUser();
   if (!user || user.role !== "bank-sampah") {
@@ -699,12 +710,35 @@ export async function bankSampahTerimaSetoran(
       };
     }
 
+    // Upload foto bukti tambahan verifikasi ke R2 jika ada
+    const fotoBuktiUrls: string[] = [];
+    if (fotoBuktiBase64List && fotoBuktiBase64List.length > 0) {
+      for (let i = 0; i < fotoBuktiBase64List.length; i++) {
+        try {
+          const uuid = randomUUID();
+          const url = await uploadImageToR2(
+            fotoBuktiBase64List[i],
+            "setoran-bukti-tambahan",
+            `${user.id}-${uuid}-${i}`,
+          );
+          fotoBuktiUrls.push(url);
+        } catch (err) {
+          console.error(`Gagal mengupload foto bukti tambahan ke-${i}:`, err);
+        }
+      }
+    }
+
+    const isPending = requestManual === true;
+
     // Hitung reward berdasarkan berat & jenis sampah
     const depositor = await db.query.nasabah.findFirst({
       where: eq(nasabah.id, item.userId),
     });
 
-    const targetJenisSampah = (jenisSampah || item.jenisSampah) as "Karton" | "Etiket" | "Paper Cup";
+    const targetJenisSampah = (jenisSampah || item.jenisSampah) as
+      | "Karton"
+      | "Etiket"
+      | "Paper Cup";
 
     const { totalPoin } = await calculateSetoranReward(
       targetJenisSampah,
@@ -712,39 +746,42 @@ export async function bankSampahTerimaSetoran(
       depositor?.role ?? "warmindo",
     );
 
-    // Update saldo nasabah Warmindo (skip credit since it's accumulated monthly)
-    await db
-      .update(nasabah)
-      .set({
-        poin: sql`${nasabah.poin} + ${totalPoin}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.id, item.userId));
+    if (!isPending) {
+      // Update saldo nasabah Warmindo (skip credit since it's accumulated monthly)
+      await db
+        .update(nasabah)
+        .set({
+          poin: sql`${nasabah.poin} + ${totalPoin}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, item.userId));
+    }
 
-    // Update status setoran ke diterima, catat berat aktual dan foto timbangan
+    // Update status setoran ke diterima atau pending, catat berat aktual dan foto timbangan
     await db
       .update(setorSampah)
       .set({
-        status: "diterima",
+        status: isPending ? "pending" : "diterima",
         beratKg: beratAktual,
+        beratAiKg: beratAiKg || null,
         jenisSampah: targetJenisSampah,
         fotoTimbangan: fotoTimbanganUrl,
-        totalPoin,
+        fotoBuktiTambahan: fotoBuktiUrls.length > 0 ? fotoBuktiUrls : undefined,
+        totalPoin: isPending ? 0 : totalPoin,
         updatedAt: new Date(),
       })
       .where(eq(setorSampah.id, id));
 
-
-    // Kirim notifikasi email status update (diterima) ke nasabah Warmindo (di-await untuk menjamin pengiriman pada Vercel Serverless)
-    if (depositor?.email) {
+    // Kirim notifikasi email status update ke nasabah Warmindo
+    if (!isPending && depositor?.email) {
       try {
         await sendStatusUpdateNotifToDepositor({
           email: depositor.email,
           name: depositor.name,
           role: depositor.role,
           nomorSetor: item.nomorSetor,
-          jenisSampah: item.jenisSampah,
-          beratKg: item.beratKg,
+          jenisSampah: targetJenisSampah,
+          beratKg: beratAktual,
           tanggalSetor: item.tanggalSetor,
           status: "diterima",
           totalPoin: totalPoin,
@@ -762,8 +799,9 @@ export async function bankSampahTerimaSetoran(
     revalidatePath("/laporan/bank-sampah");
     return {
       success: true,
-      message:
-        "Setoran Warmindo berhasil diterima dan insentif telah dikreditkan ke akun nasabah.",
+      message: isPending
+        ? "Setoran berhasil diajukan untuk validasi manual oleh Admin."
+        : "Setoran Warmindo berhasil diterima dan insentif telah dikreditkan ke akun nasabah.",
     };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);

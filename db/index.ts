@@ -18,5 +18,5 @@ export const db = drizzle({
   schema,
   // logger: isDev ? new EnhancedQueryLogger() : false,
 });
-  
+
 export type DB = typeof db;

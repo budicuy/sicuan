@@ -135,7 +135,7 @@ export default function WarmindoSetorSampah() {
 
   const [history, setHistory] = useState<SetorSampahItem[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
+  const [_formErrors, setFormErrors] = useState<Record<string, string[]>>({});
 
   const [feedback, setFeedback] = useState<{
     isOpen: boolean;
@@ -233,8 +233,8 @@ export default function WarmindoSetorSampah() {
           "success",
           "Setoran Berhasil!",
           metodeSetor === "langsung"
-            ? `Setoran sampah ${jenisSampah} (${beratKg} kg) Anda telah berhasil diajukan. Harap datang langsung ke Bank Sampah untuk verifikasi.`
-            : `Setoran sampah ${jenisSampah} (${beratKg} kg) Anda telah berhasil diajukan via ekspedisi.`,
+            ? "Pengajuan setoran sampah Anda telah berhasil dibuat. Silakan datang langsung ke alamat Bank Sampah tujuan untuk penimbangan dan validasi fisik."
+            : "Pengajuan setoran sampah Anda telah berhasil dibuat. Silakan tunggu verifikasi admin untuk penunjukan kurir ekspedisi.",
         );
         setBeratKg("");
         setCatatan("");
@@ -500,75 +500,25 @@ export default function WarmindoSetorSampah() {
                   />
                 </div>
 
-                <div id="tour-warmindo-setor-jenis">
+                <div>
                   <label
-                    htmlFor="jenisSampah"
+                    htmlFor="tanggalSetor"
                     className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
                   >
-                    Jenis Sampah <span className="text-red-500">*</span>
+                    Tanggal Setor <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    id="jenisSampah"
-                    name="jenisSampah"
-                    value={jenisSampah}
-                    onChange={(e) => setJenisSampah(e.target.value)}
-                    required
-                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
-                  >
-                    <option value="Karton">Karton</option>
-                    <option value="Etiket">Etiket</option>
-                    <option value="Paper Cup">Paper Cup</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div id="tour-warmindo-setor-berat">
-                    <label
-                      htmlFor="beratKg"
-                      className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
-                    >
-                      Berat (kg) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="beratKg"
-                      type="number"
-                      name="beratKg"
-                      value={beratKg}
-                      onChange={(e) => {
-                        setBeratKg(e.target.value);
-                      }}
-                      step="0.01"
-                      min="0.01"
-                      required
-                      placeholder="0.00"
-                      className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
-                    />
-                    {formErrors.beratKg && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {formErrors.beratKg[0]}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="tanggalSetor"
-                      className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
-                    >
-                      Tanggal Setor <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="tanggalSetor"
-                      type="date"
-                      value={tanggalSetor}
-                      disabled
-                      className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-400 focus:outline-none transition-all cursor-not-allowed"
-                    />
-                    <input
-                      type="hidden"
-                      name="tanggalSetor"
-                      value={tanggalSetor}
-                    />
-                  </div>
+                  <input
+                    id="tanggalSetor"
+                    type="date"
+                    value={tanggalSetor}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-neutral-50 text-neutral-400 focus:outline-none transition-all cursor-not-allowed"
+                  />
+                  <input
+                    type="hidden"
+                    name="tanggalSetor"
+                    value={tanggalSetor}
+                  />
                 </div>
 
                 <div id="tour-warmindo-setor-tujuan">

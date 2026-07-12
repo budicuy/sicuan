@@ -909,45 +909,28 @@ export default function LaporanWarmindoPage() {
                         {selectedItem.status === "diserahkan" && (
                           <div className="space-y-3">
                             <p className="text-xs text-neutral-600 font-semibold">
-                              Status: Kurir telah mengambil sampah. Konfirmasi
-                              jika sampah sudah Anda terima dengan benar di
-                              pusat:
+                              Status: Sampah sedang dalam perjalanan oleh kurir
+                              ke Bank Sampah tujuan.
                             </p>
-                            <div className="flex gap-2.5">
-                              <button
-                                type="button"
-                                disabled={updatingId === selectedItem.id}
-                                onClick={async () => {
-                                  await handleStatusUpdate(
-                                    selectedItem.id,
-                                    "diterima",
-                                  );
-                                  setSelectedItem(null);
-                                }}
-                                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center gap-1"
-                              >
-                                {updatingId === selectedItem.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                )}
-                                Konfirmasi Diterima
-                              </button>
-                              <button
-                                type="button"
-                                disabled={updatingId === selectedItem.id}
-                                onClick={async () => {
-                                  await handleStatusUpdate(
-                                    selectedItem.id,
-                                    "ditolak",
-                                  );
-                                  setSelectedItem(null);
-                                }}
-                                className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
-                              >
-                                Tolak / Gagal
-                              </button>
-                            </div>
+                            <p className="text-[11px] text-neutral-500 leading-relaxed bg-neutral-50 rounded-xl p-3 border border-neutral-150">
+                              ℹ️ Validasi berat aktual, jenis sampah, dan
+                              penerimaan fisik akan dilakukan secara langsung
+                              oleh mitra Bank Sampah penerima.
+                            </p>
+                            <button
+                              type="button"
+                              disabled={updatingId === selectedItem.id}
+                              onClick={async () => {
+                                await handleStatusUpdate(
+                                  selectedItem.id,
+                                  "ditolak",
+                                );
+                                setSelectedItem(null);
+                              }}
+                              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
+                            >
+                              Batalkan / Tolak Setoran
+                            </button>
                           </div>
                         )}
 
@@ -966,7 +949,7 @@ export default function LaporanWarmindoPage() {
                   {(userRole === "admin" || userRole === "superadmin") &&
                     selectedItem.metodeSetor === "langsung" &&
                     selectedItem.status === "pending" && (
-                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3 shadow-2xs">
+                      <div className="p-4 bg-emerald-50/50 border border-emerald-150 rounded-xl space-y-3 shadow-2xs">
                         <h4 className="text-xs font-bold text-emerald-800 flex items-center gap-1.5 uppercase tracking-wider">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                           Mitra Datang Langsung
@@ -974,30 +957,14 @@ export default function LaporanWarmindoPage() {
                         <p className="text-xs text-emerald-700 leading-relaxed">
                           Mitra Warmindo ini memilih untuk datang langsung ke
                           Bank Sampah.{" "}
-                          <strong>Tidak perlu verifikasi ekspedisi.</strong>{" "}
-                          Langsung setujui setelah mitra tiba dan sampah dicek
-                          secara fisik.
+                          <strong>Tidak perlu verifikasi ekspedisi.</strong>
+                        </p>
+                        <p className="text-[11px] text-neutral-500 leading-relaxed bg-white rounded-xl p-3 border border-neutral-150">
+                          ℹ️ Validasi berat aktual, jenis sampah, dan penerimaan
+                          fisik akan dilakukan secara langsung oleh mitra Bank
+                          Sampah penerima ketika mitra tiba di lokasi.
                         </p>
                         <div className="flex gap-2 pt-1">
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedItem.id}
-                            onClick={async () => {
-                              await handleStatusUpdate(
-                                selectedItem.id,
-                                "diterima",
-                              );
-                              setSelectedItem(null);
-                            }}
-                            className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center justify-center gap-1"
-                          >
-                            {updatingId === selectedItem.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                            )}
-                            Terima Setoran
-                          </button>
                           <button
                             type="button"
                             disabled={updatingId === selectedItem.id}
@@ -1008,9 +975,9 @@ export default function LaporanWarmindoPage() {
                               );
                               setSelectedItem(null);
                             }}
-                            className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
+                            className="flex-1 px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all text-center"
                           >
-                            Tolak
+                            Batalkan / Tolak Pengajuan
                           </button>
                         </div>
                       </div>
