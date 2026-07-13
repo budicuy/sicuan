@@ -390,6 +390,7 @@ export async function getMySetoran(params: {
         jenisSampah: setorSampah.jenisSampah,
         tanggalSetor: setorSampah.tanggalSetor,
         userId: setorSampah.userId,
+        status: setorSampah.status,
       })
       .from(setorSampah)
       .where(combinedWhere),
@@ -445,6 +446,7 @@ export async function getMySetoran(params: {
   let sumKredit = 0;
 
   for (const s of fetchedCount) {
+    if (s.status !== "diterima") continue;
     const range = allRanges.find(
       (r) =>
         r.jenisSampah === s.jenisSampah &&
