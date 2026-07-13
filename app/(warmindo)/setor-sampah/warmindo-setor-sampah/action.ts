@@ -930,7 +930,7 @@ export async function createSetorSampah(
   const jenisSampah = isWarmindo
     ? "Karton"
     : (formData.get("jenisSampah") as string);
-  const beratKgRaw = isWarmindo ? "1.0" : (formData.get("beratKg") as string);
+  const beratKgRaw = isWarmindo ? "0" : (formData.get("beratKg") as string);
   const tanggalSetor = formData.get("tanggalSetor") as string;
   const catatan = (formData.get("catatan") as string) || null;
   const fotoTimbanganBase64 = formData.get("fotoTimbanganBase64") as string;

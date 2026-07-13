@@ -7,17 +7,22 @@ export async function seedEkspedisi() {
   const data = [
     {
       namaVendor: "Gojek",
-      noTelepon: "02129278888",
+      noTelepon: "-",
       status: "Aktif",
     },
     {
       namaVendor: "Grab",
-      noTelepon: "02180661888",
+      noTelepon: "-",
       status: "Aktif",
     },
     {
       namaVendor: "Gosend",
-      noTelepon: "02150200050",
+      noTelepon: "-",
+      status: "Aktif",
+    },
+    {
+      namaVendor: "Internal Delivery",
+      noTelepon: "0882022007234",
       status: "Aktif",
     },
   ];

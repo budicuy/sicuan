@@ -13,7 +13,7 @@ import {
   sendPencairanPengajuanNotifToUser,
   sendPencairanSelesaiNotifToUser,
 } from "@/app/lib/email";
-import { getHargaRange } from "@/app/lib/pricing";
+import { getHargaForTotalBerat } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
@@ -65,22 +65,8 @@ async function getBankSampahMonthlyCredit(userId: number): Promise<number> {
     ),
   });
 
-  const setoranList = records.map((r) => ({
-    jenisSampah: r.jenisSampah,
-    beratKg: r.beratKg,
-  }));
-
-  const wasteMap: Record<string, number> = {};
-  for (const item of setoranList) {
-    wasteMap[item.jenisSampah] =
-      (wasteMap[item.jenisSampah] || 0) + item.beratKg;
-  }
-
-  let dynamicKredit = 0;
-  for (const [jenis, berat] of Object.entries(wasteMap)) {
-    const harga = await getHargaRange(jenis, berat);
-    dynamicKredit += harga;
-  }
+  const totalBerat = records.reduce((sum, r) => sum + r.beratKg, 0);
+  const dynamicKredit = await getHargaForTotalBerat(totalBerat);
 
   const startOfMonthDate = new Date(currentYear, currentMonth, 1);
   const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
@@ -118,16 +104,8 @@ async function getWarmindoMonthlyCredit(userId: number): Promise<number> {
     ),
   });
 
-  const wasteMap: Record<string, number> = {};
-  for (const r of records) {
-    wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
-  }
-
-  let dynamicKredit = 0;
-  for (const [jenis, berat] of Object.entries(wasteMap)) {
-    const harga = await getHargaRange(jenis, berat);
-    dynamicKredit += harga;
-  }
+  const totalBerat = records.reduce((sum, r) => sum + r.beratKg, 0);
+  const dynamicKredit = await getHargaForTotalBerat(totalBerat);
 
   const startOfMonthDate = new Date(currentYear, currentMonth, 1);
   const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
@@ -1093,9 +1071,9 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     totalTagihan: doc.totalTagihan,
     metodePembayaran: doc.metodePembayaran,
     keterangan: doc.keterangan,
-    ttdPenyerahUrl: penyerahPng || doc.ttdPenyerahUrl,
-    ttdPenerimaUrl: penerimaPng || doc.ttdPenerimaUrl,
-    buktiTransferUrl: buktiTransferPng || pencairan?.buktiTransfer || null,
+    ttdPenyerahUrl: penyerahPng,
+    ttdPenerimaUrl: penerimaPng,
+    buktiTransferUrl: buktiTransferPng,
     setoranDetail: setoranDetail.map((s) => ({
       nomorSetor: s.nomorSetor,
       jenisSampah: s.jenisSampah,

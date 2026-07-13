@@ -9,7 +9,7 @@ import {
   sendPencairanNotifToAdmins,
   sendPencairanPengajuanNotifToUser,
 } from "@/app/lib/email";
-import { getHargaRange } from "@/app/lib/pricing";
+import { getHargaForTotalBerat, getHargaRange } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { db } from "@/db";
 import {
@@ -66,12 +66,22 @@ async function calcMonthlyKredit(
     wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
   }
 
+  const totalBerat = records.reduce((sum, r) => sum + r.beratKg, 0);
+  const totalKredit = await getHargaForTotalBerat(totalBerat);
+
   const dataSampah: { jenis: string; beratKg: number; kredit: number }[] = [];
-  let totalKredit = 0;
-  for (const [jenis, berat] of Object.entries(wasteMap)) {
-    const harga = await getHargaRange(jenis, berat);
-    totalKredit += harga;
-    dataSampah.push({ jenis, beratKg: berat, kredit: harga });
+  const entries = Object.entries(wasteMap);
+  for (let i = 0; i < entries.length; i++) {
+    const [jenis, berat] = entries[i];
+    let proportionalKredit = 0;
+    if (i === entries.length - 1) {
+      const sumAllocated = dataSampah.reduce((sum, d) => sum + d.kredit, 0);
+      proportionalKredit = Math.max(0, totalKredit - sumAllocated);
+    } else {
+      proportionalKredit =
+        totalBerat > 0 ? Math.round((berat / totalBerat) * totalKredit) : 0;
+    }
+    dataSampah.push({ jenis, beratKg: berat, kredit: proportionalKredit });
   }
 
   return { kredit: totalKredit, dataSampah };

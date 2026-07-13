@@ -663,7 +663,7 @@ export default function TerimaSetoranWarmindoPage() {
                     htmlFor="modalBeratAktual"
                     className="block text-xs font-semibold text-neutral-700 uppercase mb-1.5"
                   >
-                    Berat Aktual (kg) <span className="text-red-500">*</span>
+                    Berat (kg) <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="modalBeratAktual"
