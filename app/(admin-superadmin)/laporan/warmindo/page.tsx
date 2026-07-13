@@ -11,7 +11,9 @@ import {
   FileText,
   Layers,
   Loader2,
+  MapPin,
   Pencil,
+  Phone,
   Printer,
   Scale,
   Trash2,
@@ -872,6 +874,38 @@ export default function LaporanWarmindoPage() {
                       </div>
                     </div>
 
+                    {selectedItem.user?.alamat && (
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs text-neutral-500 block">
+                            Alamat Nasabah
+                          </span>
+                          <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                            {selectedItem.user.alamat}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedItem.user?.noTelepon && (
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
+                          <Phone className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs text-neutral-500 block">
+                            No. Telepon Nasabah
+                          </span>
+                          <span className="font-semibold text-neutral-800 text-sm leading-tight">
+                            {selectedItem.user.noTelepon}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
                         <Calendar className="w-4 h-4" />
@@ -1075,6 +1109,21 @@ export default function LaporanWarmindoPage() {
                               Pilih vendor ekspedisi yang akan ditugaskan untuk
                               menjemput sampah di lokasi Warmindo:
                             </p>
+                            {selectedItem.user?.alamat && (
+                              <div className="p-3 bg-white border border-primary-100 rounded-xl space-y-1">
+                                <span className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider block">
+                                  📍 Alamat Penjemputan Warmindo:
+                                </span>
+                                <p className="text-xs font-semibold text-neutral-800 leading-normal">
+                                  {selectedItem.user.alamat}
+                                </p>
+                                {selectedItem.user?.noTelepon && (
+                                  <p className="text-[10px] text-neutral-500">
+                                    📞 Hubungi: {selectedItem.user.noTelepon}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                             <div className="flex flex-col gap-3">
                               <select
                                 value={selectedEkspedisiId}

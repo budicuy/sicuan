@@ -408,12 +408,15 @@ export async function getMySetoran(params: {
             name: true,
             username: true,
             role: true,
+            alamat: true,
+            noTelepon: true,
           },
         },
         ekspedisi: {
           columns: {
             id: true,
             namaVendor: true,
+            noTelepon: true,
           },
         },
       },
@@ -470,6 +473,8 @@ export async function getMySetoran(params: {
             name: s.user.name,
             username: s.user.username,
             role: s.user.role,
+            alamat: s.user.alamat,
+            noTelepon: s.user.noTelepon,
           }
         : null,
       totalKredit: kreditVal,

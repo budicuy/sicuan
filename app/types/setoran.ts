@@ -32,7 +32,14 @@ export interface SetoranType {
   metodeSetor?: string | null;
   ekspedisiId?: number | null;
   ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
-  user?: { id: number; name: string; username: string; role: string } | null;
+  user?: {
+    id: number;
+    name: string;
+    username: string;
+    role: string;
+    alamat?: string | null;
+    noTelepon?: string | null;
+  } | null;
   totalKredit?: number;
   kategoriNasabah: string;
   createdAt: Date;
@@ -66,6 +73,8 @@ export interface SetorSampahItem {
     name: string;
     username: string;
     role: string;
+    alamat?: string | null;
+    noTelepon?: string | null;
   } | null;
   bankSampah?: {
     id: number;
