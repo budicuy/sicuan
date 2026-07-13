@@ -469,7 +469,7 @@ export default function LaporanWarmindoPage() {
     if (status === "pending") {
       if (item.fotoTimbangan) {
         return (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-300 animate-pulse">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-300">
             <Clock className="w-3.5 h-3.5" />
             Validasi Manual
           </span>
@@ -558,10 +558,11 @@ export default function LaporanWarmindoPage() {
     {
       header: "Aksi",
       render: (item: SetorSampahItem) => {
-        const isPendingEkspedisi =
-          item.status === "pending" && item.metodeSetor === "ekspedisi";
+        const isValidationNeeded =
+          item.status === "pending" &&
+          (item.metodeSetor === "ekspedisi" || item.fotoTimbangan);
 
-        if (userRole !== "admin" && userRole !== "superadmin") {
+        if (!isValidationNeeded) {
           return (
             <button
               type="button"
@@ -574,20 +575,7 @@ export default function LaporanWarmindoPage() {
           );
         }
 
-        if (!isPendingEkspedisi) {
-          return (
-            <button
-              type="button"
-              onClick={() => setSelectedItem(item)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-primary-50 text-neutral-700 rounded-lg text-xs font-semibold border border-neutral-200 transition-all cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Detail
-            </button>
-          );
-        }
-
-        // If pending ekspedisi, show "Validasi" button
+        // If pending / validation is needed, show "Validasi" button
         return (
           <span
             id={
@@ -1073,149 +1061,147 @@ export default function LaporanWarmindoPage() {
                   )}
 
                   {/* Ekspedisi Verification Actions for Admin */}
-                  {(userRole === "admin" || userRole === "superadmin") &&
-                    selectedItem.metodeSetor === "ekspedisi" && (
-                      <div className="p-4 bg-primary-50/40 border border-primary-150 rounded-xl space-y-4 shadow-2xs">
-                        <h4 className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 uppercase tracking-wider">
-                          <Truck className="w-4 h-4 text-primary-600" />
-                          Panel Kontrol Ekspedisi (Admin)
-                        </h4>
+                  {selectedItem.metodeSetor === "ekspedisi" && (
+                    <div className="p-4 bg-primary-50/40 border border-primary-150 rounded-xl space-y-4 shadow-2xs">
+                      <h4 className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 uppercase tracking-wider">
+                        <Truck className="w-4 h-4 text-primary-600" />
+                        Panel Kontrol Ekspedisi (Admin)
+                      </h4>
 
-                        {selectedItem.status === "pending" &&
-                          !selectedItem.fotoTimbangan && (
-                            <div className="space-y-3">
-                              <p className="text-xs text-neutral-500">
-                                Pilih vendor ekspedisi yang akan ditugaskan
-                                untuk menjemput sampah di lokasi Warmindo:
-                              </p>
-                              <div className="flex flex-col gap-3">
-                                <select
-                                  value={selectedEkspedisiId}
-                                  onChange={(e) =>
-                                    setSelectedEkspedisiId(e.target.value)
-                                  }
-                                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:border-primary-600"
-                                >
-                                  {ekspedisiList.length === 0 ? (
-                                    <option value="">
-                                      Tidak ada vendor ekspedisi aktif
+                      {selectedItem.status === "pending" &&
+                        !selectedItem.fotoTimbangan && (
+                          <div className="space-y-3">
+                            <p className="text-xs text-neutral-500">
+                              Pilih vendor ekspedisi yang akan ditugaskan untuk
+                              menjemput sampah di lokasi Warmindo:
+                            </p>
+                            <div className="flex flex-col gap-3">
+                              <select
+                                value={selectedEkspedisiId}
+                                onChange={(e) =>
+                                  setSelectedEkspedisiId(e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:border-primary-600"
+                              >
+                                {ekspedisiList.length === 0 ? (
+                                  <option value="">
+                                    Tidak ada vendor ekspedisi aktif
+                                  </option>
+                                ) : (
+                                  ekspedisiList.map((e) => (
+                                    <option key={e.id} value={e.id}>
+                                      {e.namaVendor} ({e.noTelepon})
                                     </option>
+                                  ))
+                                )}
+                              </select>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  disabled={
+                                    updatingId === selectedItem.id ||
+                                    !selectedEkspedisiId
+                                  }
+                                  onClick={async () => {
+                                    await handleStatusUpdate(
+                                      selectedItem.id,
+                                      "diverifikasi",
+                                      Number(selectedEkspedisiId),
+                                    );
+                                    setSelectedItem(null);
+                                  }}
+                                  className="flex-1 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center justify-center gap-1"
+                                >
+                                  {updatingId === selectedItem.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
-                                    ekspedisiList.map((e) => (
-                                      <option key={e.id} value={e.id}>
-                                        {e.namaVendor} ({e.noTelepon})
-                                      </option>
-                                    ))
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
                                   )}
-                                </select>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    disabled={
-                                      updatingId === selectedItem.id ||
-                                      !selectedEkspedisiId
-                                    }
-                                    onClick={async () => {
-                                      await handleStatusUpdate(
-                                        selectedItem.id,
-                                        "diverifikasi",
-                                        Number(selectedEkspedisiId),
-                                      );
-                                      setSelectedItem(null);
-                                    }}
-                                    className="flex-1 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-xs border-0 cursor-pointer disabled:opacity-50 transition-all flex items-center justify-center gap-1"
-                                  >
-                                    {updatingId === selectedItem.id ? (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    ) : (
-                                      <CheckCircle2 className="w-3.5 h-3.5" />
-                                    )}
-                                    Setujui &amp; Tugaskan
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={updatingId === selectedItem.id}
-                                    onClick={async () => {
-                                      await handleStatusUpdate(
-                                        selectedItem.id,
-                                        "ditolak",
-                                      );
-                                      setSelectedItem(null);
-                                    }}
-                                    className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
-                                  >
-                                    Tolak
-                                  </button>
-                                </div>
+                                  Setujui &amp; Tugaskan
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={updatingId === selectedItem.id}
+                                  onClick={async () => {
+                                    await handleStatusUpdate(
+                                      selectedItem.id,
+                                      "ditolak",
+                                    );
+                                    setSelectedItem(null);
+                                  }}
+                                  className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
+                                >
+                                  Tolak
+                                </button>
                               </div>
                             </div>
-                          )}
-
-                        {selectedItem.status === "diverifikasi" && (
-                          <div className="space-y-2 text-xs">
-                            <p className="text-neutral-600 font-semibold">
-                              Status: Menunggu mitra Warmindo menyerahkan sampah
-                              ke kurir ({selectedItem.ekspedisi?.namaVendor}).
-                            </p>
-                            <button
-                              type="button"
-                              disabled={updatingId === selectedItem.id}
-                              onClick={async () => {
-                                await handleStatusUpdate(
-                                  selectedItem.id,
-                                  "ditolak",
-                                );
-                                setSelectedItem(null);
-                              }}
-                              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer transition-all"
-                            >
-                              Batalkan / Tolak
-                            </button>
                           </div>
                         )}
 
-                        {selectedItem.status === "diserahkan" && (
-                          <div className="space-y-3">
-                            <p className="text-xs text-neutral-600 font-semibold">
-                              Status: Sampah sedang dalam perjalanan oleh kurir
-                              ke Bank Sampah tujuan.
-                            </p>
-                            <p className="text-[11px] text-neutral-500 leading-relaxed bg-neutral-50 rounded-xl p-3 border border-neutral-150">
-                              ℹ️ Validasi berat aktual, jenis sampah, dan
-                              penerimaan fisik akan dilakukan secara langsung
-                              oleh mitra Bank Sampah penerima.
-                            </p>
-                            <button
-                              type="button"
-                              disabled={updatingId === selectedItem.id}
-                              onClick={async () => {
-                                await handleStatusUpdate(
-                                  selectedItem.id,
-                                  "ditolak",
-                                );
-                                setSelectedItem(null);
-                              }}
-                              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
-                            >
-                              Batalkan / Tolak Setoran
-                            </button>
-                          </div>
-                        )}
-
-                        {(selectedItem.status === "diterima" ||
-                          selectedItem.status === "ditolak") && (
-                          <p className="text-xs text-neutral-500 font-semibold">
-                            Proses selesai. Status akhir:{" "}
-                            <span className="capitalize font-bold text-neutral-700">
-                              {selectedItem.status}
-                            </span>
+                      {selectedItem.status === "diverifikasi" && (
+                        <div className="space-y-2 text-xs">
+                          <p className="text-neutral-600 font-semibold">
+                            Status: Menunggu mitra Warmindo menyerahkan sampah
+                            ke kurir ({selectedItem.ekspedisi?.namaVendor}).
                           </p>
-                        )}
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            disabled={updatingId === selectedItem.id}
+                            onClick={async () => {
+                              await handleStatusUpdate(
+                                selectedItem.id,
+                                "ditolak",
+                              );
+                              setSelectedItem(null);
+                            }}
+                            className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer transition-all"
+                          >
+                            Batalkan / Tolak
+                          </button>
+                        </div>
+                      )}
+
+                      {selectedItem.status === "diserahkan" && (
+                        <div className="space-y-3">
+                          <p className="text-xs text-neutral-600 font-semibold">
+                            Status: Sampah sedang dalam perjalanan oleh kurir ke
+                            Bank Sampah tujuan.
+                          </p>
+                          <p className="text-[11px] text-neutral-500 leading-relaxed bg-neutral-50 rounded-xl p-3 border border-neutral-150">
+                            ℹ️ Validasi berat aktual, jenis sampah, dan
+                            penerimaan fisik akan dilakukan secara langsung oleh
+                            mitra Bank Sampah penerima.
+                          </p>
+                          <button
+                            type="button"
+                            disabled={updatingId === selectedItem.id}
+                            onClick={async () => {
+                              await handleStatusUpdate(
+                                selectedItem.id,
+                                "ditolak",
+                              );
+                              setSelectedItem(null);
+                            }}
+                            className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all"
+                          >
+                            Batalkan / Tolak Setoran
+                          </button>
+                        </div>
+                      )}
+
+                      {(selectedItem.status === "diterima" ||
+                        selectedItem.status === "ditolak") && (
+                        <p className="text-xs text-neutral-500 font-semibold">
+                          Proses selesai. Status akhir:{" "}
+                          <span className="capitalize font-bold text-neutral-700">
+                            {selectedItem.status}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {/* Panel khusus "Datang Langsung" */}
-                  {(userRole === "admin" || userRole === "superadmin") &&
-                    selectedItem.metodeSetor === "langsung" &&
+                  {selectedItem.metodeSetor === "langsung" &&
                     selectedItem.status === "pending" &&
                     !selectedItem.fotoTimbangan && (
                       <div className="p-4 bg-emerald-50/50 border border-emerald-150 rounded-xl space-y-3 shadow-2xs">
@@ -1237,8 +1223,7 @@ export default function LaporanWarmindoPage() {
                     )}
 
                   {/* Panel Validasi Manual Admin (AI Gagal) */}
-                  {(userRole === "admin" || userRole === "superadmin") &&
-                    selectedItem.status === "pending" &&
+                  {selectedItem.status === "pending" &&
                     selectedItem.fotoTimbangan && (
                       <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3 shadow-2xs animate-in fade-in duration-200">
                         <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1.5 uppercase tracking-wider">
@@ -1266,8 +1251,7 @@ export default function LaporanWarmindoPage() {
             {/* Footer */}
             <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
               {selectedItem.status === "pending" &&
-              selectedItem.fotoTimbangan &&
-              (userRole === "admin" || userRole === "superadmin") ? (
+              selectedItem.fotoTimbangan ? (
                 <>
                   <div className="flex gap-2">
                     <button

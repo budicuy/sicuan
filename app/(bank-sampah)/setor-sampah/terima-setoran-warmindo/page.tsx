@@ -376,7 +376,7 @@ export default function TerimaSetoranWarmindoPage() {
       return "bg-indigo-100 text-indigo-700 border-indigo-200";
     if (status === "pending") {
       if (item.fotoTimbangan) {
-        return "bg-amber-100 text-amber-700 border-amber-300 animate-pulse";
+        return "bg-amber-100 text-amber-700 border-amber-300";
       }
       return "bg-amber-100 text-amber-700 border-amber-200";
     }

@@ -1,4 +1,4 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, isNotNull, or } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -64,7 +64,10 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       and(
         eq(setorSampah.kategoriNasabah, "warmindo"),
         eq(setorSampah.status, "pending"),
-        eq(setorSampah.metodeSetor, "ekspedisi"),
+        or(
+          eq(setorSampah.metodeSetor, "ekspedisi"),
+          isNotNull(setorSampah.fotoTimbangan),
+        ),
       ),
     );
 
