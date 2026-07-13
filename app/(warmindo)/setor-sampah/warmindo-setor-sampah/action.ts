@@ -18,6 +18,7 @@ import {
 } from "@/app/lib/gemini-weight-reader";
 import { calculateSetoranReward } from "@/app/lib/pricing";
 import { deleteFromR2, uploadImageToR2 } from "@/app/lib/r2";
+import { buildNomorSetor, getNextSetorId } from "@/app/lib/setor-helper";
 import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
@@ -522,26 +523,14 @@ export async function submitSetorSampah(
 
     const isPending = user.role === "konsumen" || user.role === "warmindo";
 
-    // Query next sequence value for auto-increment ID
-    const nextValResult = await db.execute<{ nextval: string }>(
-      sql`SELECT nextval('setor_sampah_id_seq')`,
+    // Gunakan MAX(id)+1 agar nomor urut tidak loncat akibat gap sequence
+    const nextId = await getNextSetorId();
+
+    const nomorSetorFormatted = buildNomorSetor(
+      nextId,
+      user.role,
+      tanggalSetor,
     );
-    const nextId = nextValResult.rows[0]?.nextval
-      ? Number.parseInt(nextValResult.rows[0].nextval as string, 10)
-      : 1;
-
-    const dateParts = tanggalSetor.split("-");
-    const tahun = dateParts[0] || "2026";
-    const bulan = dateParts[1] || "01";
-    const tanggal = dateParts[2] || "01";
-
-    const roleToCode: Record<string, string> = {
-      "bank-sampah": "K",
-      warmindo: "W",
-      konsumen: "B",
-    };
-    const code = roleToCode[user.role] || "B";
-    const nomorSetorFormatted = `${nextId}/${code}/NDL/BJM/${tanggal}/${bulan}/${tahun}`;
 
     const baseValues = {
       id: nextId,
@@ -1006,25 +995,10 @@ export async function createSetorSampah(
   );
 
   // Query next sequence value for auto-increment ID
-  const nextValResult = await db.execute<{ nextval: string }>(
-    sql`SELECT nextval('setor_sampah_id_seq')`,
-  );
-  const nextId = nextValResult.rows[0]?.nextval
-    ? Number.parseInt(nextValResult.rows[0].nextval as string, 10)
-    : 1;
+  // Gunakan MAX(id)+1 agar nomor urut tidak loncat akibat gap sequence
+  const nextId = await getNextSetorId();
 
-  const dateParts = tanggalSetor.split("-");
-  const tahun = dateParts[0] || "2026";
-  const bulan = dateParts[1] || "01";
-  const tanggal = dateParts[2] || "01";
-
-  const roleToCode: Record<string, string> = {
-    "bank-sampah": "K",
-    warmindo: "W",
-    konsumen: "B",
-  };
-  const code = roleToCode[user.role] || "B";
-  const nomorSetor = `${nextId}/${code}/NDL/BJM/${tanggal}/${bulan}/${tahun}`;
+  const nomorSetor = buildNomorSetor(nextId, user.role, tanggalSetor);
 
   // Upload foto timbangan ke R2 (hanya jika bukan Warmindo)
   let fotoTimbanganUrl: string | null = null;

@@ -1,7 +1,8 @@
 "use server";
 
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { buildNomorSetor, getNextSetorId } from "@/app/lib/setor-helper";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import { nasabah, setorSampah } from "@/db/schema";
@@ -96,26 +97,14 @@ export async function createSetoranNasabah(
       };
     }
 
-    // Query next sequence value for auto-increment ID
-    const nextValResult = await db.execute<{ nextval: string }>(
-      sql`SELECT nextval('setor_sampah_id_seq')`,
+    // Gunakan MAX(id)+1 agar nomor urut tidak loncat akibat gap sequence
+    const nextId = await getNextSetorId();
+
+    const nomorSetorFormatted = buildNomorSetor(
+      nextId,
+      depositor.role,
+      tanggalSetor,
     );
-    const nextId = nextValResult.rows[0]?.nextval
-      ? Number.parseInt(nextValResult.rows[0].nextval as string, 10)
-      : 1;
-
-    const dateParts = tanggalSetor.split("-");
-    const tahun = dateParts[0] || "2026";
-    const bulan = dateParts[1] || "01";
-    const tanggal = dateParts[2] || "01";
-
-    const roleToCode: Record<string, string> = {
-      "bank-sampah": "K",
-      warmindo: "W",
-      konsumen: "B",
-    };
-    const code = roleToCode[depositor.role] || "B";
-    const nomorSetorFormatted = `${nextId}/${code}/NDL/BJM/${tanggal}/${bulan}/${tahun}`;
 
     const baseValues = {
       id: nextId,
