@@ -97,6 +97,38 @@ export async function seedUsers() {
       role: "warmindo",
       status: "Aktif",
     },
+    {
+      name: "Mitra Warmindo Berkah",
+      username: "warmindo.berkah",
+      password: hashDefault,
+      email: "warmindo.berkah@gmail.com",
+      role: "warmindo",
+      status: "Aktif",
+    },
+    {
+      name: "Mitra Warmindo Mandiri",
+      username: "warmindo.mandiri",
+      password: hashDefault,
+      email: "warmindo.mandiri@gmail.com",
+      role: "warmindo",
+      status: "Aktif",
+    },
+    {
+      name: "Mitra Warmindo Jaya",
+      username: "warmindo.jaya",
+      password: hashDefault,
+      email: "warmindo.jaya@gmail.com",
+      role: "warmindo",
+      status: "Aktif",
+    },
+    {
+      name: "Mitra Warmindo Sejahtera",
+      username: "warmindo.sejahtera",
+      password: hashDefault,
+      email: "warmindo.sejahtera@gmail.com",
+      role: "warmindo",
+      status: "Aktif",
+    },
     // 5. Mitra Bank Sampah
     {
       name: "Mitra Bank Sampah Demo",

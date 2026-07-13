@@ -192,5 +192,241 @@ export async function seedSetorSampah() {
     );
   }
 
+  // ── DATA SEED BARU: 5 Setoran Warmindo & 5 Setoran Konsumen ─────────────────
+  const wDemo = await db.query.users.findFirst({
+    where: eq(users.username, "warmindo.demo"),
+  });
+  const wBerkah = await db.query.users.findFirst({
+    where: eq(users.username, "warmindo.berkah"),
+  });
+  const wMandiri = await db.query.users.findFirst({
+    where: eq(users.username, "warmindo.mandiri"),
+  });
+  const wJaya = await db.query.users.findFirst({
+    where: eq(users.username, "warmindo.jaya"),
+  });
+  const wSejahtera = await db.query.users.findFirst({
+    where: eq(users.username, "warmindo.sejahtera"),
+  });
+
+  const ani = await db.query.users.findFirst({
+    where: eq(users.username, "50002842"),
+  });
+  const kurnia = await db.query.users.findFirst({
+    where: eq(users.username, "50173241"),
+  });
+  const tri = await db.query.users.findFirst({
+    where: eq(users.username, "50009840"),
+  });
+  const achmad = await db.query.users.findFirst({
+    where: eq(users.username, "50141512"),
+  });
+
+  const bankSampahDemo = await db.query.users.findFirst({
+    where: eq(users.username, "banksampah.demo"),
+  });
+
+  if (wDemo && wBerkah && wMandiri && wJaya && wSejahtera && bankSampahDemo) {
+    await db.insert(setorSampah).values([
+      {
+        nomorSetor: "6/W/NDL/BJM/09/07/2026",
+        userId: wDemo.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 11.23,
+        beratAiKg: 11.23,
+        tanggalSetor: "2026-07-09",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampah Ok",
+        totalPoin: 0,
+        status: "pending" as const,
+        kategoriNasabah: "warmindo" as const,
+        metodeSetor: "langsung" as const,
+        bankSampahId: bankSampahDemo.id,
+        createdAt: new Date("2026-07-09T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-09T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "7/W/NDL/BJM/10/07/2026",
+        userId: wBerkah.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 17.54,
+        beratAiKg: 17.54,
+        tanggalSetor: "2026-07-10",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampah sudah di pisahkan",
+        totalPoin: 0,
+        status: "diverifikasi" as const,
+        kategoriNasabah: "warmindo" as const,
+        metodeSetor: "langsung" as const,
+        bankSampahId: bankSampahDemo.id,
+        createdAt: new Date("2026-07-10T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-10T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "8/W/NDL/BJM/11/07/2026",
+        userId: wMandiri.id,
+        jenisSampah: "Paper Cup" as const,
+        beratKg: 8.91,
+        beratAiKg: 8.91,
+        tanggalSetor: "2026-07-11",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampah sudah di pisahkan dan bersih",
+        totalPoin: 0,
+        status: "diserahkan" as const,
+        kategoriNasabah: "warmindo" as const,
+        metodeSetor: "langsung" as const,
+        bankSampahId: bankSampahDemo.id,
+        createdAt: new Date("2026-07-11T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-11T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "9/W/NDL/BJM/12/07/2026",
+        userId: wJaya.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 14.22,
+        beratAiKg: 14.22,
+        tanggalSetor: "2026-07-12",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Sampah belum di pisahkan",
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "warmindo" as const,
+        metodeSetor: "langsung" as const,
+        bankSampahId: bankSampahDemo.id,
+        createdAt: new Date("2026-07-12T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-12T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "10/W/NDL/BJM/13/07/2026",
+        userId: wSejahtera.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 19.86,
+        beratAiKg: 19.86,
+        tanggalSetor: "2026-07-13",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "beberapa sampah masih di campur",
+        totalPoin: 0,
+        status: "ditolak" as const,
+        kategoriNasabah: "warmindo" as const,
+        metodeSetor: "langsung" as const,
+        bankSampahId: bankSampahDemo.id,
+        createdAt: new Date("2026-07-13T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-13T09:00:00.000Z"),
+      },
+    ]);
+    console.log("✅ Seeded 5 Warmindo setoran");
+  }
+
+  if (rosiana && ani && kurnia && tri && achmad) {
+    await db.insert(setorSampah).values([
+      {
+        nomorSetor: "11/B/NDL/BJM/09/07/2026",
+        userId: rosiana.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 8.52,
+        beratAiKg: 8.52,
+        tanggalSetor: "2026-07-09",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Setoran sampah Konsumen otomatis nomor #1",
+        totalPoin: 0,
+        status: "pending" as const,
+        kategoriNasabah: "konsumen" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-07-09T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-09T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "12/B/NDL/BJM/10/07/2026",
+        userId: ani.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 8.54,
+        beratAiKg: 8.54,
+        tanggalSetor: "2026-07-10",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Setoran sampah Konsumen otomatis nomor #2",
+        totalPoin: 213,
+        status: "diverifikasi" as const,
+        kategoriNasabah: "konsumen" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-07-10T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-10T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "13/B/NDL/BJM/11/07/2026",
+        userId: kurnia.id,
+        jenisSampah: "Paper Cup" as const,
+        beratKg: 9.79,
+        beratAiKg: 9.79,
+        tanggalSetor: "2026-07-11",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Setoran sampah Konsumen otomatis nomor #3",
+        totalPoin: 293,
+        status: "diserahkan" as const,
+        kategoriNasabah: "konsumen" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-07-11T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-11T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "14/B/NDL/BJM/12/07/2026",
+        userId: tri.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 6.42,
+        beratAiKg: 6.42,
+        tanggalSetor: "2026-07-12",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Setoran sampah Konsumen otomatis nomor #4",
+        totalPoin: 128,
+        status: "diterima" as const,
+        kategoriNasabah: "konsumen" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-07-12T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-12T09:00:00.000Z"),
+      },
+      {
+        nomorSetor: "15/B/NDL/BJM/13/07/2026",
+        userId: achmad.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 5.21,
+        beratAiKg: 5.21,
+        tanggalSetor: "2026-07-13",
+        fotoTimbangan: null,
+        fotoBuktiTambahan: [],
+        catatan: "Setoran sampah Konsumen otomatis nomor #5",
+        totalPoin: 0,
+        status: "ditolak" as const,
+        kategoriNasabah: "konsumen" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-07-13T09:00:00.000Z"),
+        updatedAt: new Date("2026-07-13T09:00:00.000Z"),
+      },
+    ]);
+
+    await db
+      .update(nasabah)
+      .set({
+        poin: sql`${nasabah.poin} + 128`,
+      })
+      .where(eq(nasabah.id, tri.id));
+
+    console.log(
+      "✅ Seeded 5 Konsumen setoran & updated points for Tri Anggono",
+    );
+  }
+
+  // Reset sequence to sync with the max id inserted
+  await db.execute(
+    sql`SELECT setval('setor_sampah_id_seq', (SELECT MAX(id) FROM setor_sampah))`,
+  );
+
   console.log("✅ Seeded split setoran and pencairan successfully");
 }

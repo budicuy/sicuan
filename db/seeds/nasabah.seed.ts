@@ -145,6 +145,56 @@ export async function seedNasabah() {
     });
   }
 
+  const warmindosNew = [
+    {
+      username: "warmindo.berkah",
+      name: "Mitra Warmindo Berkah",
+      email: "warmindo.berkah@gmail.com",
+      nik: "637102000000001",
+    },
+    {
+      username: "warmindo.mandiri",
+      name: "Mitra Warmindo Mandiri",
+      email: "warmindo.mandiri@gmail.com",
+      nik: "637102000000002",
+    },
+    {
+      username: "warmindo.jaya",
+      name: "Mitra Warmindo Jaya",
+      email: "warmindo.jaya@gmail.com",
+      nik: "637102000000003",
+    },
+    {
+      username: "warmindo.sejahtera",
+      name: "Mitra Warmindo Sejahtera",
+      email: "warmindo.sejahtera@gmail.com",
+      nik: "637102000000004",
+    },
+  ];
+
+  for (const w of warmindosNew) {
+    const user = userMap.get(w.username);
+    if (user) {
+      profilesToInsert.push({
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        role: user.role as "warmindo",
+        status: user.status as "Aktif",
+        nik: w.nik,
+        tanggalLahir: "1990-08-17",
+        noTelepon: null,
+        email: w.email,
+        alamat: null,
+        jenisBank: null,
+        noRekening: null,
+        poin: null,
+        latitude: null,
+        longitude: null,
+      });
+    }
+  }
+
   // 5. Mitra Bank Sampah
   const bankSampah = userMap.get("banksampah.demo");
   if (bankSampah) {

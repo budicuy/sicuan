@@ -1,4 +1,4 @@
-import { and, count, eq, or } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -63,10 +63,8 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
     .where(
       and(
         eq(setorSampah.kategoriNasabah, "warmindo"),
-        or(
-          eq(setorSampah.status, "pending"),
-          eq(setorSampah.status, "diserahkan"),
-        ),
+        eq(setorSampah.status, "pending"),
+        eq(setorSampah.metodeSetor, "ekspedisi"),
       ),
     );
 

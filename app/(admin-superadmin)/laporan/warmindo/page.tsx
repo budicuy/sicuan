@@ -549,8 +549,8 @@ export default function LaporanWarmindoPage() {
     {
       header: "Aksi",
       render: (item: SetorSampahItem) => {
-        const isCompleted =
-          item.status === "diterima" || item.status === "ditolak";
+        const isPendingEkspedisi =
+          item.status === "pending" && item.metodeSetor === "ekspedisi";
 
         if (userRole !== "admin" && userRole !== "superadmin") {
           return (
@@ -565,7 +565,7 @@ export default function LaporanWarmindoPage() {
           );
         }
 
-        if (isCompleted) {
+        if (!isPendingEkspedisi) {
           return (
             <button
               type="button"
@@ -578,7 +578,7 @@ export default function LaporanWarmindoPage() {
           );
         }
 
-        // If not completed (pending, diverifikasi, diserahkan), show "Validasi" button
+        // If pending ekspedisi, show "Validasi" button
         return (
           <span
             id={
@@ -1221,22 +1221,6 @@ export default function LaporanWarmindoPage() {
                           fisik akan dilakukan secara langsung oleh mitra Bank
                           Sampah penerima ketika mitra tiba di lokasi.
                         </p>
-                        <div className="flex gap-2 pt-1">
-                          <button
-                            type="button"
-                            disabled={updatingId === selectedItem.id}
-                            onClick={async () => {
-                              await handleStatusUpdate(
-                                selectedItem.id,
-                                "ditolak",
-                              );
-                              setSelectedItem(null);
-                            }}
-                            className="flex-1 px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition-all text-center"
-                          >
-                            Batalkan / Tolak Pengajuan
-                          </button>
-                        </div>
                       </div>
                     )}
                 </div>
@@ -1244,65 +1228,14 @@ export default function LaporanWarmindoPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex justify-between items-center gap-3">
-              <div>
-                {(userRole === "admin" || userRole === "superadmin") &&
-                selectedItem.metodeSetor !== "ekspedisi" &&
-                selectedItem.status === "pending" ? (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedItem(null)}
-                    className="px-4 py-2 border border-neutral-200 hover:bg-neutral-100 text-neutral-600 font-semibold text-sm rounded-xl transition-all cursor-pointer"
-                  >
-                    Batal
-                  </button>
-                ) : (
-                  <div />
-                )}
-              </div>
-              <div className="flex items-center gap-2.5">
-                {(userRole === "admin" || userRole === "superadmin") &&
-                selectedItem.metodeSetor !== "ekspedisi" &&
-                selectedItem.status === "pending" ? (
-                  <>
-                    <button
-                      type="button"
-                      disabled={updatingId === selectedItem.id}
-                      onClick={async () => {
-                        await handleStatusUpdate(selectedItem.id, "ditolak");
-                        setSelectedItem(null);
-                      }}
-                      className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-sm rounded-xl cursor-pointer disabled:opacity-50 transition-all"
-                    >
-                      Tolak Setoran
-                    </button>
-                    <button
-                      type="button"
-                      disabled={updatingId === selectedItem.id}
-                      onClick={async () => {
-                        await handleStatusUpdate(selectedItem.id, "diterima");
-                        setSelectedItem(null);
-                      }}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl cursor-pointer disabled:opacity-50 shadow-sm hover:shadow-md transition-all flex items-center gap-1.5"
-                    >
-                      {updatingId === selectedItem.id ? (
-                        <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="w-4.5 h-4.5" />
-                      )}
-                      Setujui Setoran
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedItem(null)}
-                    className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-sm rounded-xl transition-colors cursor-pointer shadow-sm"
-                  >
-                    Tutup
-                  </button>
-                )}
-              </div>
+            <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedItem(null)}
+                className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-sm rounded-xl transition-colors cursor-pointer shadow-sm"
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>
