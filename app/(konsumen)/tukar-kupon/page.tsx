@@ -262,7 +262,6 @@ export default function TukarKuponPage() {
   return (
     <div className="space-y-6 pb-16 font-sans">
       <TourGuide
-        pageKey="tukar"
         steps={tukarSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

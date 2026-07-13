@@ -390,7 +390,6 @@ export default function TerimaSetoranWarmindoPage() {
   return (
     <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
       <TourGuide
-        pageKey="bank_sampah_terima"
         steps={terimaSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

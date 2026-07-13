@@ -440,7 +440,6 @@ export default function LaporanBankSampahPage() {
       </div>
 
       <TourGuide
-        pageKey="bank_sampah_laporan"
         steps={laporanSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

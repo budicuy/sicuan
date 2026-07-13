@@ -609,7 +609,6 @@ export default function PencairanDanaPage() {
   return (
     <div className="space-y-5 animate-in fade-in duration-300 pb-12 max-w-4xl mx-auto">
       <TourGuide
-        pageKey="warmindo_pencairan"
         steps={pencairanSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

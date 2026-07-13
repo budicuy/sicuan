@@ -679,7 +679,6 @@ export default function LaporanWarmindoPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <TourGuide
-        pageKey="admin_setoran_warmindo"
         steps={warmindoSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

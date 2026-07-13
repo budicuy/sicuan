@@ -25,14 +25,12 @@ interface TourStep {
 }
 
 interface TourGuideProps {
-  pageKey: string;
   steps: TourStep[];
   onStart?: () => void;
   onEnd?: () => void;
 }
 
-export function TourGuide({ pageKey, steps, onStart, onEnd }: TourGuideProps) {
-  const hasAutoRunRef = useRef(false);
+export function TourGuide({ steps, onStart, onEnd }: TourGuideProps) {
   const onStartRef = useRef(onStart);
   const onEndRef = useRef(onEnd);
   const stepsRef = useRef(steps);
@@ -45,9 +43,6 @@ export function TourGuide({ pageKey, steps, onStart, onEnd }: TourGuideProps) {
   }, [onStart, onEnd, steps]);
 
   useEffect(() => {
-    const storageKey = `tourGuide_${pageKey}_seen`;
-    const isSeen = localStorage.getItem(storageKey);
-
     const driverObj = driver({
       showProgress: true,
       allowClose: false,
@@ -96,7 +91,6 @@ export function TourGuide({ pageKey, steps, onStart, onEnd }: TourGuideProps) {
         return stepConfig;
       }),
       onDestroyed: () => {
-        localStorage.setItem(storageKey, "true");
         onEndRef.current?.();
       },
     });
@@ -108,12 +102,6 @@ export function TourGuide({ pageKey, steps, onStart, onEnd }: TourGuideProps) {
         driverObj.drive();
       }, 150);
     };
-
-    // Auto-run if not seen yet
-    if (!isSeen && !hasAutoRunRef.current) {
-      hasAutoRunRef.current = true;
-      startTour();
-    }
 
     const handleManualTrigger = () => {
       startTour();
@@ -139,7 +127,7 @@ export function TourGuide({ pageKey, steps, onStart, onEnd }: TourGuideProps) {
         // ignore
       }
     };
-  }, [pageKey]);
+  }, []);
 
   return null;
 }

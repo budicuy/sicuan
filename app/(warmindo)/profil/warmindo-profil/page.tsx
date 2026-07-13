@@ -227,7 +227,6 @@ export default function ProfilPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
       <TourGuide
-        pageKey="warmindo_profil"
         steps={profilSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

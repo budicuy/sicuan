@@ -544,7 +544,6 @@ export default function BankSampahSetorSampah() {
   return (
     <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
       <TourGuide
-        pageKey="bank_sampah_setor"
         steps={setorSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

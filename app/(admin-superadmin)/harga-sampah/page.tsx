@@ -265,7 +265,6 @@ export default function HargaSampahPage() {
   return (
     <div className="space-y-6">
       <TourGuide
-        pageKey="admin_harga"
         steps={hargaSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

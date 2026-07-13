@@ -228,7 +228,6 @@ export default function LaporanRawMaterialPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <TourGuide
-        pageKey="admin_laporan_raw_material"
         steps={rawMaterialSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

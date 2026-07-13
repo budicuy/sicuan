@@ -226,7 +226,6 @@ export default function ProfilPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
       <TourGuide
-        pageKey="profil"
         steps={profilSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

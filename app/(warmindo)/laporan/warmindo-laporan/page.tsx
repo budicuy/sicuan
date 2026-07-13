@@ -587,7 +587,6 @@ export default function LaporanWarmindoPage() {
       </div>
 
       <TourGuide
-        pageKey="warmindo_laporan"
         steps={laporanSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

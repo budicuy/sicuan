@@ -213,7 +213,6 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
       <TourGuide
-        pageKey="bank_sampah_dashboard"
         steps={dashboardSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

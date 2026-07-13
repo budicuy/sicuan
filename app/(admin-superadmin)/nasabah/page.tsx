@@ -314,7 +314,6 @@ export default function NasabahPage() {
   return (
     <div className="space-y-6">
       <TourGuide
-        pageKey="admin_nasabah"
         steps={nasabahSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}

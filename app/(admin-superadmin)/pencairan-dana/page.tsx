@@ -687,7 +687,6 @@ export default function PencairanAdminPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <TourGuide
-        pageKey="admin_pencairan"
         steps={pencairanSteps}
         onStart={handleTourStart}
         onEnd={handleTourEnd}
