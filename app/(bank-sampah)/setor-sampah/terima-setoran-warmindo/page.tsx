@@ -366,20 +366,30 @@ export default function TerimaSetoranWarmindoPage() {
       year: "numeric",
     });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (item: WarmindoSetoranItem) => {
+    const status = item.status;
     if (status === "diterima")
       return "bg-emerald-100 text-emerald-700 border-emerald-200";
     if (status === "diverifikasi")
       return "bg-sky-100 text-sky-700 border-sky-200";
     if (status === "diserahkan")
       return "bg-indigo-100 text-indigo-700 border-indigo-200";
-    if (status === "pending")
+    if (status === "pending") {
+      if (item.fotoTimbangan) {
+        return "bg-amber-100 text-amber-700 border-amber-300 animate-pulse";
+      }
       return "bg-amber-100 text-amber-700 border-amber-200";
+    }
     return "bg-red-100 text-red-700 border-red-200";
   };
 
-  const getStatusLabel = (status: string) => {
-    if (status === "pending") return "Menunggu Verifikasi";
+  const getStatusLabel = (item: WarmindoSetoranItem) => {
+    const status = item.status;
+    if (status === "pending") {
+      return item.fotoTimbangan
+        ? "Menunggu Validasi Admin"
+        : "Menunggu Verifikasi";
+    }
     if (status === "diverifikasi") return "Menunggu Pickup";
     if (status === "diserahkan") return "Sedang Dikirim";
     if (status === "diterima") return "Diterima";
@@ -532,9 +542,9 @@ export default function TerimaSetoranWarmindoPage() {
                       </p>
                     </div>
                     <span
-                      className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 ${getStatusBadge(item.status)}`}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-lg border shrink-0 ${getStatusBadge(item)}`}
                     >
-                      {getStatusLabel(item.status)}
+                      {getStatusLabel(item)}
                     </span>
                   </div>
                 </div>
@@ -573,7 +583,8 @@ export default function TerimaSetoranWarmindoPage() {
                 </div>
 
                 {item.status === "pending" &&
-                  item.metodeSetor === "langsung" && (
+                  item.metodeSetor === "langsung" &&
+                  !item.fotoTimbangan && (
                     <div className="px-4 pb-4">
                       <button
                         type="button"
