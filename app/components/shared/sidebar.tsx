@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BarChart2,
   BookOpen,
   ChevronDown,
   Coins,
@@ -41,6 +42,7 @@ const IconMap: Record<string, LucideIcon> = {
   BookOpen,
   Map: MapIcon,
   Truck,
+  BarChart2,
 };
 
 function getIcon(name: string): LucideIcon {

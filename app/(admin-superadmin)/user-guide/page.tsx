@@ -444,7 +444,7 @@ export default function UserGuidePage() {
 
                 <div className="space-y-4 text-xs">
                   <p className="text-neutral-600 leading-relaxed">
-                    Halaman <strong>Laporan Setoran</strong> menampilkan
+                    Halaman <strong>Laporan Material</strong> menampilkan
                     performa penyerapan kembali sampah (sirkularitas) dari raw
                     material yang dirilis Indofood. Beberapa fitur utama kontrol
                     halaman:

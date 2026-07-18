@@ -151,8 +151,14 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       {
         type: "link",
         href: "/laporan/raw-material",
-        label: "Laporan Setoran",
+        label: "Laporan Material",
         icon: "Recycle",
+      },
+      {
+        type: "link",
+        href: "/laporan/setoran",
+        label: "Laporan Setoran",
+        icon: "BarChart2",
       },
       {
         type: "link",

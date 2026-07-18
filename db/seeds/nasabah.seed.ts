@@ -69,7 +69,7 @@ export async function seedNasabah() {
       nik: null,
       tanggalLahir: null,
       noTelepon: "082251510087",
-      email: "adminsicuan@gmail.com",
+      email: "superadmin.sicuan@gmail.com",
       alamat:
         "Jalan Ahmad Yani KM 32, Liang Anggang, Pandahan, Kecamatan Bati-Bati, Kabupaten Tanah Laut, Kalimantan Selatan",
       jenisBank: null,
