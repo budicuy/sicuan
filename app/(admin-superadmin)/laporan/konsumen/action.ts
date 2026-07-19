@@ -862,10 +862,7 @@ export async function validateFotoTimbangan(
   }
 
   if (!aiResult.success) {
-    const isCleanError =
-      aiResult.message === "sampah bukan produk indofood" ||
-      aiResult.message === "sampah harus diletakkan di atas timbangan" ||
-      aiResult.message === "berat sampah tidak logis";
+    const isCleanError = !aiResult.message.startsWith("Gagal");
     return {
       success: false,
       berat: 0,

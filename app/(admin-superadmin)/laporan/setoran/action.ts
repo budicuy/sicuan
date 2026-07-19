@@ -1,8 +1,11 @@
 "use server";
 
+import { renderToStream } from "@react-pdf/renderer";
 import { and, asc, desc, eq, type SQL, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
+import React from "react";
+import { LaporanSetoranDocument } from "@/app/components/shared/LaporanSetoranDocument";
 import type {
   DetailSetoranItem,
   DistributionItem,
@@ -184,6 +187,31 @@ export async function getUnifiedReport(params: {
   } else if (sortBy === "status") {
     orderColumn =
       sortOrder === "asc" ? asc(setorSampah.status) : desc(setorSampah.status);
+  } else if (sortBy === "nomorSetor") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.nomorSetor)
+        : desc(setorSampah.nomorSetor);
+  } else if (sortBy === "jenisSampah") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.jenisSampah)
+        : desc(setorSampah.jenisSampah);
+  } else if (sortBy === "kategoriNasabah") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.kategoriNasabah)
+        : desc(setorSampah.kategoriNasabah);
+  } else if (sortBy === "metodeSetor") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.metodeSetor)
+        : desc(setorSampah.metodeSetor);
+  } else if (sortBy === "kredit" || sortBy === "totalPoin") {
+    orderColumn =
+      sortOrder === "asc"
+        ? asc(setorSampah.totalPoin)
+        : desc(setorSampah.totalPoin);
   }
 
   // ── Parallel Queries ─────────────────────────────────────────────
@@ -482,4 +510,385 @@ function emptyReport(): UnifiedReportData {
     detailData: [],
     totalDetailData: 0,
   };
+}
+
+export async function generateUnifiedReportPdfAction(params: {
+  selectedYear: number;
+  selectedMonth: number | null;
+  kategori: string;
+  jenisSampah: string;
+  status: string;
+  metodeSetor: string;
+  columns: string[];
+  orientation?: "portrait" | "landscape";
+}) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return { success: false, message: "Unauthorized access" };
+  }
+
+  try {
+    const filters: SQL[] = [
+      sql`extract(year from ${setorSampah.createdAt}) = ${params.selectedYear}`,
+    ];
+
+    if (params.selectedMonth !== null) {
+      filters.push(
+        sql`extract(month from ${setorSampah.createdAt}) = ${params.selectedMonth}`,
+      );
+    }
+
+    if (params.kategori && params.kategori !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.kategoriNasabah,
+          params.kategori as "warmindo" | "bank-sampah" | "konsumen",
+        ),
+      );
+    }
+
+    if (params.jenisSampah && params.jenisSampah !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.jenisSampah,
+          params.jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+        ),
+      );
+    }
+
+    if (params.status && params.status !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.status,
+          params.status as
+            | "pending"
+            | "diverifikasi"
+            | "diserahkan"
+            | "diterima"
+            | "ditolak",
+        ),
+      );
+    }
+
+    if (params.metodeSetor && params.metodeSetor !== "Semua") {
+      filters.push(sql`${setorSampah.metodeSetor} = ${params.metodeSetor}`);
+    }
+
+    const combinedWhere = and(...filters);
+
+    const [allRows, allRanges] = await Promise.all([
+      db.query.setorSampah.findMany({
+        where: combinedWhere,
+        with: {
+          user: { columns: { id: true, name: true } },
+        },
+        orderBy: [desc(setorSampah.tanggalSetor)],
+      }),
+      db.select().from(hargaSampah),
+    ]);
+
+    let totalBerat = 0;
+    let totalPoin = 0;
+    let totalKredit = 0;
+
+    const items = allRows.map((row) => {
+      totalBerat += row.beratKg;
+      totalPoin += row.totalPoin;
+
+      const range = allRanges.find(
+        (r) =>
+          r.jenisSampah === row.jenisSampah &&
+          row.beratKg >= r.minBerat &&
+          (r.maxBerat === null || row.beratKg <= r.maxBerat),
+      );
+      const isMoneyCategory =
+        row.kategoriNasabah === "warmindo" ||
+        row.kategoriNasabah === "bank-sampah";
+      const kredit = isMoneyCategory ? (range?.harga ?? 0) : 0;
+      if (row.status === "diterima") {
+        totalKredit += kredit;
+      }
+
+      return {
+        id: row.id,
+        nomorSetor: row.nomorSetor,
+        nasabah: row.user?.name ?? "–",
+        kategoriNasabah: row.kategoriNasabah,
+        jenisSampah: row.jenisSampah,
+        beratKg: row.beratKg,
+        tanggalSetor: row.tanggalSetor,
+        status: row.status,
+        metodeSetor: row.metodeSetor,
+        totalPoin: row.totalPoin,
+        kredit,
+      };
+    });
+
+    const BULAN_NAMES = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+
+    const pdfData = {
+      filters: {
+        tahun: String(params.selectedYear),
+        bulan: params.selectedMonth
+          ? BULAN_NAMES[params.selectedMonth - 1]
+          : "Semua Bulan",
+        kategori: params.kategori,
+        jenisSampah: params.jenisSampah,
+        status: params.status,
+        metodeSetor: params.metodeSetor,
+      },
+      summary: {
+        totalSetoran: items.length,
+        totalBerat: Math.round(totalBerat * 100) / 100,
+        totalKredit: Math.round(totalKredit * 100) / 100,
+        totalPoin,
+      },
+      columns: params.columns,
+      items,
+    };
+
+    const element = React.createElement(LaporanSetoranDocument, {
+      data: pdfData,
+      orientation: params.orientation || "portrait",
+    });
+    // biome-ignore lint/suspicious/noExplicitAny: react-pdf type mismatch
+    const stream = await renderToStream(element as any);
+
+    const chunks: Uint8Array[] = [];
+    // biome-ignore lint/suspicious/noExplicitAny: node stream chunk type
+    for await (const chunk of stream as any) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+    const pdfBase64 = buffer.toString("base64");
+
+    const fileName = `Laporan_Setoran_${params.selectedYear}${params.selectedMonth ? `_${params.selectedMonth}` : ""}.pdf`;
+
+    return { success: true, pdfBase64, fileName };
+  } catch (error) {
+    console.error("Error generating report PDF:", error);
+    const message =
+      error instanceof Error ? error.message : "Gagal membuat PDF";
+    return { success: false, message };
+  }
+}
+
+export async function getExportDataAction(params: {
+  selectedYear: number;
+  selectedMonth: number | null;
+  kategori: string;
+  jenisSampah: string;
+  status: string;
+  metodeSetor: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return { success: false, message: "Unauthorized access" };
+  }
+
+  try {
+    const filters: SQL[] = [
+      sql`extract(year from ${setorSampah.createdAt}) = ${params.selectedYear}`,
+    ];
+
+    if (params.selectedMonth !== null) {
+      filters.push(
+        sql`extract(month from ${setorSampah.createdAt}) = ${params.selectedMonth}`,
+      );
+    }
+
+    if (params.kategori && params.kategori !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.kategoriNasabah,
+          params.kategori as "warmindo" | "bank-sampah" | "konsumen",
+        ),
+      );
+    }
+
+    if (params.jenisSampah && params.jenisSampah !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.jenisSampah,
+          params.jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+        ),
+      );
+    }
+
+    if (params.status && params.status !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.status,
+          params.status as
+            | "pending"
+            | "diverifikasi"
+            | "diserahkan"
+            | "diterima"
+            | "ditolak",
+        ),
+      );
+    }
+
+    if (params.metodeSetor && params.metodeSetor !== "Semua") {
+      filters.push(sql`${setorSampah.metodeSetor} = ${params.metodeSetor}`);
+    }
+
+    const combinedWhere = and(...filters);
+
+    const [allRows, allRanges] = await Promise.all([
+      db.query.setorSampah.findMany({
+        where: combinedWhere,
+        with: {
+          user: { columns: { id: true, name: true } },
+        },
+        orderBy: [desc(setorSampah.tanggalSetor)],
+      }),
+      db.select().from(hargaSampah),
+    ]);
+
+    let totalBerat = 0;
+    let totalPoin = 0;
+    let totalKredit = 0;
+
+    const items = allRows.map((row) => {
+      totalBerat += row.beratKg;
+      totalPoin += row.totalPoin;
+
+      const range = allRanges.find(
+        (r) =>
+          r.jenisSampah === row.jenisSampah &&
+          row.beratKg >= r.minBerat &&
+          (r.maxBerat === null || row.beratKg <= r.maxBerat),
+      );
+      const isMoneyCategory =
+        row.kategoriNasabah === "warmindo" ||
+        row.kategoriNasabah === "bank-sampah";
+      const kredit = isMoneyCategory ? (range?.harga ?? 0) : 0;
+      if (row.status === "diterima") {
+        totalKredit += kredit;
+      }
+
+      return {
+        id: row.id,
+        nomorSetor: row.nomorSetor,
+        nasabah: row.user?.name ?? "–",
+        kategoriNasabah: row.kategoriNasabah,
+        jenisSampah: row.jenisSampah,
+        beratKg: row.beratKg,
+        tanggalSetor: row.tanggalSetor,
+        status: row.status,
+        metodeSetor: row.metodeSetor,
+        totalPoin: row.totalPoin,
+        kredit,
+      };
+    });
+
+    return {
+      success: true,
+      summary: {
+        totalSetoran: items.length,
+        totalBerat: Math.round(totalBerat * 100) / 100,
+        totalKredit: Math.round(totalKredit * 100) / 100,
+        totalPoin,
+      },
+      items,
+    };
+  } catch (error) {
+    console.error("Error fetching export data:", error);
+    const message =
+      error instanceof Error ? error.message : "Gagal mengambil data ekspor";
+    return {
+      success: false,
+      message,
+    };
+  }
+}
+
+export async function getExportCountAction(params: {
+  selectedYear: number;
+  selectedMonth: number | null;
+  kategori: string;
+  jenisSampah: string;
+  status: string;
+  metodeSetor: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return { success: false, message: "Unauthorized access", count: 0 };
+  }
+
+  try {
+    const filters: SQL[] = [
+      sql`extract(year from ${setorSampah.createdAt}) = ${params.selectedYear}`,
+    ];
+
+    if (params.selectedMonth !== null) {
+      filters.push(
+        sql`extract(month from ${setorSampah.createdAt}) = ${params.selectedMonth}`,
+      );
+    }
+
+    if (params.kategori && params.kategori !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.kategoriNasabah,
+          params.kategori as "warmindo" | "bank-sampah" | "konsumen",
+        ),
+      );
+    }
+
+    if (params.jenisSampah && params.jenisSampah !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.jenisSampah,
+          params.jenisSampah as "Karton" | "Etiket" | "Paper Cup",
+        ),
+      );
+    }
+
+    if (params.status && params.status !== "Semua") {
+      filters.push(
+        eq(
+          setorSampah.status,
+          params.status as
+            | "pending"
+            | "diverifikasi"
+            | "diserahkan"
+            | "diterima"
+            | "ditolak",
+        ),
+      );
+    }
+
+    if (params.metodeSetor && params.metodeSetor !== "Semua") {
+      filters.push(sql`${setorSampah.metodeSetor} = ${params.metodeSetor}`);
+    }
+
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(setorSampah)
+      .where(and(...filters));
+
+    return { success: true, count: countResult[0]?.count ?? 0 };
+  } catch (error) {
+    console.error("Error getting export count:", error);
+    return {
+      success: false,
+      message: "Gagal menghitung data ekspor",
+      count: 0,
+    };
+  }
 }

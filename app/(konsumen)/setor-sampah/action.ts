@@ -802,7 +802,7 @@ export async function handoverSetorSampahToEkspedisi(
 
 export async function validateFotoTimbangan(
   imageBase64: string,
-  beratInputKg: number,
+  beratInputKg?: number,
 ): Promise<{
   success: boolean;
   berat: number;
@@ -821,10 +821,7 @@ export async function validateFotoTimbangan(
   }
 
   if (!aiResult.success) {
-    const isCleanError =
-      aiResult.message === "sampah bukan produk indofood" ||
-      aiResult.message === "sampah harus diletakkan di atas timbangan" ||
-      aiResult.message === "berat sampah tidak logis";
+    const isCleanError = !aiResult.message.startsWith("Gagal");
     return {
       success: false,
       berat: 0,
@@ -834,14 +831,16 @@ export async function validateFotoTimbangan(
     };
   }
 
-  const isValid = await validateBeratTolerance(beratInputKg, aiResult.berat);
+  if (beratInputKg !== undefined) {
+    const isValid = await validateBeratTolerance(beratInputKg, aiResult.berat);
 
-  if (!isValid) {
-    return {
-      success: false,
-      berat: aiResult.berat,
-      message: `Berat yang terdeteksi tidak sesuai dengan input berat. Terdeteksi ${aiResult.berat} kg, namun Anda menginput ${beratInputKg} kg. Silakan upload ulang gambar bukti timbangan yang jelas.`,
-    };
+    if (!isValid) {
+      return {
+        success: false,
+        berat: aiResult.berat,
+        message: `Berat yang terdeteksi tidak sesuai dengan input berat. Terdeteksi ${aiResult.berat} kg, namun Anda menginput ${beratInputKg} kg. Silakan upload ulang gambar bukti timbangan yang jelas.`,
+      };
+    }
   }
 
   return {

@@ -11,9 +11,9 @@ export interface WeightReadResult {
 const PROMPT = `Kamu adalah asisten AI yang bertugas memvalidasi setoran sampah dan membaca angka berat dari foto timbangan atau timbangan digital.
 
 Tugas kamu adalah:
-1. Periksa apakah gambar menampilkan sampah/kemasan/dus/label yang merupakan produk dari Indofood (seperti mie instan Indomie, Pop Mie, Sarimi, Supermi, Sakura, Intermi, atau produk makanan/minuman/snack Indofood lainnya seperti Chitato, Lays, Chiki, dll.). Jika BUKAN merupakan produk Indofood, tolak setoran.
-2. Periksa apakah sampah Indofood tersebut benar-benar diletakkan di atas timbangan/alat timbang (timbangan tidak boleh kosong atau objek sampah tidak berada di atas timbangan). Jika tidak diletakkan di atas timbangan, tolak setoran.
-3. Periksa apakah angka berat yang dibaca dari timbangan masuk akal/logis untuk volume atau jumlah sampah yang terlihat pada gambar (misalnya, satu bungkus plastik kosong atau cup kosong tidak mungkin memiliki berat yang tidak wajar seperti beberapa kg, kecuali tumpukan/volumenya sangat banyak). Jika beratnya tidak logis, tolak setoran.
+1. Periksa apakah gambar menampilkan sampah/kemasan/dus/label yang merupakan produk dari Indofood (seperti mie instan Indomie, Pop Mie, Sarimi, Supermi, Sakura, Intermi, atau produk makanan/minuman/snack Indofood lainnya seperti Chitato, Lays, Chiki, dll.). Identifikasi hanya jika logo, merek, atau desain kemasan terlihat cukup jelas. Jika identitas merek/logo tidak terlihat jelas, buram, atau kamu tidak yakin, jangan menebak. Tolak dengan alasan identitas produk tidak dapat dipastikan.
+2. Periksa apakah sampah Indofood tersebut benar-benar ditimbang (diletakkan di atas timbangan, atau digantungkan pada timbangan gantung). Timbangan tidak boleh kosong atau objek sampah harus menempel/tergantung pada alat timbangan tersebut. Jika sampah tidak diletakkan di atas timbangan atau tidak digantung pada timbangan gantung, tolak setoran.
+3. Periksa apakah angka berat yang dibaca dari timbangan masuk akal/logis untuk volume atau jumlah sampah yang terlihat pada gambar. Sebagai acuan standar, berat sampah etiket (kemasan plastik mie instan/snack) adalah sekitar 3 hingga 7 gram per bungkus (0.003 - 0.007 kg). Jadi, satu atau beberapa bungkus plastik kosong tidak mungkin memiliki berat yang tidak wajar seperti beberapa kilogram (misalnya 10 kg). Jika beratnya tidak logis, tolak setoran.
 4. Jika semua validasi di atas lolos, baca angka berat yang tertera pada timbangan dalam satuan kilogram (kg).
 
 Balas HANYA dalam format JSON berikut (tidak ada teks lain di luar JSON):
@@ -25,18 +25,25 @@ Jika sampah BUKAN merupakan produk Indofood:
   "message": "sampah bukan produk indofood"
 }
 
-Jika objek sampah tidak diletakkan di atas timbangan atau timbangan kosong:
+Jika identitas merek/logo tidak terlihat jelas, atau kamu tidak yakin produk Indofood (jangan menebak):
 {
   "success": false,
   "berat": 0,
-  "message": "sampah harus diletakkan di atas timbangan"
+  "message": "identitas produk tidak dapat dipastikan karena logo atau merek tidak terlihat jelas"
 }
 
-Jika angka berat yang terdeteksi tidak logis/tidak wajar untuk volume/jumlah sampah yang terlihat:
+Jika objek sampah tidak diletakkan di atas timbangan atau tidak digantung pada timbangan gantung, atau timbangan kosong:
 {
   "success": false,
   "berat": 0,
-  "message": "berat sampah tidak logis"
+  "message": "sampah harus diletakkan di atas timbangan atau digantungkan pada timbangan gantung"
+}
+
+Jika angka berat yang terdeteksi tidak logis/tidak wajar untuk volume/jumlah sampah yang terlihat (misalnya: berat terdeteksi 10 kg padahal di gambar hanya ada 1 bungkus mi instan kosong/ringan):
+{
+  "success": false,
+  "berat": 0,
+  "message": "<berikan penjelasan yang ramah, mudah dipahami, dan dinamis mengenai alasan ketidaklogisan ini secara spesifik berdasarkan gambar, contoh: 'Berat yang terdeteksi (10 kg) tidak logis untuk sampah plastik mi instan yang hanya berjumlah 1 bungkus. Silakan periksa kembali unit timbangan Anda atau pastikan tidak ada benda berat lain di atas timbangan.'>"
 }
 
 Jika semua validasi lolos dan kamu berhasil membaca beratnya:
