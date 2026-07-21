@@ -2,6 +2,7 @@
 
 import imageCompression from "browser-image-compression";
 import {
+  AlertCircle,
   Camera,
   CheckCircle2,
   Loader2,
@@ -10,6 +11,7 @@ import {
   Recycle,
   ShieldCheck,
   Truck,
+  Upload,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -157,8 +159,10 @@ export default function TerimaSetoranWarmindoPage() {
 
   const [aiValidated, setAiValidated] = useState(false);
   const [beratAiKg, setBeratAiKg] = useState<number | null>(null);
+  const [aiError, setAiError] = useState("");
   const [requestManual, setRequestManual] = useState(false);
   const [isValidatingAI, setIsValidatingAI] = useState(false);
+  const [isWeightConfirmed, setIsWeightConfirmed] = useState(false);
 
   const handleBuktiChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -242,15 +246,18 @@ export default function TerimaSetoranWarmindoPage() {
     setBeratAktual("");
     setJenisSampahAktual(item.jenisSampah);
     setAiValidated(false);
+    setAiError("");
     setBeratAiKg(null);
     setRequestManual(false);
     setIsValidatingAI(false);
+    setIsWeightConfirmed(false);
     if (isTourActive) {
       setFotoTimbangan("/sampel_1.png");
       setFotoBuktiList(["/sampel_1.png"]);
       setAiValidated(true);
       setBeratAiKg(10.0);
       setBeratAktual("10.0");
+      setIsWeightConfirmed(true);
     } else {
       setFotoTimbangan(null);
       setFotoBuktiList([]);
@@ -258,24 +265,27 @@ export default function TerimaSetoranWarmindoPage() {
     setFormErrors({});
   };
 
-  const handleValidasiAI = async () => {
-    if (!fotoTimbangan || !beratAktual) return;
+  const runAiDetection = async (foto: string) => {
     setIsValidatingAI(true);
-    setFormErrors({});
+    setAiValidated(false);
+    setAiError("");
+    setBeratAiKg(null);
+    setBeratAktual("");
+    setIsWeightConfirmed(false);
+
     try {
-      const res = await validateFotoTimbangan(
-        fotoTimbangan,
-        Number(beratAktual),
-      );
+      const res = await validateFotoTimbangan(foto);
       if (res.success) {
         setAiValidated(true);
         setBeratAiKg(res.berat);
+        setBeratAktual(String(res.berat));
+        if (res.kategori) setJenisSampahAktual(res.kategori);
       } else {
-        setFormErrors({ fotoTimbangan: [res.message] });
+        setAiError(res.message);
       }
     } catch (err) {
       console.error(err);
-      setFormErrors({ fotoTimbangan: ["Terjadi kesalahan saat memvalidasi."] });
+      setAiError("Terjadi kesalahan saat memvalidasi. Silakan coba lagi.");
     } finally {
       setIsValidatingAI(false);
     }
@@ -284,6 +294,15 @@ export default function TerimaSetoranWarmindoPage() {
   const handleTerimaWarmindo = async () => {
     if (!selectedItemForTerima) return;
     setFormErrors({});
+
+    if (!isWeightConfirmed && !requestManual) {
+      setFormErrors({
+        fotoTimbangan: [
+          "Konfirmasi berat hasil AI atau ajukan validasi manual.",
+        ],
+      });
+      return;
+    }
 
     const beratNum = Number.parseFloat(beratAktual);
     if (Number.isNaN(beratNum) || beratNum <= 0) {
@@ -648,234 +667,327 @@ export default function TerimaSetoranWarmindoPage() {
               </button>
             </div>
             <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-              <div>
-                <label
-                  htmlFor="modalJenisSampah"
-                  className="block text-xs font-semibold text-neutral-700 uppercase mb-1.5"
-                >
-                  Jenis Sampah <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="modalJenisSampah"
-                  value={jenisSampahAktual}
-                  onChange={(e) => setJenisSampahAktual(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-semibold"
-                >
-                  <option value="Karton">Karton</option>
-                  <option value="Etiket">Etiket</option>
-                  <option value="Paper Cup">Paper Cup</option>
-                </select>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="modalBeratAktual"
-                    className="block text-xs font-semibold text-neutral-700 uppercase mb-1.5"
-                  >
-                    Berat (kg) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="modalBeratAktual"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    value={beratAktual}
-                    onChange={(e) => setBeratAktual(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
-                  />
-                  {formErrors.beratAktual && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.beratAktual[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div className="border-t border-neutral-100 pt-4 space-y-3">
-                  <span className="block text-xs font-semibold text-neutral-700 uppercase">
-                    Foto Timbangan Verifikasi{" "}
-                    <span className="text-red-500">*</span>
-                  </span>
-                  {fotoTimbangan ? (
-                    <div className="space-y-3">
-                      <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
-                        <Image
-                          src={fotoTimbangan}
-                          alt="Timbangan verifikasi"
-                          className="w-full h-auto block rounded-xl"
-                          width={800}
-                          height={600}
-                          unoptimized
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFotoTimbangan(null);
-                            setAiValidated(false);
-                            setBeratAiKg(null);
-                            setRequestManual(false);
-                          }}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white border-0 cursor-pointer"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {aiValidated ? (
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-50 border border-primary-200">
-                          <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
-                          <p className="text-xs text-primary-700 font-medium">
-                            Berat tervalidasi AI: {beratAiKg} kg ✓
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                            <input
-                              id="requestManual"
-                              type="checkbox"
-                              checked={requestManual}
-                              onChange={(e) =>
-                                setRequestManual(e.target.checked)
-                              }
-                              className="mt-1 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-600 cursor-pointer"
-                            />
-                            <label
-                              htmlFor="requestManual"
-                              className="text-xs text-amber-805 leading-normal cursor-pointer select-none font-semibold text-amber-800"
-                            >
-                              Ajukan validasi manual oleh Admin
-                              <span className="block text-[10px] text-amber-700 font-normal mt-0.5">
-                                Pilih jika pembacaan AI terus gagal atau gambar
-                                timbangan tidak terbaca dengan baik.
-                              </span>
-                            </label>
-                          </div>
-
-                          {!requestManual && (
-                            <button
-                              type="button"
-                              onClick={handleValidasiAI}
-                              disabled={isValidatingAI || !beratAktual}
-                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors border-0 cursor-pointer"
-                            >
-                              {isValidatingAI ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                  Memvalidasi dengan AI...
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  Validasi Berat dengan AI
-                                  {!beratAktual && " (Isi berat dulu)"}
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
+              <div className="border-t border-neutral-100 pt-4 space-y-3">
+                <span className="block text-xs font-semibold text-neutral-700 uppercase">
+                  Foto Timbangan Verifikasi{" "}
+                  <span className="text-red-500">*</span>
+                </span>
+                {fotoTimbangan ? (
+                  <div className="space-y-3">
+                    <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50">
+                      <Image
+                        src={fotoTimbangan}
+                        alt="Timbangan verifikasi"
+                        className="w-full h-auto block rounded-xl"
+                        width={800}
+                        height={600}
+                        unoptimized
+                      />
                       <button
                         type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full flex flex-col items-center justify-center gap-2 py-6 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-600 transition-all cursor-pointer"
-                      >
-                        <Camera className="w-6 h-6" />
-                        <span className="font-semibold text-xs">
-                          Ambil Foto / Upload Timbangan
-                        </span>
-                      </button>
-                      <input
-                        id="modalFotoTimbangan"
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = async (ev) => {
-                            const result = ev.target?.result as string;
-                            const compressed = await compressImage(
-                              result,
-                              100 * 1024,
-                            );
-                            setFotoTimbangan(compressed);
-                            setAiValidated(false);
-                            setBeratAiKg(null);
-                          };
-                          reader.readAsDataURL(file);
+                        onClick={() => {
+                          setFotoTimbangan(null);
+                          setAiValidated(false);
+                          setAiError("");
+                          setBeratAiKg(null);
+                          setBeratAktual("");
+                          setIsWeightConfirmed(false);
+                          setRequestManual(false);
                         }}
-                      />
-                    </div>
-                  )}
-                  {formErrors.fotoTimbangan && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.fotoTimbangan[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="block text-xs font-semibold text-neutral-700 uppercase">
-                      Foto Bukti Tambahan Verifikasi{" "}
-                      <span className="text-red-500">*</span>
-                    </span>
-                    <span className="text-xs text-neutral-400">
-                      {fotoBuktiList.length}/3 foto
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    {fotoBuktiList.map((imgB64, idx) => (
-                      <div
-                        key={imgB64}
-                        className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-black group"
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white border-0 cursor-pointer"
                       >
-                        <Image
-                          src={imgB64}
-                          alt={`Bukti tambahan ${idx + 1}`}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeBukti(idx)}
-                          className="absolute top-2 right-2 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors border-0 cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
 
-                    {fotoBuktiList.length < 3 && (
-                      <div className="relative aspect-square flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-400 text-neutral-500 transition-all cursor-pointer">
-                        <Plus className="w-6 h-6 text-neutral-400" />
-                        <span className="text-xs font-semibold">Tambah</span>
-                        <input
-                          ref={buktiInputRef}
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleBuktiChange}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
+                    {/* Loading AI */}
+                    {isValidatingAI && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
+                        <p className="text-xs text-blue-700 font-medium">
+                          AI sedang membaca berat dan kategori dari foto...
+                        </p>
+                      </div>
+                    )}
+
+                    {/* AI sukses + belum dikonfirmasi */}
+                    {aiValidated && !isWeightConfirmed && (
+                      <div className="space-y-2">
+                        <div className="flex flex-col gap-1 p-3 rounded-lg bg-primary-50 border border-primary-200">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
+                            <p className="text-xs text-primary-700 font-medium">
+                              Hasil deteksi AI:
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between pl-6">
+                            <span className="text-xs text-primary-600">
+                              Berat
+                            </span>
+                            <span className="text-xs font-bold text-primary-800">
+                              {beratAiKg} kg
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between pl-6">
+                            <span className="text-xs text-primary-600">
+                              Kategori
+                            </span>
+                            <span className="text-xs font-bold text-primary-800">
+                              {jenisSampahAktual}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (fotoTimbangan) runAiDetection(fotoTimbangan);
+                            }}
+                            disabled={isValidatingAI}
+                            className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-600 text-xs font-semibold transition-colors border-0 cursor-pointer"
+                          >
+                            <Loader2 className="w-3.5 h-3.5" />
+                            Deteksi Ulang
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsWeightConfirmed(true);
+                              setBeratAktual(String(beratAiKg));
+                            }}
+                            className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold transition-colors border-0 cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Konfirmasi Berat
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sudah dikonfirmasi */}
+                    {isWeightConfirmed && (
+                      <div className="flex flex-col gap-1 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <p className="text-xs text-emerald-700 font-medium">
+                            Dikonfirmasi ✓
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between pl-6">
+                          <span className="text-xs text-emerald-600">
+                            Berat
+                          </span>
+                          <span className="text-xs font-bold text-emerald-800">
+                            {beratAktual} kg
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pl-6">
+                          <span className="text-xs text-emerald-600">
+                            Kategori
+                          </span>
+                          <span className="text-xs font-bold text-emerald-800">
+                            {jenisSampahAktual}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI gagal + opsi ajukan manual */}
+                    {aiError && (
+                      <div className="space-y-3">
+                        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                            <span className="text-xs font-bold uppercase tracking-wider">
+                              Validasi Gagal
+                            </span>
+                          </div>
+                          <p className="text-xs leading-relaxed">{aiError}</p>
+                          <p className="text-xs font-semibold text-red-600">
+                            Silakan upload ulang foto timbangan yang lebih
+                            jelas.
+                          </p>
+                        </div>
+
+                        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                          <input
+                            id="requestManualWarmindo"
+                            type="checkbox"
+                            checked={requestManual}
+                            onChange={(e) => {
+                              setRequestManual(e.target.checked);
+                              if (!e.target.checked) setBeratAktual("");
+                            }}
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                          />
+                          <label
+                            htmlFor="requestManualWarmindo"
+                            className="text-xs text-amber-800 font-semibold cursor-pointer"
+                          >
+                            Ajukan Validasi Manual ke Admin
+                            <span className="block text-[10px] text-amber-700 font-normal mt-0.5">
+                              💡 Berat dan kategori akan diverifikasi admin.
+                              Proses 1–2 hari kerja.
+                            </span>
+                          </label>
+                        </div>
+
+                        {requestManual && (
+                          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+                            <p className="text-xs font-semibold text-amber-800">
+                              Isi data sampah secara manual:
+                            </p>
+                            <div>
+                              <label
+                                htmlFor="manualJenisSampahW"
+                                className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                              >
+                                Kategori Sampah{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                id="manualJenisSampahW"
+                                value={jenisSampahAktual}
+                                onChange={(e) =>
+                                  setJenisSampahAktual(e.target.value)
+                                }
+                                className="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all"
+                              >
+                                <option value="Etiket">Etiket (Plastik)</option>
+                                <option value="Paper Cup">
+                                  Paper Cup (Gelas Pop Mie)
+                                </option>
+                                <option value="Karton">Karton (Kardus)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label
+                                htmlFor="manualBeratW"
+                                className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                              >
+                                Berat (kg){" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <div className="relative">
+                                <input
+                                  id="manualBeratW"
+                                  type="number"
+                                  value={beratAktual}
+                                  onChange={(e) =>
+                                    setBeratAktual(e.target.value)
+                                  }
+                                  step="0.001"
+                                  min="0.001"
+                                  placeholder="0.000"
+                                  className="w-full pl-3 pr-10 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-semibold"
+                                />
+                                <span className="absolute inset-y-0 right-3 flex items-center text-xs text-neutral-400 font-bold pointer-events-none">
+                                  kg
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                  {formErrors.fotoBukti && (
-                    <p className="text-xs text-red-600 mt-1">
-                      {formErrors.fotoBukti[0]}
-                    </p>
+                ) : (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full flex flex-col items-center justify-center gap-2 py-6 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-600 transition-all cursor-pointer"
+                    >
+                      <Camera className="w-6 h-6" />
+                      <span className="font-semibold text-xs">
+                        Ambil Foto / Upload Timbangan
+                      </span>
+                    </button>
+                    <input
+                      id="modalFotoTimbangan"
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = async (ev) => {
+                          const result = ev.target?.result as string;
+                          const compressed = await compressImage(
+                            result,
+                            100 * 1024,
+                          );
+                          setFotoTimbangan(compressed);
+                          runAiDetection(compressed);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </div>
+                )}
+                {formErrors.fotoTimbangan && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {formErrors.fotoTimbangan[0]}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="block text-xs font-semibold text-neutral-700 uppercase">
+                    Foto Bukti Tambahan Verifikasi{" "}
+                    <span className="text-red-500">*</span>
+                  </span>
+                  <span className="text-xs text-neutral-400">
+                    {fotoBuktiList.length}/3 foto
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {fotoBuktiList.map((imgB64, idx) => (
+                    <div
+                      key={imgB64}
+                      className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-black group"
+                    >
+                      <Image
+                        src={imgB64}
+                        alt={`Bukti tambahan ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeBukti(idx)}
+                        className="absolute top-2 right-2 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors border-0 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {fotoBuktiList.length < 3 && (
+                    <div className="relative aspect-square flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-400 text-neutral-500 transition-all cursor-pointer">
+                      <Plus className="w-6 h-6 text-neutral-400" />
+                      <span className="text-xs font-semibold">Tambah</span>
+                      <input
+                        ref={buktiInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleBuktiChange}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
                   )}
                 </div>
+                {formErrors.fotoBukti && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {formErrors.fotoBukti[0]}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -891,20 +1003,24 @@ export default function TerimaSetoranWarmindoPage() {
                 type="button"
                 disabled={
                   isPending ||
-                  !beratAktual ||
+                  (!isWeightConfirmed && !requestManual) ||
+                  (requestManual && !beratAktual) ||
                   !fotoTimbangan ||
-                  fotoBuktiList.length === 0 ||
-                  (!aiValidated && !requestManual)
+                  fotoBuktiList.length === 0
                 }
                 onClick={handleTerimaWarmindo}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 border-0 cursor-pointer"
               >
                 {isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : requestManual ? (
+                  <Upload className="w-3.5 h-3.5" />
                 ) : (
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 )}
-                Konfirmasi Penerimaan
+                {requestManual
+                  ? "Ajukan ke Admin (Manual)"
+                  : "Konfirmasi Penerimaan"}
               </button>
             </div>
           </div>

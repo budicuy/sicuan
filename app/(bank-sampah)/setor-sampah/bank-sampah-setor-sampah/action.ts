@@ -953,13 +953,19 @@ export async function handoverSetorSampahToEkspedisi(
 
 export async function validateFotoTimbangan(
   imageBase64: string,
-  beratInputKg: number,
+  beratInputKg?: number,
 ): Promise<{
   success: boolean;
   berat: number;
+  kategori: "Etiket" | "Paper Cup" | "Karton" | null;
   message: string;
 }> {
-  let aiResult: { success: boolean; berat: number; message: string };
+  let aiResult: {
+    success: boolean;
+    berat: number;
+    kategori: "Etiket" | "Paper Cup" | "Karton" | null;
+    message: string;
+  };
   try {
     aiResult = await readWeightFromImage(imageBase64);
   } catch (e) {
@@ -967,6 +973,7 @@ export async function validateFotoTimbangan(
     return {
       success: false,
       berat: 0,
+      kategori: null,
       message: `Gagal memproses gambar timbangan: ${errorMsg}`,
     };
   }
@@ -976,9 +983,20 @@ export async function validateFotoTimbangan(
     return {
       success: false,
       berat: 0,
+      kategori: null,
       message: isCleanError
         ? aiResult.message
         : `${aiResult.message} (Detail: Pastikan API Key GEMINI_API_KEY sudah diset dengan benar di env dan gambar tidak terlalu besar)`,
+    };
+  }
+
+  // Jika beratInputKg tidak diberikan, langsung kembalikan hasil AI
+  if (beratInputKg === undefined || beratInputKg === null) {
+    return {
+      success: true,
+      berat: aiResult.berat,
+      kategori: aiResult.kategori,
+      message: "Berat berhasil dideteksi.",
     };
   }
 
@@ -988,6 +1006,7 @@ export async function validateFotoTimbangan(
     return {
       success: false,
       berat: aiResult.berat,
+      kategori: null,
       message: `Berat yang terdeteksi tidak sesuai dengan input berat. Terdeteksi ${aiResult.berat} kg, namun Anda menginput ${beratInputKg} kg. Silakan upload ulang gambar bukti timbangan yang jelas.`,
     };
   }
@@ -995,6 +1014,7 @@ export async function validateFotoTimbangan(
   return {
     success: true,
     berat: aiResult.berat,
+    kategori: aiResult.kategori,
     message: "Berat berhasil divalidasi.",
   };
 }

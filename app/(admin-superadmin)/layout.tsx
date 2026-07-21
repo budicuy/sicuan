@@ -162,6 +162,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       },
       {
         type: "link",
+        href: "/pengaturan-ai",
+        label: "Pengaturan AI",
+        icon: "Sliders",
+      },
+      {
+        type: "link",
         href: "/profil/admin-profil",
         label: "Profil Saya",
         icon: "User",

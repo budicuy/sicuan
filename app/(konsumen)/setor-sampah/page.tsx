@@ -21,6 +21,7 @@ import {
 } from "@/app/(konsumen)/setor-sampah/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { TourGuide } from "@/app/components/shared/TourGuide";
+import { checkAiDisabled } from "@/app/lib/settings-actions";
 import type { SetorSampahItem } from "@/app/types";
 
 function addWatermarkToImage(
@@ -224,6 +225,7 @@ export default function KonsumenSetorSampah() {
   const [aiError, setAiError] = useState("");
   const [isWeightConfirmed, setIsWeightConfirmed] = useState(false);
   const [requestManual, setRequestManual] = useState(false);
+  const [isAiDisabled, setIsAiDisabled] = useState(false);
 
   const [fotoBuktiList, setFotoBuktiList] = useState<string[]>([]);
   const buktiInputRef = useRef<HTMLInputElement>(null);
@@ -316,6 +318,12 @@ export default function KonsumenSetorSampah() {
 
   useEffect(() => {
     loadData();
+    checkAiDisabled("konsumen").then((disabled) => {
+      setIsAiDisabled(disabled);
+      if (disabled) {
+        setRequestManual(true);
+      }
+    });
   }, [loadData]);
 
   const compressImage = async (
@@ -401,6 +409,10 @@ export default function KonsumenSetorSampah() {
     const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
     const compressed = await compressImage(withWatermark, 100 * 1024);
     setFotoTimbangan(compressed);
+    if (isAiDisabled) {
+      setRequestManual(true);
+      return;
+    }
     runAiDetection(compressed);
   };
 
@@ -429,6 +441,10 @@ export default function KonsumenSetorSampah() {
       const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
       const compressed = await compressImage(withWatermark, 100 * 1024);
       setFotoTimbangan(compressed);
+      if (isAiDisabled) {
+        setRequestManual(true);
+        return;
+      }
       runAiDetection(compressed);
     };
     reader.readAsDataURL(file);
@@ -659,11 +675,6 @@ export default function KonsumenSetorSampah() {
                 <span className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                   Foto Bukti Timbangan <span className="text-red-500">*</span>
                 </span>
-                <p className="text-xs text-neutral-500">
-                  Wajib diambil menggunakan kamera. Foto akan otomatis mendapat
-                  watermark tanggal & jam.
-                </p>
-
                 {fotoTimbangan ? (
                   <div className="space-y-3">
                     <div className="relative rounded-xl overflow-hidden border border-neutral-200 aspect-video bg-neutral-50">
@@ -683,7 +694,7 @@ export default function KonsumenSetorSampah() {
                           setBeratAiKg(null);
                           setBeratKg("");
                           setIsWeightConfirmed(false);
-                          setRequestManual(false);
+                          setRequestManual(isAiDisabled);
                           setJenisSampah("Etiket");
                         }}
                         className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
@@ -692,152 +703,197 @@ export default function KonsumenSetorSampah() {
                       </button>
                     </div>
 
-                    {isValidatingAI && (
-                      <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-neutral-50 border border-neutral-200">
-                        <Loader2 className="w-4 h-4 animate-spin text-primary-600" />
-                        <span className="text-xs text-neutral-600 font-medium">
-                          Mendeteksi berat dengan AI...
-                        </span>
-                      </div>
-                    )}
-
-                    {aiValidated && (
-                      <div className="space-y-3">
-                        {!isWeightConfirmed ? (
-                          <>
-                            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-50 border border-primary-200">
-                              <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
-                              <p className="text-xs text-primary-700 font-medium">
-                                Berat terdeteksi AI:{" "}
-                                <span className="font-bold text-sm text-primary-800">
-                                  {beratAiKg} kg
-                                </span>
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                id="tour-setor-konfirmasi-berat"
-                                type="button"
-                                onClick={() => setIsWeightConfirmed(true)}
-                                className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
-                              >
-                                Konfirmasi Berat
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (fotoTimbangan)
-                                    runAiDetection(fotoTimbangan);
-                                }}
-                                disabled={isValidatingAI}
-                                className="py-2.5 px-3 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-xs font-semibold transition-colors disabled:opacity-50"
-                              >
-                                Deteksi Ulang
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
-                            <span className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                              Berat dikonfirmasi ({beratAiKg} kg)
+                    {isAiDisabled ? (
+                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+                        <p className="text-xs font-semibold text-amber-800">
+                          Isi data sampah secara manual:
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                            Kategori Sampah
+                          </span>
+                          <span className="text-sm font-semibold text-neutral-800">
+                            Etiket
+                          </span>
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="manualBeratKg"
+                            className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                          >
+                            Berat (kg) <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              id="manualBeratKg"
+                              type="number"
+                              value={beratKg}
+                              onChange={(e) => setBeratKg(e.target.value)}
+                              step="0.001"
+                              min="0.001"
+                              placeholder="0.000"
+                              className="w-full pl-3 pr-10 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-semibold"
+                            />
+                            <span className="absolute inset-y-0 right-3 flex items-center text-xs text-neutral-400 font-bold pointer-events-none">
+                              kg
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => setIsWeightConfirmed(false)}
-                              className="text-xs text-neutral-500 hover:text-neutral-700 underline"
-                            >
-                              Ubah
-                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {isValidatingAI && (
+                          <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-neutral-50 border border-neutral-200">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary-600" />
+                            <span className="text-xs text-neutral-600 font-medium">
+                              Mendeteksi berat dengan AI...
+                            </span>
                           </div>
                         )}
-                      </div>
-                    )}
 
-                    {aiError && (
-                      <div className="space-y-3">
-                        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="w-4.5 h-4.5 text-red-600 shrink-0" />
-                            <span className="text-xs font-bold uppercase tracking-wider">
-                              Validasi Gagal
-                            </span>
+                        {aiValidated && (
+                          <div className="space-y-3">
+                            {!isWeightConfirmed ? (
+                              <>
+                                <div className="flex items-center gap-2 p-3 rounded-lg bg-primary-50 border border-primary-200">
+                                  <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
+                                  <p className="text-xs text-primary-700 font-medium">
+                                    Berat terdeteksi AI:{" "}
+                                    <span className="font-bold text-sm text-primary-800">
+                                      {beratAiKg} kg
+                                    </span>
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    id="tour-setor-konfirmasi-berat"
+                                    type="button"
+                                    onClick={() => setIsWeightConfirmed(true)}
+                                    className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                                  >
+                                    Konfirmasi Berat
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (fotoTimbangan)
+                                        runAiDetection(fotoTimbangan);
+                                    }}
+                                    disabled={isValidatingAI}
+                                    className="py-2.5 px-3 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-xs font-semibold transition-colors disabled:opacity-50"
+                                  >
+                                    Deteksi Ulang
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                                <span className="text-xs text-emerald-800 font-semibold flex items-center gap-1">
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                  Berat dikonfirmasi ({beratAiKg} kg)
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsWeightConfirmed(false)}
+                                  className="text-xs text-neutral-500 hover:text-neutral-700 underline"
+                                >
+                                  Ubah
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-xs leading-relaxed">{aiError}</p>
-                          <p className="text-xs font-semibold text-red-600">
-                            Silakan upload ulang foto timbangan yang lebih jelas
-                            dan coba lagi.
-                          </p>
-                        </div>
+                        )}
 
-                        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                          <input
-                            type="checkbox"
-                            id="requestManual"
-                            checked={requestManual}
-                            onChange={(e) => {
-                              setRequestManual(e.target.checked);
-                              if (!e.target.checked) {
-                                setBeratKg("");
-                                setJenisSampah("Etiket");
-                              }
-                            }}
-                            className="w-4 h-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500 cursor-pointer mt-0.5 shrink-0"
-                          />
-                          <div className="flex flex-col">
-                            <label
-                              htmlFor="requestManual"
-                              className="text-xs text-amber-800 font-semibold cursor-pointer"
-                            >
-                              Ajukan Validasi Manual ke Admin
-                            </label>
-                            <span className="text-[10px] text-amber-700 mt-0.5 leading-normal">
-                              💡 Berat dan kategori sampah akan diverifikasi
-                              oleh admin. Proses 1–2 hari kerja.
-                            </span>
-                          </div>
-                        </div>
-
-                        {requestManual && (
-                          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
-                            <p className="text-xs font-semibold text-amber-800">
-                              Isi data sampah secara manual:
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                                Kategori Sampah
-                              </span>
-                              <span className="text-sm font-semibold text-neutral-800">
-                                Etiket
-                              </span>
+                        {aiError && (
+                          <div className="space-y-3">
+                            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-4.5 h-4.5 text-red-600 shrink-0" />
+                                <span className="text-xs font-bold uppercase tracking-wider">
+                                  Validasi Gagal
+                                </span>
+                              </div>
+                              <p className="text-xs leading-relaxed">
+                                {aiError}
+                              </p>
+                              <p className="text-xs font-semibold text-red-600">
+                                Silakan upload ulang foto timbangan yang lebih
+                                jelas dan coba lagi.
+                              </p>
                             </div>
-                            <div>
-                              <label
-                                htmlFor="manualBeratKg"
-                                className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
-                              >
-                                Berat (kg){" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <div className="relative">
-                                <input
-                                  id="manualBeratKg"
-                                  type="number"
-                                  value={beratKg}
-                                  onChange={(e) => setBeratKg(e.target.value)}
-                                  step="0.001"
-                                  min="0.001"
-                                  placeholder="0.000"
-                                  className="w-full pl-3 pr-10 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-semibold"
-                                />
-                                <span className="absolute inset-y-0 right-3 flex items-center text-xs text-neutral-400 font-bold pointer-events-none">
-                                  kg
+
+                            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                              <input
+                                type="checkbox"
+                                id="requestManual"
+                                checked={requestManual}
+                                onChange={(e) => {
+                                  setRequestManual(e.target.checked);
+                                  if (!e.target.checked) {
+                                    setBeratKg("");
+                                    setJenisSampah("Etiket");
+                                  }
+                                }}
+                                className="w-4 h-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500 cursor-pointer mt-0.5 shrink-0"
+                              />
+                              <div className="flex flex-col">
+                                <label
+                                  htmlFor="requestManual"
+                                  className="text-xs text-amber-800 font-semibold cursor-pointer"
+                                >
+                                  Ajukan Validasi Manual ke Admin
+                                </label>
+                                <span className="text-[10px] text-amber-700 mt-0.5 leading-normal">
+                                  💡 Berat dan kategori sampah akan diverifikasi
+                                  oleh admin. Proses 1–2 hari kerja.
                                 </span>
                               </div>
                             </div>
+
+                            {requestManual && (
+                              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+                                <p className="text-xs font-semibold text-amber-800">
+                                  Isi data sampah secara manual:
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                                    Kategori Sampah
+                                  </span>
+                                  <span className="text-sm font-semibold text-neutral-800">
+                                    Etiket
+                                  </span>
+                                </div>
+                                <div>
+                                  <label
+                                    htmlFor="manualBeratKg"
+                                    className="block text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-1.5"
+                                  >
+                                    Berat (kg){" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      id="manualBeratKg"
+                                      type="number"
+                                      value={beratKg}
+                                      onChange={(e) =>
+                                        setBeratKg(e.target.value)
+                                      }
+                                      step="0.001"
+                                      min="0.001"
+                                      placeholder="0.000"
+                                      className="w-full pl-3 pr-10 py-2.5 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-semibold"
+                                    />
+                                    <span className="absolute inset-y-0 right-3 flex items-center text-xs text-neutral-400 font-bold pointer-events-none">
+                                      kg
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
+                      </>
                     )}
                   </div>
                 ) : (

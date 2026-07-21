@@ -5,16 +5,26 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export interface WeightReadResult {
   success: boolean;
   berat: number; // dalam kg
+  kategori: "Etiket" | "Paper Cup" | "Karton" | null; // kategori sampah terdeteksi
   message: string;
 }
 
-const PROMPT = `Kamu adalah asisten AI yang bertugas memvalidasi setoran sampah dan membaca angka berat dari foto timbangan atau timbangan digital.
+const PROMPT = `Kamu adalah asisten AI yang bertugas memvalidasi setoran sampah, membaca angka berat dari foto timbangan, dan mengidentifikasi kategori sampah Indofood.
 
 Tugas kamu adalah:
 1. Periksa apakah gambar menampilkan sampah/kemasan/dus/label yang merupakan produk dari Indofood (seperti mie instan Indomie, Pop Mie, Sarimi, Supermi, Sakura, Intermi, atau produk makanan/minuman/snack Indofood lainnya seperti Chitato, Lays, Chiki, dll.). Identifikasi hanya jika logo, merek, atau desain kemasan terlihat cukup jelas. Jika identitas merek/logo tidak terlihat jelas, buram, atau kamu tidak yakin, jangan menebak. Tolak dengan alasan identitas produk tidak dapat dipastikan.
 2. Periksa apakah sampah Indofood tersebut benar-benar ditimbang (diletakkan di atas timbangan, atau digantungkan pada timbangan gantung). Timbangan tidak boleh kosong atau objek sampah harus menempel/tergantung pada alat timbangan tersebut. Jika sampah tidak diletakkan di atas timbangan atau tidak digantung pada timbangan gantung, tolak setoran.
-3. Periksa apakah angka berat yang dibaca dari timbangan masuk akal/logis untuk volume atau jumlah sampah yang terlihat pada gambar. Sebagai acuan standar, berat sampah etiket (kemasan plastik mie instan/snack) adalah sekitar 3 hingga 7 gram per bungkus (0.003 - 0.007 kg). Jadi, satu atau beberapa bungkus plastik kosong tidak mungkin memiliki berat yang tidak wajar seperti beberapa kilogram (misalnya 10 kg). Jika beratnya tidak logis, tolak setoran.
-4. Jika semua validasi di atas lolos, baca angka berat yang tertera pada timbangan dalam satuan kilogram (kg).
+3. Periksa apakah angka berat yang dibaca dari timbangan masuk akal/logis berdasarkan perkiraan jumlah dan jenis sampah yang terlihat pada gambar. Panduan acuan:
+   - Etiket (kemasan plastik): ~3–7 gram per bungkus. Satu bungkus sekitar 5 gram, jadi 100 bungkus ≈ 0.5 kg, 200 bungkus ≈ 1 kg — ini WAJAR.
+   - Paper Cup (gelas Pop Mie): ~5–15 gram per gelas. 50 gelas ≈ 0.5 kg — ini WAJAR.
+   - Karton (kardus): bervariasi, ~50–500 gram per lembar — ini WAJAR.
+   Tolak HANYA jika berat benar-benar tidak mungkin untuk jumlah yang terlihat, misalnya: 1 bungkus plastik kosong menunjukkan berat 5 kg, atau timbangan kosong menunjukkan angka besar. Jangan tolak berat yang masuk akal untuk tumpukan/kumpulan sampah yang banyak.
+4. Identifikasi kategori sampah dari gambar:
+   - "Etiket": kemasan plastik fleksibel (bungkus mie instan, snack, sachet bumbu, dll.)
+   - "Paper Cup": gelas kertas atau styrofoam (contoh: gelas Pop Mie)
+   - "Karton": dus/kardus/karton (contoh: dus karton kemasan produk Indofood)
+   Pilih SATU yang paling sesuai berdasarkan mayoritas sampah yang terlihat. Jika tidak dapat dipastikan, gunakan null.
+5. Jika semua validasi di atas lolos, baca angka berat yang tertera pada timbangan dalam satuan kilogram (kg).
 
 Balas HANYA dalam format JSON berikut (tidak ada teks lain di luar JSON):
 
@@ -22,6 +32,7 @@ Jika sampah BUKAN merupakan produk Indofood:
 {
   "success": false,
   "berat": 0,
+  "kategori": null,
   "message": "sampah bukan produk indofood"
 }
 
@@ -29,6 +40,7 @@ Jika identitas merek/logo tidak terlihat jelas, atau kamu tidak yakin produk Ind
 {
   "success": false,
   "berat": 0,
+  "kategori": null,
   "message": "identitas produk tidak dapat dipastikan karena logo atau merek tidak terlihat jelas"
 }
 
@@ -36,6 +48,7 @@ Jika objek sampah tidak diletakkan di atas timbangan atau tidak digantung pada t
 {
   "success": false,
   "berat": 0,
+  "kategori": null,
   "message": "sampah harus diletakkan di atas timbangan atau digantungkan pada timbangan gantung"
 }
 
@@ -43,6 +56,7 @@ Jika angka berat yang terdeteksi tidak logis/tidak wajar untuk volume/jumlah sam
 {
   "success": false,
   "berat": 0,
+  "kategori": null,
   "message": "<berikan penjelasan yang ramah, mudah dipahami, dan dinamis mengenai alasan ketidaklogisan ini secara spesifik berdasarkan gambar, contoh: 'Berat yang terdeteksi (10 kg) tidak logis untuk sampah plastik mi instan yang hanya berjumlah 1 bungkus. Silakan periksa kembali unit timbangan Anda atau pastikan tidak ada benda berat lain di atas timbangan.'>"
 }
 
@@ -50,6 +64,7 @@ Jika semua validasi lolos dan kamu berhasil membaca beratnya:
 {
   "success": true,
   "berat": <angka_dalam_kg>,
+  "kategori": "<Etiket | Paper Cup | Karton>",
   "message": "Berat berhasil dibaca dari gambar timbangan."
 }
 
@@ -57,6 +72,7 @@ Jika semua validasi lolos tetapi kamu tidak bisa membaca berat karena gambar bur
 {
   "success": false,
   "berat": 0,
+  "kategori": null,
   "message": "Tidak dapat membaca berat dari gambar. Pastikan gambar timbangan jelas dan terlihat angka beratnya."
 }`;
 
@@ -73,6 +89,7 @@ export async function readWeightFromImage(
     return {
       success: false,
       berat: 0,
+      kategori: null,
       message: "Gagal membaca berat dari gambar. Silakan coba lagi nanti.",
     };
   }
@@ -111,7 +128,9 @@ export async function readWeightFromImage(
       }
 
       const parsed = JSON.parse(jsonMatch[0]) as WeightReadResult;
-      console.log(`[${modelName}] Berhasil membaca berat: ${parsed.berat} kg`);
+      console.log(
+        `[${modelName}] Berhasil membaca berat: ${parsed.berat} kg, kategori: ${parsed.kategori}`,
+      );
       return parsed;
     } catch (err) {
       console.error(`[${modelName}] Error:`, err);
@@ -122,6 +141,7 @@ export async function readWeightFromImage(
   return {
     success: false,
     berat: 0,
+    kategori: null,
     message: "Gagal membaca berat dari gambar. Silakan coba lagi nanti.",
   };
 }

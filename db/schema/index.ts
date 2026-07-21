@@ -1,3 +1,4 @@
+export * from "@/db/schema/app-settings";
 export * from "@/db/schema/bukti-pembayaran";
 export * from "@/db/schema/ekspedisi";
 export * from "@/db/schema/harga-sampah";
