@@ -3,19 +3,22 @@
 import {
   ArrowLeft,
   ArrowRight,
+  Bot,
+  Building2,
   Eye,
   EyeOff,
   Leaf,
   Lock,
-  Shield,
   ShieldAlert,
-  TrendingUp,
+  ShieldCheck,
+  Sparkles,
+  Store,
   User,
 } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { startTransition, useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { getActiveVideoPost } from "@/app/(admin-superadmin)/video-post/action";
 import {
   TransitionLink,
@@ -48,32 +51,19 @@ export default function LoginPage() {
     }
   }, [state, transitionTo]);
 
-  const handleUseDemo = (demoUsername: string, demoPassword: string) => {
-    setUsername(demoUsername);
-    setPassword(demoPassword);
-
-    // Trigger submission directly with FormData
-    const formData = new FormData();
-    formData.append("username", demoUsername);
-    formData.append("password", demoPassword);
-
-    startTransition(() => {
-      formAction(formData);
-    });
-  };
-
   return (
-    <div className="min-h-screen flex bg-neutral-50 text-neutral-900 selection:bg-primary-200 overflow-hidden font-sans">
-      {/* LEFT SIDE: Beautiful Interactive Environmental Branding (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white p-12 relative flex-col justify-between overflow-y-auto">
-        {/* Glow Effects */}
-        <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-emerald-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="h-screen w-screen flex bg-neutral-50 text-neutral-900 selection:bg-primary-200 overflow-hidden font-sans">
+      {/* LEFT SIDE: Compact, No-Scroll World-Class Ecosystem & Brand Showcase */}
+      <div className="hidden lg:flex lg:w-1/2 h-full bg-linear-to-br from-slate-950 via-primary-950 to-emerald-950 text-white p-8 xl:p-12 relative flex-col justify-between overflow-hidden select-none">
+        {/* Background Grid Pattern & Ambient Glows */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top Header */}
-        <div className="relative z-10 flex items-center gap-3">
+        {/* Top Brand Header */}
+        <div className="relative z-10 flex items-center justify-between">
           <TransitionLink href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300">
+            <div className="w-10 h-10 rounded-xl bg-white border border-white p-2 flex items-center justify-center shadow-md group-hover:scale-105 transition-all duration-300">
               <Image
                 src="/logo.png"
                 alt="SICUAN Logo"
@@ -83,93 +73,119 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <span className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
+              <span className="text-xl font-black tracking-tight text-white flex items-center gap-2">
                 SICUAN
-                <span className="text-[10px] bg-primary-500/20 text-primary-300 px-2 py-0.5 rounded-full font-medium border border-primary-500/30">
-                  Official Portal
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold border border-emerald-500/30 tracking-wide uppercase">
+                  Official
                 </span>
               </span>
-              <p className="text-[9px] text-primary-300 font-medium tracking-wider uppercase leading-none mt-0.5">
+              <p className="text-[8px] text-primary-300 font-semibold tracking-wider uppercase leading-none mt-0.5">
                 PT. Indofood Sukses Makmur Tbk
               </p>
             </div>
           </TransitionLink>
+
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm text-[10px] text-primary-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Sistem Sirkular Aktif</span>
+          </div>
         </div>
 
-        {/* Center Illustration & Dynamic Info Card & Active Video */}
-        <div className="relative z-10 my-auto py-8 max-w-md space-y-6">
-          <div className="space-y-3">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
-              Sistem Informasi Cerdas Ubah Anorganik Jadi Nilai
+        {/* Center Hero & Value Proposition */}
+        <div className="relative z-10 my-auto py-4 max-w-lg space-y-5">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-500/20 border border-primary-400/30 text-emerald-300 text-[11px] font-bold tracking-wide">
+              <Sparkles className="w-3 h-3" />
+              <span>Platform Sirkular Ekonomi Terpadu</span>
+            </div>
+            <h1 className="text-2xl xl:text-3xl font-black tracking-tight leading-tight text-white">
+              Sistem Informasi Cerdas <br />
+              <span className="bg-linear-to-r from-emerald-400 via-primary-300 to-amber-300 bg-clip-text text-transparent">
+                Ubah Anorganik Jadi Nilai
+              </span>
             </h1>
-            <p className="text-primary-200/90 text-xs sm:text-sm leading-relaxed">
-              Gabung bersama ribuan mitra dan konsumen dalam mendaur ulang
-              limbah kemasan produk Indofood menjadi poin reward atau dana tunai
-              langsung.
+            <p className="text-primary-100/85 text-xs leading-relaxed">
+              Integrasi cerdas pengelolaan sampah kemasan produk Indofood
+              (Karton, Etiket Plastik, dan Paper Cup) untuk mewujudkan masa
+              depan bebas limbah.
             </p>
           </div>
 
-          {/* Active Video Post Display */}
-          {activeVideo && (
-            <div className="rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
-              <VideoBanner
-                videoUrl={activeVideo.videoUrl}
-                judul={activeVideo.judul}
-                deskripsi={activeVideo.deskripsi}
-                autoPlay
-              />
-            </div>
-          )}
-
-          {/* Environmental Commitment Card */}
-          <div className="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 relative overflow-hidden">
-            <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold tracking-widest text-primary-300 uppercase">
-                Keamanan &amp; Transparansi
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">
-                SSL Secured
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 mb-2">
-              <div className="p-2 rounded-xl bg-white/10 text-emerald-400">
-                <Shield className="w-4 h-4" />
+          {/* 3 User Roles / Pathways Highlight */}
+          <div className="space-y-2">
+            <span className="text-[9px] font-bold tracking-widest text-primary-300 uppercase block">
+              3 Ekosistem Kemitraan SICUAN
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {/* Konsumen */}
+              <div className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors backdrop-blur-sm group">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 mb-1.5 group-hover:scale-105 transition-transform">
+                  <User className="w-3.5 h-3.5" />
+                </div>
+                <h4 className="text-xs font-bold text-white">Konsumen</h4>
+                <p className="text-[9px] text-primary-200/80 mt-0.5 leading-snug">
+                  Daur ulang kemasan dan dapatkan reward.
+                </p>
               </div>
-              <h3 className="font-bold text-base text-white">
-                Sistem Autentikasi SICUAN
-              </h3>
+
+              {/* Warmindo */}
+              <div className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors backdrop-blur-sm group">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 mb-1.5 group-hover:scale-105 transition-transform">
+                  <Store className="w-3.5 h-3.5" />
+                </div>
+                <h4 className="text-xs font-bold text-white">Warmindo</h4>
+                <p className="text-[9px] text-amber-200/80 mt-0.5 leading-snug">
+                  Kelola kemasan dan raih berbagai hadiah.
+                </p>
+              </div>
+
+              {/* Bank Sampah */}
+              <div className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors backdrop-blur-sm group">
+                <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-300 mb-1.5 group-hover:scale-105 transition-transform">
+                  <Building2 className="w-3.5 h-3.5" />
+                </div>
+                <h4 className="text-xs font-bold text-white">Bank Sampah</h4>
+                <p className="text-[9px] text-sky-200/80 mt-0.5 leading-snug">
+                  Pusat pengumpulan dan verifikasi kemasan.
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-primary-100/90 leading-relaxed mb-3">
-              Akses akun Anda dilindungi dengan enkripsi tingkat tinggi demi
-              menjaga keamanan data profil, histori setoran, saldo reward, dan
-              rekening bank Anda.
-            </p>
-            <div className="h-px bg-white/10 my-2.5" />
-            <div className="flex items-center justify-between text-[10px] text-primary-200">
-              <span className="flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-emerald-400" /> Real-time
-                tracking
-              </span>
-              <span className="flex items-center gap-1">
-                <Leaf className="w-3 h-3 text-emerald-400" /> Zero Waste
-                Initiative
-              </span>
+          </div>
+
+          {/* System Guarantees & Features */}
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center justify-between gap-2 text-[10px] text-primary-200">
+            <div className="flex items-center gap-1.5">
+              <Bot className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Verifikasi AI Otomatis</span>
+            </div>
+            <div className="h-3 w-px bg-white/15" />
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary-400 shrink-0" />
+              <span>Enkripsi SSL 256-Bit</span>
+            </div>
+            <div className="h-3 w-px bg-white/15" />
+            <div className="flex items-center gap-1.5">
+              <Leaf className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span>Zero Waste</span>
             </div>
           </div>
         </div>
 
-        {/* Bottom copyright */}
-        <div className="relative z-10 text-xs text-primary-300/80">
-          &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk —
-          Noodle Division Banjarmasin. All rights reserved.
+        {/* Bottom Copyright & Division Info */}
+        <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] text-primary-300/80">
+          <span>
+            &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk
+          </span>
+          <span className="text-[9px] font-medium text-emerald-300/90">
+            Noodle Division Banjarmasin
+          </span>
         </div>
       </div>
 
-      {/* RIGHT SIDE: Elegant Responsive Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 relative overflow-y-auto">
+      {/* RIGHT SIDE: Elegant Responsive Login Form with Video Banner */}
+      <div className="w-full lg:w-1/2 h-full flex flex-col justify-between p-6 sm:p-10 xl:p-12 relative overflow-y-auto overflow-x-hidden">
         {/* Top bar with back to home link */}
-        <div className="flex justify-between items-center w-full mb-8 lg:mb-0">
+        <div className="flex justify-between items-center w-full mb-6 lg:mb-0">
           <TransitionLink
             href="/"
             className="flex items-center gap-2 text-xs font-semibold text-neutral-500 hover:text-primary-600 transition-colors group"
@@ -189,11 +205,11 @@ export default function LoginPage() {
         </div>
 
         {/* Login Container */}
-        <div className="my-auto max-w-md w-full mx-auto py-8 space-y-8">
-          <div className="space-y-6">
+        <div className="my-auto max-w-md w-full mx-auto py-4 space-y-5">
+          <div className="space-y-4">
             {/* Heading */}
-            <div className="space-y-2">
-              <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900">
+            <div className="space-y-1">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900">
                 Masuk ke Akun
               </h2>
               <p className="text-xs text-neutral-500">
@@ -203,7 +219,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form action={formAction} className="space-y-5">
+            <form action={formAction} className="space-y-4">
               {/* Server Validation Alert */}
               {state?.error && (
                 <motion.div
@@ -219,131 +235,17 @@ export default function LoginPage() {
                 </motion.div>
               )}
 
-              {/* Info helper showing credentials */}
-              <div className="p-3 bg-neutral-100 rounded-xl border border-neutral-200/50 text-[10px] text-neutral-600 space-y-1.5">
-                <span className="font-bold block text-neutral-700 text-xs mb-1">
-                  Akun Demo untuk Uji Coba:
-                </span>
-                <div className="flex flex-col gap-1.5 pt-1">
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span>•</span>
-                      <span className="font-semibold text-neutral-800">
-                        superadmin.sicuan
-                      </span>
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 uppercase border border-red-200">
-                        Superadmin
-                      </span>
-                      <span className="text-neutral-500 font-mono text-[9px]">
-                        (Pass: PasswordSuper123)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleUseDemo("superadmin.sicuan", "PasswordSuper123")
-                      }
-                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
-                    >
-                      Gunakan ini
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span>•</span>
-                      <span className="font-semibold text-neutral-800">
-                        admin.banjarmasin
-                      </span>
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 uppercase border border-blue-200">
-                        Admin
-                      </span>
-                      <span className="text-neutral-500 font-mono text-[9px]">
-                        (Pass: PasswordAdmin456)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleUseDemo("admin.banjarmasin", "PasswordAdmin456")
-                      }
-                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
-                    >
-                      Gunakan ini
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span>•</span>
-                      <span className="font-semibold text-neutral-800">
-                        budi.santoso
-                      </span>
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase border border-emerald-200">
-                        Konsumen
-                      </span>
-                      <span className="text-neutral-500 font-mono text-[9px]">
-                        (Pass: 170895)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleUseDemo("budi.santoso", "170895")}
-                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
-                    >
-                      Gunakan ini
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span>•</span>
-                      <span className="font-semibold text-neutral-800">
-                        warmindo.demo
-                      </span>
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase border border-amber-200">
-                        Warmindo
-                      </span>
-                      <span className="text-neutral-500 font-mono text-[9px]">
-                        (Pass: Password123)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleUseDemo("warmindo.demo", "Password123")
-                      }
-                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
-                    >
-                      Gunakan ini
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-neutral-200/40 transition-colors">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span>•</span>
-                      <span className="font-semibold text-neutral-800">
-                        banksampah.demo
-                      </span>
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 uppercase border border-purple-200">
-                        Bank Sampah
-                      </span>
-                      <span className="text-neutral-500 font-mono text-[9px]">
-                        (Pass: Password123)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleUseDemo("banksampah.demo", "Password123")
-                      }
-                      className="px-2 py-0.5 text-[10px] font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors cursor-pointer shrink-0"
-                    >
-                      Gunakan ini
-                    </button>
-                  </div>
+              {/* Video Edukasi & Informasi SICUAN (16:9 Aspect Ratio) */}
+              {activeVideo?.videoUrl && (
+                <div className="rounded-2xl overflow-hidden shadow-sm border border-neutral-200">
+                  <VideoBanner
+                    videoUrl={activeVideo.videoUrl}
+                    judul={activeVideo.judul}
+                    deskripsi={activeVideo.deskripsi}
+                    autoPlay
+                  />
                 </div>
-              </div>
+              )}
 
               {/* Username Field */}
               <div className="space-y-1.5">
@@ -364,7 +266,7 @@ export default function LoginPage() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
                     placeholder="Masukkan NIK atau username Anda"
                   />
                 </div>
@@ -397,7 +299,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
+                    className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
                     placeholder="Contoh: 240368 atau password"
                   />
                   <button
@@ -440,11 +342,11 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full py-3.5 px-5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/10 hover:shadow-primary-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed group text-sm"
+                className="w-full py-3 px-5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/10 hover:shadow-primary-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed group text-sm"
               >
                 {isPending ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Memverifikasi Akun...</span>
                   </>
                 ) : (
@@ -455,7 +357,7 @@ export default function LoginPage() {
                 )}
               </button>
 
-              <div className="text-center text-xs text-neutral-500 pt-2">
+              <div className="text-center text-xs text-neutral-500 pt-1">
                 Belum memiliki akun?{" "}
                 <TransitionLink
                   href="/register"
@@ -469,7 +371,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom mobile disclaimer */}
-        <div className="text-[10px] text-neutral-400 text-center w-full max-w-xs mx-auto lg:hidden pt-4 border-t border-neutral-100">
+        <div className="text-[10px] text-neutral-400 text-center w-full max-w-xs mx-auto lg:hidden pt-3 border-t border-neutral-100">
           &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk.
         </div>
       </div>

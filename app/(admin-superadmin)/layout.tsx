@@ -190,12 +190,16 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         label: "Pengaturan AI",
         icon: "Sliders",
       },
-      {
-        type: "link",
-        href: "/video-post",
-        label: "Kelola Video Post",
-        icon: "Video",
-      },
+      ...(user.role === "superadmin"
+        ? [
+            {
+              type: "link" as const,
+              href: "/video-post",
+              label: "Kelola Video Post",
+              icon: "Video" as const,
+            },
+          ]
+        : []),
       {
         type: "link",
         href: "/profil/admin-profil",

@@ -10,8 +10,10 @@ import {
   Upload,
   Video,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
+  checkIsSuperadmin,
   getVideoPost,
   toggleVideoStatus,
   updateVideoPost,
@@ -21,6 +23,7 @@ import { VideoBanner } from "@/app/components/shared/VideoBanner";
 import type { VideoPost } from "@/app/types";
 
 export default function VideoPostAdminPage() {
+  const router = useRouter();
   const [video, setVideo] = useState<VideoPost | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -66,8 +69,14 @@ export default function VideoPostAdminPage() {
   }, []);
 
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    checkIsSuperadmin().then((isSuper) => {
+      if (!isSuper) {
+        router.replace("/dashboard/admin-dashboard");
+      } else {
+        refreshData();
+      }
+    });
+  }, [refreshData, router]);
 
   const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

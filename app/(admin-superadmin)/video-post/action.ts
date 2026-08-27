@@ -11,6 +11,13 @@ import { db } from "@/db";
 import { videoPost } from "@/db/schema";
 
 /**
+ * Pengecekan hak akses Superadmin
+ */
+export async function checkIsSuperadmin() {
+  return verifyIsSuperadmin();
+}
+
+/**
  * Mengambil data video post aktif untuk tayang di Login & Dashboard.
  */
 export async function getActiveVideoPost() {
