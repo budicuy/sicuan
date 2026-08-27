@@ -58,7 +58,7 @@ export async function seedNasabah() {
   const profilesToInsert: NewNasabah[] = [];
 
   // 1. Superadmin
-  const superadmin = userMap.get("superadmin.sicuan");
+  const superadmin = userMap.get("superadmin");
   if (superadmin) {
     profilesToInsert.push({
       id: superadmin.id,
@@ -69,7 +69,7 @@ export async function seedNasabah() {
       nik: null,
       tanggalLahir: null,
       noTelepon: "082251510087",
-      email: "superadmin.sicuan@gmail.com",
+      email: "superadmin@sicuan.com",
       alamat:
         "Jalan Ahmad Yani KM 32, Liang Anggang, Pandahan, Kecamatan Bati-Bati, Kabupaten Tanah Laut, Kalimantan Selatan",
       jenisBank: null,
@@ -81,7 +81,7 @@ export async function seedNasabah() {
   }
 
   // 2. Admin
-  const admin = userMap.get("admin.banjarmasin");
+  const admin = userMap.get("admin");
   if (admin) {
     profilesToInsert.push({
       id: admin.id,
@@ -92,7 +92,7 @@ export async function seedNasabah() {
       nik: null,
       tanggalLahir: null,
       noTelepon: "082251510087",
-      email: "adminsicuan@gmail.com",
+      email: "admin@sicuan.com",
       alamat:
         "Jalan Ahmad Yani KM 32, Liang Anggang, Pandahan, Kecamatan Bati-Bati, Kabupaten Tanah Laut, Kalimantan Selatan",
       jenisBank: null,
@@ -103,19 +103,19 @@ export async function seedNasabah() {
     });
   }
 
-  // 3. Budi Santoso (konsumen demo)
-  const budi = userMap.get("budi.santoso");
-  if (budi) {
+  // 3. Konsumen Demo
+  const konsumen = userMap.get("konsumen");
+  if (konsumen) {
     profilesToInsert.push({
-      id: budi.id,
-      name: budi.name,
-      username: budi.username,
-      role: budi.role as "konsumen",
-      status: budi.status as "Aktif",
+      id: konsumen.id,
+      name: konsumen.name,
+      username: konsumen.username,
+      role: konsumen.role as "konsumen",
+      status: konsumen.status as "Aktif",
       nik: "637101000000000",
       tanggalLahir: "1995-08-17",
       noTelepon: null,
-      email: "budi.santoso@gmail.com",
+      email: "konsumen@sicuan.com",
       alamat: "Jl. Sungai Baru No. 123, Banjarmasin, Kalimantan Selatan",
       jenisBank: "BNI",
       noRekening: "9876543210",
@@ -126,7 +126,7 @@ export async function seedNasabah() {
   }
 
   // 4. Mitra Warmindo
-  const warmindo = userMap.get("warmindo.demo");
+  const warmindo = userMap.get("warmindo");
   if (warmindo) {
     profilesToInsert.push({
       id: warmindo.id,
@@ -137,7 +137,7 @@ export async function seedNasabah() {
       nik: "637102000000000",
       tanggalLahir: "1990-08-17",
       noTelepon: "081234567890",
-      email: "warmindo.demo@gmail.com",
+      email: "warmindo@sicuan.com",
       alamat: "Jl. A. Yani Km. 5,5 No. 123, Banjarmasin, Kalimantan Selatan ",
       jenisBank: "BCA",
       noRekening: "1234567890",
@@ -198,7 +198,7 @@ export async function seedNasabah() {
   }
 
   // 5. Mitra Bank Sampah
-  const bankSampah = userMap.get("banksampah.demo");
+  const bankSampah = userMap.get("banksampah");
   if (bankSampah) {
     profilesToInsert.push({
       id: bankSampah.id,
@@ -209,7 +209,7 @@ export async function seedNasabah() {
       nik: null,
       tanggalLahir: "1985-08-17",
       noTelepon: "081234567890",
-      email: "banksampah.demo@gmail.com",
+      email: "banksampah@sicuan.com",
       alamat: "Jl. Sungai Baru No. 456, Banjarmasin, Kalimantan Selatan",
       jenisBank: "BCA",
       noRekening: "1234567890",

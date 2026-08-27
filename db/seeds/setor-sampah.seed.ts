@@ -10,13 +10,13 @@ export async function seedSetorSampah() {
 
   // Get active users
   const budi = await db.query.users.findFirst({
-    where: eq(users.username, "budi.santoso"),
+    where: eq(users.username, "konsumen"),
   });
   const warmindo = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo.demo"),
+    where: eq(users.username, "warmindo"),
   });
   const bankSampah = await db.query.users.findFirst({
-    where: eq(users.username, "banksampah.demo"),
+    where: eq(users.username, "banksampah"),
   });
 
   if (!budi || !warmindo || !bankSampah) {
@@ -194,7 +194,7 @@ export async function seedSetorSampah() {
 
   // ── DATA SEED BARU: 5 Setoran Warmindo & 5 Setoran Konsumen ─────────────────
   const wDemo = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo.demo"),
+    where: eq(users.username, "warmindo"),
   });
   const wBerkah = await db.query.users.findFirst({
     where: eq(users.username, "warmindo.berkah"),
@@ -223,7 +223,7 @@ export async function seedSetorSampah() {
   });
 
   const bankSampahDemo = await db.query.users.findFirst({
-    where: eq(users.username, "banksampah.demo"),
+    where: eq(users.username, "banksampah"),
   });
 
   if (wDemo && wBerkah && wMandiri && wJaya && wSejahtera && bankSampahDemo) {

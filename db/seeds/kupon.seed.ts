@@ -34,19 +34,19 @@ export async function seedKupon() {
 
   const insertedKupons = await db.insert(kupon).values(kuponData).returning();
 
-  // Find Budi Santoso user
-  const budi = await db.query.users.findFirst({
-    where: eq(users.username, "budi.santoso"),
+  // Find konsumen demo user
+  const konsumenUser = await db.query.users.findFirst({
+    where: eq(users.username, "konsumen"),
   });
 
-  if (!budi) {
-    throw new Error("User budi.santoso not found during kupon seeding!");
+  if (!konsumenUser) {
+    throw new Error("User konsumen not found during kupon seeding!");
   }
 
-  // Redeem each of the 3 kupons once for budi.santoso
+  // Redeem each of the 3 kupons once for konsumen
   const penukaranData = insertedKupons.map((k, index) => {
     return {
-      userId: budi.id,
+      userId: konsumenUser.id,
       kuponId: k.id,
       kodeUnik: `KPN-DEMO-VOUCHER-${index + 1}`,
       status: "aktif" as const,

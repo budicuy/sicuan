@@ -53,9 +53,11 @@ export async function seedUsers() {
 
   await db.delete(users);
 
-  const hashSuperadmin = await argon2.hash("PasswordSuper123");
-  const hashAdmin = await argon2.hash("PasswordAdmin456");
-  const hashBudi = await argon2.hash("170895"); // DDMMYY dari 17/08/1995
+  const hashSuperadmin = await argon2.hash("superadmin123");
+  const hashAdmin = await argon2.hash("admin123");
+  const hashKonsumen = await argon2.hash("konsumen123");
+  const hashWarmindo = await argon2.hash("warmindo123");
+  const hashBankSampah = await argon2.hash("banksampah123");
   const hashDefault = await argon2.hash("Password123");
 
   const csvUsers = parseCsv();
@@ -64,36 +66,36 @@ export async function seedUsers() {
     // 1. Superadmin
     {
       name: "SUPERADMIN SICUAN",
-      username: "superadmin.sicuan",
+      username: "superadmin",
       password: hashSuperadmin,
-      email: "superadmin.sicuan@gmail.com",
+      email: "superadmin@sicuan.com",
       role: "superadmin",
       status: "Aktif",
     },
     // 2. Admin
     {
       name: "ADMIN SICUAN",
-      username: "admin.banjarmasin",
+      username: "admin",
       password: hashAdmin,
-      email: "admin.sicuan@gmail.com",
+      email: "admin@sicuan.com",
       role: "admin",
       status: "Aktif",
     },
-    // 3. Budi Santoso (konsumen demo)
+    // 3. Konsumen Demo
     {
-      name: "Budi Santoso",
-      username: "budi.santoso",
-      password: hashBudi,
-      email: "budi.santoso@gmail.com",
+      name: "Konsumen Demo",
+      username: "konsumen",
+      password: hashKonsumen,
+      email: "konsumen@sicuan.com",
       role: "konsumen",
       status: "Aktif",
     },
-    // 4. Mitra Warmindo
+    // 4. Mitra Warmindo Demo
     {
       name: "Mitra Warmindo Demo",
-      username: "warmindo.demo",
-      password: hashDefault,
-      email: "warmindo.demo@gmail.com",
+      username: "warmindo",
+      password: hashWarmindo,
+      email: "warmindo@sicuan.com",
       role: "warmindo",
       status: "Aktif",
     },
@@ -129,16 +131,16 @@ export async function seedUsers() {
       role: "warmindo",
       status: "Aktif",
     },
-    // 5. Mitra Bank Sampah
+    // 5. Mitra Bank Sampah Demo
     {
       name: "Mitra Bank Sampah Demo",
-      username: "banksampah.demo",
-      password: hashDefault,
-      email: "gaming.budicuy@gmail.com",
+      username: "banksampah",
+      password: hashBankSampah,
+      email: "banksampah@sicuan.com",
       role: "bank-sampah",
       status: "Aktif",
     },
-    // New Bank Sampah 1
+    // Bank Sampah 1
     {
       name: "Bank Sampah Banjarbaru / TPS 3R Gotong Royong",
       username: "banksampah.banjarbaru",
@@ -147,7 +149,7 @@ export async function seedUsers() {
       role: "bank-sampah",
       status: "Aktif",
     },
-    // New Bank Sampah 2
+    // Bank Sampah 2
     {
       name: "TPS 3R Sidoarjo",
       username: "banksampah.sidoarjo",
