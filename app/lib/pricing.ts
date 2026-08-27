@@ -1,9 +1,9 @@
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
-import { hargaSampah, poinSampah } from "@/db/schema";
+import { hargaSampah, poinSampah, poinSampahWarmindo } from "@/db/schema";
 
 /**
- * Mendapatkan nilai poin per kg untuk jenis sampah tertentu dari master data poin.
+ * Mendapatkan nilai poin per kg untuk jenis sampah tertentu dari master data poin (Konsumen).
  */
 export async function getPoinPerKg(jenis: string): Promise<number> {
   try {
@@ -19,6 +19,32 @@ export async function getPoinPerKg(jenis: string): Promise<number> {
   } catch (error) {
     console.error("Error getting poin per kg:", error);
     return 0;
+  }
+}
+
+/**
+ * Mendapatkan nilai poin per 100 gram untuk Warmindo dari master data poin warmindo.
+ * Default 10 poin per 100 gram (= 100 poin / kg).
+ */
+export async function getPoinWarmindoPer100Gram(
+  jenis: string,
+): Promise<number> {
+  try {
+    const result = await db
+      .select({ poinPer100Gram: poinSampahWarmindo.poinPer100Gram })
+      .from(poinSampahWarmindo)
+      .where(
+        eq(
+          poinSampahWarmindo.jenisSampah,
+          jenis as "Karton" | "Etiket" | "Paper Cup",
+        ),
+      )
+      .limit(1);
+
+    return result[0]?.poinPer100Gram ?? 10;
+  } catch (error) {
+    console.error("Error getting poin warmindo per 100 gram:", error);
+    return 10;
   }
 }
 
@@ -54,7 +80,9 @@ export async function getHargaRange(
 
 /**
  * Menghitung total poin dan kredit uang dari setoran sampah.
- * Kredit uang hanya diberikan untuk mitra warmindo dan bank-sampah.
+ * - Konsumen: dapat poin (poin_sampah)
+ * - Warmindo: dapat poin khusus warmindo (poin_sampah_warmindo: default 10 poin per 100 gram)
+ * - Bank Sampah: tidak mendapatkan poin langsung (berupa setoran fasilitas)
  */
 export async function calculateSetoranReward(
   jenis: string,
@@ -65,14 +93,17 @@ export async function calculateSetoranReward(
     return { totalPoin: 0, totalKredit: 0 };
   }
 
-  const isWarmindo = role === "warmindo";
-  const pointPerKg = isWarmindo ? 0 : await getPoinPerKg(jenis);
-  const totalPoin = isWarmindo ? 0 : Math.floor(berat * pointPerKg);
+  if (role === "warmindo") {
+    const poinPer100g = await getPoinWarmindoPer100Gram(jenis);
+    // berat dalam kg -> konversi ke 100 gram: (berat * 10) * poinPer100g
+    const totalPoin = Math.floor(berat * 10 * poinPer100g);
+    return { totalPoin, totalKredit: 0 };
+  }
 
-  const isMoneyReward = role === "warmindo";
-  const totalKredit = isMoneyReward ? await getHargaRange(jenis, berat) : 0;
+  const pointPerKg = await getPoinPerKg(jenis);
+  const totalPoin = Math.floor(berat * pointPerKg);
 
-  return { totalPoin, totalKredit };
+  return { totalPoin, totalKredit: 0 };
 }
 
 /**

@@ -3,8 +3,10 @@ import { seedHargaSampah } from "@/db/seeds/harga-sampah.seed";
 import { seedKupon } from "@/db/seeds/kupon.seed";
 import { seedNasabah } from "@/db/seeds/nasabah.seed";
 import { seedPoinSampah } from "@/db/seeds/poin-sampah.seed";
+import { seedPoinWarmindo } from "@/db/seeds/poin-warmindo.seed";
 import { seedRawMaterial } from "@/db/seeds/raw-material.seed";
 import { seedUsers } from "@/db/seeds/users.seed";
+import { seedVideoPost } from "@/db/seeds/video-post.seed";
 import { seedSetorSampah } from "./setor-sampah.seed";
 
 export const seeders = [
@@ -13,7 +15,9 @@ export const seeders = [
   seedEkspedisi,
   seedHargaSampah,
   seedPoinSampah,
+  seedPoinWarmindo,
   seedRawMaterial,
   seedKupon,
   seedSetorSampah,
+  seedVideoPost,
 ];

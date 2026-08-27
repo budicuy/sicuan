@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getHargaRange } from "@/app/lib/pricing";
 import { db } from "@/db";
-import { nasabah, pencairanDana, setorSampah } from "@/db/schema";
+import { nasabah, pencairanDana, setorSampah, videoPost } from "@/db/schema";
 
 async function getCurrentUser() {
   try {
@@ -89,7 +89,7 @@ export async function getDashboardData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  const [profile, mySetoran, myPencairan] = await Promise.all([
+  const [profile, mySetoran, myPencairan, activeVideo] = await Promise.all([
     db.query.nasabah.findFirst({
       where: eq(nasabah.id, user.id),
     }),
@@ -103,6 +103,10 @@ export async function getDashboardData() {
     db.query.pencairanDana.findMany({
       where: eq(pencairanDana.userId, user.id),
       orderBy: [desc(pencairanDana.createdAt)],
+    }),
+    db.query.videoPost.findFirst({
+      where: eq(videoPost.isActive, true),
+      orderBy: [desc(videoPost.id)],
     }),
   ]);
 
@@ -161,6 +165,13 @@ export async function getDashboardData() {
       poin: profile?.poin ?? 0,
       kredit: profile ? await getBankSampahMonthlyCredit(profile.id) : 0,
     },
+    video: activeVideo
+      ? {
+          videoUrl: activeVideo.videoUrl,
+          judul: activeVideo.judul,
+          deskripsi: activeVideo.deskripsi,
+        }
+      : null,
     metrics: {
       totalSetoranKg: Math.round(totalSetoranKg * 100) / 100,
       totalSetoranPending,

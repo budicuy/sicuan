@@ -5,6 +5,10 @@ import { kupon } from "@/db/schema/kupon";
 import { nasabah, users } from "@/db/schema/nasabah";
 import { pencairanDana } from "@/db/schema/pencairan-dana";
 import { penukaranKupon } from "@/db/schema/penukaran-kupon";
+import {
+  penukaranRewardWarmindo,
+  rewardWarmindo,
+} from "@/db/schema/reward-warmindo";
 import { setorSampah } from "@/db/schema/setor-sampah";
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -21,6 +25,7 @@ export const nasabahRelations = relations(nasabah, ({ one, many }) => ({
   }),
   setorSampah: many(setorSampah),
   penukaranKupon: many(penukaranKupon),
+  penukaranRewardWarmindo: many(penukaranRewardWarmindo),
 }));
 
 export const setorSampahRelations = relations(setorSampah, ({ one }) => ({
@@ -74,6 +79,27 @@ export const buktiPembayaranRelations = relations(
     pencairanDana: one(pencairanDana, {
       fields: [buktiPembayaran.pencairanDanaId],
       references: [pencairanDana.id],
+    }),
+  }),
+);
+
+export const rewardWarmindoRelations = relations(
+  rewardWarmindo,
+  ({ many }) => ({
+    penukaran: many(penukaranRewardWarmindo),
+  }),
+);
+
+export const penukaranRewardWarmindoRelations = relations(
+  penukaranRewardWarmindo,
+  ({ one }) => ({
+    user: one(nasabah, {
+      fields: [penukaranRewardWarmindo.userId],
+      references: [nasabah.id],
+    }),
+    reward: one(rewardWarmindo, {
+      fields: [penukaranRewardWarmindo.rewardId],
+      references: [rewardWarmindo.id],
     }),
   }),
 );

@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SidebarLayout } from "@/app/components/shared/sidebar";
 import { db } from "@/db";
-import { pencairanDana, setorSampah } from "@/db/schema";
+import {
+  pencairanDana,
+  penukaranRewardWarmindo,
+  setorSampah,
+} from "@/db/schema";
 
 async function logoutAction() {
   "use server";
@@ -94,6 +98,14 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
 
   const countPencairan = pendingPencairan?.count ?? 0;
 
+  // Fetch pending penukaran reward warmindo count
+  const [pendingReward] = await db
+    .select({ count: count() })
+    .from(penukaranRewardWarmindo)
+    .where(eq(penukaranRewardWarmindo.status, "pending"));
+
+  const countReward = pendingReward?.count ?? 0;
+
   const sidebarItems: import("@/app/components/shared/sidebar").SidebarItem[] =
     [
       {
@@ -110,10 +122,22 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
           { href: "/nasabah", label: "Data Nasabah", icon: "Coins" },
           { href: "/ekspedisi", label: "Data Ekspedisi", icon: "FileText" },
           { href: "/harga-sampah", label: "Harga Sampah", icon: "Settings" },
-          { href: "/poin", label: "Master Poin", icon: "Star" },
+          { href: "/poin", label: "Master Poin Konsumen", icon: "Star" },
+          {
+            href: "/poin-warmindo",
+            label: "Poin & Reward Warmindo",
+            icon: "Award",
+          },
           { href: "/raw-material", label: "Raw Material", icon: "Recycle" },
           { href: "/kupon", label: "Master Kupon", icon: "Star" },
         ],
+      },
+      {
+        type: "link",
+        href: "/penukaran-reward-warmindo",
+        label: "Reward Warmindo",
+        icon: "Gift",
+        badgeCount: countReward,
       },
       {
         type: "link",
@@ -165,6 +189,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         href: "/pengaturan-ai",
         label: "Pengaturan AI",
         icon: "Sliders",
+      },
+      {
+        type: "link",
+        href: "/video-post",
+        label: "Kelola Video Post",
+        icon: "Video",
       },
       {
         type: "link",

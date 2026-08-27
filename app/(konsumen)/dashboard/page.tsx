@@ -25,11 +25,17 @@ import {
 import { getDashboardData } from "@/app/(konsumen)/dashboard/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 import { TourGuide } from "@/app/components/shared/TourGuide";
+import { VideoBanner } from "@/app/components/shared/VideoBanner";
 
 interface DashboardData {
   success: boolean;
   role: string;
   name: string;
+  video?: {
+    videoUrl: string;
+    judul: string;
+    deskripsi?: string | null;
+  } | null;
   metrics?: {
     totalSetoranKg?: number;
     totalSetoranPending?: number;
@@ -224,6 +230,16 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Active Video Banner Display */}
+      {data?.video?.videoUrl && (
+        <VideoBanner
+          videoUrl={data.video.videoUrl}
+          judul={data.video.judul}
+          deskripsi={data.video.deskripsi}
+          autoPlay
+        />
+      )}
 
       {/* Metrics Grid */}
       <div

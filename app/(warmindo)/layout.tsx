@@ -86,9 +86,9 @@ export default async function WarmindoLayout({ children }: LayoutProps) {
       badgeCount: pendingHandoverCount,
     },
     {
-      href: "/ajukan-pencairan-dana/warmindo-pencairan",
-      label: "Pencairan Dana",
-      icon: "Coins",
+      href: "/tukar-reward",
+      label: "Tukar Reward",
+      icon: "Gift",
     },
     { href: "/profil/warmindo-profil", label: "Profil Saya", icon: "User" },
   ];

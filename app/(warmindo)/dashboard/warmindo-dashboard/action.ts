@@ -1,12 +1,16 @@
 "use server";
 
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getHargaRange } from "@/app/lib/pricing";
 import { db } from "@/db";
-import { nasabah, pencairanDana, setorSampah } from "@/db/schema";
+import {
+  nasabah,
+  penukaranRewardWarmindo,
+  setorSampah,
+  videoPost,
+} from "@/db/schema";
 
 async function getCurrentUser() {
   try {
@@ -30,60 +34,13 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-async function getWarmindoMonthlyCredit(userId: number): Promise<number> {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0-indexed
-  const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-
-  const records = await db.query.setorSampah.findMany({
-    where: and(
-      eq(setorSampah.userId, userId),
-      eq(setorSampah.kategoriNasabah, "warmindo"),
-      eq(setorSampah.status, "diterima"),
-      gte(setorSampah.tanggalSetor, startOfMonthStr),
-      lte(setorSampah.tanggalSetor, endOfMonthStr),
-    ),
-  });
-
-  const wasteMap: Record<string, number> = {};
-  for (const r of records) {
-    wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
-  }
-
-  let dynamicKredit = 0;
-  for (const [jenis, berat] of Object.entries(wasteMap)) {
-    const harga = await getHargaRange(jenis, berat);
-    dynamicKredit += harga;
-  }
-
-  const startOfMonthDate = new Date(currentYear, currentMonth, 1);
-  const endOfMonthDate = new Date(currentYear, currentMonth + 1, 1);
-
-  const myDisbursements = await db.query.pencairanDana.findMany({
-    where: and(
-      eq(pencairanDana.userId, userId),
-      gte(pencairanDana.createdAt, startOfMonthDate),
-      lte(pencairanDana.createdAt, endOfMonthDate),
-    ),
-  });
-
-  const totalWithdrawn = myDisbursements
-    .filter((p) => p.status === "berhasil" || p.status === "pending")
-    .reduce((sum, p) => sum + p.jumlah, 0);
-
-  return Math.max(0, dynamicKredit - totalWithdrawn);
-}
-
 export async function getDashboardData() {
   const user = await getCurrentUser();
   if (!user || user.role !== "warmindo") {
     return { success: false, message: "Akses ditolak" };
   }
 
-  const [profile, mySetoran, myPencairan, currentKredit] = await Promise.all([
+  const [profile, mySetoran, myRewardClaims, activeVideo] = await Promise.all([
     db.query.nasabah.findFirst({
       where: eq(nasabah.id, user.id),
     }),
@@ -94,11 +51,14 @@ export async function getDashboardData() {
       ),
       orderBy: [desc(setorSampah.createdAt)],
     }),
-    db.query.pencairanDana.findMany({
-      where: eq(pencairanDana.userId, user.id),
-      orderBy: [desc(pencairanDana.createdAt)],
+    db.query.penukaranRewardWarmindo.findMany({
+      where: eq(penukaranRewardWarmindo.userId, user.id),
+      orderBy: [desc(penukaranRewardWarmindo.createdAt)],
     }),
-    getWarmindoMonthlyCredit(user.id),
+    db.query.videoPost.findFirst({
+      where: eq(videoPost.isActive, true),
+      orderBy: [desc(videoPost.id)],
+    }),
   ]);
 
   // Calculate metrics
@@ -113,12 +73,12 @@ export async function getDashboardData() {
     (s) => s.status === "diterima",
   ).length;
 
-  const totalPencairanBerhasil = myPencairan
-    .filter((p) => p.status === "berhasil")
-    .reduce((sum, p) => sum + p.jumlah, 0);
-  const totalPencairanPending = myPencairan
-    .filter((p) => p.status === "pending")
-    .reduce((sum, p) => sum + p.jumlah, 0);
+  const totalRewardBerhasil = myRewardClaims.filter(
+    (r) => r.status === "berhasil",
+  ).length;
+  const totalRewardPending = myRewardClaims.filter(
+    (r) => r.status === "pending",
+  ).length;
 
   // Composition
   const composition = {
@@ -154,14 +114,20 @@ export async function getDashboardData() {
     name: user.name,
     profile: {
       poin: profile?.poin ?? 0,
-      kredit: currentKredit,
     },
+    video: activeVideo
+      ? {
+          videoUrl: activeVideo.videoUrl,
+          judul: activeVideo.judul,
+          deskripsi: activeVideo.deskripsi,
+        }
+      : null,
     metrics: {
       totalSetoranKg: Math.round(totalSetoranKg * 100) / 100,
       totalSetoranPending,
       totalSetoranDiterima,
-      totalPencairanBerhasil,
-      totalPencairanPending,
+      totalRewardBerhasil,
+      totalRewardPending,
     },
     composition: [
       {
@@ -189,11 +155,14 @@ export async function getDashboardData() {
       status: s.status,
       tanggalSetor: s.tanggalSetor,
     })),
-    recentPencairan: myPencairan.slice(0, 5).map((p) => ({
-      id: p.id,
-      jumlah: p.jumlah,
-      status: p.status,
-      createdAt: p.createdAt,
+    recentReward: myRewardClaims.slice(0, 5).map((r) => ({
+      id: r.id,
+      namaReward: r.namaReward,
+      kategori: r.kategori,
+      poinDipotong: r.poinDipotong,
+      nominalUang: r.nominalUang,
+      status: r.status,
+      createdAt: r.createdAt,
     })),
   };
 }

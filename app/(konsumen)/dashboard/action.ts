@@ -10,6 +10,7 @@ import {
   pencairanDana,
   penukaranKupon,
   setorSampah,
+  videoPost,
 } from "@/db/schema";
 
 async function getCurrentUser() {
@@ -40,26 +41,31 @@ export async function getDashboardData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  const [profile, mySetoran, myPencairan, myKupon] = await Promise.all([
-    db.query.nasabah.findFirst({
-      where: eq(nasabah.id, user.id),
-    }),
-    db.query.setorSampah.findMany({
-      where: and(
-        eq(setorSampah.userId, user.id),
-        eq(setorSampah.kategoriNasabah, "konsumen"),
-      ),
-      orderBy: [desc(setorSampah.createdAt)],
-    }),
-    db.query.pencairanDana.findMany({
-      where: eq(pencairanDana.userId, user.id),
-      orderBy: [desc(pencairanDana.createdAt)],
-    }),
-    db.query.penukaranKupon.findMany({
-      where: eq(penukaranKupon.userId, user.id),
-      orderBy: [desc(penukaranKupon.createdAt)],
-    }),
-  ]);
+  const [profile, mySetoran, myPencairan, myKupon, activeVideo] =
+    await Promise.all([
+      db.query.nasabah.findFirst({
+        where: eq(nasabah.id, user.id),
+      }),
+      db.query.setorSampah.findMany({
+        where: and(
+          eq(setorSampah.userId, user.id),
+          eq(setorSampah.kategoriNasabah, "konsumen"),
+        ),
+        orderBy: [desc(setorSampah.createdAt)],
+      }),
+      db.query.pencairanDana.findMany({
+        where: eq(pencairanDana.userId, user.id),
+        orderBy: [desc(pencairanDana.createdAt)],
+      }),
+      db.query.penukaranKupon.findMany({
+        where: eq(penukaranKupon.userId, user.id),
+        orderBy: [desc(penukaranKupon.createdAt)],
+      }),
+      db.query.videoPost.findFirst({
+        where: eq(videoPost.isActive, true),
+        orderBy: [desc(videoPost.id)],
+      }),
+    ]);
 
   const totalSetoranKg = mySetoran
     .filter((s) => s.status === "diterima")
@@ -115,6 +121,13 @@ export async function getDashboardData() {
     profile: {
       poin: profile?.poin ?? 0,
     },
+    video: activeVideo
+      ? {
+          videoUrl: activeVideo.videoUrl,
+          judul: activeVideo.judul,
+          deskripsi: activeVideo.deskripsi,
+        }
+      : null,
     metrics: {
       totalSetoranKg: Math.round(totalSetoranKg * 100) / 100,
       totalSetoranPending,

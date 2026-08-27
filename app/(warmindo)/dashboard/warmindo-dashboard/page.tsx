@@ -3,11 +3,14 @@
 import {
   CheckCircle2,
   Coins,
+  Gift,
   Recycle,
   Scale,
   ShoppingBag,
+  Sparkles,
   TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Area,
@@ -24,6 +27,7 @@ import {
 import { getDashboardData } from "@/app/(warmindo)/dashboard/warmindo-dashboard/action";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 import { TourGuide } from "@/app/components/shared/TourGuide";
+import { VideoBanner } from "@/app/components/shared/VideoBanner";
 
 const dashboardSteps = [
   {
@@ -31,16 +35,16 @@ const dashboardSteps = [
     popover: {
       title: "Selamat Datang Mitra!",
       description:
-        "Ini adalah Dashboard Kemitraan Warmindo Anda. Di sini Anda dapat memantau status setoran dan kredit saldo hasil daur ulang sampah PT. Indofood.",
+        "Ini adalah Dashboard Kemitraan Warmindo Anda. Pantau status setoran dan saldo poin hasil daur ulang sampah kemasan PT. Indofood.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-warmindo-dashboard-points",
     popover: {
-      title: "Saldo Kredit Tersedia Bulan Ini",
+      title: "Saldo Poin Reward",
       description:
-        "Menampilkan saldo uang tunai yang berhasil Anda kumpulkan dari hasil verifikasi aktual sampah oleh Bank Sampah. Saldo ini dapat Anda cairkan kapan saja.",
+        "Menampilkan akumulasi poin reward Anda (10 poin / 100 gram). Poin ini dapat Anda tukarkan menjadi Uang Tunai atau Hadiah Barang kapan saja.",
       side: "bottom" as const,
     },
   },
@@ -49,7 +53,7 @@ const dashboardSteps = [
     popover: {
       title: "Metrik Kemitraan",
       description:
-        "Menampilkan total volume sampah yang disetor, serta status pencairan dana Anda secara ringkas.",
+        "Menampilkan total volume sampah yang disetor serta status klaim reward Anda secara ringkas.",
       side: "top" as const,
     },
   },
@@ -76,7 +80,7 @@ const dashboardSteps = [
     popover: {
       title: "Riwayat Transaksi Terbaru",
       description:
-        "Tabel ini menunjukkan aktivitas pengiriman ekspedisi dan pengajuan pencairan dana terbaru Anda beserta statusnya.",
+        "Tabel ini menunjukkan aktivitas setoran sampah dan penukaran reward terbaru Anda beserta statusnya.",
       side: "top" as const,
     },
   },
@@ -86,16 +90,20 @@ interface DashboardData {
   success: boolean;
   role: string;
   name: string;
+  video?: {
+    videoUrl: string;
+    judul: string;
+    deskripsi?: string | null;
+  } | null;
   metrics?: {
     totalSetoranKg?: number;
     totalSetoranPending?: number;
     totalSetoranDiterima?: number;
-    totalPencairanBerhasil?: number;
-    totalPencairanPending?: number;
+    totalRewardBerhasil?: number;
+    totalRewardPending?: number;
   };
   profile?: {
     poin: number;
-    kredit: number;
   };
   composition?: { name: string; value: number; color: string }[];
   setoranHistory?: {
@@ -111,9 +119,12 @@ interface DashboardData {
     status: string;
     tanggalSetor: string;
   }[];
-  recentPencairan?: {
+  recentReward?: {
     id: number;
-    jumlah: number;
+    namaReward: string;
+    kategori: string;
+    poinDipotong: number;
+    nominalUang?: number | null;
     status: string;
     createdAt: string | Date;
   }[];
@@ -138,12 +149,11 @@ export default function DashboardPage() {
         totalSetoranKg: 85,
         totalSetoranPending: 15,
         totalSetoranDiterima: 70,
-        totalPencairanBerhasil: 450000,
-        totalPencairanPending: 150000,
+        totalRewardBerhasil: 3,
+        totalRewardPending: 1,
       },
       profile: {
-        poin: 0,
-        kredit: 350000,
+        poin: 3500,
       },
       composition: [
         { name: "Karton", value: 45, color: "#f59e0b" },
@@ -151,9 +161,9 @@ export default function DashboardPage() {
         { name: "Paper Cup", value: 15, color: "#3b82f6" },
       ],
       setoranHistory: [
-        { date: "Mei", Volume: 15, Poin: 0 },
-        { date: "Juni", Volume: 35, Poin: 0 },
-        { date: "Juli", Volume: 85, Poin: 0 },
+        { date: "Mei", Volume: 15, Poin: 1500 },
+        { date: "Juni", Volume: 35, Poin: 3500 },
+        { date: "Juli", Volume: 85, Poin: 8500 },
       ],
       recentSetoran: [
         {
@@ -173,10 +183,13 @@ export default function DashboardPage() {
           tanggalSetor: new Date().toISOString().split("T")[0],
         },
       ],
-      recentPencairan: [
+      recentReward: [
         {
           id: 1,
-          jumlah: 150000,
+          namaReward: "Uang Tunai Rp 50.000",
+          kategori: "uang",
+          poinDipotong: 500,
+          nominalUang: 50000,
           status: "pending",
           createdAt: new Date(),
         },
@@ -226,54 +239,69 @@ export default function DashboardPage() {
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
-            <Coins className="w-6 h-6 animate-pulse" />
+            <Gift className="w-6 h-6 animate-pulse" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
               Halo Mitra, <span className="text-primary-600">{name}</span>!
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Dashboard Kemitraan Warmindo SICUAN — Cairkan reward tunai dari
-              kontribusi Anda.
+              Dashboard Kemitraan Warmindo SICUAN — Dapatkan 10 poin per 100
+              gram dan tukarkan dengan hadiah pilihan.
             </p>
           </div>
         </div>
+
+        <Link
+          href="/tukar-reward"
+          className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 hover:scale-[1.02]"
+        >
+          <Sparkles className="w-4 h-4" /> Tukar Poin Reward
+        </Link>
       </div>
+
+      {/* Active Video Banner Display */}
+      {data?.video?.videoUrl && (
+        <VideoBanner
+          videoUrl={data.video.videoUrl}
+          judul={data.video.judul}
+          deskripsi={data.video.deskripsi}
+          autoPlay
+        />
+      )}
 
       {/* Metrics Grid */}
       <div
         id="tour-warmindo-dashboard-metrics"
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        {/* Balance Card */}
+        {/* Point Balance Card */}
         <div
           id="tour-warmindo-dashboard-points"
-          className="bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2"
+          className="bg-linear-to-tr from-primary-950 via-primary-900 to-amber-900 text-white rounded-2xl p-5 shadow-md relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 sm:col-span-2"
         >
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
-          <span className="text-[10px] font-bold text-primary-300 uppercase tracking-widest block">
-            KREDIT CAIR SEBAGAI UANG
+          <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest block">
+            SALDO POIN TERSEDIA
           </span>
           <div className="flex justify-between items-end mt-4">
             <div>
               <span className="text-[9px] text-primary-200">
-                Saldo Kredit Tersedia Bulan Ini
+                10 Poin per 100 gram sampah terverifikasi
               </span>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-0.5">
-                <AnimatedCounter
-                  value={data?.profile?.kredit ?? 0}
-                  prefix="Rp "
-                />
+                <AnimatedCounter value={data?.profile?.poin ?? 0} />{" "}
+                <span className="text-lg font-bold text-amber-300">Poin</span>
               </h2>
             </div>
-            <Coins className="w-8 h-8 text-emerald-400 shrink-0 mb-1" />
+            <Coins className="w-8 h-8 text-amber-400 shrink-0 mb-1" />
           </div>
         </div>
 
         {/* Total Setoran */}
         <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex items-center justify-between hover:scale-[1.01] transition-transform">
           <div>
-            <span className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider text-neutral-405 block">
+            <span className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider block">
               Total Setoran
             </span>
             <h2 className="text-xl font-black text-neutral-800 tracking-tight mt-1.5">
@@ -288,16 +316,16 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Total Pencairan */}
+        {/* Total Reward Diklaim */}
         <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex items-center justify-between hover:scale-[1.01] transition-transform">
           <div>
-            <span className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider text-neutral-405 block">
-              Cair Berhasil
+            <span className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider block">
+              Reward Berhasil
             </span>
             <h2 className="text-xl font-black tracking-tight mt-1.5 text-emerald-600">
               <AnimatedCounter
-                value={data?.metrics?.totalPencairanBerhasil ?? 0}
-                prefix="Rp "
+                value={data?.metrics?.totalRewardBerhasil ?? 0}
+                suffix=" Klaim"
               />
             </h2>
           </div>
@@ -498,47 +526,58 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent withdrawals */}
+        {/* Recent Reward Redemptions */}
         <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
-          <h3 className="font-bold text-xs text-neutral-850 flex items-center gap-1.5 pb-2 border-b border-neutral-100">
-            <Coins className="w-4 h-4 text-emerald-650" />
-            Pencairan Dana Terakhir
-          </h3>
+          <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+            <h3 className="font-bold text-xs text-neutral-850 flex items-center gap-1.5">
+              <Gift className="w-4 h-4 text-emerald-650" />
+              Penukaran Reward Terakhir
+            </h3>
+            <Link
+              href="/tukar-reward"
+              className="text-[10px] text-primary-600 font-bold hover:underline"
+            >
+              Lihat Semua
+            </Link>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[11px]">
               <thead>
                 <tr className="text-neutral-400 border-b border-neutral-100">
-                  <th className="pb-2 font-semibold">Tanggal</th>
-                  <th className="pb-2 font-semibold">Nominal</th>
+                  <th className="pb-2 font-semibold">Hadiah</th>
+                  <th className="pb-2 font-semibold">Poin</th>
                   <th className="pb-2 font-semibold text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
-                {data?.recentPencairan && data.recentPencairan.length > 0 ? (
-                  data.recentPencairan.map((p) => (
-                    <tr key={p.id}>
-                      <td className="py-2.5 text-neutral-550">
-                        {new Date(p.createdAt).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </td>
+                {data?.recentReward && data.recentReward.length > 0 ? (
+                  data.recentReward.map((r) => (
+                    <tr key={r.id}>
                       <td className="py-2.5 font-bold text-neutral-800">
-                        Rp {p.jumlah.toLocaleString("id-ID")}
+                        <span className="block truncate max-w-36">
+                          {r.namaReward}
+                        </span>
+                        <span className="text-[9px] font-normal text-neutral-500">
+                          {new Date(r.createdAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                      </td>
+                      <td className="py-2.5 font-mono font-bold text-neutral-700">
+                        {r.poinDipotong} Poin
                       </td>
                       <td className="py-2.5 text-center">
                         <span
                           className={`px-2 py-0.5 rounded-full font-bold text-[8px] uppercase tracking-wider ${
-                            p.status === "berhasil"
+                            r.status === "berhasil"
                               ? "bg-emerald-50 text-emerald-700"
-                              : p.status === "ditolak"
+                              : r.status === "ditolak"
                                 ? "bg-red-50 text-red-700"
                                 : "bg-amber-50 text-amber-700"
                           }`}
                         >
-                          {p.status}
+                          {r.status}
                         </span>
                       </td>
                     </tr>
@@ -549,7 +588,7 @@ export default function DashboardPage() {
                       colSpan={3}
                       className="py-4 text-center text-neutral-400"
                     >
-                      Belum ada pencairan dana.
+                      Belum ada penukaran reward.
                     </td>
                   </tr>
                 )}

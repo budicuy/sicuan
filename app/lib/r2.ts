@@ -96,3 +96,29 @@ export async function uploadImageToR2(
   const key = `setor-sampah/${folder}/${filename}.webp`;
   return uploadToR2(optimized, key);
 }
+
+/**
+ * Upload video (MP4/WebM) ke Cloudflare R2 tanpa kompresi gambar sharp.
+ */
+export async function uploadVideoToR2(
+  videoData: string | Buffer,
+  filename: string,
+  contentType: string = "video/mp4",
+): Promise<string> {
+  const rawBuffer =
+    typeof videoData === "string"
+      ? Buffer.from(videoData.replace(/^data:video\/\w+;base64,/, ""), "base64")
+      : videoData;
+
+  const key = `videos/${filename}`;
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME ?? "",
+    Key: key,
+    Body: rawBuffer,
+    ContentType: contentType,
+    CacheControl: "public, max-age=31536000, immutable",
+  });
+
+  await r2Client.send(command);
+  return `${process.env.R2_ENDPOINT ?? ""}/${key}`;
+}

@@ -16,22 +16,30 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useEffect, useState } from "react";
+import { getActiveVideoPost } from "@/app/(admin-superadmin)/video-post/action";
 import {
   TransitionLink,
   usePageTransition,
 } from "@/app/components/shared/PageTransitionProvider";
+import { VideoBanner } from "@/app/components/shared/VideoBanner";
 import { loginAction } from "@/app/login/action";
+import type { VideoPost } from "@/app/types";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [activeVideo, setActiveVideo] = useState<VideoPost | null>(null);
   const _router = useRouter();
   const { transitionTo } = usePageTransition();
 
   // Use React 19 useActionState to bind the server action
   const [state, formAction, isPending] = useActionState(loginAction, null);
+
+  useEffect(() => {
+    getActiveVideoPost().then(setActiveVideo);
+  }, []);
 
   // Redirect directly to dashboard when server action returns success
   useEffect(() => {
@@ -57,7 +65,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex bg-neutral-50 text-neutral-900 selection:bg-primary-200 overflow-hidden font-sans">
       {/* LEFT SIDE: Beautiful Interactive Environmental Branding (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white p-12 relative flex-col justify-between overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-linear-to-tr from-primary-950 via-primary-900 to-emerald-850 text-white p-12 relative flex-col justify-between overflow-y-auto">
         {/* Glow Effects */}
         <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-emerald-600/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -88,23 +96,35 @@ export default function LoginPage() {
           </TransitionLink>
         </div>
 
-        {/* Center Illustration & Dynamic Info Card */}
-        <div className="relative z-10 my-auto py-12 max-w-md space-y-8">
-          <div className="space-y-4">
-            <h1 className="text-4xl font-extrabold tracking-tight leading-tight">
+        {/* Center Illustration & Dynamic Info Card & Active Video */}
+        <div className="relative z-10 my-auto py-8 max-w-md space-y-6">
+          <div className="space-y-3">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
               Sistem Informasi Cerdas Ubah Anorganik Jadi Nilai
             </h1>
-            <p className="text-primary-200/90 text-sm leading-relaxed">
+            <p className="text-primary-200/90 text-xs sm:text-sm leading-relaxed">
               Gabung bersama ribuan mitra dan konsumen dalam mendaur ulang
               limbah kemasan produk Indofood menjadi poin reward atau dana tunai
               langsung.
             </p>
           </div>
 
+          {/* Active Video Post Display */}
+          {activeVideo && (
+            <div className="rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
+              <VideoBanner
+                videoUrl={activeVideo.videoUrl}
+                judul={activeVideo.judul}
+                deskripsi={activeVideo.deskripsi}
+                autoPlay
+              />
+            </div>
+          )}
+
           {/* Environmental Commitment Card */}
-          <div className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 relative overflow-hidden">
+          <div className="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 relative overflow-hidden">
             <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] font-bold tracking-widest text-primary-300 uppercase">
                 Keamanan &amp; Transparansi
               </span>
@@ -112,27 +132,27 @@ export default function LoginPage() {
                 SSL Secured
               </span>
             </div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 rounded-xl bg-white/10 text-emerald-400">
-                <Shield className="w-5 h-5" />
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="p-2 rounded-xl bg-white/10 text-emerald-400">
+                <Shield className="w-4 h-4" />
               </div>
-              <h3 className="font-bold text-lg text-white">
+              <h3 className="font-bold text-base text-white">
                 Sistem Autentikasi SICUAN
               </h3>
             </div>
-            <p className="text-xs text-primary-100/90 leading-relaxed mb-4">
+            <p className="text-xs text-primary-100/90 leading-relaxed mb-3">
               Akses akun Anda dilindungi dengan enkripsi tingkat tinggi demi
               menjaga keamanan data profil, histori setoran, saldo reward, dan
               rekening bank Anda.
             </p>
-            <div className="h-px bg-white/10 my-3" />
-            <div className="flex items-center justify-between text-[11px] text-primary-200">
+            <div className="h-px bg-white/10 my-2.5" />
+            <div className="flex items-center justify-between text-[10px] text-primary-200">
               <span className="flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />{" "}
-                Real-time tracking
+                <TrendingUp className="w-3 h-3 text-emerald-400" /> Real-time
+                tracking
               </span>
               <span className="flex items-center gap-1">
-                <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Zero Waste
+                <Leaf className="w-3 h-3 text-emerald-400" /> Zero Waste
                 Initiative
               </span>
             </div>
