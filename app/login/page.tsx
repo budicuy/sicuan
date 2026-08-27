@@ -96,7 +96,7 @@ export default function LoginPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-500/20 border border-primary-400/30 text-emerald-300 text-[11px] font-bold tracking-wide">
               <Sparkles className="w-3 h-3" />
-              <span>Platform Sirkular Ekonomi Terpadu</span>
+              <span>SICUAN - PT. INDOFOOD</span>
             </div>
             <h1 className="text-2xl xl:text-3xl font-black tracking-tight leading-tight text-white">
               Sistem Informasi Cerdas <br />
@@ -182,10 +182,15 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Elegant Responsive Login Form with Video Banner */}
-      <div className="w-full lg:w-1/2 h-full flex flex-col justify-between p-6 sm:p-10 xl:p-12 relative overflow-y-auto overflow-x-hidden">
+      {/* RIGHT SIDE: Elegant Card Login Container with Background Grid */}
+      <div className="w-full lg:w-1/2 h-full flex flex-col justify-between p-6 sm:p-10 xl:p-12 relative overflow-y-auto overflow-x-hidden bg-neutral-100/50">
+        {/* Background Grid Pattern & Ambient Glows behind the Card */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+        <div className="absolute top-1/4 right-10 w-72 h-72 bg-primary-300/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 left-10 w-64 h-64 bg-emerald-300/20 rounded-full blur-3xl pointer-events-none" />
+
         {/* Top bar with back to home link */}
-        <div className="flex justify-between items-center w-full mb-6 lg:mb-0">
+        <div className="relative z-10 flex justify-between items-center w-full mb-4 lg:mb-0">
           <TransitionLink
             href="/"
             className="flex items-center gap-2 text-xs font-semibold text-neutral-500 hover:text-primary-600 transition-colors group"
@@ -204,8 +209,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Login Container */}
-        <div className="my-auto max-w-md w-full mx-auto py-4 space-y-5">
+        {/* Elevated White Login Card */}
+        <div className="relative z-10 my-auto max-w-md w-full mx-auto p-6 sm:p-8 bg-white rounded-3xl border border-neutral-200 shadow-xl shadow-neutral-900/5 space-y-4">
           <div className="space-y-4">
             {/* Heading */}
             <div className="space-y-1">
@@ -219,7 +224,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form action={formAction} className="space-y-4">
+            <form action={formAction} className="space-y-3.5">
               {/* Server Validation Alert */}
               {state?.error && (
                 <motion.div
@@ -237,7 +242,7 @@ export default function LoginPage() {
 
               {/* Video Edukasi & Informasi SICUAN (16:9 Aspect Ratio) */}
               {activeVideo?.videoUrl && (
-                <div className="rounded-2xl overflow-hidden shadow-sm border border-neutral-200">
+                <div className="rounded-2xl overflow-hidden shadow-xs border border-neutral-200">
                   <VideoBanner
                     videoUrl={activeVideo.videoUrl}
                     judul={activeVideo.judul}
@@ -248,7 +253,7 @@ export default function LoginPage() {
               )}
 
               {/* Username Field */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label
                   htmlFor="username"
                   className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
@@ -266,14 +271,14 @@ export default function LoginPage() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-50/60 border border-neutral-200 text-sm transition-all focus:bg-white focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
                     placeholder="Masukkan NIK atau username Anda"
                   />
                 </div>
               </div>
 
               {/* Password Field */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label
                     htmlFor="password"
@@ -299,7 +304,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-neutral-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
+                    className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-neutral-50/60 border border-neutral-200 text-sm transition-all focus:bg-white focus:outline-none focus:ring-2 focus:border-primary-600 focus:ring-primary-600/15"
                     placeholder="Contoh: 240368 atau password"
                   />
                   <button
@@ -371,7 +376,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom mobile disclaimer */}
-        <div className="text-[10px] text-neutral-400 text-center w-full max-w-xs mx-auto lg:hidden pt-3 border-t border-neutral-100">
+        <div className="relative z-10 text-[10px] text-neutral-400 text-center w-full max-w-xs mx-auto lg:hidden pt-3 border-t border-neutral-200/60">
           &copy; {new Date().getFullYear()} PT. Indofood Sukses Makmur Tbk.
         </div>
       </div>
