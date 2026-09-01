@@ -35,12 +35,27 @@ export function MediaSlider({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [isMuted, setIsMuted] = useState(true);
+  // Default suara video: ON (isMuted: false)
+  const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadedMedia, setLoadedMedia] = useState<Record<number, boolean>>({});
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Map<number, HTMLVideoElement>>(new Map());
+
+  // Load sound setting from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedMuted = localStorage.getItem("sicuan_video_muted");
+      if (savedMuted !== null) {
+        setIsMuted(savedMuted === "true");
+      } else {
+        setIsMuted(false); // default ON
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Filter valid media items
   const validItems = items.filter((item) =>
@@ -86,7 +101,19 @@ export function MediaSlider({
           vid
             .play()
             .then(() => setIsPlaying(true))
-            .catch(() => setIsPlaying(false));
+            .catch((err) => {
+              // Jika browser memblokir autoplay dengan suara sebelum ada interaksi,
+              // lakukan fallback mute sementara agar video tetap berputar
+              if (err?.name === "NotAllowedError" && !isMuted) {
+                vid.muted = true;
+                vid
+                  .play()
+                  .then(() => setIsPlaying(true))
+                  .catch(() => setIsPlaying(false));
+              } else {
+                setIsPlaying(false);
+              }
+            });
         }
       }
     }
@@ -130,10 +157,22 @@ export function MediaSlider({
   const toggleMute = () => {
     const newMuted = !isMuted;
     setIsMuted(newMuted);
+    try {
+      localStorage.setItem("sicuan_video_muted", String(newMuted));
+    } catch {
+      // ignore
+    }
+
     if (currentItem && currentItem.tipe === "video") {
       const vid = videoRefs.current.get(currentItem.id);
       if (vid) {
         vid.muted = newMuted;
+        if (!newMuted && vid.paused) {
+          vid
+            .play()
+            .then(() => setIsPlaying(true))
+            .catch(() => {});
+        }
       }
     }
   };
