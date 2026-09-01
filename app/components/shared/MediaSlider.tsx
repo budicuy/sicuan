@@ -355,7 +355,7 @@ export function MediaSlider({
           </motion.div>
         </AnimatePresence>
 
-        {/* Instagram-Style Counter Badge (Top Left) */}
+        {/* Media Slider Counter Badge (Top Left) */}
         {validItems.length > 1 && (
           <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-bold text-white/90 shadow-md pointer-events-none">
             {currentIndex + 1}/{validItems.length}
@@ -411,7 +411,7 @@ export function MediaSlider({
           </button>
         </div>
 
-        {/* Instagram-Style Navigation Arrows (Left & Right) */}
+        {/* Media Slider Navigation Arrows (Left & Right) */}
         {validItems.length > 1 && (
           <>
             <button
@@ -433,7 +433,7 @@ export function MediaSlider({
           </>
         )}
 
-        {/* Instagram-Style Pagination Dots (Bottom Center) */}
+        {/* Media Slider Pagination Dots (Bottom Center) */}
         {validItems.length > 1 && (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md">
             {validItems.map((item, idx) => (

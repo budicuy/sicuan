@@ -235,8 +235,8 @@ export default function MediaSliderAdminPage() {
               Pengaturan Media Slider (Foto &amp; Video)
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Kelola slide foto dan video bergaya Instagram yang dapat digeser
-              di halaman Login dan Dashboard
+              Kelola slide foto dan video Media Slider yang dapat digeser di
+              halaman Login dan Dashboard
             </p>
           </div>
         </div>
@@ -248,14 +248,14 @@ export default function MediaSliderAdminPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Live Instagram-Style Preview */}
+        {/* Left Column: Live Media Slider Preview */}
         <div className="lg:col-span-6 bg-white p-6 rounded-3xl border border-neutral-200 shadow-sm space-y-4 flex flex-col justify-between">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-primary-500" />
                 <h2 className="text-sm font-black text-neutral-900 uppercase tracking-wider">
-                  Live Preview Instagram Slider
+                  Live Preview Media Slider
                 </h2>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase text-emerald-700 bg-emerald-50 border border-emerald-200">
