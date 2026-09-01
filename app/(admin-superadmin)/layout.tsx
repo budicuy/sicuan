@@ -195,8 +195,8 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
             {
               type: "link" as const,
               href: "/video-post",
-              label: "Kelola Video Post",
-              icon: "Video" as const,
+              label: "Kelola Media Slider",
+              icon: "Images" as const,
             },
           ]
         : []),

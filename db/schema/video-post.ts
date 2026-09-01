@@ -1,13 +1,23 @@
-import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const videoPost = pgTable("video_post", {
   id: serial("id").primaryKey(),
-  judul: text("judul").notNull(),
-  deskripsi: text("deskripsi").default(""),
-  videoUrl: text("video_url").notNull(),
+  tipe: text("tipe").notNull().default("video"), // 'video' | 'gambar'
+  mediaUrl: text("media_url"),
+  videoUrl: text("video_url"),
   thumbnailUrl: text("thumbnail_url"),
+  urutan: integer("urutan").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
+  judul: text("judul"),
+  deskripsi: text("deskripsi").default(""),
 
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

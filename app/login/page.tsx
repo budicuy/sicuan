@@ -19,12 +19,12 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
-import { getActiveVideoPost } from "@/app/(admin-superadmin)/video-post/action";
+import { getActiveMediaSlider } from "@/app/(admin-superadmin)/video-post/action";
+import { MediaSlider } from "@/app/components/shared/MediaSlider";
 import {
   TransitionLink,
   usePageTransition,
 } from "@/app/components/shared/PageTransitionProvider";
-import { VideoBanner } from "@/app/components/shared/VideoBanner";
 import { loginAction } from "@/app/login/action";
 import type { VideoPost } from "@/app/types";
 
@@ -33,7 +33,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [activeVideo, setActiveVideo] = useState<VideoPost | null>(null);
+  const [mediaItems, setMediaItems] = useState<VideoPost[]>([]);
   const _router = useRouter();
   const { transitionTo } = usePageTransition();
 
@@ -41,7 +41,7 @@ export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, null);
 
   useEffect(() => {
-    getActiveVideoPost().then(setActiveVideo);
+    getActiveMediaSlider().then(setMediaItems);
   }, []);
 
   // Redirect directly to dashboard when server action returns success
@@ -240,15 +240,10 @@ export default function LoginPage() {
                 </motion.div>
               )}
 
-              {/* Video Edukasi & Informasi SICUAN (16:9 Aspect Ratio) */}
-              {activeVideo?.videoUrl && (
+              {/* Media Slider Foto & Video SICUAN (16:9 Aspect Ratio) */}
+              {mediaItems.length > 0 && (
                 <div className="rounded-2xl overflow-hidden shadow-xs border border-neutral-200">
-                  <VideoBanner
-                    videoUrl={activeVideo.videoUrl}
-                    judul={activeVideo.judul}
-                    deskripsi={activeVideo.deskripsi}
-                    autoPlay
-                  />
+                  <MediaSlider items={mediaItems} autoPlay />
                 </div>
               )}
 

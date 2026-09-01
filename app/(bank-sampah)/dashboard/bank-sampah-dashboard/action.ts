@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -89,7 +89,7 @@ export async function getDashboardData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  const [profile, mySetoran, myPencairan, activeVideo] = await Promise.all([
+  const [profile, mySetoran, myPencairan, activeMedia] = await Promise.all([
     db.query.nasabah.findFirst({
       where: eq(nasabah.id, user.id),
     }),
@@ -104,9 +104,9 @@ export async function getDashboardData() {
       where: eq(pencairanDana.userId, user.id),
       orderBy: [desc(pencairanDana.createdAt)],
     }),
-    db.query.videoPost.findFirst({
+    db.query.videoPost.findMany({
       where: eq(videoPost.isActive, true),
-      orderBy: [desc(videoPost.id)],
+      orderBy: [asc(videoPost.urutan), asc(videoPost.id)],
     }),
   ]);
 
@@ -165,11 +165,16 @@ export async function getDashboardData() {
       poin: profile?.poin ?? 0,
       kredit: profile ? await getBankSampahMonthlyCredit(profile.id) : 0,
     },
-    video: activeVideo
+    mediaItems: activeMedia.map((m) => ({
+      id: m.id,
+      tipe: m.tipe,
+      mediaUrl: m.mediaUrl || m.videoUrl || "",
+    })),
+    video: activeMedia[0]
       ? {
-          videoUrl: activeVideo.videoUrl,
-          judul: activeVideo.judul,
-          deskripsi: activeVideo.deskripsi,
+          videoUrl: activeMedia[0].mediaUrl || activeMedia[0].videoUrl,
+          judul: activeMedia[0].judul,
+          deskripsi: activeMedia[0].deskripsi,
         }
       : null,
     metrics: {

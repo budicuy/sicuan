@@ -31,6 +31,12 @@ interface DashboardData {
   success: boolean;
   role: string;
   name: string;
+  mediaItems?: {
+    id: number;
+    tipe: string;
+    mediaUrl?: string | null;
+    videoUrl?: string | null;
+  }[];
   video?: {
     videoUrl: string;
     judul: string;
@@ -231,12 +237,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Active Video Banner Display */}
-      {data?.video?.videoUrl && (
+      {/* Active Media Slider Display (Foto & Video) */}
+      {((data?.mediaItems && data.mediaItems.length > 0) ||
+        data?.video?.videoUrl) && (
         <VideoBanner
-          videoUrl={data.video.videoUrl}
-          judul={data.video.judul}
-          deskripsi={data.video.deskripsi}
+          items={data.mediaItems}
+          videoUrl={data.video?.videoUrl}
           autoPlay
         />
       )}

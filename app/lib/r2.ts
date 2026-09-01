@@ -17,17 +17,36 @@ const r2Client = new S3Client({
 });
 
 /**
+ * Normalisasi URL media agar melalui proxy internal /api/media/
+ * dan tidak terblokir oleh ISP Indonesia (Internet Positif / XL / Telkomsel).
+ */
+export async function normalizeMediaUrl(
+  url: string | null | undefined,
+): Promise<string> {
+  if (!url) return "";
+  if (url.includes(".r2.dev/")) {
+    const parts = url.split(".r2.dev/");
+    return `/api/media/${parts[1]}`;
+  }
+  return url;
+}
+
+/**
  * Hapus object dari Cloudflare R2 berdasarkan URL atau key.
  */
 export async function deleteFromR2(urlOrKey: string): Promise<boolean> {
   try {
     let key = urlOrKey;
-    const endpoint = process.env.R2_ENDPOINT ?? "";
-    if (urlOrKey.startsWith(endpoint)) {
-      key = urlOrKey.substring(endpoint.length).replace(/^\//, "");
-    } else if (urlOrKey.startsWith("http")) {
-      const url = new URL(urlOrKey);
-      key = url.pathname.replace(/^\//, "");
+    if (urlOrKey.startsWith("/api/media/")) {
+      key = urlOrKey.replace(/^\/api\/media\//, "");
+    } else {
+      const endpoint = process.env.R2_ENDPOINT ?? "";
+      if (endpoint && urlOrKey.startsWith(endpoint)) {
+        key = urlOrKey.substring(endpoint.length).replace(/^\//, "");
+      } else if (urlOrKey.startsWith("http")) {
+        const url = new URL(urlOrKey);
+        key = url.pathname.replace(/^\//, "");
+      }
     }
 
     const command = new DeleteObjectCommand({
@@ -57,10 +76,10 @@ export async function optimizeImage(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
- * Upload buffer ke Cloudflare R2.
+ * Upload buffer ke Cloudflare R2 dan kembalikan URL internal proxy.
  * @param buffer  - gambar yang sudah dioptimasi
  * @param key     - path di bucket (misal: setor-sampah/timbangan/uuid.webp)
- * @returns public URL gambar
+ * @returns internal proxy URL (/api/media/...)
  */
 export async function uploadToR2(buffer: Buffer, key: string): Promise<string> {
   const command = new PutObjectCommand({
@@ -72,7 +91,7 @@ export async function uploadToR2(buffer: Buffer, key: string): Promise<string> {
   });
 
   await r2Client.send(command);
-  return `${process.env.R2_ENDPOINT ?? ""}/${key}`;
+  return `/api/media/${key}`;
 }
 
 /**
@@ -80,7 +99,7 @@ export async function uploadToR2(buffer: Buffer, key: string): Promise<string> {
  * @param imageData - base64 string atau Buffer
  * @param folder    - sub-folder di bucket (contoh: "timbangan" atau "bukti")
  * @param filename  - nama file tanpa ekstensi
- * @returns public URL
+ * @returns internal proxy URL
  */
 export async function uploadImageToR2(
   imageData: string | Buffer,
@@ -120,5 +139,5 @@ export async function uploadVideoToR2(
   });
 
   await r2Client.send(command);
-  return `${process.env.R2_ENDPOINT ?? ""}/${key}`;
+  return `/api/media/${key}`;
 }

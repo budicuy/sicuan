@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
@@ -9,6 +9,15 @@ import { uploadImageToR2, uploadVideoToR2 } from "@/app/lib/r2";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import { videoPost } from "@/db/schema";
+
+function cleanUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  if (url.includes(".r2.dev/")) {
+    const parts = url.split(".r2.dev/");
+    return `/api/media/${parts[1]}`;
+  }
+  return url;
+}
 
 /**
  * Pengecekan hak akses Superadmin
@@ -18,15 +27,33 @@ export async function checkIsSuperadmin() {
 }
 
 /**
- * Mengambil data video post aktif untuk tayang di Login & Dashboard.
+ * Mengambil semua slide media aktif untuk tayang di Login & Dashboard (Carousel Slider).
+ */
+export async function getActiveMediaSlider() {
+  try {
+    const items = await db.query.videoPost.findMany({
+      where: eq(videoPost.isActive, true),
+      orderBy: [asc(videoPost.urutan), asc(videoPost.id)],
+    });
+
+    return items.map((item) => ({
+      ...item,
+      mediaUrl: cleanUrl(item.mediaUrl || item.videoUrl),
+      videoUrl: cleanUrl(item.videoUrl),
+    }));
+  } catch (error) {
+    console.error("Gagal mengambil active media slider:", error);
+    return [];
+  }
+}
+
+/**
+ * Kompatibilitas mundur: mengambil slide video/media pertama yang aktif.
  */
 export async function getActiveVideoPost() {
   try {
-    const video = await db.query.videoPost.findFirst({
-      where: eq(videoPost.isActive, true),
-      orderBy: [desc(videoPost.id)],
-    });
-    return video || null;
+    const items = await getActiveMediaSlider();
+    return items.length > 0 ? items[0] : null;
   } catch (error) {
     console.error("Gagal mengambil active video post:", error);
     return null;
@@ -34,48 +61,62 @@ export async function getActiveVideoPost() {
 }
 
 /**
- * Mengambil data single video post untuk konfigurasi di halaman Admin.
+ * Mengambil seluruh daftar media slider untuk halaman konfigurasi Superadmin.
  */
-export async function getVideoPost() {
+export async function getAllMediaSlider() {
   try {
-    let video = await db.query.videoPost.findFirst({
-      orderBy: [desc(videoPost.id)],
+    const items = await db.query.videoPost.findMany({
+      orderBy: [asc(videoPost.urutan), asc(videoPost.id)],
     });
 
-    // Jika belum ada record sama sekali, buat 1 record default
-    if (!video) {
+    // Inisialisasi default jika tabel masih kosong
+    if (items.length === 0) {
       const [inserted] = await db
         .insert(videoPost)
         .values({
-          judul: "Program Daur Ulang Kemasan Indofood SICUAN",
-          deskripsi:
-            "Video panduan dan edukasi pengumpulan sampah kemasan Indofood bersama Bank Sampah dan Mitra Warmindo untuk masa depan bumi yang berkelanjutan.",
+          tipe: "video",
+          mediaUrl: "/edukasi.mp4",
           videoUrl: "/edukasi.mp4",
+          urutan: 0,
           isActive: true,
         })
         .returning();
-      video = inserted;
+      return [
+        {
+          ...inserted,
+          mediaUrl: inserted.mediaUrl || inserted.videoUrl || "",
+        },
+      ];
     }
 
-    return video;
+    return items.map((item) => ({
+      ...item,
+      mediaUrl: cleanUrl(item.mediaUrl || item.videoUrl),
+      videoUrl: cleanUrl(item.videoUrl),
+    }));
   } catch (error) {
-    console.error("Gagal mengambil video post config:", error);
-    return null;
+    console.error("Gagal mengambil media slider list:", error);
+    return [];
   }
 }
 
-const videoPostSchema = z.object({
-  judul: z.string().min(2, "Judul video minimal 2 karakter"),
-  deskripsi: z.string().optional().default(""),
-  videoUrl: z.string().min(1, "URL Video atau File Video wajib ada"),
-  thumbnailUrl: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
+/**
+ * Kompatibilitas: mengambil 1 media post untuk fallback.
+ */
+export async function getVideoPost() {
+  const all = await getAllMediaSlider();
+  return all.length > 0 ? all[0] : null;
+}
+
+const addMediaSchema = z.object({
+  tipe: z.enum(["video", "gambar"]),
+  mediaUrl: z.string().min(1, "File media atau URL wajib diisi"),
 });
 
 /**
- * Mengubah / memperbarui 1 video post yang ada.
+ * Menambahkan slide media baru (Foto atau Video) ke dalam slider.
  */
-export async function updateVideoPost(
+export async function addMediaSlide(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -83,64 +124,65 @@ export async function updateVideoPost(
   if (!isSuperadmin) {
     return {
       success: false,
-      errors: { _form: ["Hanya Superadmin yang berhak mengelola Video Post."] },
+      errors: {
+        _form: ["Hanya Superadmin yang berhak mengelola Media Slider."],
+      },
     };
   }
 
-  const judul = (formData.get("judul") as string) || "";
-  const deskripsi = (formData.get("deskripsi") as string) || "";
-  const videoUrlInput = (formData.get("videoUrl") as string) || "";
-  const videoBase64 = (formData.get("videoBase64") as string) || "";
-  const thumbnailBase64 = (formData.get("thumbnailBase64") as string) || "";
-  const isActive = formData.get("isActive") === "true";
+  const tipe = (formData.get("tipe") as "video" | "gambar") || "video";
+  const urlInput = (formData.get("urlInput") as string) || "";
+  const fileBase64 = (formData.get("fileBase64") as string) || "";
 
-  let finalVideoUrl = videoUrlInput;
+  let finalMediaUrl = urlInput.trim();
 
   try {
-    // 1. Jika ada upload file video base64, validasi 20MB & upload ke R2
-    if (videoBase64 && videoBase64.trim() !== "") {
-      const buffer = Buffer.from(
-        videoBase64.replace(/^data:video\/\w+;base64,/, ""),
-        "base64",
-      );
-      if (buffer.length > 20 * 1024 * 1024) {
-        return {
-          success: false,
-          errors: {
-            videoUrl: [
-              "Ukuran file video melebihi batas maksimal 20 MB. Silakan gunakan video yang lebih kecil atau gunakan URL langsung.",
-            ],
-          },
-        };
+    if (fileBase64 && fileBase64.trim() !== "") {
+      const uuid = randomUUID();
+
+      if (tipe === "video") {
+        const buffer = Buffer.from(
+          fileBase64.replace(/^data:video\/\w+;base64,/, ""),
+          "base64",
+        );
+        if (buffer.length > 20 * 1024 * 1024) {
+          return {
+            success: false,
+            errors: {
+              mediaUrl: [
+                "Ukuran file video melebihi 20 MB. Silakan kompresi atau gunakan direct URL.",
+              ],
+            },
+          };
+        }
+        finalMediaUrl = await uploadVideoToR2(buffer, `slide-${uuid}.mp4`);
+      } else {
+        // Foto / Gambar
+        const buffer = Buffer.from(
+          fileBase64.replace(/^data:image\/\w+;base64,/, ""),
+          "base64",
+        );
+        if (buffer.length > 5 * 1024 * 1024) {
+          return {
+            success: false,
+            errors: {
+              mediaUrl: [
+                "Ukuran file foto melebihi 5 MB. Silakan gunakan foto yang lebih kecil.",
+              ],
+            },
+          };
+        }
+        finalMediaUrl = await uploadImageToR2(
+          buffer,
+          "slider-photos",
+          `photo-${uuid}`,
+        );
       }
-      const uuid = randomUUID();
-      finalVideoUrl = await uploadVideoToR2(buffer, `post-${uuid}.mp4`);
     }
 
-    if (!finalVideoUrl || finalVideoUrl.trim() === "") {
-      return {
-        success: false,
-        errors: { videoUrl: ["Silakan unggah video atau masukkan URL video."] },
-      };
-    }
-
-    // 2. Jika ada thumbnail gambar
-    let finalThumbnailUrl: string | null = null;
-    if (thumbnailBase64 && thumbnailBase64.trim() !== "") {
-      const uuid = randomUUID();
-      finalThumbnailUrl = await uploadImageToR2(
-        thumbnailBase64,
-        "video-thumbnails",
-        `thumb-${uuid}`,
-      );
-    }
-
-    const parsed = videoPostSchema.safeParse({
-      judul,
-      deskripsi,
-      videoUrl: finalVideoUrl,
-      thumbnailUrl: finalThumbnailUrl,
-      isActive,
+    const parsed = addMediaSchema.safeParse({
+      tipe,
+      mediaUrl: cleanUrl(finalMediaUrl),
     });
 
     if (!parsed.success) {
@@ -150,54 +192,64 @@ export async function updateVideoPost(
       };
     }
 
-    // Ambil single record yang ada
-    const existing = await db.query.videoPost.findFirst({
-      orderBy: [desc(videoPost.id)],
+    // Tentukan urutan terakhir
+    const existing = await db.query.videoPost.findMany({
+      orderBy: [desc(videoPost.urutan)],
+      limit: 1,
+    });
+    const nextUrutan = existing.length > 0 ? (existing[0].urutan ?? 0) + 1 : 0;
+
+    await db.insert(videoPost).values({
+      tipe: parsed.data.tipe,
+      mediaUrl: parsed.data.mediaUrl,
+      videoUrl: parsed.data.tipe === "video" ? parsed.data.mediaUrl : null,
+      urutan: nextUrutan,
+      isActive: true,
     });
 
-    if (existing) {
-      await db
-        .update(videoPost)
-        .set({
-          judul: parsed.data.judul,
-          deskripsi: parsed.data.deskripsi,
-          videoUrl: parsed.data.videoUrl,
-          thumbnailUrl: finalThumbnailUrl ?? undefined,
-          isActive: parsed.data.isActive,
-          updatedAt: new Date(),
-        })
-        .where(eq(videoPost.id, existing.id));
-    } else {
-      await db.insert(videoPost).values({
-        judul: parsed.data.judul,
-        deskripsi: parsed.data.deskripsi,
-        videoUrl: parsed.data.videoUrl,
-        thumbnailUrl: finalThumbnailUrl,
-        isActive: parsed.data.isActive,
-      });
-    }
-
-    revalidatePath("/video-post");
-    revalidatePath("/login");
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/warmindo-dashboard");
-    revalidatePath("/dashboard/bank-sampah-dashboard");
+    revalidatePaths();
     return { success: true };
   } catch (error) {
-    console.error("Gagal memperbarui video post:", error);
+    console.error("Gagal menambahkan media slide:", error);
     return {
       success: false,
       errors: {
-        _form: ["Terjadi kesalahan server saat memperbarui video post."],
+        _form: ["Terjadi kesalahan server saat menambahkan media slider."],
       },
     };
   }
 }
 
 /**
- * Toggle status tayang aktif / nonaktif video.
+ * Menghapus 1 slide media dari slider.
  */
-export async function toggleVideoStatus(
+export async function deleteMediaSlide(id: number): Promise<ActionState> {
+  const isSuperadmin = await verifyIsSuperadmin();
+  if (!isSuperadmin) {
+    return {
+      success: false,
+      errors: { _form: ["Akses ditolak."] },
+    };
+  }
+
+  try {
+    await db.delete(videoPost).where(eq(videoPost.id, id));
+    revalidatePaths();
+    return { success: true };
+  } catch (error) {
+    console.error("Gagal menghapus slide media:", error);
+    return {
+      success: false,
+      errors: { _form: ["Gagal menghapus slide media."] },
+    };
+  }
+}
+
+/**
+ * Toggle status aktif/nonaktif slide media.
+ */
+export async function toggleMediaSlideStatus(
+  id: number,
   makeActive: boolean,
 ): Promise<ActionState> {
   const isSuperadmin = await verifyIsSuperadmin();
@@ -209,28 +261,85 @@ export async function toggleVideoStatus(
   }
 
   try {
-    const existing = await db.query.videoPost.findFirst({
-      orderBy: [desc(videoPost.id)],
-    });
+    await db
+      .update(videoPost)
+      .set({ isActive: makeActive, updatedAt: new Date() })
+      .where(eq(videoPost.id, id));
 
-    if (existing) {
-      await db
-        .update(videoPost)
-        .set({ isActive: makeActive, updatedAt: new Date() })
-        .where(eq(videoPost.id, existing.id));
-    }
-
-    revalidatePath("/video-post");
-    revalidatePath("/login");
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/warmindo-dashboard");
-    revalidatePath("/dashboard/bank-sampah-dashboard");
+    revalidatePaths();
     return { success: true };
   } catch (error) {
-    console.error("Gagal mengubah status video post:", error);
+    console.error("Gagal mengubah status slide:", error);
     return {
       success: false,
-      errors: { _form: ["Gagal mengubah status penayangan video."] },
+      errors: { _form: ["Gagal mengubah status penayangan slide."] },
     };
   }
+}
+
+/**
+ * Mengubah posisi urutan slide (naik atau turun).
+ */
+export async function moveMediaSlideOrder(
+  id: number,
+  direction: "up" | "down",
+): Promise<ActionState> {
+  const isSuperadmin = await verifyIsSuperadmin();
+  if (!isSuperadmin) {
+    return {
+      success: false,
+      errors: { _form: ["Akses ditolak."] },
+    };
+  }
+
+  try {
+    const items = await db.query.videoPost.findMany({
+      orderBy: [asc(videoPost.urutan), asc(videoPost.id)],
+    });
+
+    const currentIndex = items.findIndex((item) => item.id === id);
+    if (currentIndex === -1) {
+      return { success: false, errors: { _form: ["Slide tidak ditemukan."] } };
+    }
+
+    const targetIndex =
+      direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= items.length) {
+      return { success: true }; // Sudah di ujung
+    }
+
+    const currentItem = items[currentIndex];
+    const targetItem = items[targetIndex];
+
+    const tempUrutan = currentItem.urutan ?? currentIndex;
+    const targetUrutan = targetItem.urutan ?? targetIndex;
+
+    // Swap urutan
+    await db
+      .update(videoPost)
+      .set({ urutan: targetUrutan, updatedAt: new Date() })
+      .where(eq(videoPost.id, currentItem.id));
+
+    await db
+      .update(videoPost)
+      .set({ urutan: tempUrutan, updatedAt: new Date() })
+      .where(eq(videoPost.id, targetItem.id));
+
+    revalidatePaths();
+    return { success: true };
+  } catch (error) {
+    console.error("Gagal mengubah urutan slide:", error);
+    return {
+      success: false,
+      errors: { _form: ["Gagal mengubah urutan slide."] },
+    };
+  }
+}
+
+function revalidatePaths() {
+  revalidatePath("/video-post");
+  revalidatePath("/login");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/warmindo-dashboard");
+  revalidatePath("/dashboard/bank-sampah-dashboard");
 }

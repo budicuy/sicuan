@@ -8,6 +8,7 @@ import {
   FileText,
   Folder,
   HelpCircle,
+  Images,
   LayoutDashboard,
   LogOut,
   type LucideIcon,
@@ -45,6 +46,7 @@ const IconMap: Record<string, LucideIcon> = {
   Map: MapIcon,
   Truck,
   BarChart2,
+  Images,
 };
 
 function getIcon(name: string): LucideIcon {
