@@ -111,6 +111,234 @@ async function getMonthDisbursement(
 
 // ─── EXPORTED ACTIONS ────────────────────────────────────────────────────────
 
+const BULAN_NAMES = [
+  "",
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+];
+
+export interface PeriodItem {
+  key: string; // e.g. "2026-05"
+  year: number;
+  month: number;
+  monthName: string;
+  totalBeratKg: number;
+  kredit: number;
+  dataSampah: { jenis: string; beratKg: number; kredit: number }[];
+  statusPencairan: "belum_dicairkan" | "pending" | "berhasil" | "ditolak";
+  isCurrentMonth: boolean;
+  canWithdraw: boolean;
+  disbursement: {
+    id: number;
+    jumlah: number;
+    status: string;
+    metodePembayaran: string;
+    createdAt: Date;
+    keterangan: string | null;
+    buktiTransfer: string | null;
+    buktiPembayaranId?: number | null;
+    ttdPenyerahUrl?: string | null;
+  } | null;
+}
+
+/**
+ * Mengambil daftar periode (bulan & tahun) yang HANYA memiliki setoran riil
+ * untuk nasabah bank-sampah yang sedang login.
+ */
+export async function getBankSampahPeriodsWithSetoran() {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "bank-sampah") {
+    return { success: false, message: "Akses ditolak" };
+  }
+
+  const profile = await db.query.nasabah.findFirst({
+    where: eq(nasabah.id, user.id),
+  });
+
+  // Ambil semua setoran bank-sampah yang statusnya diterima
+  const setoranRecords = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, user.id),
+      eq(setorSampah.kategoriNasabah, "bank-sampah"),
+      eq(setorSampah.status, "diterima"),
+    ),
+  });
+
+  // Ambil juga semua pencairan dana yang pernah dicatat untuk user ini
+  const allDisbursements = await db.query.pencairanDana.findMany({
+    where: eq(pencairanDana.userId, user.id),
+    orderBy: [desc(pencairanDana.createdAt)],
+  });
+
+  // Kumpulkan hanya periode unik yang benar-benar ada setoran
+  const periodMap = new Map<string, { year: number; month: number }>();
+
+  for (const record of setoranRecords) {
+    const dateStr =
+      typeof record.tanggalSetor === "string"
+        ? record.tanggalSetor
+        : new Date(record.tanggalSetor).toISOString().slice(0, 10);
+    const [yStr, mStr] = dateStr.split("-");
+    const y = Number.parseInt(yStr, 10);
+    const m = Number.parseInt(mStr, 10);
+    if (!Number.isNaN(y) && !Number.isNaN(m)) {
+      const key = `${y}-${String(m).padStart(2, "0")}`;
+      if (!periodMap.has(key)) {
+        periodMap.set(key, { year: y, month: m });
+      }
+    }
+  }
+
+  // Jika ada pencairan yang tercatat di database namun setorannya sudah ada
+  for (const d of allDisbursements) {
+    if (d.periodeTahun && d.periodeBulan) {
+      const key = `${d.periodeTahun}-${String(d.periodeBulan).padStart(2, "0")}`;
+      if (!periodMap.has(key)) {
+        periodMap.set(key, { year: d.periodeTahun, month: d.periodeBulan });
+      }
+    }
+  }
+
+  // Urutkan periode dari yang paling baru ke terlama
+  const sortedKeys = Array.from(periodMap.keys()).sort((a, b) =>
+    b.localeCompare(a),
+  );
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const periods: PeriodItem[] = [];
+
+  for (const key of sortedKeys) {
+    const periodInfo = periodMap.get(key);
+    if (!periodInfo) continue;
+    const { year, month } = periodInfo;
+    const { kredit, dataSampah } = await calcMonthlyKredit(
+      user.id,
+      year,
+      month,
+    );
+    const totalBerat = dataSampah.reduce((s, d) => s + d.beratKg, 0);
+
+    const disbursementsInPeriod = allDisbursements.filter(
+      (d) => d.periodeTahun === year && d.periodeBulan === month,
+    );
+
+    const activeDisbursement = disbursementsInPeriod.find(
+      (d) => d.status === "berhasil" || d.status === "pending",
+    );
+    const latestDisbursement =
+      activeDisbursement || disbursementsInPeriod[0] || null;
+
+    let statusPencairan:
+      | "belum_dicairkan"
+      | "pending"
+      | "berhasil"
+      | "ditolak" = "belum_dicairkan";
+    if (latestDisbursement) {
+      statusPencairan = latestDisbursement.status as
+        | "pending"
+        | "berhasil"
+        | "ditolak";
+    }
+
+    let buktiPembayaranId: number | null = null;
+    if (latestDisbursement) {
+      const doc = await db.query.buktiPembayaran.findFirst({
+        where: eq(buktiPembayaran.pencairanDanaId, latestDisbursement.id),
+      });
+      if (doc) {
+        buktiPembayaranId = doc.id;
+      }
+    }
+
+    const isCurrentMonth = year === currentYear && month === currentMonth;
+    const canWithdraw =
+      (statusPencairan === "belum_dicairkan" ||
+        statusPencairan === "ditolak") &&
+      kredit > 0 &&
+      !isCurrentMonth;
+
+    periods.push({
+      key,
+      year,
+      month,
+      monthName: BULAN_NAMES[month] || `Bulan ${month}`,
+      totalBeratKg: Math.round(totalBerat * 100) / 100,
+      kredit,
+      dataSampah,
+      statusPencairan,
+      isCurrentMonth,
+      canWithdraw,
+      disbursement: latestDisbursement
+        ? {
+          id: latestDisbursement.id,
+          jumlah: latestDisbursement.jumlah,
+          status: latestDisbursement.status,
+          metodePembayaran: latestDisbursement.metodePembayaran,
+          createdAt: latestDisbursement.createdAt,
+          keterangan: latestDisbursement.keterangan || null,
+          buktiTransfer: latestDisbursement.buktiTransfer || null,
+          buktiPembayaranId,
+          ttdPenyerahUrl: latestDisbursement.ttdPenyerahUrl || null,
+        }
+        : null,
+    });
+  }
+
+  let totalKreditTersedia = 0;
+  let totalKreditDicairkan = 0;
+  let totalBeratKg = 0;
+
+  for (const p of periods) {
+    if (
+      p.statusPencairan === "belum_dicairkan" ||
+      p.statusPencairan === "ditolak"
+    ) {
+      totalKreditTersedia += p.kredit;
+    } else if (p.statusPencairan === "berhasil") {
+      totalKreditDicairkan += p.disbursement?.jumlah ?? p.kredit;
+    }
+    totalBeratKg += p.totalBeratKg;
+  }
+
+  return {
+    success: true,
+    data: {
+      periods,
+      profile: profile
+        ? {
+          id: profile.id,
+          name: profile.name,
+          role: profile.role,
+          jenisBank: profile.jenisBank || "",
+          noRekening: profile.noRekening || "",
+          alamat: profile.alamat || "",
+          noTelepon: profile.noTelepon || "",
+          idPelanggan: `SPK-${String(user.id).padStart(3, "0")}`,
+        }
+        : null,
+      summary: {
+        totalKreditTersedia,
+        totalKreditDicairkan,
+        totalBeratKg: Math.round(totalBeratKg * 100) / 100,
+        totalPeriode: periods.length,
+      },
+    },
+  };
+}
+
 export async function getDisbursementDataForMonth(
   year: number,
   month: number, // 1-indexed
@@ -150,17 +378,17 @@ export async function getDisbursementDataForMonth(
       sudahDicairkan: pencairanAktif !== null,
       pencairanAktif: pencairanAktif
         ? {
-            id: pencairanAktif.id,
-            jumlah: pencairanAktif.jumlah,
-            status: pencairanAktif.status,
-            metodePembayaran: pencairanAktif.metodePembayaran,
-            createdAt: pencairanAktif.createdAt,
-            keterangan: pencairanAktif.keterangan || "",
-            biayaTambahan: pencairanAktif.biayaTambahan,
-            catatanBiayaTambahan: pencairanAktif.catatanBiayaTambahan,
-            ttdPenyerahUrl: pencairanAktif.ttdPenyerahUrl || null,
-            ttdPenerimaUrl: ttdPenerimaUrl,
-          }
+          id: pencairanAktif.id,
+          jumlah: pencairanAktif.jumlah,
+          status: pencairanAktif.status,
+          metodePembayaran: pencairanAktif.metodePembayaran,
+          createdAt: pencairanAktif.createdAt,
+          keterangan: pencairanAktif.keterangan || "",
+          biayaTambahan: pencairanAktif.biayaTambahan,
+          catatanBiayaTambahan: pencairanAktif.catatanBiayaTambahan,
+          ttdPenyerahUrl: pencairanAktif.ttdPenyerahUrl || null,
+          ttdPenerimaUrl: ttdPenerimaUrl,
+        }
         : null,
       jenisBank: profile?.jenisBank || "",
       noRekening: profile?.noRekening || "",
@@ -334,8 +562,24 @@ export async function requestDisbursement(
     }
   }
 
+  let finalJumlah = 0;
+
   // Untuk bank-sampah: cek pencairan sudah ada di bulan tsb, dan hitung kredit dinamis
-  if (user.role === "bank-sampah" && selectedYear > 0 && selectedMonth > 0) {
+  if (user.role === "bank-sampah") {
+    if (
+      !selectedYear ||
+      !selectedMonth ||
+      selectedYear < 2020 ||
+      selectedMonth < 1 ||
+      selectedMonth > 12
+    ) {
+      return {
+        success: false,
+        message: "Periode bulan & tahun tidak valid.",
+        errors: { _form: ["Periode pencairan tidak valid"] },
+      };
+    }
+
     // Blokir pencairan untuk bulan yang sedang berjalan
     const now = new Date();
     const isCurrentMonth =
@@ -358,24 +602,33 @@ export async function requestDisbursement(
     if (existing) {
       return {
         success: false,
-        message: `Pencairan bulan ${selectedMonth}/${selectedYear} sudah pernah dilakukan.`,
-        errors: { _form: ["Bulan ini sudah memiliki pengajuan pencairan"] },
+        message: `Pencairan bulan ${selectedMonth}/${selectedYear} sudah pernah diajukan.`,
+        errors: {
+          _form: ["Periode ini sudah memiliki pengajuan pencairan aktif"],
+        },
       };
     }
 
-    const { kredit } = await calcMonthlyKredit(
+    // Hitung kredit di backend — JANGAN PERCAYA INPUT JUMLAH DARI FRONTEND
+    const { kredit, dataSampah } = await calcMonthlyKredit(
       user.id,
       selectedYear,
       selectedMonth,
     );
-    const baseKredit = jumlah - biayaTambahan;
-    if (kredit < baseKredit) {
+
+    if (kredit <= 0 || dataSampah.length === 0) {
       return {
         success: false,
-        message: `Kredit bulan ini tidak mencukupi. Total kredit bulan ini Rp ${kredit.toLocaleString("id-ID")}`,
-        errors: { jumlah: ["Kredit bulan ini tidak mencukupi"] },
+        message:
+          "Tidak ada data setoran yang valid untuk dicairkan pada periode ini.",
+        errors: {
+          _form: ["Tidak ada setoran yang dapat dicairkan pada periode ini"],
+        },
       };
     }
+
+    // Tetapkan jumlah secara mutlak dari kredit hasil hitungan backend
+    finalJumlah = kredit;
   } else if (user.role === "warmindo") {
     const credit = await getWarmindoMonthlyCredit(user.id);
     const baseKredit = jumlah - biayaTambahan;
@@ -386,6 +639,7 @@ export async function requestDisbursement(
         errors: { jumlah: ["Saldo kredit tidak mencukupi"] },
       };
     }
+    finalJumlah = jumlah;
   }
 
   try {
@@ -402,7 +656,7 @@ export async function requestDisbursement(
 
     await db.insert(pencairanDana).values({
       userId: user.id,
-      jumlah,
+      jumlah: finalJumlah,
       jenisBank:
         metodePembayaran !== "tunai" ? (profile.jenisBank ?? "") : null,
       noRekening:
@@ -483,6 +737,8 @@ export async function getDisbursementHistory() {
       ttdPenyerahUrl: pencairanDana.ttdPenyerahUrl,
       buktiTransfer: pencairanDana.buktiTransfer,
       createdAt: pencairanDana.createdAt,
+      periodeBulan: pencairanDana.periodeBulan,
+      periodeTahun: pencairanDana.periodeTahun,
       buktiPembayaranId: buktiPembayaran.id,
     })
     .from(pencairanDana)

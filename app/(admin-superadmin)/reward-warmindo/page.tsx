@@ -1,14 +1,7 @@
 "use client";
 
 import imageCompression from "browser-image-compression";
-import {
-  Coins,
-  Gift,
-  ImageIcon,
-  Package,
-  Upload,
-  X,
-} from "lucide-react";
+import { Coins, Gift, ImageIcon, Package, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createRewardWarmindo,
@@ -655,4 +648,3 @@ export default function RewardWarmindoPage() {
     </div>
   );
 }
-

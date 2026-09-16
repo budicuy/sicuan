@@ -52,6 +52,8 @@ export interface DisbursementHistoryItem {
   buktiTransfer: string | null;
   biayaTambahan?: number | null;
   catatanBiayaTambahan?: string | null;
+  periodeBulan?: number | null;
+  periodeTahun?: number | null;
   createdAt: string | Date;
   buktiPembayaranId: number | null;
 }

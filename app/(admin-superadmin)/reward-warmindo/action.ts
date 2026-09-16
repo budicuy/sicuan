@@ -294,4 +294,3 @@ export async function deleteRewardWarmindo(id: number): Promise<ActionState> {
     };
   }
 }
-
