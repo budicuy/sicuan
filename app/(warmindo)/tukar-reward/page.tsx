@@ -414,13 +414,43 @@ export default function TukarRewardWarmindoPage() {
                 key={reward.id}
                 className="bg-white rounded-2xl border border-neutral-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
               >
-                <div className="p-5">
-                  <div className="flex justify-between items-start gap-2 mb-3">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                {/* Image Header 16:9 */}
+                <div className="relative w-full aspect-video bg-neutral-100 overflow-hidden flex items-center justify-center border-b border-neutral-100">
+                  {reward.gambar ? (
+                    /* biome-ignore lint/performance/noImgElement: dynamic user-uploaded image */
+                    <img
+                      src={reward.gambar}
+                      alt={reward.nama}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div
+                      className={`w-full h-full flex flex-col items-center justify-center gap-2 ${
                         reward.kategori === "uang"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-blue-50 text-blue-700 border-blue-200"
+                          ? "bg-linear-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 text-emerald-600"
+                          : "bg-linear-to-br from-amber-500/10 via-primary-500/5 to-primary-500/10 text-primary-600"
+                      }`}
+                    >
+                      {reward.kategori === "uang" ? (
+                        <Banknote className="w-12 h-12 opacity-80 group-hover:scale-110 transition-transform duration-300" />
+                      ) : (
+                        <Package className="w-12 h-12 opacity-80 group-hover:scale-110 transition-transform duration-300" />
+                      )}
+                      <span className="text-[11px] font-bold uppercase tracking-wider opacity-60">
+                        {reward.kategori === "uang"
+                          ? "Pencairan Saldo"
+                          : "Reward Merchandise"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Badge Category on Image */}
+                  <div className="absolute top-3 left-3">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-xs ${
+                        reward.kategori === "uang"
+                          ? "bg-emerald-50/95 text-emerald-800 border border-emerald-200"
+                          : "bg-blue-50/95 text-blue-800 border border-blue-200"
                       }`}
                     >
                       {reward.kategori === "uang" ? (
@@ -430,28 +460,41 @@ export default function TukarRewardWarmindoPage() {
                       )}
                       {reward.kategori === "uang" ? "Uang Tunai" : "Barang"}
                     </span>
-
-                    <span className="text-[11px] text-neutral-400 font-medium">
-                      Stok: {reward.stok}
-                    </span>
                   </div>
 
-                  <h3 className="font-extrabold text-neutral-900 text-base group-hover:text-primary-600 transition-colors">
-                    {reward.nama}
-                  </h3>
+                  {/* Stock Badge on Image */}
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider backdrop-blur-md shadow-xs ${
+                        reward.stok <= 0
+                          ? "bg-red-500/90 text-white"
+                          : "bg-black/60 text-white"
+                      }`}
+                    >
+                      {reward.stok <= 0 ? "Stok Habis" : `Stok: ${reward.stok}`}
+                    </span>
+                  </div>
+                </div>
 
-                  {reward.kategori === "uang" && reward.nominalUang && (
-                    <div className="mt-1">
-                      <span className="text-lg font-black text-emerald-600">
-                        Rp {reward.nominalUang.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                  )}
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-extrabold text-neutral-900 text-base group-hover:text-primary-600 transition-colors line-clamp-2">
+                      {reward.nama}
+                    </h3>
 
-                  <p className="text-xs text-neutral-500 mt-2 line-clamp-2 leading-relaxed">
-                    {reward.deskripsi ||
-                      "Tukarkan poin Anda dengan reward pilihan berkualitas."}
-                  </p>
+                    {reward.kategori === "uang" && reward.nominalUang && (
+                      <div className="mt-1">
+                        <span className="text-lg font-black text-emerald-600">
+                          Rp {reward.nominalUang.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-neutral-500 mt-2 line-clamp-2 leading-relaxed">
+                      {reward.deskripsi ||
+                        "Tukarkan poin Anda dengan reward pilihan berkualitas."}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="p-4 bg-neutral-50/70 border-t border-neutral-100 flex items-center justify-between gap-3">
@@ -572,13 +615,32 @@ export default function TukarRewardWarmindoPage() {
           submitLabel="Ajukan Penukaran Sekarang"
         >
           {/* Summary Box */}
-          <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-900 space-y-1.5">
-            <div className="flex justify-between">
-              <span className="text-neutral-600">Reward Dipilih:</span>
-              <span className="font-bold text-neutral-900">
-                {selectedReward.nama}
-              </span>
+          <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-900 space-y-2">
+            <div className="flex items-center gap-3 pb-2 border-b border-amber-200/60">
+              <div className="w-12 h-12 rounded-xl bg-white border border-amber-200/80 overflow-hidden shrink-0 flex items-center justify-center">
+                {selectedReward.gambar ? (
+                  /* biome-ignore lint/performance/noImgElement: dynamic user-uploaded image */
+                  <img
+                    src={selectedReward.gambar}
+                    alt={selectedReward.nama}
+                    className="w-full h-full object-cover"
+                  />
+                ) : selectedReward.kategori === "uang" ? (
+                  <Banknote className="w-6 h-6 text-emerald-600" />
+                ) : (
+                  <Package className="w-6 h-6 text-amber-600" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold block">
+                  Reward yang Dipilih
+                </span>
+                <span className="font-extrabold text-neutral-900 text-sm block truncate">
+                  {selectedReward.nama}
+                </span>
+              </div>
             </div>
+
             <div className="flex justify-between">
               <span className="text-neutral-600">Poin yang Dipotong:</span>
               <span className="font-mono font-black text-amber-800">

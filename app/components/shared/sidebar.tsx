@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  Award,
   BarChart2,
   BookOpen,
   ChevronDown,
   Coins,
   FileText,
   Folder,
+  Gift,
   HelpCircle,
   Images,
   LayoutDashboard,
@@ -47,6 +49,8 @@ const IconMap: Record<string, LucideIcon> = {
   Truck,
   BarChart2,
   Images,
+  Award,
+  Gift,
 };
 
 function getIcon(name: string): LucideIcon {

@@ -1,35 +1,18 @@
 "use client";
 
-import { Award, Coins, Gift, Package, Star } from "lucide-react";
+import { Award, Coins, Package } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  createRewardWarmindo,
-  deleteRewardWarmindo,
   getPoinWarmindo,
-  getRewardWarmindo,
   updatePoinWarmindo,
-  updateRewardWarmindo,
 } from "@/app/(admin-superadmin)/poin-warmindo/action";
-import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
-import {
-  type Column,
-  DataTable,
-  type TableFilter,
-} from "@/app/components/shared/DataTable";
+import { type Column, DataTable } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
-import { getCurrentUser } from "@/app/lib/auth-actions";
-import type {
-  ActionState,
-  PoinSampahWarmindo,
-  RewardWarmindo,
-} from "@/app/types";
+import type { PoinSampahWarmindo } from "@/app/types";
 
 export default function PoinWarmindoPage() {
-  const [activeTab, setActiveTab] = useState<"poin" | "reward">("poin");
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  // Tab 1 (Poin) states
+  // Poin states
   const [poinData, setPoinData] = useState<PoinSampahWarmindo[]>([]);
   const [poinTotal, setPoinTotal] = useState(0);
   const [poinPage, setPoinPage] = useState(1);
@@ -40,28 +23,7 @@ export default function PoinWarmindoPage() {
   );
   const [poinModalOpen, setPoinModalOpen] = useState(false);
 
-  // Tab 2 (Reward) states
-  const [rewardData, setRewardData] = useState<RewardWarmindo[]>([]);
-  const [rewardTotal, setRewardTotal] = useState(0);
-  const [rewardPage, setRewardPage] = useState(1);
-  const [rewardLimit, setRewardLimit] = useState(50);
-  const [rewardSearch, setRewardSearch] = useState("");
-  const [rewardFilters, setRewardFilters] = useState<Record<string, string>>({
-    kategori: "",
-    status: "",
-  });
-  const [editingReward, setEditingReward] = useState<RewardWarmindo | null>(
-    null,
-  );
-  const [rewardModalOpen, setRewardModalOpen] = useState(false);
-  const [selectedKategoriForm, setSelectedKategoriForm] = useState<
-    "barang" | "uang"
-  >("barang");
-  const [confirmDeleteReward, setConfirmDeleteReward] =
-    useState<RewardWarmindo | null>(null);
-  const [isDeletingReward, setIsDeletingReward] = useState(false);
-
-  // Common transition & feedback
+  // Transition & feedback
   const [isPending, startTransition] = useTransition();
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const [globalError, setGlobalError] = useState("");
@@ -91,34 +53,11 @@ export default function PoinWarmindoPage() {
     });
   }, [poinPage, poinLimit, poinSearch]);
 
-  const refreshReward = useCallback(() => {
-    getRewardWarmindo({
-      page: rewardPage,
-      limit: rewardLimit,
-      search: rewardSearch,
-      kategori: rewardFilters.kategori,
-      status: rewardFilters.status,
-    }).then((res) => {
-      setRewardData(res.data);
-      setRewardTotal(res.total);
-    });
-  }, [rewardPage, rewardLimit, rewardSearch, rewardFilters]);
-
   useEffect(() => {
-    getCurrentUser().then((u) => {
-      if (u) setUserRole(u.role);
-    });
-  }, []);
+    refreshPoin();
+  }, [refreshPoin]);
 
-  useEffect(() => {
-    if (activeTab === "poin") {
-      refreshPoin();
-    } else {
-      refreshReward();
-    }
-  }, [activeTab, refreshPoin, refreshReward]);
-
-  // Handle Tab 1 Form
+  // Handle Edit Poin Form
   const handleOpenEditPoin = (item: PoinSampahWarmindo) => {
     setEditingPoin(item);
     setFormErrors({});
@@ -159,84 +98,7 @@ export default function PoinWarmindoPage() {
     });
   };
 
-  // Handle Tab 2 Form
-  const handleOpenAddReward = () => {
-    setEditingReward(null);
-    setSelectedKategoriForm("barang");
-    setFormErrors({});
-    setGlobalError("");
-    setRewardModalOpen(true);
-  };
-
-  const handleOpenEditReward = (item: RewardWarmindo) => {
-    setEditingReward(item);
-    setSelectedKategoriForm(item.kategori as "barang" | "uang");
-    setFormErrors({});
-    setGlobalError("");
-    setRewardModalOpen(true);
-  };
-
-  const handleRewardSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setFormErrors({});
-    setGlobalError("");
-    const formData = new FormData(e.currentTarget);
-
-    startTransition(async () => {
-      let result: ActionState;
-      if (editingReward) {
-        result = await updateRewardWarmindo(
-          editingReward.id,
-          { success: false },
-          formData,
-        );
-      } else {
-        result = await createRewardWarmindo({ success: false }, formData);
-      }
-
-      if (result.success) {
-        setRewardModalOpen(false);
-        showFeedback(
-          "success",
-          "Berhasil!",
-          editingReward
-            ? `Reward "${editingReward.nama}" berhasil diperbarui.`
-            : "Reward baru untuk Warmindo berhasil ditambahkan.",
-        );
-        refreshReward();
-      } else {
-        if (result.errors?._form) {
-          setGlobalError(result.errors._form[0]);
-        } else if (result.errors) {
-          setFormErrors(result.errors);
-        }
-      }
-    });
-  };
-
-  const handleConfirmDeleteReward = async () => {
-    if (!confirmDeleteReward) return;
-    setIsDeletingReward(true);
-    const res = await deleteRewardWarmindo(confirmDeleteReward.id);
-    setIsDeletingReward(false);
-    setConfirmDeleteReward(null);
-    if (res.success) {
-      showFeedback(
-        "success",
-        "Berhasil!",
-        `Reward "${confirmDeleteReward.nama}" berhasil dihapus.`,
-      );
-      refreshReward();
-    } else {
-      showFeedback(
-        "error",
-        "Gagal!",
-        res.errors?._form?.[0] || "Gagal menghapus reward.",
-      );
-    }
-  };
-
-  // Columns Tab 1: Poin
+  // Columns: Poin
   const poinColumns: Column<PoinSampahWarmindo>[] = [
     {
       header: "Jenis Sampah",
@@ -267,99 +129,6 @@ export default function PoinWarmindoPage() {
     },
   ];
 
-  // Columns Tab 2: Reward
-  const rewardColumns: Column<RewardWarmindo>[] = [
-    {
-      header: "Nama Reward",
-      sortKey: "nama",
-      render: (item) => (
-        <div>
-          <span className="font-bold text-neutral-900 text-sm block">
-            {item.nama}
-          </span>
-          {item.deskripsi && (
-            <span className="text-xs text-neutral-500 line-clamp-1">
-              {item.deskripsi}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      header: "Kategori",
-      sortKey: "kategori",
-      render: (item) => (
-        <span
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-            item.kategori === "uang"
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-blue-50 text-blue-700 border-blue-200"
-          }`}
-        >
-          {item.kategori === "uang" ? "Uang Tunai" : "Barang Fisik"}
-        </span>
-      ),
-    },
-    {
-      header: "Poin Dibutuhkan",
-      sortKey: "poin",
-      render: (item) => (
-        <span className="font-mono text-xs text-neutral-900 font-black bg-neutral-100 px-2.5 py-1 rounded-md border border-neutral-200">
-          {item.poin.toLocaleString("id-ID")} Poin
-        </span>
-      ),
-    },
-    {
-      header: "Nilai / Stok",
-      render: (item) => (
-        <div className="text-xs">
-          {item.kategori === "uang" && item.nominalUang ? (
-            <span className="font-bold text-emerald-600 block">
-              Rp {item.nominalUang.toLocaleString("id-ID")}
-            </span>
-          ) : (
-            <span className="text-neutral-600">Stok: {item.stok} unit</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      header: "Status",
-      render: (item) => (
-        <span
-          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-            item.status === "aktif"
-              ? "bg-emerald-100 text-emerald-800"
-              : "bg-neutral-100 text-neutral-600"
-          }`}
-        >
-          {item.status}
-        </span>
-      ),
-    },
-  ];
-
-  const rewardTableFilters: TableFilter<RewardWarmindo>[] = [
-    {
-      id: "kategori",
-      label: "Kategori",
-      options: [
-        { label: "Semua Kategori", value: "" },
-        { label: "Barang", value: "barang" },
-        { label: "Uang Tunai", value: "uang" },
-      ],
-    },
-    {
-      id: "status",
-      label: "Status",
-      options: [
-        { label: "Semua Status", value: "" },
-        { label: "Aktif", value: "aktif" },
-        { label: "Nonaktif", value: "nonaktif" },
-      ],
-    },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -371,122 +140,52 @@ export default function PoinWarmindoPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-              Master Data Poin & Reward Warmindo
+              Master Data Poin Warmindo
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Atur konversi tarif poin per 100 gram sampah serta katalog reward
-              (Barang & Uang) khusus mitra Warmindo
+              Atur konversi tarif poin per 100 gram sampah khusus mitra Warmindo
             </p>
           </div>
         </div>
       </div>
 
-      {/* 2 Tabs Navigation */}
-      <div className="flex border-b border-neutral-200 gap-2 bg-neutral-50/50 p-1.5 rounded-2xl border">
-        <button
-          type="button"
-          onClick={() => setActiveTab("poin")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-            activeTab === "poin"
-              ? "bg-white text-neutral-900 shadow-sm border border-neutral-200/80"
-              : "text-neutral-500 hover:text-neutral-800"
-          }`}
-        >
-          <Star className="w-4 h-4 text-amber-500" />
-          Tab 1: Atur Poin Warmindo
-        </button>
+      {/* Content: Atur Poin */}
+      <div className="space-y-4">
+        <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-4 text-xs text-amber-900 flex items-start gap-2.5">
+          <Coins className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+          <div>
+            <span className="font-bold">Informasi Skema Poin Warmindo:</span>
+            <p className="mt-0.5 text-amber-800">
+              Secara default, seluruh kategori sampah dihitung sebesar{" "}
+              <strong>10 poin per 100 gram</strong> (setara dengan 100 poin per
+              1 kg). Admin dapat menyesuaikan tarif poin masing-masing kategori
+              sampah di bawah ini.
+            </p>
+          </div>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("reward")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-            activeTab === "reward"
-              ? "bg-white text-neutral-900 shadow-sm border border-neutral-200/80"
-              : "text-neutral-500 hover:text-neutral-800"
-          }`}
-        >
-          <Gift className="w-4 h-4 text-primary-600" />
-          Tab 2: Atur Reward Warmindo
-        </button>
+        <DataTable
+          data={poinData}
+          columns={poinColumns}
+          totalItems={poinTotal}
+          currentPage={poinPage}
+          pageSize={poinLimit}
+          onPageChange={setPoinPage}
+          onPageSizeChange={(e) => {
+            setPoinLimit(Number(e.target.value));
+            setPoinPage(1);
+          }}
+          search={poinSearch}
+          onSearchChange={(val) => {
+            setPoinSearch(val);
+            setPoinPage(1);
+          }}
+          searchPlaceholder="Cari jenis sampah..."
+          onEdit={handleOpenEditPoin}
+        />
       </div>
 
-      {/* Tab 1 Content: Atur Poin */}
-      {activeTab === "poin" && (
-        <div className="space-y-4">
-          <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-4 text-xs text-amber-900 flex items-start gap-2.5">
-            <Coins className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-            <div>
-              <span className="font-bold">Informasi Skema Poin Warmindo:</span>
-              <p className="mt-0.5 text-amber-800">
-                Secara default, seluruh kategori sampah dihitung sebesar{" "}
-                <strong>10 poin per 100 gram</strong> (setara dengan 100 poin
-                per 1 kg). Admin dapat menyesuaikan tarif poin masing-masing
-                kategori sampah di bawah ini.
-              </p>
-            </div>
-          </div>
-
-          <DataTable
-            data={poinData}
-            columns={poinColumns}
-            totalItems={poinTotal}
-            currentPage={poinPage}
-            pageSize={poinLimit}
-            onPageChange={setPoinPage}
-            onPageSizeChange={(e) => {
-              setPoinLimit(Number(e.target.value));
-              setPoinPage(1);
-            }}
-            search={poinSearch}
-            onSearchChange={(val) => {
-              setPoinSearch(val);
-              setPoinPage(1);
-            }}
-            searchPlaceholder="Cari jenis sampah..."
-            onEdit={handleOpenEditPoin}
-          />
-        </div>
-      )}
-
-      {/* Tab 2 Content: Atur Reward */}
-      {activeTab === "reward" && (
-        <div className="space-y-4">
-          <DataTable
-            data={rewardData}
-            columns={rewardColumns}
-            totalItems={rewardTotal}
-            currentPage={rewardPage}
-            pageSize={rewardLimit}
-            onPageChange={setRewardPage}
-            onPageSizeChange={(e) => {
-              setRewardLimit(Number(e.target.value));
-              setRewardPage(1);
-            }}
-            search={rewardSearch}
-            onSearchChange={(val) => {
-              setRewardSearch(val);
-              setRewardPage(1);
-            }}
-            filters={rewardTableFilters}
-            filterValues={rewardFilters}
-            onFilterChange={(id, val) => {
-              setRewardFilters((prev) => ({ ...prev, [id]: val }));
-              setRewardPage(1);
-            }}
-            searchPlaceholder="Cari nama atau deskripsi reward..."
-            onAdd={handleOpenAddReward}
-            addLabel="Tambah Reward Baru"
-            onEdit={handleOpenEditReward}
-            onDelete={
-              userRole === "superadmin"
-                ? (item) => setConfirmDeleteReward(item)
-                : undefined
-            }
-          />
-        </div>
-      )}
-
-      {/* Form Modal: Edit Poin (Tab 1) */}
+      {/* Form Modal: Edit Poin */}
       <FormModal
         isOpen={poinModalOpen}
         onClose={() => setPoinModalOpen(false)}
@@ -537,184 +236,6 @@ export default function PoinWarmindoPage() {
           )}
         </div>
       </FormModal>
-
-      {/* Form Modal: Add/Edit Reward (Tab 2) */}
-      <FormModal
-        isOpen={rewardModalOpen}
-        onClose={() => setRewardModalOpen(false)}
-        title={
-          editingReward
-            ? `Edit Reward: ${editingReward.nama}`
-            : "Tambah Reward Warmindo Baru"
-        }
-        onSubmit={handleRewardSubmit}
-        isPending={isPending}
-        globalError={globalError}
-      >
-        <div>
-          <label
-            htmlFor="namaReward"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Nama Reward
-          </label>
-          <input
-            id="namaReward"
-            type="text"
-            name="nama"
-            required
-            defaultValue={editingReward?.nama ?? ""}
-            placeholder="Contoh: Uang Tunai Rp 50.000 atau Kaos Eksklusif"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 text-neutral-800"
-          />
-          {formErrors.nama && (
-            <p className="text-red-600 text-xs mt-1">{formErrors.nama[0]}</p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="kategoriReward"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Kategori Reward
-          </label>
-          <select
-            id="kategoriReward"
-            name="kategori"
-            value={selectedKategoriForm}
-            onChange={(e) =>
-              setSelectedKategoriForm(e.target.value as "barang" | "uang")
-            }
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 text-neutral-800"
-          >
-            <option value="barang">
-              Barang Fisik (Merchandise, Alat, dll)
-            </option>
-            <option value="uang">Uang Tunai (Transfer / Pencairan)</option>
-          </select>
-          {formErrors.kategori && (
-            <p className="text-red-600 text-xs mt-1">
-              {formErrors.kategori[0]}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="poinReward"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Poin yang Dibutuhkan untuk Menukar
-          </label>
-          <input
-            id="poinReward"
-            type="number"
-            name="poin"
-            required
-            defaultValue={editingReward?.poin ?? ""}
-            placeholder="Contoh: 500"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 font-mono text-neutral-800"
-          />
-          {formErrors.poin && (
-            <p className="text-red-600 text-xs mt-1">{formErrors.poin[0]}</p>
-          )}
-        </div>
-
-        {selectedKategoriForm === "uang" && (
-          <div>
-            <label
-              htmlFor="nominalUang"
-              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-            >
-              Nominal Uang Tunai (Rp)
-            </label>
-            <input
-              id="nominalUang"
-              type="number"
-              name="nominalUang"
-              required
-              defaultValue={editingReward?.nominalUang ?? ""}
-              placeholder="Contoh: 50000"
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 font-mono text-neutral-800"
-            />
-            {formErrors.nominalUang && (
-              <p className="text-red-600 text-xs mt-1">
-                {formErrors.nominalUang[0]}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div>
-          <label
-            htmlFor="stokReward"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Stok Tersedia
-          </label>
-          <input
-            id="stokReward"
-            type="number"
-            name="stok"
-            required
-            defaultValue={editingReward?.stok ?? 100}
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 font-mono text-neutral-800"
-          />
-          {formErrors.stok && (
-            <p className="text-red-600 text-xs mt-1">{formErrors.stok[0]}</p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="deskripsiReward"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Deskripsi / Ketentuan Reward
-          </label>
-          <textarea
-            id="deskripsiReward"
-            name="deskripsi"
-            rows={2}
-            defaultValue={editingReward?.deskripsi ?? ""}
-            placeholder="Keterangan spesifikasi barang atau proses transfer uang..."
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 text-neutral-800"
-          />
-          {formErrors.deskripsi && (
-            <p className="text-red-600 text-xs mt-1">
-              {formErrors.deskripsi[0]}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="statusReward"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Status
-          </label>
-          <select
-            id="statusReward"
-            name="status"
-            defaultValue={editingReward?.status ?? "aktif"}
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 text-neutral-800"
-          >
-            <option value="aktif">Aktif (Tersedia untuk ditukar)</option>
-            <option value="nonaktif">Nonaktif (Disembunyikan)</option>
-          </select>
-        </div>
-      </FormModal>
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={!!confirmDeleteReward}
-        onClose={() => setConfirmDeleteReward(null)}
-        onConfirm={handleConfirmDeleteReward}
-        message={`Apakah Anda yakin ingin menghapus reward "${confirmDeleteReward?.nama}"? Tindakan ini tidak dapat dibatalkan.`}
-        isPending={isDeletingReward}
-      />
 
       {/* Feedback Modal */}
       <FeedbackModal

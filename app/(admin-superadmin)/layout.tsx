@@ -125,8 +125,13 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
           { href: "/poin", label: "Master Poin Konsumen", icon: "Star" },
           {
             href: "/poin-warmindo",
-            label: "Poin & Reward Warmindo",
-            icon: "Award",
+            label: "Poin Warmindo",
+            icon: "Coins",
+          },
+          {
+            href: "/reward-warmindo",
+            label: "Reward Warmindo",
+            icon: "Gift",
           },
           { href: "/raw-material", label: "Raw Material", icon: "Recycle" },
           { href: "/kupon", label: "Master Kupon", icon: "Star" },
@@ -135,8 +140,8 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       {
         type: "link",
         href: "/penukaran-reward-warmindo",
-        label: "Reward Warmindo",
-        icon: "Gift",
+        label: "Penukaran Reward",
+        icon: "Award",
         badgeCount: countReward,
       },
       {
