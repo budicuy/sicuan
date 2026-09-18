@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -68,12 +68,12 @@ export async function getKonsumenRewardData() {
       userPoin: profile?.poin ?? 0,
       userProfile: profile
         ? {
-            id: profile.id,
-            name: profile.name,
-            jenisBank: profile.jenisBank,
-            noRekening: profile.noRekening,
-            alamat: profile.alamat,
-          }
+          id: profile.id,
+          name: profile.name,
+          jenisBank: profile.jenisBank,
+          noRekening: profile.noRekening,
+          alamat: profile.alamat,
+        }
         : null,
       rewards,
       history,
@@ -131,123 +131,129 @@ export async function submitTukarRewardKonsumen(
   }
 
   try {
-    // 1. Ambil data reward
-    const reward = await db.query.rewardWarmindo.findFirst({
-      where: and(
-        eq(rewardWarmindo.id, rewardId),
-        eq(rewardWarmindo.status, "aktif"),
-        inArray(rewardWarmindo.targetAudience, ["semua", "konsumen"]),
-      ),
-    });
+    const result = await db.transaction(async (tx) => {
+      // 1. Ambil data reward
+      const reward = await tx.query.rewardWarmindo.findFirst({
+        where: and(
+          eq(rewardWarmindo.id, rewardId),
+          eq(rewardWarmindo.status, "aktif"),
+          inArray(rewardWarmindo.targetAudience, ["semua", "konsumen"]),
+        ),
+      });
 
-    if (!reward) {
-      return {
-        success: false,
-        errors: { _form: ["Reward tidak ditemukan atau sudah tidak aktif."] },
-      };
-    }
+      if (!reward) {
+        return {
+          success: false,
+          errors: { _form: ["Reward tidak ditemukan atau sudah tidak aktif."] },
+        };
+      }
 
-    // 2. Cek stok jika kategori barang atau voucher
-    if (
-      (reward.kategori === "barang" || reward.kategori === "voucher") &&
-      reward.stok <= 0
-    ) {
-      return {
-        success: false,
-        errors: { _form: ["Maaf, stok reward ini sudah habis."] },
-      };
-    }
-
-    // 3. Ambil data profil nasabah & poin aktif
-    const profile = await db.query.nasabah.findFirst({
-      where: eq(nasabah.id, user.id),
-    });
-
-    const userPoin = profile?.poin ?? 0;
-    if (userPoin < reward.poin) {
-      return {
-        success: false,
-        errors: {
-          _form: [
-            `Poin Anda tidak mencukupi. Anda memiliki ${userPoin} poin, namun dibutuhkan ${reward.poin} poin.`,
-          ],
-        },
-      };
-    }
-
-    // 4. Validasi spesifik kategori
-    if (reward.kategori === "uang") {
+      // 2. Cek stok jika kategori barang atau voucher
       if (
-        !parsed.data.jenisBank ||
-        !parsed.data.noRekening ||
-        !parsed.data.atasNama
+        (reward.kategori === "barang" || reward.kategori === "voucher") &&
+        reward.stok <= 0
       ) {
         return {
           success: false,
-          errors: {
-            _form: [
-              "Untuk reward uang tunai, data rekening tujuan wajib diisi lengkap.",
-            ],
-          },
+          errors: { _form: ["Maaf, stok reward ini sudah habis."] },
         };
       }
-    } else if (reward.kategori === "barang") {
-      if (!parsed.data.alamatPengiriman) {
+
+      // 3. Ambil data profil nasabah & poin aktif
+      const profile = await tx.query.nasabah.findFirst({
+        where: eq(nasabah.id, user.id),
+      });
+
+      const userPoin = profile?.poin ?? 0;
+      if (userPoin < reward.poin) {
         return {
           success: false,
           errors: {
             _form: [
-              "Untuk reward barang fisik, alamat pengiriman wajib diisi.",
+              `Poin Anda tidak mencukupi. Anda memiliki ${userPoin.toLocaleString("id-ID")} poin, namun dibutuhkan ${reward.poin.toLocaleString("id-ID")} poin.`,
             ],
           },
         };
       }
-    }
 
-    // 5. Potong poin nasabah
-    await db
-      .update(nasabah)
-      .set({
-        poin: Math.max(0, userPoin - reward.poin),
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.id, user.id));
+      // 4. Validasi spesifik kategori
+      if (reward.kategori === "uang") {
+        if (
+          !parsed.data.jenisBank ||
+          !parsed.data.noRekening ||
+          !parsed.data.atasNama
+        ) {
+          return {
+            success: false,
+            errors: {
+              _form: [
+                "Untuk reward uang tunai, data rekening tujuan wajib diisi lengkap.",
+              ],
+            },
+          };
+        }
+      } else if (reward.kategori === "barang") {
+        if (!parsed.data.alamatPengiriman) {
+          return {
+            success: false,
+            errors: {
+              _form: [
+                "Untuk reward barang fisik, alamat pengiriman wajib diisi.",
+              ],
+            },
+          };
+        }
+      }
 
-    // 6. Potong stok reward jika barang atau voucher
-    if (reward.kategori === "barang" || reward.kategori === "voucher") {
-      await db
-        .update(rewardWarmindo)
+      // 5. Potong poin nasabah secara aman
+      await tx
+        .update(nasabah)
         .set({
-          stok: Math.max(0, reward.stok - 1),
+          poin: sql`${nasabah.poin} - ${reward.poin}`,
           updatedAt: new Date(),
         })
-        .where(eq(rewardWarmindo.id, reward.id));
-    }
+        .where(eq(nasabah.id, user.id));
 
-    // 7. Simpan pengajuan penukaran reward
-    await db.insert(penukaranRewardWarmindo).values({
-      userId: user.id,
-      rewardId: reward.id,
-      namaReward: reward.nama,
-      kategori: reward.kategori,
-      poinDipotong: reward.poin,
-      nominalUang: reward.kategori === "uang" ? reward.nominalUang : null,
-      status: "pending",
-      kategoriNasabah: "konsumen",
-      jenisBank: parsed.data.jenisBank,
-      noRekening: parsed.data.noRekening,
-      atasNama: parsed.data.atasNama,
-      alamatPengiriman: parsed.data.alamatPengiriman,
-      catatan: parsed.data.catatan,
+      // 6. Kurangi stok reward jika barang atau voucher
+      if (reward.kategori === "barang" || reward.kategori === "voucher") {
+        await tx
+          .update(rewardWarmindo)
+          .set({
+            stok: sql`${rewardWarmindo.stok} - 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(rewardWarmindo.id, reward.id));
+      }
+
+      // 7. Simpan pengajuan penukaran reward
+      await tx.insert(penukaranRewardWarmindo).values({
+        userId: user.id,
+        rewardId: reward.id,
+        namaReward: reward.nama,
+        kategori: reward.kategori,
+        poinDipotong: reward.poin,
+        nominalUang: reward.kategori === "uang" ? reward.nominalUang : null,
+        status: "pending",
+        kategoriNasabah: "konsumen",
+        jenisBank: parsed.data.jenisBank,
+        noRekening: parsed.data.noRekening,
+        atasNama: parsed.data.atasNama,
+        alamatPengiriman: parsed.data.alamatPengiriman,
+        catatan: parsed.data.catatan,
+      });
+
+      return {
+        success: true,
+        message: `Penukaran reward "${reward.nama}" berhasil diajukan! Poin Anda telah dipotong sebesar ${reward.poin.toLocaleString("id-ID")} poin.`,
+      };
     });
 
-    revalidatePath("/tukar-kupon");
-    revalidatePath("/penukaran-reward-warmindo");
+    if (result.success) {
+      revalidatePath("/tukar-kupon");
+      revalidatePath("/penukaran-reward-warmindo");
+    }
 
-    return {
-      success: true,
-      message: `Penukaran reward "${reward.nama}" berhasil diajukan! Poin Anda telah dipotong sebesar ${reward.poin} poin.`,
-    };
+    return result;
   } catch (error) {
     console.error("Gagal memproses penukaran reward konsumen:", error);
     return {

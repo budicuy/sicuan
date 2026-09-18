@@ -1,14 +1,14 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
-import { nasabah, penukaranRewardWarmindo } from "@/db/schema";
+import { nasabah, penukaranRewardWarmindo, rewardWarmindo } from "@/db/schema";
 
 async function getCurrentUser() {
   try {
@@ -85,7 +85,7 @@ export async function getPenukaranRewardList(params?: {
         : and(...filters)
       : searchFilter;
 
-  const [data, totalCount] = await Promise.all([
+  const [data, [{ total }]] = await Promise.all([
     db.query.penukaranRewardWarmindo.findMany({
       where: combinedWhere,
       with: {
@@ -96,12 +96,12 @@ export async function getPenukaranRewardList(params?: {
       offset,
     }),
     db
-      .select({ id: penukaranRewardWarmindo.id })
+      .select({ total: count() })
       .from(penukaranRewardWarmindo)
       .where(combinedWhere),
   ]);
 
-  return { data, total: totalCount.length };
+  return { data, total };
 }
 
 export async function approvePenukaranReward(
@@ -160,6 +160,7 @@ export async function approvePenukaranReward(
 
     revalidatePath("/penukaran-reward-warmindo");
     revalidatePath("/tukar-reward");
+    revalidatePath("/tukar-kupon");
     revalidatePath("/dashboard/warmindo-dashboard");
     return { success: true };
   } catch (error) {
@@ -199,27 +200,44 @@ export async function rejectPenukaranReward(
   }
 
   try {
-    // 1. Update status to ditolak
-    await db
-      .update(penukaranRewardWarmindo)
-      .set({
-        status: "ditolak",
-        catatanAdmin: alasan,
-        updatedAt: new Date(),
-      })
-      .where(eq(penukaranRewardWarmindo.id, id));
+    await db.transaction(async (tx) => {
+      // 1. Update status to ditolak
+      await tx
+        .update(penukaranRewardWarmindo)
+        .set({
+          status: "ditolak",
+          catatanAdmin: alasan,
+          updatedAt: new Date(),
+        })
+        .where(eq(penukaranRewardWarmindo.id, id));
 
-    // 2. Refund points to user
-    await db
-      .update(nasabah)
-      .set({
-        poin: sql`${nasabah.poin} + ${item.poinDipotong}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(nasabah.id, item.userId));
+      // 2. Refund points to user
+      await tx
+        .update(nasabah)
+        .set({
+          poin: sql`${nasabah.poin} + ${item.poinDipotong}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(nasabah.id, item.userId));
+
+      // 3. Restock reward jika kategori barang atau voucher
+      if (
+        item.rewardId &&
+        (item.kategori === "barang" || item.kategori === "voucher")
+      ) {
+        await tx
+          .update(rewardWarmindo)
+          .set({
+            stok: sql`${rewardWarmindo.stok} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(rewardWarmindo.id, item.rewardId));
+      }
+    });
 
     revalidatePath("/penukaran-reward-warmindo");
     revalidatePath("/tukar-reward");
+    revalidatePath("/tukar-kupon");
     revalidatePath("/dashboard/warmindo-dashboard");
     return { success: true };
   } catch (error) {

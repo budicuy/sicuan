@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
@@ -84,7 +84,7 @@ export async function getRewardWarmindo(params?: {
         : desc(rewardWarmindo.kategori);
   }
 
-  const [data, totalCount] = await Promise.all([
+  const [data, [{ total }]] = await Promise.all([
     db
       .select()
       .from(rewardWarmindo)
@@ -92,13 +92,10 @@ export async function getRewardWarmindo(params?: {
       .orderBy(orderColumn)
       .limit(limit)
       .offset(offset),
-    db
-      .select({ id: rewardWarmindo.id })
-      .from(rewardWarmindo)
-      .where(combinedWhere),
+    db.select({ total: count() }).from(rewardWarmindo).where(combinedWhere),
   ]);
 
-  return { data, total: totalCount.length };
+  return { data, total };
 }
 
 const rewardFormSchema = z.object({

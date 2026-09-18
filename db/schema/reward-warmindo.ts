@@ -32,27 +32,39 @@ export const targetRewardEnum = pgEnum("target_reward_enum", [
   "konsumen",
 ]);
 
-export const rewardWarmindo = pgTable("master_reward", {
-  id: serial("id").primaryKey(),
-  nama: text("nama").notNull(),
-  kategori: kategoriRewardWarmindoEnum("kategori").notNull().default("barang"),
-  deskripsi: text("deskripsi").notNull().default(""),
-  poin: integer("poin").notNull(), // Jumlah poin yang dibutuhkan untuk menukar
-  nominalUang: integer("nominal_uang"), // Nilai nominal rupiah jika kategori uang
-  stok: integer("stok").notNull().default(100),
-  gambar: text("gambar"),
-  targetAudience: targetRewardEnum("target_audience")
-    .notNull()
-    .default("semua"),
-  status: statusRewardWarmindoEnum("status").notNull().default("aktif"),
+export const rewardWarmindo = pgTable(
+  "master_reward",
+  {
+    id: serial("id").primaryKey(),
+    nama: text("nama").notNull(),
+    kategori: kategoriRewardWarmindoEnum("kategori")
+      .notNull()
+      .default("barang"),
+    deskripsi: text("deskripsi").notNull().default(""),
+    poin: integer("poin").notNull(), // Jumlah poin yang dibutuhkan untuk menukar
+    nominalUang: integer("nominal_uang"), // Nilai nominal rupiah jika kategori uang
+    stok: integer("stok").notNull().default(100),
+    gambar: text("gambar"),
+    targetAudience: targetRewardEnum("target_audience")
+      .notNull()
+      .default("semua"),
+    status: statusRewardWarmindoEnum("status").notNull().default("aktif"),
 
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("master_reward_target_status_idx").on(
+      table.targetAudience,
+      table.status,
+    ),
+    index("master_reward_kategori_idx").on(table.kategori),
+  ],
+);
 
 export const penukaranRewardWarmindo = pgTable(
   "penukaran_reward",
@@ -117,3 +129,11 @@ export type PenukaranRewardWarmindo =
   typeof penukaranRewardWarmindo.$inferSelect;
 export type NewPenukaranRewardWarmindo =
   typeof penukaranRewardWarmindo.$inferInsert;
+
+// Aliases for unified naming
+export const masterReward = rewardWarmindo;
+export const penukaranReward = penukaranRewardWarmindo;
+export type MasterReward = RewardWarmindo;
+export type NewMasterReward = NewRewardWarmindo;
+export type PenukaranReward = PenukaranRewardWarmindo;
+export type NewPenukaranReward = NewPenukaranRewardWarmindo;
