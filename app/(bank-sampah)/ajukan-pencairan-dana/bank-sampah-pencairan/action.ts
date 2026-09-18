@@ -283,16 +283,16 @@ export async function getBankSampahPeriodsWithSetoran() {
       canWithdraw,
       disbursement: latestDisbursement
         ? {
-          id: latestDisbursement.id,
-          jumlah: latestDisbursement.jumlah,
-          status: latestDisbursement.status,
-          metodePembayaran: latestDisbursement.metodePembayaran,
-          createdAt: latestDisbursement.createdAt,
-          keterangan: latestDisbursement.keterangan || null,
-          buktiTransfer: latestDisbursement.buktiTransfer || null,
-          buktiPembayaranId,
-          ttdPenyerahUrl: latestDisbursement.ttdPenyerahUrl || null,
-        }
+            id: latestDisbursement.id,
+            jumlah: latestDisbursement.jumlah,
+            status: latestDisbursement.status,
+            metodePembayaran: latestDisbursement.metodePembayaran,
+            createdAt: latestDisbursement.createdAt,
+            keterangan: latestDisbursement.keterangan || null,
+            buktiTransfer: latestDisbursement.buktiTransfer || null,
+            buktiPembayaranId,
+            ttdPenyerahUrl: latestDisbursement.ttdPenyerahUrl || null,
+          }
         : null,
     });
   }
@@ -319,15 +319,15 @@ export async function getBankSampahPeriodsWithSetoran() {
       periods,
       profile: profile
         ? {
-          id: profile.id,
-          name: profile.name,
-          role: profile.role,
-          jenisBank: profile.jenisBank || "",
-          noRekening: profile.noRekening || "",
-          alamat: profile.alamat || "",
-          noTelepon: profile.noTelepon || "",
-          idPelanggan: `SPK-${String(user.id).padStart(3, "0")}`,
-        }
+            id: profile.id,
+            name: profile.name,
+            role: profile.role,
+            jenisBank: profile.jenisBank || "",
+            noRekening: profile.noRekening || "",
+            alamat: profile.alamat || "",
+            noTelepon: profile.noTelepon || "",
+            idPelanggan: `SPK-${String(user.id).padStart(3, "0")}`,
+          }
         : null,
       summary: {
         totalKreditTersedia,
@@ -378,17 +378,17 @@ export async function getDisbursementDataForMonth(
       sudahDicairkan: pencairanAktif !== null,
       pencairanAktif: pencairanAktif
         ? {
-          id: pencairanAktif.id,
-          jumlah: pencairanAktif.jumlah,
-          status: pencairanAktif.status,
-          metodePembayaran: pencairanAktif.metodePembayaran,
-          createdAt: pencairanAktif.createdAt,
-          keterangan: pencairanAktif.keterangan || "",
-          biayaTambahan: pencairanAktif.biayaTambahan,
-          catatanBiayaTambahan: pencairanAktif.catatanBiayaTambahan,
-          ttdPenyerahUrl: pencairanAktif.ttdPenyerahUrl || null,
-          ttdPenerimaUrl: ttdPenerimaUrl,
-        }
+            id: pencairanAktif.id,
+            jumlah: pencairanAktif.jumlah,
+            status: pencairanAktif.status,
+            metodePembayaran: pencairanAktif.metodePembayaran,
+            createdAt: pencairanAktif.createdAt,
+            keterangan: pencairanAktif.keterangan || "",
+            biayaTambahan: pencairanAktif.biayaTambahan,
+            catatanBiayaTambahan: pencairanAktif.catatanBiayaTambahan,
+            ttdPenyerahUrl: pencairanAktif.ttdPenyerahUrl || null,
+            ttdPenerimaUrl: ttdPenerimaUrl,
+          }
         : null,
       jenisBank: profile?.jenisBank || "",
       noRekening: profile?.noRekening || "",

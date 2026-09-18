@@ -1,6 +1,16 @@
 "use client";
 
-import { Info, Key, Loader2, Lock, Save, User } from "lucide-react";
+import {
+  ExternalLink,
+  Info,
+  Key,
+  Loader2,
+  Lock,
+  MapPin,
+  Navigation,
+  Save,
+  User,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   getProfileData,
@@ -24,9 +34,9 @@ const profilSteps = [
   {
     element: "#tour-bank-sampah-profil-form",
     popover: {
-      title: "Detail Data Profil",
+      title: "Detail Profil, Titik Lokasi & Google Maps",
       description:
-        "Seluruh data diri kemitraan Anda ditampilkan secara lengkap di sini. Pada mode demo tour ini, data telah otomatis diisi.",
+        "Seluruh data diri kemitraan Anda ditampilkan secara lengkap di sini, termasuk titik koordinat GPS dan tautan Google Maps untuk navigasi armada.",
       side: "top" as const,
     },
   },
@@ -44,6 +54,12 @@ export default function ProfilPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
+
+  // Lokasi & Google Maps state
+  const [latVal, setLatVal] = useState<string>("");
+  const [lngVal, setLngVal] = useState<string>("");
+  const [mapsUrlVal, setMapsUrlVal] = useState<string>("");
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   const [isTourActive, setIsTourActive] = useState(false);
   const savedStateRef = useRef<typeof profile | null>(null);
@@ -64,12 +80,32 @@ export default function ProfilPage() {
       alamat: "Jl. A. Yani No. 99 (Demo)",
       role: "bank-sampah",
       tanggalLahir: "1990-01-01",
+      latitude: -3.29826,
+      longitude: 114.58602,
+      googleMapsUrl: "https://maps.google.com/?q=-3.29826,114.58602",
     });
+    setLatVal("-3.29826");
+    setLngVal("114.58602");
+    setMapsUrlVal("https://maps.google.com/?q=-3.29826,114.58602");
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    setProfile(savedStateRef.current as typeof profile);
+    const prev = savedStateRef.current;
+    setProfile(prev as typeof profile);
+    if (prev) {
+      setLatVal(
+        prev.latitude !== null && prev.latitude !== undefined
+          ? String(prev.latitude)
+          : "",
+      );
+      setLngVal(
+        prev.longitude !== null && prev.longitude !== undefined
+          ? String(prev.longitude)
+          : "",
+      );
+      setMapsUrlVal(prev.googleMapsUrl || "");
+    }
   };
 
   // Transition hooks for server actions
@@ -129,6 +165,71 @@ export default function ProfilPage() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => {
+    if (profile) {
+      setLatVal(
+        profile.latitude !== null && profile.latitude !== undefined
+          ? String(profile.latitude)
+          : "",
+      );
+      setLngVal(
+        profile.longitude !== null && profile.longitude !== undefined
+          ? String(profile.longitude)
+          : "",
+      );
+      setMapsUrlVal(profile.googleMapsUrl || "");
+    }
+  }, [profile]);
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      showFeedback(
+        "error",
+        "Geolocation Tidak Didukung",
+        "Browser Anda tidak mendukung deteksi lokasi otomatis.",
+      );
+      return;
+    }
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setLatVal(lat.toFixed(6));
+        setLngVal(lng.toFixed(6));
+        if (!mapsUrlVal) {
+          setMapsUrlVal(`https://www.google.com/maps?q=${lat},${lng}`);
+        }
+        setIsDetectingLocation(false);
+        showFeedback(
+          "success",
+          "Lokasi Terdeteksi",
+          `Titik koordinat berhasil didapatkan: ${lat.toFixed(5)}, ${lng.toFixed(5)}.`,
+        );
+      },
+      (err) => {
+        setIsDetectingLocation(false);
+        showFeedback(
+          "error",
+          "Gagal Mendeteksi Lokasi",
+          err.message || "Mohon izinkan akses lokasi pada peramban Anda.",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
+  const handleGenerateMapsLink = () => {
+    if (latVal && lngVal) {
+      setMapsUrlVal(`https://www.google.com/maps?q=${latVal},${lngVal}`);
+      showFeedback(
+        "success",
+        "Tautan Dibuat",
+        "Tautan Google Maps berhasil dibuat dari titik koordinat.",
+      );
+    }
+  };
 
   const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -512,6 +613,150 @@ export default function ProfilPage() {
                   {profileErrors.noRekening[0]}
                 </p>
               )}
+            </div>
+
+            {/* ── Titik Lokasi & Link Google Maps ── */}
+            <div className="pt-4 border-t border-neutral-100 md:col-span-2 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-primary-50 text-primary-600 rounded-lg">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-800">
+                      Titik Lokasi & Google Maps
+                    </h3>
+                    <p className="text-[11px] text-neutral-400">
+                      Tentukan koordinat operasional dan tautan peta lokasi
+                      Anda.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={isDetectingLocation}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold border border-emerald-200 transition-colors cursor-pointer disabled:opacity-50 self-start sm:self-auto"
+                >
+                  {isDetectingLocation ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                  ) : (
+                    <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+                  )}
+                  {isDetectingLocation
+                    ? "Mendeteksi GPS..."
+                    : "Ambil Lokasi Saat Ini"}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Latitude */}
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="latitude"
+                    className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+                  >
+                    Latitude (Garis Lintang)
+                  </label>
+                  <input
+                    id="latitude"
+                    name="latitude"
+                    type="number"
+                    step="any"
+                    value={latVal}
+                    onChange={(e) => setLatVal(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all font-mono"
+                    placeholder="Contoh: -3.29826"
+                  />
+                  {profileErrors.latitude && (
+                    <p className="text-[11px] font-semibold text-red-600">
+                      {profileErrors.latitude[0]}
+                    </p>
+                  )}
+                </div>
+
+                {/* Longitude */}
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="longitude"
+                    className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+                  >
+                    Longitude (Garis Bujur)
+                  </label>
+                  <input
+                    id="longitude"
+                    name="longitude"
+                    type="number"
+                    step="any"
+                    value={lngVal}
+                    onChange={(e) => setLngVal(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all font-mono"
+                    placeholder="Contoh: 114.58602"
+                  />
+                  {profileErrors.longitude && (
+                    <p className="text-[11px] font-semibold text-red-600">
+                      {profileErrors.longitude[0]}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Link Google Maps */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="googleMapsUrl"
+                    className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+                  >
+                    Tautan / Link Google Maps
+                  </label>
+                  {latVal && lngVal && (
+                    <button
+                      type="button"
+                      onClick={handleGenerateMapsLink}
+                      className="text-[11px] font-bold text-primary-600 hover:underline cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Salin Koordinat ke Tautan
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      id="googleMapsUrl"
+                      name="googleMapsUrl"
+                      type="url"
+                      value={mapsUrlVal}
+                      onChange={(e) => setMapsUrlVal(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
+                      placeholder="https://maps.app.goo.gl/... atau https://maps.google.com/?q=..."
+                    />
+                  </div>
+                  {(mapsUrlVal || (latVal && lngVal)) && (
+                    <a
+                      href={
+                        mapsUrlVal ||
+                        `https://www.google.com/maps?q=${latVal},${lngVal}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border border-neutral-200"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-primary-600" />
+                      Buka Peta
+                    </a>
+                  )}
+                </div>
+                {profileErrors.googleMapsUrl && (
+                  <p className="text-[11px] font-semibold text-red-600">
+                    {profileErrors.googleMapsUrl[0]}
+                  </p>
+                )}
+                <p className="text-[11px] text-neutral-400">
+                  Tautan Google Maps membantu armada pengangkut dan sistem
+                  logistik menemukan lokasi operasional secara presisi.
+                </p>
+              </div>
             </div>
           </div>
 

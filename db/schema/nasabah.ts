@@ -74,6 +74,7 @@ export const nasabah = pgTable(
     poin: integer("poin"), // NULL = bukan konsumen (tidak memiliki poin)
     latitude: doublePrecision("latitude"),
     longitude: doublePrecision("longitude"),
+    googleMapsUrl: text("google_maps_url"),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

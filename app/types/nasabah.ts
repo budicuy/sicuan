@@ -13,6 +13,9 @@ export interface NasabahWithUser {
   jenisBank: string | null;
   noRekening: string | null;
   poin: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  googleMapsUrl?: string | null;
   user: {
     name: string;
     username: string;
@@ -39,4 +42,7 @@ export interface ProfileData {
   jenisBank: string;
   noRekening: string;
   email: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  googleMapsUrl?: string | null;
 }

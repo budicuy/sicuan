@@ -62,6 +62,44 @@ const profileSchema = z.object({
       message: "Format email tidak valid",
     })
     .transform((val) => (val === "" ? null : val)),
+  latitude: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? val.trim() : ""))
+    .transform((val) => (val === "" ? null : Number.parseFloat(val)))
+    .refine(
+      (val) => val === null || (!Number.isNaN(val) && val >= -90 && val <= 90),
+      {
+        message: "Latitude harus berupa angka valid antara -90 dan 90",
+      },
+    ),
+  longitude: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? val.trim() : ""))
+    .transform((val) => (val === "" ? null : Number.parseFloat(val)))
+    .refine(
+      (val) =>
+        val === null || (!Number.isNaN(val) && val >= -180 && val <= 180),
+      {
+        message: "Longitude harus berupa angka valid antara -180 dan 180",
+      },
+    ),
+  googleMapsUrl: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? val.trim() : ""))
+    .refine(
+      (val) =>
+        val === "" ||
+        val.startsWith("http://") ||
+        val.startsWith("https://") ||
+        val.includes("maps"),
+      {
+        message: "Tautan Google Maps harus berupa URL valid",
+      },
+    )
+    .transform((val) => (val === "" ? null : val)),
 });
 
 const passwordSchema = z
@@ -106,6 +144,9 @@ export async function getProfileData() {
         alamat: nasabah.alamat,
         jenisBank: nasabah.jenisBank,
         noRekening: nasabah.noRekening,
+        latitude: nasabah.latitude,
+        longitude: nasabah.longitude,
+        googleMapsUrl: nasabah.googleMapsUrl,
       })
       .from(users)
       .innerJoin(nasabah, eq(nasabah.id, users.id))
@@ -131,6 +172,9 @@ export async function getProfileData() {
         jenisBank: profileData.jenisBank || "",
         noRekening: profileData.noRekening || "",
         email: profileData.email || "",
+        latitude: profileData.latitude ?? null,
+        longitude: profileData.longitude ?? null,
+        googleMapsUrl: profileData.googleMapsUrl || "",
       },
     };
   } catch (error) {
@@ -159,6 +203,9 @@ export async function updateProfileData(
       jenisBank: (formData.get("jenisBank") as string) || null,
       noRekening: (formData.get("noRekening") as string) || null,
       email: (formData.get("email") as string) || null,
+      latitude: (formData.get("latitude") as string) || null,
+      longitude: (formData.get("longitude") as string) || null,
+      googleMapsUrl: (formData.get("googleMapsUrl") as string) || null,
     };
 
     const parsed = profileSchema.safeParse(rawData);
@@ -191,6 +238,9 @@ export async function updateProfileData(
           jenisBank: parsed.data.jenisBank,
           noRekening: parsed.data.noRekening,
           email: parsed.data.email,
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
+          googleMapsUrl: parsed.data.googleMapsUrl,
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, userId));
