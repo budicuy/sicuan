@@ -56,12 +56,12 @@ export async function getWarmindoRewardData() {
       userPoin: userProfile?.poin ?? 0,
       userProfile: userProfile
         ? {
-            id: userProfile.id,
-            name: userProfile.name,
-            jenisBank: userProfile.jenisBank,
-            noRekening: userProfile.noRekening,
-            alamat: userProfile.alamat,
-          }
+          id: userProfile.id,
+          name: userProfile.name,
+          jenisBank: userProfile.jenisBank,
+          noRekening: userProfile.noRekening,
+          alamat: userProfile.alamat,
+        }
         : null,
       rewards,
       history,
@@ -159,7 +159,7 @@ export async function submitTukarReward(
           },
         };
       }
-    } else {
+    } else if (reward.kategori === "barang") {
       if (!alamatPengiriman) {
         return {
           success: false,
@@ -179,8 +179,8 @@ export async function submitTukarReward(
       })
       .where(eq(nasabah.id, user.id));
 
-    // 3. Kurangi stok reward jika bukan uang
-    if (reward.kategori === "barang") {
+    // 3. Kurangi stok reward jika barang atau voucher
+    if (reward.kategori === "barang" || reward.kategori === "voucher") {
       await db
         .update(rewardWarmindo)
         .set({

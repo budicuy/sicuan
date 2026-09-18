@@ -46,7 +46,10 @@ export async function getPenukaranRewardList(params?: {
 
   if (kategori && kategori !== "Semua") {
     filters.push(
-      eq(penukaranRewardWarmindo.kategori, kategori as "barang" | "uang"),
+      eq(
+        penukaranRewardWarmindo.kategori,
+        kategori as "barang" | "uang" | "voucher",
+      ),
     );
   }
 

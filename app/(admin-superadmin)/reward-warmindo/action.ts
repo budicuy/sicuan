@@ -31,7 +31,9 @@ export async function getRewardWarmindo(params?: {
   const filters: SQL[] = [];
 
   if (kategori && kategori !== "Semua") {
-    filters.push(eq(rewardWarmindo.kategori, kategori as "barang" | "uang"));
+    filters.push(
+      eq(rewardWarmindo.kategori, kategori as "barang" | "uang" | "voucher"),
+    );
   }
 
   if (status && status !== "Semua") {
@@ -90,7 +92,7 @@ export async function getRewardWarmindo(params?: {
 
 const rewardFormSchema = z.object({
   nama: z.string().min(2, "Nama reward minimal 2 karakter"),
-  kategori: z.enum(["barang", "uang"]),
+  kategori: z.enum(["barang", "uang", "voucher"]),
   deskripsi: z.string().optional().default(""),
   poin: z.number().int().positive("Poin harus bilangan bulat positif"),
   nominalUang: z.number().int().nonnegative().optional().nullable(),
@@ -113,7 +115,7 @@ export async function createRewardWarmindo(
     };
   }
 
-  const kategori = formData.get("kategori") as "barang" | "uang";
+  const kategori = formData.get("kategori") as "barang" | "uang" | "voucher";
   const nominalUangRaw = formData.get("nominalUang");
   const nominalUang =
     kategori === "uang" && nominalUangRaw
@@ -197,7 +199,7 @@ export async function updateRewardWarmindo(
     };
   }
 
-  const kategori = formData.get("kategori") as "barang" | "uang";
+  const kategori = formData.get("kategori") as "barang" | "uang" | "voucher";
   const nominalUangRaw = formData.get("nominalUang");
   const nominalUang =
     kategori === "uang" && nominalUangRaw

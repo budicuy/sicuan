@@ -238,10 +238,16 @@ export default function PenukaranRewardWarmindoPage() {
               className={`px-2 py-0.2 rounded-full text-[9px] font-bold uppercase ${
                 item.kategori === "uang"
                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  : "bg-blue-50 text-blue-700 border border-blue-200"
+                  : item.kategori === "voucher"
+                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-200"
               }`}
             >
-              {item.kategori === "uang" ? "Uang Tunai" : "Barang"}
+              {item.kategori === "uang"
+                ? "Uang Tunai"
+                : item.kategori === "voucher"
+                  ? "Voucher"
+                  : "Barang"}
             </span>
             <span className="text-[10px] font-mono font-bold text-neutral-700">
               {item.poinDipotong} Poin
@@ -265,6 +271,17 @@ export default function PenukaranRewardWarmindoPage() {
               <div className="text-[10px] text-neutral-500">
                 a.n. {item.atasNama}
               </div>
+            </div>
+          ) : item.kategori === "voucher" ? (
+            <div>
+              <div className="text-[11px] text-amber-800 font-medium">
+                Voucher Digital / Fisik
+              </div>
+              {item.nomorResi && (
+                <div className="text-[10px] text-amber-700 font-mono mt-0.5 font-bold">
+                  Kode/Ref: {item.nomorResi}
+                </div>
+              )}
             </div>
           ) : (
             <div>
@@ -362,6 +379,7 @@ export default function PenukaranRewardWarmindoPage() {
         { label: "Semua Kategori", value: "" },
         { label: "Uang Tunai", value: "uang" },
         { label: "Barang", value: "barang" },
+        { label: "Voucher", value: "voucher" },
       ],
     },
   ];
@@ -456,6 +474,13 @@ export default function PenukaranRewardWarmindoPage() {
                   </span>
                 </div>
               </>
+            ) : selectedItemForApprove.kategori === "voucher" ? (
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Tipe Reward:</span>
+                <span className="font-semibold text-amber-700">
+                  Voucher / Kupon Reward
+                </span>
+              </div>
             ) : (
               <div className="flex justify-between">
                 <span className="text-neutral-500">Alamat Pengiriman:</span>
@@ -531,13 +556,19 @@ export default function PenukaranRewardWarmindoPage() {
                 htmlFor="nomorResiInput"
                 className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
               >
-                Nomor Resi / Kurir Pengiriman
+                {selectedItemForApprove.kategori === "voucher"
+                  ? "Kode Voucher / Link / Nomor Referensi (Opsional)"
+                  : "Nomor Resi / Kurir Pengiriman"}
               </label>
               <input
                 id="nomorResiInput"
                 type="text"
                 name="nomorResi"
-                placeholder="Contoh: JNE-8829102849 atau Diambil Langsung"
+                placeholder={
+                  selectedItemForApprove.kategori === "voucher"
+                    ? "Contoh: VCR-DISC-50K atau https://voucher..."
+                    : "Contoh: JNE-8829102849 atau Diambil Langsung"
+                }
                 className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 font-mono text-neutral-800"
               />
             </div>

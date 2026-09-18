@@ -112,7 +112,8 @@ export const latestRewardWarmindoData = [
     poin: 100,
     nominalUang: null,
     stok: 50,
-    gambar: "/api/media/setor-sampah/reward-warmindo/hand-held-fan-versi-1.webp",
+    gambar:
+      "/api/media/setor-sampah/reward-warmindo/hand-held-fan-versi-1.webp",
     status: "aktif" as const,
     fileDummy: "HAND-HELD-FAN_VERSI-1.jpeg",
     slug: "hand-held-fan-versi-1",
@@ -124,7 +125,8 @@ export const latestRewardWarmindoData = [
     poin: 100,
     nominalUang: null,
     stok: 30,
-    gambar: "/api/media/setor-sampah/reward-warmindo/hand-held-fan-versi-2.webp",
+    gambar:
+      "/api/media/setor-sampah/reward-warmindo/hand-held-fan-versi-2.webp",
     status: "aktif" as const,
     fileDummy: "HAND-HELD-FAN-VERSI-2.jpeg",
     slug: "hand-held-fan-versi-2",
@@ -195,4 +197,3 @@ export async function seedRewardWarmindo() {
 
   console.log("✅ Seeded reward_warmindo successfully");
 }
-

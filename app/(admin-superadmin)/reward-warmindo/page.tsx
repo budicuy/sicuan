@@ -1,7 +1,15 @@
 "use client";
 
 import imageCompression from "browser-image-compression";
-import { Coins, Gift, ImageIcon, Package, Upload, X } from "lucide-react";
+import {
+  Coins,
+  Gift,
+  ImageIcon,
+  Package,
+  Ticket,
+  Upload,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createRewardWarmindo,
@@ -38,7 +46,7 @@ export default function RewardWarmindoPage() {
   );
   const [rewardModalOpen, setRewardModalOpen] = useState(false);
   const [selectedKategoriForm, setSelectedKategoriForm] = useState<
-    "barang" | "uang"
+    "barang" | "uang" | "voucher"
   >("barang");
   const [confirmDeleteReward, setConfirmDeleteReward] =
     useState<RewardWarmindo | null>(null);
@@ -148,7 +156,7 @@ export default function RewardWarmindoPage() {
 
   const handleOpenEditReward = (item: RewardWarmindo) => {
     setEditingReward(item);
-    setSelectedKategoriForm(item.kategori as "barang" | "uang");
+    setSelectedKategoriForm(item.kategori as "barang" | "uang" | "voucher");
     setRewardImageBase64(null);
     setExistingRewardImage(item.gambar || null);
     setImageUploadError("");
@@ -235,6 +243,8 @@ export default function RewardWarmindoPage() {
               />
             ) : item.kategori === "uang" ? (
               <Coins className="w-5 h-5 text-emerald-600" />
+            ) : item.kategori === "voucher" ? (
+              <Ticket className="w-5 h-5 text-amber-600" />
             ) : (
               <Package className="w-5 h-5 text-neutral-400" />
             )}
@@ -260,10 +270,16 @@ export default function RewardWarmindoPage() {
           className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
             item.kategori === "uang"
               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-blue-50 text-blue-700 border-blue-200"
+              : item.kategori === "voucher"
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-blue-50 text-blue-700 border-blue-200"
           }`}
         >
-          {item.kategori === "uang" ? "Uang Tunai" : "Barang Fisik"}
+          {item.kategori === "uang"
+            ? "Uang Tunai"
+            : item.kategori === "voucher"
+              ? "Voucher"
+              : "Barang Fisik"}
         </span>
       ),
     },
@@ -313,6 +329,7 @@ export default function RewardWarmindoPage() {
       options: [
         { label: "Semua Kategori", value: "" },
         { label: "Barang", value: "barang" },
+        { label: "Voucher", value: "voucher" },
         { label: "Uang Tunai", value: "uang" },
       ],
     },
@@ -430,12 +447,17 @@ export default function RewardWarmindoPage() {
             name="kategori"
             value={selectedKategoriForm}
             onChange={(e) =>
-              setSelectedKategoriForm(e.target.value as "barang" | "uang")
+              setSelectedKategoriForm(
+                e.target.value as "barang" | "uang" | "voucher",
+              )
             }
             className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 text-neutral-800"
           >
             <option value="barang">
               Barang Fisik (Merchandise, Alat, dll)
+            </option>
+            <option value="voucher">
+              Voucher (Voucher Belanja, Diskon, Pulsa/Token, dll)
             </option>
             <option value="uang">Uang Tunai (Transfer / Pencairan)</option>
           </select>

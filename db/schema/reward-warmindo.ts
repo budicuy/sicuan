@@ -13,6 +13,7 @@ import { nasabah } from "@/db/schema/nasabah";
 export const kategoriRewardWarmindoEnum = pgEnum("kategori_reward_warmindo", [
   "barang",
   "uang",
+  "voucher",
 ]);
 
 export const statusPenukaranRewardWarmindoEnum = pgEnum(

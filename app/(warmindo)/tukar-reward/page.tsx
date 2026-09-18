@@ -9,6 +9,7 @@ import {
   Eye,
   Gift,
   Package,
+  Ticket,
   X,
   XCircle,
 } from "lucide-react";
@@ -30,16 +31,16 @@ const rewardTourSteps = [
     popover: {
       title: "Poin Reward Anda",
       description:
-        "Menampilkan total akumulasi poin yang Anda peroleh dari setoran sampah kemasan Indofood (10 poin / 100 gram). Poin ini dapat ditukarkan dengan hadiah barang atau uang tunai.",
+        "Menampilkan total akumulasi poin yang Anda peroleh dari setoran sampah kemasan Indofood (10 poin / 100 gram). Poin ini dapat ditukarkan dengan hadiah barang, voucher belanja, atau uang tunai.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-warmindo-reward-cards",
     popover: {
-      title: "Katalog Reward (Barang & Uang)",
+      title: "Katalog Reward (Barang, Voucher & Uang)",
       description:
-        "Pilih reward yang Anda inginkan. Tersedia pilihan Uang Tunai yang ditransfer langsung ke rekening Anda atau Merchandise/Peralatan operasional warung.",
+        "Pilih reward yang Anda inginkan. Tersedia pilihan Voucher belanja/diskon, Uang Tunai yang ditransfer langsung ke rekening Anda, atau Merchandise/Peralatan operasional warung.",
       side: "top" as const,
     },
   },
@@ -48,7 +49,7 @@ const rewardTourSteps = [
     popover: {
       title: "Riwayat Penukaran Poin",
       description:
-        "Pantau status pengajuan penukaran reward Anda dari proses verifikasi admin hingga reward berhasil disalurkan beserta bukti transfer atau nomor resi pengiriman.",
+        "Pantau status pengajuan penukaran reward Anda dari proses verifikasi admin hingga reward berhasil disalurkan beserta bukti transfer, kode voucher, atau nomor resi pengiriman.",
       side: "top" as const,
     },
   },
@@ -67,9 +68,9 @@ export default function TukarRewardWarmindoPage() {
   const [history, setHistory] = useState<PenukaranRewardWarmindo[]>([]);
   const [_loading, setLoading] = useState(true);
 
-  // Filter Tab state: "semua" | "uang" | "barang"
+  // Filter Tab state: "semua" | "uang" | "barang" | "voucher"
   const [categoryFilter, setCategoryFilter] = useState<
-    "semua" | "uang" | "barang"
+    "semua" | "uang" | "barang" | "voucher"
   >("semua");
 
   // History table states
@@ -201,10 +202,16 @@ export default function TukarRewardWarmindoPage() {
             className={`inline-block mt-0.5 px-2 py-0.2 rounded-full text-[9px] font-bold uppercase ${
               item.kategori === "uang"
                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                : "bg-blue-50 text-blue-700 border border-blue-200"
+                : item.kategori === "voucher"
+                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                  : "bg-blue-50 text-blue-700 border border-blue-200"
             }`}
           >
-            {item.kategori === "uang" ? "Uang Tunai" : "Barang Fisik"}
+            {item.kategori === "uang"
+              ? "Uang Tunai"
+              : item.kategori === "voucher"
+                ? "Voucher"
+                : "Barang Fisik"}
           </span>
         </div>
       ),
@@ -229,6 +236,17 @@ export default function TukarRewardWarmindoPage() {
               <span className="text-[11px] text-neutral-600">
                 {item.jenisBank} - {item.noRekening} (a.n. {item.atasNama})
               </span>
+            </div>
+          ) : item.kategori === "voucher" ? (
+            <div>
+              <span className="text-[11px] text-amber-800 font-semibold block">
+                Voucher Reward
+              </span>
+              {item.nomorResi && (
+                <span className="text-[10px] text-amber-700 font-mono font-bold block">
+                  Kode/Link: {item.nomorResi}
+                </span>
+              )}
             </div>
           ) : (
             <div>
@@ -347,7 +365,7 @@ export default function TukarRewardWarmindoPage() {
                 Pilihan Hadiah
               </p>
               <p className="text-xs font-extrabold text-white">
-                Uang Tunai & Barang
+                Uang, Voucher & Barang
               </p>
             </div>
           </div>
@@ -382,6 +400,18 @@ export default function TukarRewardWarmindoPage() {
           >
             <Banknote className="w-3.5 h-3.5" /> Uang Tunai (
             {rewards.filter((r) => r.kategori === "uang").length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("voucher")}
+            className={`flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              categoryFilter === "voucher"
+                ? "bg-white text-amber-700 shadow-xs"
+                : "text-neutral-500 hover:text-neutral-800"
+            }`}
+          >
+            <Ticket className="w-3.5 h-3.5" /> Voucher (
+            {rewards.filter((r) => r.kategori === "voucher").length})
           </button>
           <button
             type="button"
@@ -428,18 +458,24 @@ export default function TukarRewardWarmindoPage() {
                       className={`w-full h-full flex flex-col items-center justify-center gap-2 ${
                         reward.kategori === "uang"
                           ? "bg-linear-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 text-emerald-600"
-                          : "bg-linear-to-br from-amber-500/10 via-primary-500/5 to-primary-500/10 text-primary-600"
+                          : reward.kategori === "voucher"
+                            ? "bg-linear-to-br from-amber-500/10 via-amber-500/5 to-yellow-500/10 text-amber-600"
+                            : "bg-linear-to-br from-blue-500/10 via-primary-500/5 to-primary-500/10 text-primary-600"
                       }`}
                     >
                       {reward.kategori === "uang" ? (
                         <Banknote className="w-12 h-12 opacity-80 group-hover:scale-110 transition-transform duration-300" />
+                      ) : reward.kategori === "voucher" ? (
+                        <Ticket className="w-12 h-12 opacity-80 group-hover:scale-110 transition-transform duration-300" />
                       ) : (
                         <Package className="w-12 h-12 opacity-80 group-hover:scale-110 transition-transform duration-300" />
                       )}
                       <span className="text-[11px] font-bold uppercase tracking-wider opacity-60">
                         {reward.kategori === "uang"
                           ? "Pencairan Saldo"
-                          : "Reward Merchandise"}
+                          : reward.kategori === "voucher"
+                            ? "Voucher Reward"
+                            : "Reward Merchandise"}
                       </span>
                     </div>
                   )}
@@ -450,15 +486,23 @@ export default function TukarRewardWarmindoPage() {
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-xs ${
                         reward.kategori === "uang"
                           ? "bg-emerald-50/95 text-emerald-800 border border-emerald-200"
-                          : "bg-blue-50/95 text-blue-800 border border-blue-200"
+                          : reward.kategori === "voucher"
+                            ? "bg-amber-50/95 text-amber-800 border border-amber-200"
+                            : "bg-blue-50/95 text-blue-800 border border-blue-200"
                       }`}
                     >
                       {reward.kategori === "uang" ? (
                         <Banknote className="w-3 h-3" />
+                      ) : reward.kategori === "voucher" ? (
+                        <Ticket className="w-3 h-3" />
                       ) : (
                         <Package className="w-3 h-3" />
                       )}
-                      {reward.kategori === "uang" ? "Uang Tunai" : "Barang"}
+                      {reward.kategori === "uang"
+                        ? "Uang Tunai"
+                        : reward.kategori === "voucher"
+                          ? "Voucher"
+                          : "Barang"}
                     </span>
                   </div>
 
@@ -627,8 +671,10 @@ export default function TukarRewardWarmindoPage() {
                   />
                 ) : selectedReward.kategori === "uang" ? (
                   <Banknote className="w-6 h-6 text-emerald-600" />
+                ) : selectedReward.kategori === "voucher" ? (
+                  <Ticket className="w-6 h-6 text-amber-600" />
                 ) : (
-                  <Package className="w-6 h-6 text-amber-600" />
+                  <Package className="w-6 h-6 text-blue-600" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -719,6 +765,19 @@ export default function TukarRewardWarmindoPage() {
                 />
               </div>
             </>
+          ) : selectedReward.kategori === "voucher" ? (
+            <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5 text-amber-800">
+                <Ticket className="w-4 h-4 text-amber-600" /> Informasi
+                Penukaran Voucher
+              </p>
+              <p className="text-neutral-600 leading-relaxed">
+                Kode voucher / kupon digital akan dikirimkan oleh admin dan
+                dapat Anda lihat pada tabel riwayat penukaran di bawah setelah
+                disetujui. Cantumkan nomor HP/WA pada catatan jika dibutuhkan
+                verifikasi lebih lanjut.
+              </p>
+            </div>
           ) : (
             <div>
               <label
