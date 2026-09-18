@@ -130,11 +130,10 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
           },
           {
             href: "/reward-warmindo",
-            label: "Reward Warmindo",
+            label: "Master Reward",
             icon: "Gift",
           },
           { href: "/raw-material", label: "Raw Material", icon: "Recycle" },
-          { href: "/kupon", label: "Master Kupon", icon: "Star" },
         ],
       },
       {

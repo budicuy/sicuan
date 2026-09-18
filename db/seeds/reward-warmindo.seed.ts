@@ -139,9 +139,52 @@ export const latestRewardWarmindoData = [
     nominalUang: null,
     stok: 50,
     gambar: "/api/media/setor-sampah/reward-warmindo/chopsticks.webp",
+    targetAudience: "semua" as const,
     status: "aktif" as const,
     fileDummy: "CHOPSTICKS.jpeg",
     slug: "chopsticks",
+  },
+  {
+    nama: "Voucher 25K",
+    kategori: "voucher" as const,
+    deskripsi:
+      "Potongan Harga Rp. 25.000 untuk Belanja di Koperasi PT. Indofood",
+    poin: 50,
+    nominalUang: null,
+    stok: 100,
+    gambar: null,
+    targetAudience: "semua" as const,
+    status: "aktif" as const,
+    fileDummy: "",
+    slug: "voucher-25k",
+  },
+  {
+    nama: "Voucher 75K",
+    kategori: "voucher" as const,
+    deskripsi:
+      "Potongan Harga Rp. 75.000 untuk Belanja di Koperasi PT. Indofood",
+    poin: 150,
+    nominalUang: null,
+    stok: 100,
+    gambar: null,
+    targetAudience: "semua" as const,
+    status: "aktif" as const,
+    fileDummy: "",
+    slug: "voucher-75k",
+  },
+  {
+    nama: "Voucher 150K",
+    kategori: "voucher" as const,
+    deskripsi:
+      "Potongan Harga Rp. 150.000 untuk Belanja di Koperasi PT. Indofood",
+    poin: 300,
+    nominalUang: null,
+    stok: 100,
+    gambar: null,
+    targetAudience: "semua" as const,
+    status: "aktif" as const,
+    fileDummy: "",
+    slug: "voucher-150k",
   },
 ];
 
@@ -159,21 +202,23 @@ export async function seedRewardWarmindo() {
     let gambarUrl = item.gambar;
 
     // Jika file dummy ada, coba upload ke R2 jika belum terupload
-    try {
-      const filePath = path.join(dummyDir, item.fileDummy);
-      const fileBuffer = await fs.readFile(filePath);
-      console.log(`⬆️ Mengunggah ${item.fileDummy} ke Cloudflare R2...`);
-      const uploadedUrl = await uploadImageToR2(
-        fileBuffer,
-        "reward-warmindo",
-        item.slug,
-      );
-      if (uploadedUrl) {
-        gambarUrl = uploadedUrl;
-        console.log(`✅ Berhasil diunggah: ${gambarUrl}`);
+    if (item.fileDummy) {
+      try {
+        const filePath = path.join(dummyDir, item.fileDummy);
+        const fileBuffer = await fs.readFile(filePath);
+        console.log(`⬆️ Mengunggah ${item.fileDummy} ke Cloudflare R2...`);
+        const uploadedUrl = await uploadImageToR2(
+          fileBuffer,
+          "reward-warmindo",
+          item.slug,
+        );
+        if (uploadedUrl) {
+          gambarUrl = uploadedUrl;
+          console.log(`✅ Berhasil diunggah: ${gambarUrl}`);
+        }
+      } catch {
+        console.log(`ℹ️ Menggunakan path gambar yang ada: ${gambarUrl}`);
       }
-    } catch {
-      console.log(`ℹ️ Menggunakan path gambar yang ada: ${gambarUrl}`);
     }
 
     rewardItems.push({
@@ -182,6 +227,7 @@ export async function seedRewardWarmindo() {
       nominalUang: item.nominalUang,
       poin: item.poin,
       stok: item.stok,
+      targetAudience: item.targetAudience ?? "semua",
       status: item.status,
       deskripsi: item.deskripsi,
       gambar: gambarUrl,

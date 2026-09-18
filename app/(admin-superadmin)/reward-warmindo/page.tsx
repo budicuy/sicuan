@@ -39,6 +39,7 @@ export default function RewardWarmindoPage() {
   const [rewardSearch, setRewardSearch] = useState("");
   const [rewardFilters, setRewardFilters] = useState<Record<string, string>>({
     kategori: "",
+    targetAudience: "",
     status: "",
   });
   const [editingReward, setEditingReward] = useState<RewardWarmindo | null>(
@@ -87,6 +88,7 @@ export default function RewardWarmindoPage() {
       limit: rewardLimit,
       search: rewardSearch,
       kategori: rewardFilters.kategori,
+      targetAudience: rewardFilters.targetAudience,
       status: rewardFilters.status,
     }).then((res) => {
       setRewardData(res.data);
@@ -307,6 +309,26 @@ export default function RewardWarmindoPage() {
       ),
     },
     {
+      header: "Target",
+      render: (item) => (
+        <span
+          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+            item.targetAudience === "konsumen"
+              ? "bg-purple-50 text-purple-700 border-purple-200"
+              : item.targetAudience === "warmindo"
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-teal-50 text-teal-700 border-teal-200"
+          }`}
+        >
+          {item.targetAudience === "konsumen"
+            ? "Konsumen"
+            : item.targetAudience === "warmindo"
+              ? "Warmindo"
+              : "Semua"}
+        </span>
+      ),
+    },
+    {
       header: "Status",
       render: (item) => (
         <span
@@ -334,6 +356,16 @@ export default function RewardWarmindoPage() {
       ],
     },
     {
+      id: "targetAudience",
+      label: "Target",
+      options: [
+        { label: "Semua Target", value: "" },
+        { label: "Semua (Warmindo & Konsumen)", value: "semua" },
+        { label: "Khusus Warmindo", value: "warmindo" },
+        { label: "Khusus Konsumen", value: "konsumen" },
+      ],
+    },
+    {
       id: "status",
       label: "Status",
       options: [
@@ -355,11 +387,11 @@ export default function RewardWarmindoPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-              Master Data Reward Warmindo
+              Master Reward Warmindo & Konsumen
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Atur katalog reward barang fisik dan uang tunai khusus penukaran
-              poin mitra Warmindo
+              Atur katalog reward barang fisik, voucher, dan uang tunai untuk
+              penukaran poin mitra Warmindo dan Konsumen
             </p>
           </div>
         </div>
@@ -408,7 +440,7 @@ export default function RewardWarmindoPage() {
         title={
           editingReward
             ? `Edit Reward: ${editingReward.nama}`
-            : "Tambah Reward Warmindo Baru"
+            : "Tambah Reward Baru"
         }
         onSubmit={handleRewardSubmit}
         isPending={isPending}
@@ -629,6 +661,27 @@ export default function RewardWarmindoPage() {
               {formErrors.deskripsi[0]}
             </p>
           )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="targetAudienceReward"
+            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+          >
+            Target Penukaran Reward
+          </label>
+          <select
+            id="targetAudienceReward"
+            name="targetAudience"
+            defaultValue={editingReward?.targetAudience ?? "semua"}
+            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 text-neutral-800"
+          >
+            <option value="semua">
+              Semua (Dapat ditukar Mitra Warmindo & Konsumen)
+            </option>
+            <option value="warmindo">Khusus Mitra Warmindo</option>
+            <option value="konsumen">Khusus Konsumen</option>
+          </select>
         </div>
 
         <div>

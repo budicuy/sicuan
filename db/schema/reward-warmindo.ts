@@ -26,7 +26,13 @@ export const statusRewardWarmindoEnum = pgEnum("status_reward_warmindo", [
   "nonaktif",
 ]);
 
-export const rewardWarmindo = pgTable("reward_warmindo", {
+export const targetRewardEnum = pgEnum("target_reward_enum", [
+  "semua",
+  "warmindo",
+  "konsumen",
+]);
+
+export const rewardWarmindo = pgTable("master_reward", {
   id: serial("id").primaryKey(),
   nama: text("nama").notNull(),
   kategori: kategoriRewardWarmindoEnum("kategori").notNull().default("barang"),
@@ -35,6 +41,9 @@ export const rewardWarmindo = pgTable("reward_warmindo", {
   nominalUang: integer("nominal_uang"), // Nilai nominal rupiah jika kategori uang
   stok: integer("stok").notNull().default(100),
   gambar: text("gambar"),
+  targetAudience: targetRewardEnum("target_audience")
+    .notNull()
+    .default("semua"),
   status: statusRewardWarmindoEnum("status").notNull().default("aktif"),
 
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -46,7 +55,7 @@ export const rewardWarmindo = pgTable("reward_warmindo", {
 });
 
 export const penukaranRewardWarmindo = pgTable(
-  "penukaran_reward_warmindo",
+  "penukaran_reward",
   {
     id: serial("id").primaryKey(),
     userId: integer("user_id")
@@ -62,6 +71,7 @@ export const penukaranRewardWarmindo = pgTable(
     status: statusPenukaranRewardWarmindoEnum("status")
       .notNull()
       .default("pending"),
+    kategoriNasabah: text("kategori_nasabah").notNull().default("warmindo"),
 
     // Detail untuk kategori "uang"
     jenisBank: text("jenis_bank"),

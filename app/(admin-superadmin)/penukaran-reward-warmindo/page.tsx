@@ -44,6 +44,7 @@ export default function PenukaranRewardWarmindoPage() {
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     status: "",
     kategori: "",
+    kategoriNasabah: "",
   });
 
   // Modal Action States
@@ -85,6 +86,7 @@ export default function PenukaranRewardWarmindoPage() {
       search,
       status: filterValues.status,
       kategori: filterValues.kategori,
+      kategoriNasabah: filterValues.kategoriNasabah,
     }).then((res) => {
       setData(res.data as PenukaranWithUser[]);
       setTotalItems(res.total);
@@ -214,12 +216,23 @@ export default function PenukaranRewardWarmindoPage() {
       ),
     },
     {
-      header: "Mitra Warmindo",
+      header: "Pemohon / Nasabah",
       render: (item) => (
         <div>
-          <span className="font-bold text-neutral-900 text-xs block">
-            {item.user?.name ?? `User #${item.userId}`}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-neutral-900 text-xs block">
+              {item.user?.name ?? `User #${item.userId}`}
+            </span>
+            <span
+              className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider border ${
+                item.kategoriNasabah === "konsumen"
+                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}
+            >
+              {item.kategoriNasabah === "konsumen" ? "Konsumen" : "Warmindo"}
+            </span>
+          </div>
           <span className="text-[10px] text-neutral-500 font-mono">
             @{item.user?.username ?? "-"}
           </span>
@@ -373,6 +386,15 @@ export default function PenukaranRewardWarmindoPage() {
       ],
     },
     {
+      id: "kategoriNasabah",
+      label: "Tipe Pemohon",
+      options: [
+        { label: "Semua Pemohon", value: "" },
+        { label: "Mitra Warmindo", value: "warmindo" },
+        { label: "Konsumen", value: "konsumen" },
+      ],
+    },
+    {
       id: "kategori",
       label: "Kategori Reward",
       options: [
@@ -395,11 +417,11 @@ export default function PenukaranRewardWarmindoPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-              Persetujuan Penukaran Reward Warmindo
+              Persetujuan Penukaran Reward
             </h1>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Kelola dan proses pengajuan penukaran reward (Uang Tunai & Barang)
-              dari mitra Warmindo
+              Kelola dan proses pengajuan penukaran reward (Barang, Voucher &
+              Uang Tunai) dari mitra Warmindo dan Konsumen
             </p>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { kupon, nasabah, penukaranKupon } from "@/db/schema";
+import { nasabah, penukaranRewardWarmindo } from "@/db/schema";
 
 export type ValidatorState = {
   success: boolean;
@@ -26,25 +26,23 @@ export async function getKuponDetailForValidation(
   try {
     const penukaran = await db
       .select({
-        id: penukaranKupon.id,
-        kodeUnik: penukaranKupon.kodeUnik,
-        status: penukaranKupon.status,
-        tanggalGunakan: penukaranKupon.tanggalGunakan,
-        createdAt: penukaranKupon.createdAt,
-        rewardNama: kupon.nama,
+        id: penukaranRewardWarmindo.id,
+        kodeUnik: penukaranRewardWarmindo.nomorResi,
+        status: penukaranRewardWarmindo.status,
+        createdAt: penukaranRewardWarmindo.createdAt,
+        rewardNama: penukaranRewardWarmindo.namaReward,
         pemilikNama: nasabah.name,
-        biayaPoin: kupon.poin,
+        biayaPoin: penukaranRewardWarmindo.poinDipotong,
       })
-      .from(penukaranKupon)
-      .innerJoin(kupon, eq(penukaranKupon.kuponId, kupon.id))
-      .innerJoin(nasabah, eq(penukaranKupon.userId, nasabah.id))
-      .where(eq(penukaranKupon.kodeUnik, kodeUnik))
+      .from(penukaranRewardWarmindo)
+      .innerJoin(nasabah, eq(penukaranRewardWarmindo.userId, nasabah.id))
+      .where(eq(penukaranRewardWarmindo.nomorResi, kodeUnik))
       .limit(1);
 
     if (penukaran.length === 0) {
       return {
         success: false,
-        message: "Kupon tidak ditemukan atau tidak valid.",
+        message: "Voucher / Reward tidak ditemukan atau tidak valid.",
       };
     }
 
@@ -53,11 +51,9 @@ export async function getKuponDetailForValidation(
       success: true,
       kuponData: {
         id: item.id,
-        kodeUnik: item.kodeUnik,
-        status: item.status,
-        tanggalGunakan: item.tanggalGunakan
-          ? item.tanggalGunakan.toISOString()
-          : null,
+        kodeUnik: item.kodeUnik || kodeUnik,
+        status: item.status === "berhasil" ? "aktif" : item.status,
+        tanggalGunakan: null,
         createdAt: item.createdAt.toISOString(),
         rewardNama: item.rewardNama,
         pemilikNama: item.pemilikNama,
@@ -68,7 +64,7 @@ export async function getKuponDetailForValidation(
     console.error("Error fetching validation detail:", error);
     return {
       success: false,
-      message: "Terjadi kesalahan server saat memproses kupon.",
+      message: "Terjadi kesalahan server saat memproses voucher.",
     };
   }
 }
@@ -78,20 +74,20 @@ export async function markKuponAsUsed(
 ): Promise<{ success: boolean; message: string }> {
   try {
     await db
-      .update(penukaranKupon)
+      .update(penukaranRewardWarmindo)
       .set({
-        status: "digunakan",
-        tanggalGunakan: new Date(),
+        catatanAdmin: "Telah digunakan / ditukarkan di merchant",
+        updatedAt: new Date(),
       })
-      .where(eq(penukaranKupon.id, id));
+      .where(eq(penukaranRewardWarmindo.id, id));
 
     revalidatePath("/kupon-validasi");
     return {
       success: true,
-      message: "Kupon berhasil ditandai telah digunakan.",
+      message: "Voucher / Reward berhasil diverifikasi dan digunakan.",
     };
   } catch (error) {
     console.error("Error marking coupon as used:", error);
-    return { success: false, message: "Gagal memproses penukaran kupon." };
+    return { success: false, message: "Gagal memproses penukaran voucher." };
   }
 }

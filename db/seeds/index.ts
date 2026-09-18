@@ -1,6 +1,5 @@
 import { seedEkspedisi } from "@/db/seeds/ekspedisi.seed";
 import { seedHargaSampah } from "@/db/seeds/harga-sampah.seed";
-import { seedKupon } from "@/db/seeds/kupon.seed";
 import { seedNasabah } from "@/db/seeds/nasabah.seed";
 import { seedPoinSampah } from "@/db/seeds/poin-sampah.seed";
 import { seedPoinWarmindo } from "@/db/seeds/poin-warmindo.seed";
@@ -19,7 +18,6 @@ export const seeders = [
   seedPoinWarmindo,
   seedRewardWarmindo,
   seedRawMaterial,
-  seedKupon,
   seedSetorSampah,
   seedVideoPost,
 ];

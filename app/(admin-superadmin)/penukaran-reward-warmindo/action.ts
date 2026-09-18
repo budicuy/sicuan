@@ -31,6 +31,7 @@ export async function getPenukaranRewardList(params?: {
   limit?: number;
   search?: string;
   kategori?: string;
+  kategoriNasabah?: string;
   status?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -40,6 +41,7 @@ export async function getPenukaranRewardList(params?: {
   const offset = (page - 1) * limit;
   const search = params?.search ?? "";
   const kategori = params?.kategori ?? "";
+  const kategoriNasabah = params?.kategoriNasabah ?? "";
   const status = params?.status ?? "";
 
   const filters: SQL[] = [];
@@ -51,6 +53,10 @@ export async function getPenukaranRewardList(params?: {
         kategori as "barang" | "uang" | "voucher",
       ),
     );
+  }
+
+  if (kategoriNasabah && kategoriNasabah !== "Semua") {
+    filters.push(eq(penukaranRewardWarmindo.kategoriNasabah, kategoriNasabah));
   }
 
   if (status && status !== "Semua") {

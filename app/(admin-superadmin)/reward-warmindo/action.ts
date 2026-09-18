@@ -15,6 +15,7 @@ export async function getRewardWarmindo(params?: {
   limit?: number;
   search?: string;
   kategori?: string;
+  targetAudience?: string;
   status?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -24,6 +25,7 @@ export async function getRewardWarmindo(params?: {
   const offset = (page - 1) * limit;
   const search = params?.search ?? "";
   const kategori = params?.kategori ?? "";
+  const targetAudience = params?.targetAudience ?? "";
   const status = params?.status ?? "";
   const sortBy = params?.sortBy ?? "id";
   const sortOrder = params?.sortOrder ?? "desc";
@@ -33,6 +35,15 @@ export async function getRewardWarmindo(params?: {
   if (kategori && kategori !== "Semua") {
     filters.push(
       eq(rewardWarmindo.kategori, kategori as "barang" | "uang" | "voucher"),
+    );
+  }
+
+  if (targetAudience && targetAudience !== "Semua") {
+    filters.push(
+      eq(
+        rewardWarmindo.targetAudience,
+        targetAudience as "semua" | "warmindo" | "konsumen",
+      ),
     );
   }
 
@@ -97,6 +108,7 @@ const rewardFormSchema = z.object({
   poin: z.number().int().positive("Poin harus bilangan bulat positif"),
   nominalUang: z.number().int().nonnegative().optional().nullable(),
   stok: z.number().int().nonnegative().default(100),
+  targetAudience: z.enum(["semua", "warmindo", "konsumen"]).default("semua"),
   status: z.enum(["aktif", "nonaktif"]).default("aktif"),
   gambar: z.string().optional().nullable(),
 });
@@ -148,6 +160,9 @@ export async function createRewardWarmindo(
     poin: Number.parseInt(formData.get("poin") as string, 10),
     nominalUang,
     stok: Number.parseInt((formData.get("stok") as string) || "100", 10),
+    targetAudience:
+      (formData.get("targetAudience") as "semua" | "warmindo" | "konsumen") ||
+      "semua",
     status: (formData.get("status") as "aktif" | "nonaktif") || "aktif",
     gambar: finalGambarUrl,
   };
@@ -168,6 +183,7 @@ export async function createRewardWarmindo(
       poin: parsed.data.poin,
       nominalUang: parsed.data.nominalUang,
       stok: parsed.data.stok,
+      targetAudience: parsed.data.targetAudience,
       status: parsed.data.status,
       gambar: parsed.data.gambar,
     });
@@ -232,6 +248,9 @@ export async function updateRewardWarmindo(
     poin: Number.parseInt(formData.get("poin") as string, 10),
     nominalUang,
     stok: Number.parseInt((formData.get("stok") as string) || "100", 10),
+    targetAudience:
+      (formData.get("targetAudience") as "semua" | "warmindo" | "konsumen") ||
+      "semua",
     status: (formData.get("status") as "aktif" | "nonaktif") || "aktif",
     gambar: finalGambarUrl,
   };
@@ -254,6 +273,7 @@ export async function updateRewardWarmindo(
         poin: parsed.data.poin,
         nominalUang: parsed.data.nominalUang,
         stok: parsed.data.stok,
+        targetAudience: parsed.data.targetAudience,
         status: parsed.data.status,
         gambar: parsed.data.gambar,
         updatedAt: new Date(),

@@ -9,7 +9,7 @@ import { db } from "@/db";
 import {
   nasabah,
   pencairanDana,
-  penukaranKupon,
+  penukaranRewardWarmindo,
   setorSampah,
 } from "@/db/schema";
 
@@ -157,10 +157,10 @@ export async function getDashboardData(
           ),
         ),
 
-      // 8. Total coupons redeemed
+      // 8. Total rewards redeemed
       db
         .select({ count: sql<number>`count(*)` })
-        .from(penukaranKupon),
+        .from(penukaranRewardWarmindo),
 
       // 9. Total successful disbursements
       db
@@ -465,8 +465,8 @@ export async function getDashboardData(
 
     const countKuponRes = await db
       .select({ count: sql<number>`count(*)` })
-      .from(penukaranKupon)
-      .where(eq(penukaranKupon.userId, user.id));
+      .from(penukaranRewardWarmindo)
+      .where(eq(penukaranRewardWarmindo.userId, user.id));
     const totalKuponDitukar = Number(countKuponRes[0]?.count ?? 0);
 
     // Calculate metrics

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -42,7 +42,10 @@ export async function getWarmindoRewardData() {
         where: eq(nasabah.id, user.id),
       }),
       db.query.rewardWarmindo.findMany({
-        where: eq(rewardWarmindo.status, "aktif"),
+        where: and(
+          eq(rewardWarmindo.status, "aktif"),
+          inArray(rewardWarmindo.targetAudience, ["semua", "warmindo"]),
+        ),
         orderBy: [desc(rewardWarmindo.poin)],
       }),
       db.query.penukaranRewardWarmindo.findMany({
@@ -56,12 +59,12 @@ export async function getWarmindoRewardData() {
       userPoin: userProfile?.poin ?? 0,
       userProfile: userProfile
         ? {
-          id: userProfile.id,
-          name: userProfile.name,
-          jenisBank: userProfile.jenisBank,
-          noRekening: userProfile.noRekening,
-          alamat: userProfile.alamat,
-        }
+            id: userProfile.id,
+            name: userProfile.name,
+            jenisBank: userProfile.jenisBank,
+            noRekening: userProfile.noRekening,
+            alamat: userProfile.alamat,
+          }
         : null,
       rewards,
       history,
@@ -199,6 +202,7 @@ export async function submitTukarReward(
       poinDipotong: reward.poin,
       nominalUang: reward.nominalUang,
       status: "pending",
+      kategoriNasabah: "warmindo",
       jenisBank,
       noRekening,
       atasNama,

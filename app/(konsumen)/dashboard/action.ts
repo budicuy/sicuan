@@ -8,7 +8,7 @@ import { db } from "@/db";
 import {
   nasabah,
   pencairanDana,
-  penukaranKupon,
+  penukaranRewardWarmindo,
   setorSampah,
   videoPost,
 } from "@/db/schema";
@@ -41,7 +41,7 @@ export async function getDashboardData() {
     return { success: false, message: "Akses ditolak" };
   }
 
-  const [profile, mySetoran, myPencairan, myKupon, activeMedia] =
+  const [profile, mySetoran, myPencairan, myReward, activeMedia] =
     await Promise.all([
       db.query.nasabah.findFirst({
         where: eq(nasabah.id, user.id),
@@ -57,9 +57,9 @@ export async function getDashboardData() {
         where: eq(pencairanDana.userId, user.id),
         orderBy: [desc(pencairanDana.createdAt)],
       }),
-      db.query.penukaranKupon.findMany({
-        where: eq(penukaranKupon.userId, user.id),
-        orderBy: [desc(penukaranKupon.createdAt)],
+      db.query.penukaranRewardWarmindo.findMany({
+        where: eq(penukaranRewardWarmindo.userId, user.id),
+        orderBy: [desc(penukaranRewardWarmindo.createdAt)],
       }),
       db.query.videoPost.findMany({
         where: eq(videoPost.isActive, true),
@@ -85,7 +85,7 @@ export async function getDashboardData() {
     .filter((p) => p.status === "pending")
     .reduce((sum, p) => sum + p.jumlah, 0);
 
-  const totalKuponDitukar = myKupon.length;
+  const totalKuponDitukar = myReward.length;
 
   const composition = {
     Karton: 0,
