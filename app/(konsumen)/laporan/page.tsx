@@ -21,68 +21,32 @@ import { DataTable } from "@/app/components/shared/DataTable";
 import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
 
-const demoLaporanData: SetorSampahItem[] = [
-  {
-    id: 999,
-    nomorSetor: "1/B/NDL/BJM/10/07/2026",
-    beratKg: 5.5,
-    totalPoin: 110,
-    status: "pending",
-    jenisSampah: "Karton",
-    tanggalSetor: "2026-07-10",
-    fotoTimbangan: "",
-    fotoBuktiTambahan: [],
-    catatan: "Setoran pertama untuk demo",
-    createdAt: new Date("2026-07-10"),
-    totalKredit: 0,
-  },
-  {
-    id: 998,
-    nomorSetor: "2/B/NDL/BJM/05/07/2026",
-    beratKg: 6,
-    totalPoin: 120,
-    status: "diterima",
-    jenisSampah: "Etiket",
-    tanggalSetor: "2026-07-05",
-    fotoTimbangan: "/sampel_1.png",
-    fotoBuktiTambahan: [],
-    catatan: "Setoran etiket mie instan",
-    createdAt: new Date("2026-07-05"),
-    totalKredit: 0,
-  },
-  {
-    id: 997,
-    nomorSetor: "3/B/NDL/BJM/01/07/2026",
-    beratKg: 4,
-    totalPoin: 80,
-    status: "diterima",
-    jenisSampah: "Paper Cup",
-    tanggalSetor: "2026-07-01",
-    fotoTimbangan: "",
-    fotoBuktiTambahan: [],
-    catatan: "Setoran paper cup",
-    createdAt: new Date("2026-07-01"),
-    totalKredit: 0,
-  },
-];
-
 const laporanSteps = [
   {
     element: "#tour-laporan-summary",
     popover: {
-      title: "Rangkuman Aktivitas",
+      title: "Rangkuman Statistik Setoran",
       description:
-        "Melihat total transaksi penyetoran, total berat bersih sampah yang berhasil dikumpulkan, serta total perolehan poin Anda.",
+        "Tiga kartu ini merangkum seluruh rekam jejak penyetoran sampah Anda: Berapa kali Anda telah menyetor, total akumulasi berat sampah (dalam kg) yang sudah disetor, serta total perolehan poin sirkular yang Anda kumpulkan.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-laporan-table",
     popover: {
-      title: "Riwayat & Filter Laporan",
+      title: "Tabel Riwayat & Filter Setoran",
       description:
-        "Cari data setoran tertentu atau gunakan filter untuk memilah berdasarkan jenis sampah dan status verifikasi. Semua data setoran tersimpan rapi di sini.",
+        "Tabel ini memuat seluruh transaksi setoran sampah Anda. Anda dapat menyaring data berdasarkan jenis sampah atau status verifikasi. Klik tombol 'Detail' pada setiap baris untuk melihat foto timbangan dan bukti tambahan yang diunggah.",
       side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-laporan-print",
+    popover: {
+      title: "Cetak Dokumen Laporan",
+      description:
+        "Klik tombol 'Cetak Laporan' ini kapan saja Anda memerlukan bukti fisik atau ingin mengunduh laporan rekapitulasi setoran sampah Anda dalam format cetak/PDF.",
+      side: "left" as const,
     },
   },
 ];
@@ -94,7 +58,7 @@ export default function LaporanKonsumenPage() {
   const [realTotalPoin, setRealTotalPoin] = useState(0);
   const [_realTotalKredit, setRealTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isTourActive, setIsTourActive] = useState(false);
+  const [_isTourActive, _setIsTourActive] = useState(false);
 
   // Table pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -144,10 +108,10 @@ export default function LaporanKonsumenPage() {
     }
   }, [currentPage, pageSize, searchQuery, filterValues, sortBy, sortOrder]);
 
-  const data = isTourActive ? demoLaporanData : realData;
-  const totalItems = isTourActive ? 3 : realTotalItems;
-  const totalBerat = isTourActive ? 15.5 : realTotalBerat;
-  const totalPoin = isTourActive ? 310 : realTotalPoin;
+  const data = realData;
+  const totalItems = realTotalItems;
+  const totalBerat = realTotalBerat;
+  const totalPoin = realTotalPoin;
 
   const loadUserRole = useCallback(async () => {
     try {
@@ -404,11 +368,7 @@ export default function LaporanKonsumenPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
-      <TourGuide
-        steps={laporanSteps}
-        onStart={() => setIsTourActive(true)}
-        onEnd={() => setIsTourActive(false)}
-      />
+      <TourGuide steps={laporanSteps} />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 print:hidden">
         <div className="flex items-center gap-3">
@@ -427,6 +387,7 @@ export default function LaporanKonsumenPage() {
 
         <div className="flex items-center gap-3">
           <button
+            id="tour-laporan-print"
             type="button"
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-sm transition-colors cursor-pointer"

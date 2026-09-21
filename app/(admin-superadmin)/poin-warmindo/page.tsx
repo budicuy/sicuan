@@ -9,7 +9,38 @@ import {
 import { type Column, DataTable } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { PoinSampahWarmindo } from "@/app/types";
+
+const poinWarmindoTourSteps = [
+  {
+    element: "#tour-admin-poin-warmindo-header",
+    popover: {
+      title: "Master Tarif Poin Warmindo",
+      description:
+        "Halaman untuk mengatur nilai konversi poin reward yang berhak didapatkan mitra Warmindo dari setiap gram kemasan sampah Indofood yang mereka kumpulkan dan setorkan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-poin-warmindo-info",
+    popover: {
+      title: "Pedoman Standar Konversi Poin",
+      description:
+        "Panduan skema dasar: Standar konversi acuan sistem adalah 10 poin per 100 gram (ekuivalen 100 poin per 1 Kg sampah). Anda dapat menyesuaikan tarif tiap jenis material di tabel.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-poin-warmindo-table",
+    popover: {
+      title: "Tabel Konfigurasi Tarif Poin",
+      description:
+        "Tabel yang memuat jenis sampah (Karton, Etiket, Paper Cup) beserta tarif poin aktif per 100 gram dan per kilogram. Gunakan tombol 'Edit' di baris tabel untuk mengubah tarif poin sesuai kebijakan reward terbaru.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function PoinWarmindoPage() {
   // Poin states
@@ -131,8 +162,13 @@ export default function PoinWarmindoPage() {
 
   return (
     <div className="space-y-6">
+      <TourGuide steps={poinWarmindoTourSteps} />
+
       {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden print:hidden">
+      <div
+        id="tour-admin-poin-warmindo-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden print:hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-amber-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
@@ -151,7 +187,10 @@ export default function PoinWarmindoPage() {
 
       {/* Content: Atur Poin */}
       <div className="space-y-4">
-        <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-4 text-xs text-amber-900 flex items-start gap-2.5">
+        <div
+          id="tour-admin-poin-warmindo-info"
+          className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-4 text-xs text-amber-900 flex items-start gap-2.5"
+        >
           <Coins className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <div>
             <span className="font-bold">Informasi Skema Poin Warmindo:</span>
@@ -164,25 +203,27 @@ export default function PoinWarmindoPage() {
           </div>
         </div>
 
-        <DataTable
-          data={poinData}
-          columns={poinColumns}
-          totalItems={poinTotal}
-          currentPage={poinPage}
-          pageSize={poinLimit}
-          onPageChange={setPoinPage}
-          onPageSizeChange={(e) => {
-            setPoinLimit(Number(e.target.value));
-            setPoinPage(1);
-          }}
-          search={poinSearch}
-          onSearchChange={(val) => {
-            setPoinSearch(val);
-            setPoinPage(1);
-          }}
-          searchPlaceholder="Cari jenis sampah..."
-          onEdit={handleOpenEditPoin}
-        />
+        <div id="tour-admin-poin-warmindo-table">
+          <DataTable
+            data={poinData}
+            columns={poinColumns}
+            totalItems={poinTotal}
+            currentPage={poinPage}
+            pageSize={poinLimit}
+            onPageChange={setPoinPage}
+            onPageSizeChange={(e) => {
+              setPoinLimit(Number(e.target.value));
+              setPoinPage(1);
+            }}
+            search={poinSearch}
+            onSearchChange={(val) => {
+              setPoinSearch(val);
+              setPoinPage(1);
+            }}
+            searchPlaceholder="Cari jenis sampah..."
+            onEdit={handleOpenEditPoin}
+          />
+        </div>
       </div>
 
       {/* Form Modal: Edit Poin */}

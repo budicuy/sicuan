@@ -68,12 +68,12 @@ export async function getKonsumenRewardData() {
       userPoin: profile?.poin ?? 0,
       userProfile: profile
         ? {
-          id: profile.id,
-          name: profile.name,
-          jenisBank: profile.jenisBank,
-          noRekening: profile.noRekening,
-          alamat: profile.alamat,
-        }
+            id: profile.id,
+            name: profile.name,
+            jenisBank: profile.jenisBank,
+            noRekening: profile.noRekening,
+            alamat: profile.alamat,
+          }
         : null,
       rewards,
       history,

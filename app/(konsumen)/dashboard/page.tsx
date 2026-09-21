@@ -69,111 +69,58 @@ interface DashboardData {
   }[];
 }
 
-const demoDashboardData: DashboardData = {
-  success: true,
-  role: "konsumen",
-  name: "Budi Santoso (Demo)",
-  metrics: {
-    totalSetoranKg: 45.5,
-    totalSetoranPending: 10,
-    totalSetoranDiterima: 8,
-    totalPencairanBerhasil: 0,
-    totalPencairanPending: 0,
-    totalKuponDitukar: 3,
-  },
-  profile: {
-    poin: 250,
-  },
-  composition: [
-    { name: "Karton", value: 20, color: "#10b981" },
-    { name: "Etiket", value: 15, color: "#3b82f6" },
-    { name: "Paper Cup", value: 10.5, color: "#f59e0b" },
-  ],
-  setoranHistory: [
-    { date: "Mei", Volume: 15, Poin: 75 },
-    { date: "Jun", Volume: 30, Poin: 150 },
-    { date: "Jul", Volume: 45.5, Poin: 225 },
-  ],
-  recentSetoran: [
-    {
-      id: 999,
-      nomorSetor: "1/B/NDL/BJM/10/07/2026",
-      jenisSampah: "Karton",
-      beratKg: 10.5,
-      status: "pending",
-      tanggalSetor: "2026-07-10",
-    },
-    {
-      id: 998,
-      nomorSetor: "2/B/NDL/BJM/05/07/2026",
-      jenisSampah: "Etiket",
-      beratKg: 15,
-      status: "diterima",
-      tanggalSetor: "2026-07-05",
-    },
-    {
-      id: 997,
-      nomorSetor: "3/B/NDL/BJM/01/07/2026",
-      jenisSampah: "Paper Cup",
-      beratKg: 20,
-      status: "diterima",
-      tanggalSetor: "2026-07-01",
-    },
-  ],
-};
-
 const ringkasanSteps = [
   {
     element: "#tour-welcome-board",
     popover: {
-      title: "Selamat Datang!",
+      title: "Selamat Datang di Dashboard Sicuan!",
       description:
-        "Ini adalah Dashboard Sicuan Konsumen. Di sini Anda dapat melihat rangkuman kontribusi pengelolaan sampah Anda.",
+        "Area ini menyapa Anda dengan nama akun Anda sendiri. Di sini Anda dapat melihat status keterlibatan Anda dalam program daur ulang kemasan mie instan dan sampah anorganik.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-points-card",
     popover: {
-      title: "Saldo Poin Utama",
+      title: "Saldo Poin Sirkular Anda",
       description:
-        "Jumlah poin sirkular yang Anda peroleh. Poin ini dapat ditukarkan dengan berbagai kupon reward menarik di menu Tukar Kupon.",
+        "Kotak hijau ini menampilkan akumulasi poin yang telah Anda peroleh dari setiap kilogram sampah yang berhasil disetor dan diverifikasi. Poin ini dapat Anda tukarkan menjadi barang fisik, voucher diskon, atau uang tunai melalui menu 'Tukar Reward'.",
       side: "right" as const,
     },
   },
   {
     element: "#tour-metrics-grid",
     popover: {
-      title: "Rangkuman Metrik",
+      title: "Statistik Kontribusi Anda",
       description:
-        "Statistik total berat sampah yang disetor, jumlah transaksi yang telah diterima, serta kupon yang sudah Anda tukarkan.",
+        "Tiga kartu ini merangkum pencapaian Anda: (1) Total berat sampah yang telah Anda kumpulkan (kg), (2) Berapa kali setoran Anda telah disetujui, dan (3) Total reward/kupon yang telah Anda tukarkan sejauh ini.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-performance-chart",
+    popover: {
+      title: "Grafik Perkembangan Setoran Bulanan",
+      description:
+        "Grafik ini menampilkan tren kenaikan volume sampah (kg) dan perolehan poin Anda dari bulan ke bulan. Semakin rajin Anda menyetor, semakin tinggi grafik kontribusi lingkungan Anda.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-composition-chart",
     popover: {
-      title: "Komposisi Sampah",
+      title: "Komposisi Jenis Sampah",
       description:
-        "Diagram lingkaran ini memperlihatkan proporsi sampah (Karton, Etiket, Paper Cup) yang Anda kontribusikan.",
+        "Diagram lingkaran ini memperlihatkan pembagian jenis sampah yang paling sering Anda setor, terbagi atas 3 kategori: Karton/Kardus (hijau), Etiket/Plastik Kemasan (biru), dan Paper Cup/Gelas Kertas (oranye).",
       side: "left" as const,
-    },
-  },
-  {
-    element: "#tour-performance-chart",
-    popover: {
-      title: "Grafik Tren Setoran",
-      description:
-        "Grafik area yang memantau perkembangan volume setoran sampah Anda dari waktu ke waktu dalam satuan kilogram.",
-      side: "top" as const,
     },
   },
   {
     element: "#tour-recent-setoran",
     popover: {
-      title: "Setoran Sampah Terakhir",
+      title: "Tabel Aktivitas Setoran Terakhir",
       description:
-        "Tabel ini menunjukkan aktivitas penyetoran terbaru beserta status verifikasi dari pihak admin.",
+        "Bagian ini menampilkan daftar setoran terbaru Anda beserta nomor resi setor, tanggal, jenis sampah, berat timbangan, dan status verifikasi (Pending, Diserahkan, Diterima, atau Ditolak). Untuk melihat seluruh riwayat lengkap, Anda dapat membuka menu 'Laporan'.",
       side: "top" as const,
     },
   },
@@ -183,7 +130,6 @@ export default function DashboardPage() {
   const [_mounted, setMounted] = useState(false);
   const [realData, setRealData] = useState<DashboardData | null>(null);
   const [_loading, setLoading] = useState(true);
-  const [isTourActive, setIsTourActive] = useState(false);
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -200,7 +146,7 @@ export default function DashboardPage() {
     loadData();
   }, [loadData]);
 
-  const data = isTourActive ? demoDashboardData : realData;
+  const data = realData;
 
   const name = data?.name ?? "-";
   const hasCompositionData =
@@ -210,11 +156,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
-      <TourGuide
-        steps={ringkasanSteps}
-        onStart={() => setIsTourActive(true)}
-        onEnd={() => setIsTourActive(false)}
-      />
+      <TourGuide steps={ringkasanSteps} />
       {/* Welcome Board */}
       <div
         id="tour-welcome-board"

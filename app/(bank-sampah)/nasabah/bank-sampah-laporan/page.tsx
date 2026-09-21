@@ -11,6 +11,37 @@ import {
   DataTable,
   type TableFilter,
 } from "@/app/components/shared/DataTable";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+
+const laporanNasabahTourSteps = [
+  {
+    element: "#tour-bank-sampah-laporan-nasabah-header",
+    popover: {
+      title: "Laporan Setoran Nasabah",
+      description:
+        "Halaman rekapitulasi data setoran yang disetorkan oleh nasabah (baik Konsumen perorangan maupun mitra Warmindo) ke Bank Sampah Anda.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-laporan-nasabah-summary",
+    popover: {
+      title: "Kartu Statistik Akumulasi",
+      description:
+        "Tiga indikator utama: Total berat sampah yang terkumpul (Kg), Total nilai kredit yang telah disalurkan kepada nasabah (Rp), dan Total frekuensi transaksi yang berhasil tercatat.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-laporan-nasabah-table",
+    popover: {
+      title: "Tabel Laporan & Pencarian",
+      description:
+        "Daftar lengkap transaksi setoran nasabah. Anda dapat menyortir berdasarkan kolom, memfilter kategori nasabah atau jenis sampah, serta mencari nama atau nomor setor secara cepat.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function LaporanSetoranNasabahPage() {
   const [data, setData] = useState<SetoranReportItem[]>([]);
@@ -159,7 +190,11 @@ export default function LaporanSetoranNasabahPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
+      <TourGuide steps={laporanNasabahTourSteps} />
+      <div
+        id="tour-bank-sampah-laporan-nasabah-header"
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5"
+      >
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 flex items-center gap-2">
             <FileText className="w-7 h-7 text-primary-600" />
@@ -173,7 +208,10 @@ export default function LaporanSetoranNasabahPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div
+        id="tour-bank-sampah-laporan-nasabah-summary"
+        className="grid grid-cols-1 md:grid-cols-3 gap-5"
+      >
         {/* Card 1: Total Berat */}
         <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-xs flex items-center gap-4">
           <div className="p-3 bg-primary-50 rounded-xl">
@@ -225,33 +263,35 @@ export default function LaporanSetoranNasabahPage() {
       </div>
 
       {/* Data Table */}
-      <DataTable
-        data={data}
-        columns={columns}
-        totalItems={totalItems}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(e) => {
-          setPageSize(Number(e.target.value));
-          setCurrentPage(1);
-        }}
-        search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setCurrentPage(1);
-        }}
-        filters={filters}
-        filterValues={filterValues}
-        onFilterChange={(id, val) => {
-          setFilterValues((prev) => ({ ...prev, [id]: val }));
-          setCurrentPage(1);
-        }}
-        searchPlaceholder="Cari berdasarkan nomor setor atau nama nasabah..."
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSort={handleSort}
-      />
+      <div id="tour-bank-sampah-laporan-nasabah-table">
+        <DataTable
+          data={data}
+          columns={columns}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+          search={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setCurrentPage(1);
+          }}
+          filters={filters}
+          filterValues={filterValues}
+          onFilterChange={(id, val) => {
+            setFilterValues((prev) => ({ ...prev, [id]: val }));
+            setCurrentPage(1);
+          }}
+          searchPlaceholder="Cari berdasarkan nomor setor atau nama nasabah..."
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        />
+      </div>
     </div>
   );
 }

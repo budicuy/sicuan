@@ -17,7 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getCurrentUserRole,
   getMySetoran,
@@ -31,18 +31,27 @@ const laporanSteps = [
   {
     element: "#tour-bank-sampah-laporan-summary",
     popover: {
-      title: "Rangkuman Kartu",
+      title: "Rangkuman Akumulasi Setoran",
       description:
-        "Menampilkan total kali setoran yang dilakukan beserta total akumulasi berat sampah (Kg) yang Anda kontribusikan.",
+        "Kartu statistik ringkas yang menampilkan total frekuensi penyetoran sampah (berapa kali) dan total akumulasi berat bersih sampah (dalam satuan Kg) yang telah Anda setorkan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-laporan-print",
+    popover: {
+      title: "Cetak & Ekspor Laporan",
+      description:
+        "Gunakan tombol ini untuk mencetak dokumen fisik laporan atau menyimpannya sebagai file PDF siap pakai untuk keperluan rekap dan arsip pembukuan bank sampah.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-laporan-table",
     popover: {
-      title: "Tabel Data Laporan Setoran",
+      title: "Tabel Riwayat & Status Setoran",
       description:
-        "Di sini Anda dapat melihat rincian detail seluruh riwayat setoran, memfilter berdasarkan jenis/status, serta memantau status pengiriman kurir ekspedisi.",
+        "Daftar lengkap seluruh transaksi setoran sampah kemasan Indofood Anda. Anda dapat mencari berdasarkan nomor setor, memfilter jenis sampah (Karton, Etiket, Paper Cup) atau status (Pending, Diterima, Ditolak), serta menekan tombol 'Detail' untuk melihat foto bukti timbangan dan catatan verifikasi.",
       side: "top" as const,
     },
   },
@@ -55,63 +64,6 @@ export default function LaporanBankSampahPage() {
   const [_totalPoin, setTotalPoin] = useState(0);
   const [_totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: SetorSampahItem[];
-    totalItems: number;
-    totalBerat: number;
-  } | null>(null);
-
-  const handleTourStart = () => {
-    savedStateRef.current = {
-      data,
-      totalItems,
-      totalBerat,
-    };
-    setIsTourActive(true);
-    setData([
-      {
-        id: 1,
-        nomorSetor: "SIMULASI-B01",
-        jenisSampah: "Karton",
-        beratKg: 15.0,
-        totalPoin: 300,
-        tanggalSetor: new Date().toISOString().split("T")[0],
-        status: "pending",
-        createdAt: new Date(),
-        fotoTimbangan: "/sampel_1.png",
-        metodeSetor: "ekspedisi",
-        catatan: "Setoran Karton Demo",
-        totalKredit: 0,
-      },
-      {
-        id: 2,
-        nomorSetor: "SIMULASI-B02",
-        jenisSampah: "Etiket",
-        beratKg: 10.0,
-        totalPoin: 200,
-        tanggalSetor: new Date().toISOString().split("T")[0],
-        status: "diterima",
-        createdAt: new Date(),
-        fotoTimbangan: "/sampel_1.png",
-        metodeSetor: "ekspedisi",
-        catatan: "Setoran Etiket Demo",
-        totalKredit: 0,
-      },
-    ]);
-    setTotalItems(2);
-    setTotalBerat(25.0);
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-      setTotalBerat(savedStateRef.current.totalBerat);
-    }
-  };
 
   // Table pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -429,6 +381,7 @@ export default function LaporanBankSampahPage() {
 
         <div className="flex items-center gap-3">
           <button
+            id="tour-bank-sampah-laporan-print"
             type="button"
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-sm transition-colors cursor-pointer"
@@ -439,11 +392,7 @@ export default function LaporanBankSampahPage() {
         </div>
       </div>
 
-      <TourGuide
-        steps={laporanSteps}
-        onStart={handleTourStart}
-        onEnd={handleTourEnd}
-      />
+      <TourGuide steps={laporanSteps} />
 
       {/* Rangkuman Kartu */}
       <div

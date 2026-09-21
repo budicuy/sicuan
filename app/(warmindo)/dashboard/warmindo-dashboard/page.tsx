@@ -11,7 +11,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -33,54 +33,54 @@ const dashboardSteps = [
   {
     element: "#tour-warmindo-dashboard-welcome",
     popover: {
-      title: "Selamat Datang Mitra!",
+      title: "Selamat Datang di Portal Mitra Warmindo!",
       description:
-        "Ini adalah Dashboard Kemitraan Warmindo Anda. Pantau status setoran dan saldo poin hasil daur ulang sampah kemasan PT. Indofood.",
+        "Area ini menampilkan nama resmi gerai Warmindo Anda. Dari sini Anda dapat memantau kontribusi daur ulang kemasan Indomie, Sarimi, dan kemasan mie lainnya dari usaha warung makan Anda.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-warmindo-dashboard-points",
     popover: {
-      title: "Saldo Poin Reward",
+      title: "Saldo Poin Kemitraan Anda",
       description:
-        "Menampilkan akumulasi poin reward Anda (10 poin / 100 gram). Poin ini dapat Anda tukarkan menjadi Uang Tunai atau Hadiah Barang kapan saja.",
+        "Menampilkan total poin aktif yang Anda kumpulkan dari penyetoran sampah kemasan. Poin ini memiliki nilai rupiah yang tinggi dan dapat dicairkan langsung menjadi Uang Tunai ke rekening/e-wallet Anda atau ditukar hadiah di menu 'Tukar Reward'.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-warmindo-dashboard-metrics",
     popover: {
-      title: "Metrik Kemitraan",
+      title: "Ringkasan Metrik Setoran & Reward",
       description:
-        "Menampilkan total volume sampah yang disetor serta status klaim reward Anda secara ringkas.",
+        "Tiga kotak indikator ini merangkum: (1) Total tonase/berat sampah yang telah disetor, (2) Jumlah transaksi setoran yang sudah disetujui, dan (3) Total pencairan reward yang telah berhasil diterima warung Anda.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-warmindo-dashboard-performance",
     popover: {
-      title: "Grafik Riwayat Setoran",
+      title: "Grafik Perkembangan Daur Ulang",
       description:
-        "Grafik ini memvisualisasikan tren volume setoran sampah (dalam kilogram) yang Anda lakukan setiap bulannya.",
+        "Grafik ini memvisualisasikan kenaikan volume sampah kemasan yang Anda setorkan setiap bulannya (dalam kilogram) serta akumulasi poin yang Anda dapatkan.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-warmindo-dashboard-composition",
     popover: {
-      title: "Komposisi Bahan Sampah",
+      title: "Komposisi Jenis Sampah Warung",
       description:
-        "Grafik lingkaran ini mengelompokkan sampah yang Anda kirimkan berdasarkan jenisnya (Karton, Etiket, Paper Cup).",
+        "Diagram lingkaran ini mengelompokkan sampah dari warung Anda berdasarkan 3 jenis: Karton/Kardus Mie, Etiket/Plastik Bungkus Bumbu & Kemasan, dan Paper Cup/Gelas Kertas Pop Mie.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-warmindo-dashboard-history",
     popover: {
-      title: "Riwayat Transaksi Terbaru",
+      title: "Riwayat Aktivitas & Klaim Reward Terbaru",
       description:
-        "Tabel ini menunjukkan aktivitas setoran sampah dan penukaran reward terbaru Anda beserta statusnya.",
+        "Tabel ini memuat transaksi penyetoran sampah dan pengajuan pencairan reward terbaru milik Warmindo Anda, lengkap dengan status terkini (Pending, Diserahkan, Diterima, atau Berhasil).",
       side: "top" as const,
     },
   },
@@ -141,72 +141,8 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [_loading, setLoading] = useState(true);
 
-  const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<typeof data | null>(null);
-
-  const handleTourStart = () => {
-    savedStateRef.current = data;
-    setIsTourActive(true);
-    setData({
-      success: true,
-      role: "warmindo",
-      name: "Warmindo Bakti Jaya (Demo)",
-      metrics: {
-        totalSetoranKg: 85,
-        totalSetoranPending: 15,
-        totalSetoranDiterima: 70,
-        totalRewardBerhasil: 3,
-        totalRewardPending: 1,
-      },
-      profile: {
-        poin: 3500,
-      },
-      composition: [
-        { name: "Karton", value: 45, color: "#f59e0b" },
-        { name: "Etiket", value: 25, color: "#10b981" },
-        { name: "Paper Cup", value: 15, color: "#3b82f6" },
-      ],
-      setoranHistory: [
-        { date: "Mei", Volume: 15, Poin: 1500 },
-        { date: "Juni", Volume: 35, Poin: 3500 },
-        { date: "Juli", Volume: 85, Poin: 8500 },
-      ],
-      recentSetoran: [
-        {
-          id: 1,
-          nomorSetor: "SIMULASI-W01",
-          jenisSampah: "Karton",
-          beratKg: 10.0,
-          status: "pending",
-          tanggalSetor: new Date().toISOString().split("T")[0],
-        },
-        {
-          id: 2,
-          nomorSetor: "SIMULASI-W02",
-          jenisSampah: "Etiket",
-          beratKg: 5.0,
-          status: "diterima",
-          tanggalSetor: new Date().toISOString().split("T")[0],
-        },
-      ],
-      recentReward: [
-        {
-          id: 1,
-          namaReward: "Uang Tunai Rp 50.000",
-          kategori: "uang",
-          poinDipotong: 500,
-          nominalUang: 50000,
-          status: "pending",
-          createdAt: new Date(),
-        },
-      ],
-    });
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    setData(savedStateRef.current as typeof data);
-  };
+  const handleTourStart = () => {};
+  const handleTourEnd = () => {};
 
   const loadData = useCallback(() => {
     setLoading(true);

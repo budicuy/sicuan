@@ -1,7 +1,7 @@
 "use client";
 
 import { Info, Key, Loader2, Lock, Save, User } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   getProfileData,
   updatePassword,
@@ -15,27 +15,27 @@ const profilSteps = [
   {
     element: "#tour-admin-profil-tabs",
     popover: {
-      title: "Menu Tab Profil",
+      title: "Tab Pengaturan Akun",
       description:
-        "Pilih tab 'Informasi Profil' untuk melengkapi data diri, atau beralih ke 'Ubah Password' untuk menjaga keamanan akun Anda.",
+        "Beralih antara tab 'Informasi Profil' untuk melengkapi data administratif dan tab 'Ubah Password' untuk memperbarui kata sandi akun administrator Anda.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-admin-profil-form",
     popover: {
-      title: "Data Profil Saya",
+      title: "Formulir Profil Akun",
       description:
-        "Isi NIK, No Telepon, Alamat, Jenis Bank, dan No Rekening Anda secara lengkap agar pencairan dana transfer berjalan lancar.",
+        "Menampilkan data diri resmi akun Anda: Nama Lengkap, Username sistem, NIK, Nomor Kontak WhatsApp/Telepon, Alamat, serta Rekening Bank.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-admin-profil-save",
     popover: {
-      title: "Simpan Pembaruan",
+      title: "Simpan Pembaruan Profil",
       description:
-        "Klik tombol ini untuk menyimpan pembaruan informasi profil Anda.",
+        "Klik tombol 'Simpan Profil' setelah melakukan perubahan untuk memperbarui data Anda langsung ke database utama.",
       side: "top" as const,
     },
   },
@@ -45,33 +45,6 @@ export default function ProfilPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [_loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
-
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<typeof profile | null>(null);
-
-  const handleTourStart = () => {
-    savedStateRef.current = profile;
-    setIsTourActive(true);
-    setProfile({
-      id: 999,
-      name: "nama lengkap demo",
-      username: "username demo",
-      nik: "637101xxxxxxx",
-      noTelepon: "0882022xxxxx",
-      email: "demo@gmail.com",
-      noRekening: "123456xxx",
-      jenisBank: "BNI",
-      status: "aktif",
-      alamat: "Jl. A. Yani No. 99 (Demo)",
-      role: "admin",
-      tanggalLahir: "1990-01-01",
-    });
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    setProfile(savedStateRef.current as typeof profile);
-  };
 
   // Transition hooks for server actions
   const [isProfilePending, startProfileTransition] = useTransition();
@@ -134,16 +107,6 @@ export default function ProfilPage() {
   const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setProfileErrors({});
-
-    if (isTourActive) {
-      document.dispatchEvent(new CustomEvent("close-tour-guide"));
-      showFeedback(
-        "success",
-        "Profil Diperbarui! (Simulasi)",
-        "Detail profil demo Anda berhasil diperbarui di memori lokal.",
-      );
-      return;
-    }
 
     const formData = new FormData(e.currentTarget);
     startProfileTransition(async () => {
@@ -226,11 +189,7 @@ export default function ProfilPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
-      <TourGuide
-        steps={profilSteps}
-        onStart={handleTourStart}
-        onEnd={handleTourEnd}
-      />
+      <TourGuide steps={profilSteps} />
 
       {/* Profil Header Card */}
       <div className="relative overflow-hidden bg-linear-to-r from-primary-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 shadow-xl">

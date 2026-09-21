@@ -18,7 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getAllActiveEkspedisi,
   getCurrentUserRole,
@@ -34,18 +34,18 @@ const laporanSteps = [
   {
     element: "#tour-warmindo-laporan-summary",
     popover: {
-      title: "Rangkuman Kartu",
+      title: "Rangkuman Aktivitas Setoran Warmindo",
       description:
-        "Menampilkan total kali setoran yang dilakukan beserta total akumulasi berat sampah (Kg) yang Anda kontribusikan.",
+        "Dua kartu ini merangkum seluruh rekam jejak kontribusi warung Anda: Berapa kali penyetoran telah diajukan, serta total berat bersih sampah kemasan (dalam kilogram) yang berhasil dikumpulkan.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-warmindo-laporan-table",
     popover: {
-      title: "Tabel Data Laporan Setoran",
+      title: "Tabel Laporan & Pemantauan Pengiriman",
       description:
-        "Di sini Anda dapat melihat rincian detail seluruh riwayat setoran, memfilter berdasarkan jenis/status, serta memantau status pengiriman kurir ekspedisi.",
+        "Tabel ini memuat rincian setiap transaksi setoran sampah: nomor resi, tanggal, jenis sampah, berat riil, dan status verifikasi. Jika Anda menggunakan kurir ekspedisi, Anda juga dapat memantau status penjemputan paket di sini.",
       side: "top" as const,
     },
   },
@@ -59,62 +59,8 @@ export default function LaporanWarmindoPage() {
   const [_totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    data: SetorSampahItem[];
-    totalItems: number;
-    totalBerat: number;
-  } | null>(null);
-
-  const handleTourStart = () => {
-    savedStateRef.current = {
-      data,
-      totalItems,
-      totalBerat,
-    };
-    setIsTourActive(true);
-    setData([
-      {
-        id: 1,
-        nomorSetor: "SIMULASI-W01",
-        jenisSampah: "Karton",
-        beratKg: 10.0,
-        totalPoin: 200,
-        tanggalSetor: new Date().toISOString().split("T")[0],
-        status: "pending",
-        createdAt: new Date(),
-        fotoTimbangan: "/sampel_1.png",
-        metodeSetor: "ekspedisi",
-        catatan: "Setoran Karton Demo",
-        totalKredit: 0,
-      },
-      {
-        id: 2,
-        nomorSetor: "SIMULASI-W02",
-        jenisSampah: "Etiket",
-        beratKg: 5.0,
-        totalPoin: 100,
-        tanggalSetor: new Date().toISOString().split("T")[0],
-        status: "diterima",
-        createdAt: new Date(),
-        fotoTimbangan: "/sampel_1.png",
-        metodeSetor: "ekspedisi",
-        catatan: "Setoran Etiket Demo",
-        totalKredit: 0,
-      },
-    ]);
-    setTotalItems(2);
-    setTotalBerat(15.0);
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    if (savedStateRef.current) {
-      setData(savedStateRef.current.data);
-      setTotalItems(savedStateRef.current.totalItems);
-      setTotalBerat(savedStateRef.current.totalBerat);
-    }
-  };
+  const handleTourStart = () => {};
+  const handleTourEnd = () => {};
 
   // Table pagination state
   const [currentPage, setCurrentPage] = useState(1);

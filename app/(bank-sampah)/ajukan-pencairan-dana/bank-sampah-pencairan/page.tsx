@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { getBuktiPembayaranPdfBase64 } from "@/app/(admin-superadmin)/pencairan-dana/action";
 import {
   getBankSampahPeriodsWithSetoran,
@@ -45,36 +45,36 @@ const pencairanSteps = [
   {
     element: "#tour-bank-sampah-pencairan-saldo",
     popover: {
-      title: "Ringkasan Saldo & Kredit",
+      title: "Ringkasan Saldo Kredit Tunai",
       description:
-        "Pantau total kredit yang siap dicairkan, dana yang telah berhasil dicairkan, dan akumulasi berat sampah yang telah diverifikasi oleh petugas.",
+        "Bagian ini menunjukkan rekapitulasi finansial Anda: Saldo kredit yang siap dicairkan (Rp), total dana yang telah berhasil dicairkan ke rekening Anda, total berat akumulasi sampah (Kg), serta jumlah periode setoran aktif.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-periods",
     popover: {
-      title: "Daftar Periode Setoran Sampah",
+      title: "Daftar Periode Bulanan Setoran",
       description:
-        "Hanya periode bulan yang memiliki setoran sampah riil yang akan muncul di sini. Setiap kartu menampilkan total berat, estimasi kredit, dan status pencairannya.",
+        "Hanya periode bulan yang memiliki riwayat setoran nyata yang akan muncul di sini. Anda dapat memeriksa rincian jenis sampah dan berat masing-masing periode.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-action",
     popover: {
-      title: "Pencairan & Detail Setoran",
+      title: "Pengajuan Pencairan & Berkas Bukti",
       description:
-        "Klik 'Cairkan Dana' untuk mengajukan pencairan pada bulan yang sudah selesai. Jika dana sudah dicairkan, tombol akan terkunci dan Anda dapat melihat detail atau mengunduh surat bukti pembayaran.",
+        "Pada periode bulan yang telah ditutup dan belum dicairkan, Anda dapat menekan tombol 'Cairkan Dana' untuk mengajukan transfer bank dengan menyertakan tanda tangan digital. Jika telah dicairkan, tombol akan menampilkan status 'Sudah Dicairkan' beserta opsi unduh PDF Bukti Pembayaran.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-pencairan-history",
     popover: {
-      title: "Riwayat Pencairan Dana",
+      title: "Tabel Riwayat Pencairan Dana",
       description:
-        "Daftar seluruh transaksi pencairan dana yang pernah Anda ajukan beserta bukti transfer dari admin dan unduhan PDF resmi.",
+        "Tabel lengkap riwayat seluruh pengajuan pencairan dana Anda, dilengkapi status persetujuan admin, rincian rekening tujuan, bukti transfer, dan surat kuitansi PDF resmi.",
       side: "top" as const,
     },
   },
@@ -185,14 +185,6 @@ export default function BankSampahPencairanPage() {
   // Proof Image Preview Modal
   const [viewProofUrl, setViewProofUrl] = useState<string | null>(null);
 
-  // Tour Guide State
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedTourState = useRef<{
-    periods: PeriodItem[];
-    summary: typeof summary;
-    history: DisbursementHistoryItem[];
-  } | null>(null);
-
   // Table pagination & filtering
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -252,76 +244,6 @@ export default function BankSampahPencairanPage() {
     loadAllData();
   }, [loadAllData]);
 
-  // Tour Guide Handlers
-  const handleTourStart = () => {
-    savedTourState.current = {
-      periods,
-      summary,
-      history,
-    };
-    setIsTourActive(true);
-
-    // Mock realistic state for demo tour
-    if (periods.length === 0) {
-      setPeriods([
-        {
-          key: "2026-05",
-          year: 2026,
-          month: 5,
-          monthName: "Mei",
-          totalBeratKg: 45.5,
-          kredit: 550000,
-          dataSampah: [
-            { jenis: "Etiket", beratKg: 25.5, kredit: 320000 },
-            { jenis: "Karton", beratKg: 20.0, kredit: 230000 },
-          ],
-          statusPencairan: "belum_dicairkan",
-          isCurrentMonth: false,
-          canWithdraw: true,
-          disbursement: null,
-        },
-        {
-          key: "2026-04",
-          year: 2026,
-          month: 4,
-          monthName: "April",
-          totalBeratKg: 60.0,
-          kredit: 720000,
-          dataSampah: [{ jenis: "Etiket", beratKg: 60.0, kredit: 720000 }],
-          statusPencairan: "berhasil",
-          isCurrentMonth: false,
-          canWithdraw: false,
-          disbursement: {
-            id: 101,
-            jumlah: 720000,
-            status: "berhasil",
-            metodePembayaran: "transfer",
-            createdAt: new Date("2026-05-02"),
-            keterangan: "Pencairan rutin April",
-            buktiTransfer: null,
-            buktiPembayaranId: 1,
-            ttdPenyerahUrl: null,
-          },
-        },
-      ]);
-      setSummary({
-        totalKreditTersedia: 550000,
-        totalKreditDicairkan: 720000,
-        totalBeratKg: 105.5,
-        totalPeriode: 2,
-      });
-    }
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    if (savedTourState.current) {
-      setPeriods(savedTourState.current.periods);
-      setSummary(savedTourState.current.summary);
-      setHistory(savedTourState.current.history);
-    }
-  };
-
   // Upload Signature Handler
   const handleTtdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -362,16 +284,6 @@ export default function BankSampahPencairanPage() {
   const handleSubmitWithdrawal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!withdrawPeriod) return;
-
-    if (isTourActive) {
-      setWithdrawPeriod(null);
-      showFeedback(
-        "success",
-        "Simulasi Berhasil",
-        `Simulasi pengajuan pencairan dana sebesar ${formatRp(withdrawPeriod.kredit)} berhasil dilakukan.`,
-      );
-      return;
-    }
 
     if (!ttdBase64) {
       setTtdError("Tanda tangan penyerah wajib diunggah sebelum mengajukan.");
@@ -598,11 +510,7 @@ export default function BankSampahPencairanPage() {
 
   return (
     <div className="space-y-6 pb-16 max-w-5xl mx-auto animate-in fade-in duration-300">
-      <TourGuide
-        steps={pencairanSteps}
-        onStart={handleTourStart}
-        onEnd={handleTourEnd}
-      />
+      <TourGuide steps={pencairanSteps} />
 
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

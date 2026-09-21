@@ -16,8 +16,66 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getCurrentUser } from "@/app/lib/auth-actions";
 import type { DisplayRow, RawMaterial } from "@/app/types";
+
+const rawMaterialTourSteps = [
+  {
+    element: "#tour-admin-raw-header",
+    popover: {
+      title: "Master Data Raw Material",
+      description:
+        "Selamat datang di menu Master Data Raw Material! Halaman ini digunakan untuk mengelola data acuan standar berat pengeluaran bahan baku kemasan produk PT. Indofood per periode bulan/tahun. Data ini menjadi patokan utama untuk menghitung rasio sirkularitas sampah yang berhasil ditarik kembali dari peredaran.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-raw-search",
+    popover: {
+      title: "Pencarian Cepat Data Material",
+      description:
+        "Ketikkan kata kunci nama kategori (Cup, Etiket, Karton), klasifikasi mi (NN, GN, CN), atau periode tertentu pada kolom ini untuk menemukan data bahan baku dengan cepat.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-raw-filter",
+    popover: {
+      title: "Penyaringan Kategori & Klasifikasi",
+      description:
+        "Gunakan menu dropdown filter ini untuk menyaring tabel berdasarkan Kategori kemasan (Cup, Etiket, Karton) atau Klasifikasi mi (Normal Noodle, Glass Noodle, Cup Noodle) guna menganalisis jenis bahan baku tertentu secara spesifik.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-raw-add",
+    popover: {
+      title: "Pencatatan Bahan Baku Periode Baru",
+      description:
+        "Klik tombol 'Tambah Raw Material' untuk memasukkan data berat bahan baku produksi Indofood untuk periode baru. Anda dapat menginput rincian gramatur lengkap untuk Etiket, Karton, dan Paper Cup dalam sekali simpan.",
+      side: "left" as const,
+    },
+  },
+  {
+    element: "#tour-admin-raw-table",
+    popover: {
+      title: "Tabel Konversi Satuan Gram & Kilogram",
+      description:
+        "Tabel ini mengelompokkan data bahan baku rapi per periode waktu. Setiap baris memuat kategori kemasan, klasifikasi jenis mi, serta perhitungan konversi otomatis dari satuan Gram (gr) ke Kilogram (kg).",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-raw-actions",
+    popover: {
+      title: "Manajemen Koreksi Data",
+      description:
+        "Pada kolom aksi per periode, Administrator dapat mengklik ikon pensil (Edit) untuk menyesuaikan nilai gramatur jika ada revisi data dari pabrik. Khusus akun Superadmin, tersedia juga ikon tempat sampah (Hapus) jika terdapat data periode yang perlu dibatalkan.",
+      side: "left" as const,
+    },
+  },
+];
 
 /** Expand 1 baris DB → 7 baris tampilan */
 function expandToDisplayRows(raw: RawMaterial): DisplayRow[] {
@@ -65,6 +123,15 @@ export default function RawMaterialPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+  const [_isTourActive, setIsTourActive] = useState(false);
+
+  const handleTourStart = () => {
+    setIsTourActive(true);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+  };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     kategori: "",
@@ -345,7 +412,16 @@ export default function RawMaterialPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden">
+      <TourGuide
+        steps={rawMaterialTourSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
+      <div
+        id="tour-admin-raw-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
@@ -365,6 +441,12 @@ export default function RawMaterialPage() {
 
       {/* Tabel dengan grouping per periode — tampilan sama seperti sebelumnya */}
       <DataTable
+        id="tour-admin-raw-table-root"
+        searchId="tour-admin-raw-search"
+        filterId="tour-admin-raw-filter"
+        addButtonId="tour-admin-raw-add"
+        tableContainerId="tour-admin-raw-table"
+        actionsHeaderId="tour-admin-raw-actions"
         data={displayData}
         columns={columns}
         totalItems={totalItems * 7}

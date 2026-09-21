@@ -15,7 +15,29 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { ActionState } from "@/app/types";
+
+const nasabahTourSteps = [
+  {
+    element: "#tour-bank-sampah-nasabah-header",
+    popover: {
+      title: "Master Data Nasabah",
+      description:
+        "Halaman ini digunakan untuk mengelola seluruh data profil nasabah yang terhubung dengan Bank Sampah Anda, baik nasabah individu (Konsumen) maupun warung mitra (Warmindo). Data yang tampil adalah data nasabah riil yang terdaftar di sistem.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-nasabah-table",
+    popover: {
+      title: "Tabel Data Profil Nasabah",
+      description:
+        "Daftar lengkap nasabah beserta NIK, nomor kontak WhatsApp/telepon, alamat operasional/domisili, serta rekening bank untuk pencairan reward. Anda dapat menggunakan kolom pencarian, memfilter berdasarkan tipe konsumen/warmindo, atau mengklik tombol 'Tambah Profil Nasabah' untuk mendaftarkan nasabah baru.",
+      side: "top" as const,
+    },
+  },
+];
 
 interface Nasabah {
   id: number;
@@ -259,7 +281,11 @@ export default function BankSampahNasabahPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
+      <TourGuide steps={nasabahTourSteps} />
+      <div
+        id="tour-bank-sampah-nasabah-header"
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5"
+      >
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
             Master Data Nasabah
@@ -271,37 +297,39 @@ export default function BankSampahNasabahPage() {
         </div>
       </div>
 
-      <DataTable
-        data={data}
-        columns={columns}
-        totalItems={totalItems}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(e) => {
-          setPageSize(Number(e.target.value));
-          setCurrentPage(1);
-        }}
-        search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setCurrentPage(1);
-        }}
-        filters={filters}
-        filterValues={filterValues}
-        onFilterChange={(id, val) => {
-          setFilterValues((prev) => ({ ...prev, [id]: val }));
-          setCurrentPage(1);
-        }}
-        searchPlaceholder="Cari nasabah berdasarkan nama, NIK, atau no telp..."
-        onAdd={handleOpenAddModal}
-        addLabel="Tambah Profil Nasabah"
-        onEdit={handleOpenEditModal}
-        onDelete={handleDelete}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSort={handleSort}
-      />
+      <div id="tour-bank-sampah-nasabah-table">
+        <DataTable
+          data={data}
+          columns={columns}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+          search={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setCurrentPage(1);
+          }}
+          filters={filters}
+          filterValues={filterValues}
+          onFilterChange={(id, val) => {
+            setFilterValues((prev) => ({ ...prev, [id]: val }));
+            setCurrentPage(1);
+          }}
+          searchPlaceholder="Cari nasabah berdasarkan nama, NIK, atau no telp..."
+          onAdd={handleOpenAddModal}
+          addLabel="Tambah Profil Nasabah"
+          onEdit={handleOpenEditModal}
+          onDelete={handleDelete}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        />
+      </div>
 
       <FormModal
         isOpen={modalOpen}

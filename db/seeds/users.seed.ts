@@ -57,7 +57,7 @@ export async function seedUsers() {
   const hashAdmin = await argon2.hash("admin123");
   const hashKonsumen = await argon2.hash("konsumen123");
   const hashWarmindo = await argon2.hash("warmindo123");
-  const hashBankSampah = await argon2.hash("banksampah123");
+  const _hashBankSampah = await argon2.hash("banksampah123");
   const hashDefault = await argon2.hash("Password123");
 
   const csvUsers = parseCsv();
@@ -83,7 +83,7 @@ export async function seedUsers() {
     },
     // 3. Konsumen Demo
     {
-      name: "Konsumen Demo",
+      name: "Konsumen",
       username: "konsumen",
       password: hashKonsumen,
       email: "konsumen@sicuan.com",
@@ -92,52 +92,11 @@ export async function seedUsers() {
     },
     // 4. Mitra Warmindo Demo
     {
-      name: "Mitra Warmindo Demo",
+      name: "Mitra Warmindo",
       username: "warmindo",
       password: hashWarmindo,
       email: "warmindo@sicuan.com",
       role: "warmindo",
-      status: "Aktif",
-    },
-    {
-      name: "Mitra Warmindo Berkah",
-      username: "warmindo.berkah",
-      password: hashDefault,
-      email: "warmindo.berkah@gmail.com",
-      role: "warmindo",
-      status: "Aktif",
-    },
-    {
-      name: "Mitra Warmindo Mandiri",
-      username: "warmindo.mandiri",
-      password: hashDefault,
-      email: "warmindo.mandiri@gmail.com",
-      role: "warmindo",
-      status: "Aktif",
-    },
-    {
-      name: "Mitra Warmindo Jaya",
-      username: "warmindo.jaya",
-      password: hashDefault,
-      email: "warmindo.jaya@gmail.com",
-      role: "warmindo",
-      status: "Aktif",
-    },
-    {
-      name: "Mitra Warmindo Sejahtera",
-      username: "warmindo.sejahtera",
-      password: hashDefault,
-      email: "warmindo.sejahtera@gmail.com",
-      role: "warmindo",
-      status: "Aktif",
-    },
-    // 5. Mitra Bank Sampah Demo
-    {
-      name: "Mitra Bank Sampah Demo",
-      username: "banksampah",
-      password: hashBankSampah,
-      email: "banksampah@sicuan.com",
-      role: "bank-sampah",
       status: "Aktif",
     },
     // Bank Sampah 1

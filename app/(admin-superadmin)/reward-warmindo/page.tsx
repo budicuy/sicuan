@@ -25,8 +25,30 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getCurrentUser } from "@/app/lib/auth-actions";
 import type { ActionState, RewardWarmindo } from "@/app/types";
+
+const rewardWarmindoTourSteps = [
+  {
+    element: "#tour-admin-reward-header",
+    popover: {
+      title: "Master Katalog Reward",
+      description:
+        "Halaman untuk mengelola seluruh katalog hadiah (barang fisik operasional, voucher belanja, dan pencairan uang tunai) yang dapat ditukarkan dengan poin hasil setoran sampah oleh mitra Warmindo maupun Konsumen.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-reward-table",
+    popover: {
+      title: "Daftar & Pengelolaan Hadiah",
+      description:
+        "Tabel ini memuat katalog hadiah aktif: Foto pratinjau, nama reward, kategori hadiah, nilai poin yang dibutuhkan, sisa stok, target penerima (Warmindo/Konsumen), dan status publikasinya. Klik 'Tambah Reward Baru' untuk menambahkan hadiah baru ke katalog.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function RewardWarmindoPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -378,8 +400,13 @@ export default function RewardWarmindoPage() {
 
   return (
     <div className="space-y-6">
+      <TourGuide steps={rewardWarmindoTourSteps} />
+
       {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden print:hidden">
+      <div
+        id="tour-admin-reward-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden print:hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
@@ -398,7 +425,7 @@ export default function RewardWarmindoPage() {
       </div>
 
       {/* Content: DataTable */}
-      <div className="space-y-4">
+      <div id="tour-admin-reward-table" className="space-y-4">
         <DataTable
           data={rewardData}
           columns={rewardColumns}

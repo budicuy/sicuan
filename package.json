@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit && biome check --write --unsafe",
-    "db:seed": "tsx db/seeds/seed.ts",
+    "db:seed": "bun run db/seeds/seed.ts",
     "db:push": "bunx drizzle-kit push --force",
     "db:studio": "drizzle-kit studio"
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import { Info, Key, Loader2, Lock, Save, User } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   getProfileData,
   updatePassword,
@@ -15,57 +15,38 @@ const profilSteps = [
   {
     element: "#tour-profil-tabs",
     popover: {
-      title: "Tab Pengaturan",
+      title: "Pilihan Tab Pengaturan Akun",
       description:
-        "Pilih tab 'Detail Profil' untuk mengelola data diri dan rekening bank, atau 'Ubah Password' untuk mengganti kata sandi akun.",
+        "Gunakan tab ini untuk berpindah antara 'Detail Profil' (untuk memperbarui data identitas pribadi dan nomor rekening bank Anda) dan 'Ubah Password' (untuk memperbarui kata sandi keamanan akun Anda).",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-profil-form",
     popover: {
-      title: "Form Data Diri & Rekening",
+      title: "Formulir Data Diri & Rekening Bank",
       description:
-        "Lengkapi data profil diri Anda. Pastikan informasi NIK, Alamat, serta Rekening Bank terisi secara akurat untuk mempermudah proses pencairan saldo atau reward.",
+        "Di formulir ini, pastikan data diri asli Anda (Nama Lengkap, NIK KTP, Nomor Telepon/WhatsApp, Alamat Domisili, serta Informasi Rekening Bank) terisi dengan benar. Data rekening ini sangat penting untuk pengiriman pencairan reward tunai.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-profil-save",
     popover: {
-      title: "Simpan Perubahan",
+      title: "Tombol Simpan Perubahan",
       description:
-        "Klik tombol 'Simpan Perubahan' setelah Anda memperbarui data profil Anda agar tersimpan secara permanen di server.",
+        "Setelah Anda mengisi atau mengedit informasi data diri Anda, klik tombol 'Simpan Perubahan' ini untuk menyimpan pembaruan profil Anda ke server Sicuan secara aman.",
       side: "top" as const,
     },
   },
 ];
 
 export default function ProfilPage() {
-  const savedProfileRef = useRef<ProfileData | null>(null);
-
   const handleTourStart = () => {
-    savedProfileRef.current = profile;
     setActiveTab("profile");
-    setProfile({
-      id: 999,
-      name: "nama lengkap demo",
-      email: "demo@gmail.com",
-      nik: "637101xxxxxxx",
-      noTelepon: "0882022xxxxx",
-      alamat: "Jl. Sudirman No. 45, Jakarta",
-      jenisBank: "BNI",
-      noRekening: "123456xxx",
-      role: "konsumen",
-      status: "aktif",
-      username: "username demo",
-      tanggalLahir: "1995-01-01",
-    });
   };
 
-  const handleTourEnd = () => {
-    setProfile(savedProfileRef.current);
-  };
+  const handleTourEnd = () => {};
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);

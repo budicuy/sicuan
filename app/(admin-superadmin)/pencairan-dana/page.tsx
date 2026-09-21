@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   approveDisbursement,
   approveDisbursementCash,
@@ -43,27 +43,27 @@ const pencairanSteps = [
   {
     element: "#tour-admin-pencairan-header",
     popover: {
-      title: "Halaman Verifikasi Pencairan Dana",
+      title: "Verifikasi Pencairan Dana Mitra",
       description:
-        "Di sini Admin memproses pengajuan pencairan dana dari mitra Warmindo dan Bank Sampah. Setiap pengajuan harus diverifikasi atau ditolak.",
+        "Halaman kerja bagi administrator untuk memproses, memverifikasi, dan menyetujui permohonan pencairan saldo kredit tunai yang diajukan oleh mitra Warmindo dan Bank Sampah. Seluruh permohonan yang tampil adalah transaksi riil dari mitra.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-admin-pencairan-table",
     popover: {
-      title: "Daftar Pengajuan Pencairan",
+      title: "Tabel Pengajuan Pencairan Dana",
       description:
-        "Tabel ini menampilkan seluruh pengajuan pencairan dana dari mitra beserta metode pembayaran (tunai/transfer), nominal, dan statusnya.",
+        "Tabel ini memuat identitas mitra pemohon, tanggal pengajuan, nominal uang tunai (Rp), metode pembayaran (Transfer Bank / Tunai), nomor rekening tujuan, serta status proses permohonan.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-admin-pencairan-action",
     popover: {
-      title: "Aksi Verifikasi",
+      title: "Aksi Verifikasi & Validasi Transfer",
       description:
-        "Klik tombol 'Proses' untuk menyetujui pengajuan atau 'Tolak' untuk menolak. Pada mode tour ini adalah simulasi dan tidak akan mengubah data nyata.",
+        "Gunakan tombol aksi pada setiap baris pengajuan: Klik 'Proses' untuk mengunggah bukti transfer struk bank atau menyetujui pembayaran tunai, klik 'Tolak' bila data permohonan tidak valid, atau unduh tanda terima resmi PDF setelah transaksi berhasil disetujui.",
       side: "left" as const,
     },
   },
@@ -73,43 +73,6 @@ export default function PencairanAdminPage() {
   const [items, setItems] = useState<DisbursementItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>("");
-
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedItemsRef = useRef<DisbursementItem[]>([]);
-
-  const demoPencairanItem: DisbursementItem = {
-    id: 99901,
-    userId: 9901,
-    jumlah: 200000,
-    metodePembayaran: "transfer",
-    jenisBank: "BNI",
-    noRekening: "123456xxx",
-    keterangan: "Pencairan Demo Tour",
-    status: "pending",
-    buktiTransfer: null,
-    ttdPenyerahUrl: null,
-    periodeBulan: null,
-    periodeTahun: null,
-    createdAt: new Date(),
-    user: {
-      name: "Warmindo Demo",
-      username: "warmindo_demo",
-      role: "warmindo",
-    },
-  };
-
-  const handleTourStart = () => {
-    savedItemsRef.current = items;
-    setIsTourActive(true);
-    if (items.filter((i) => i.status === "pending").length === 0) {
-      setItems([demoPencairanItem, ...items]);
-    }
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    setItems(savedItemsRef.current);
-  };
 
   // Modals / Action states
   const [verifyRequest, setVerifyRequest] = useState<DisbursementItem | null>(
@@ -273,22 +236,6 @@ export default function PencairanAdminPage() {
   const handleApprove = () => {
     if (!verifyRequest) return;
 
-    // Tour mode: simulate success
-    if (isTourActive && verifyRequest.id === 99901) {
-      setItems((prev) =>
-        prev.map((i) => (i.id === 99901 ? { ...i, status: "berhasil" } : i)),
-      );
-      setVerifyRequest(null);
-      setUploadedImage(null);
-      document.dispatchEvent(new CustomEvent("close-tour-guide"));
-      showFeedback(
-        "success",
-        "[SIMULASI] Pencairan Disetujui",
-        "Ini adalah simulasi tour. Data nyata tidak berubah.",
-      );
-      return;
-    }
-
     // Cash: approve without photo
     if (verifyRequest.metodePembayaran === "tunai") {
       startTransition(async () => {
@@ -324,21 +271,6 @@ export default function PencairanAdminPage() {
 
   const handleReject = () => {
     if (!rejectRequest) return;
-
-    // Tour mode: simulate reject
-    if (isTourActive && rejectRequest.id === 99901) {
-      setItems((prev) =>
-        prev.map((i) => (i.id === 99901 ? { ...i, status: "ditolak" } : i)),
-      );
-      setRejectRequest(null);
-      document.dispatchEvent(new CustomEvent("close-tour-guide"));
-      showFeedback(
-        "success",
-        "[SIMULASI] Pencairan Ditolak",
-        "Ini adalah simulasi tour. Data nyata tidak berubah.",
-      );
-      return;
-    }
 
     startTransition(async () => {
       const res = await rejectDisbursement(rejectRequest.id);
@@ -686,11 +618,7 @@ export default function PencairanAdminPage() {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      <TourGuide
-        steps={pencairanSteps}
-        onStart={handleTourStart}
-        onEnd={handleTourEnd}
-      />
+      <TourGuide steps={pencairanSteps} />
 
       {/* Header Title */}
       <div id="tour-admin-pencairan-header">

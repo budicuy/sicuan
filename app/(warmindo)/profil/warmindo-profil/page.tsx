@@ -11,7 +11,7 @@ import {
   Save,
   User,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   getProfileData,
   updatePassword,
@@ -25,27 +25,27 @@ const profilSteps = [
   {
     element: "#tour-warmindo-profil-tabs",
     popover: {
-      title: "Menu Tab Profil",
+      title: "Pilihan Tab Pengaturan Akun Warmindo",
       description:
-        "Pilih tab 'Informasi Profil' untuk melengkapi data diri, atau beralih ke 'Ubah Password' untuk menjaga keamanan akun Anda.",
+        "Beralih antara tab 'Informasi Profil' (untuk mengelola identitas warung, rekening bank pencairan, dan titik koordinat GPS) dan tab 'Ubah Password' (untuk memperbarui kata sandi login Anda).",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-warmindo-profil-form",
     popover: {
-      title: "Data Profil Saya & Titik Lokasi",
+      title: "Data Profil Gerai & Titik Lokasi Google Maps",
       description:
-        "Isi data diri, rekening bank, titik koordinat GPS usaha, serta link Google Maps untuk mempermudah penjemputan sampah.",
+        "Pastikan data usaha Warmindo Anda (Nama Warung, NIK Pemilik, Nomor Telepon/WhatsApp, Alamat Lengkap, Rekening Bank, serta Titik Koordinat GPS & Tautan Google Maps) terisi secara presisi agar pihak ekspedisi atau Bank Sampah dapat menemukan lokasi warung Anda dengan mudah saat penjemputan.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-warmindo-profil-save",
     popover: {
-      title: "Simpan Pembaruan",
+      title: "Tombol Simpan Pembaruan",
       description:
-        "Klik tombol ini untuk menyimpan pembaruan informasi profil Anda.",
+        "Setelah data warung dan titik lokasi selesai diperbarui, tekan tombol 'Simpan Pembaruan' ini untuk menyimpan perubahan secara permanen di server Sicuan.",
       side: "top" as const,
     },
   },
@@ -62,52 +62,13 @@ export default function ProfilPage() {
   const [mapsUrlVal, setMapsUrlVal] = useState<string>("");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<typeof profile | null>(null);
+  const [_isTourActive, _setIsTourActive] = useState(false);
 
   const handleTourStart = () => {
-    savedStateRef.current = profile;
-    setIsTourActive(true);
-    setProfile({
-      id: 999,
-      name: "nama lengkap demo",
-      username: "username demo",
-      nik: "637101xxxxxxx",
-      noTelepon: "0882022xxxxx",
-      email: "demo@gmail.com",
-      noRekening: "123456xxx",
-      jenisBank: "BNI",
-      status: "aktif",
-      alamat: "Jl. A. Yani No. 99 (Demo)",
-      role: "warmindo",
-      tanggalLahir: "1990-01-01",
-      latitude: -3.32426,
-      longitude: 114.59102,
-      googleMapsUrl: "https://maps.google.com/?q=-3.32426,114.59102",
-    });
-    setLatVal("-3.32426");
-    setLngVal("114.59102");
-    setMapsUrlVal("https://maps.google.com/?q=-3.32426,114.59102");
+    setActiveTab("profile");
   };
 
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    const prev = savedStateRef.current;
-    setProfile(prev as typeof profile);
-    if (prev) {
-      setLatVal(
-        prev.latitude !== null && prev.latitude !== undefined
-          ? String(prev.latitude)
-          : "",
-      );
-      setLngVal(
-        prev.longitude !== null && prev.longitude !== undefined
-          ? String(prev.longitude)
-          : "",
-      );
-      setMapsUrlVal(prev.googleMapsUrl || "");
-    }
-  };
+  const handleTourEnd = () => {};
 
   // Transition hooks for server actions
   const [isProfilePending, startProfileTransition] = useTransition();
@@ -235,16 +196,6 @@ export default function ProfilPage() {
   const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setProfileErrors({});
-
-    if (isTourActive) {
-      document.dispatchEvent(new CustomEvent("close-tour-guide"));
-      showFeedback(
-        "success",
-        "Profil Diperbarui! (Simulasi)",
-        "Detail profil demo Anda berhasil diperbarui di memori lokal.",
-      );
-      return;
-    }
 
     const formData = new FormData(e.currentTarget);
     startProfileTransition(async () => {

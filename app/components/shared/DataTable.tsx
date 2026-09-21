@@ -32,6 +32,11 @@ export interface TableFilter<T> {
 
 interface DataTableProps<T> {
   id?: string;
+  searchId?: string;
+  filterId?: string;
+  addButtonId?: string;
+  tableContainerId?: string;
+  actionsHeaderId?: string;
   data: T[];
   columns: Column<T>[];
   totalItems: number;
@@ -64,6 +69,11 @@ interface DataTableProps<T> {
 
 export function DataTable<T extends { id: number }>({
   id,
+  searchId,
+  filterId,
+  addButtonId,
+  tableContainerId,
+  actionsHeaderId,
   data,
   columns,
   totalItems,
@@ -292,6 +302,7 @@ export function DataTable<T extends { id: number }>({
           <div className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
+              id={searchId}
               type="text"
               placeholder={searchPlaceholder}
               value={search}
@@ -301,7 +312,7 @@ export function DataTable<T extends { id: number }>({
           </div>
 
           {filters && filters.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div id={filterId} className="flex flex-wrap items-center gap-2">
               {filters.map((filter) => (
                 <div key={filter.id} className="relative flex items-center">
                   <Filter className="absolute left-2.5 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
@@ -325,6 +336,7 @@ export function DataTable<T extends { id: number }>({
 
         {onAdd && (
           <button
+            id={addButtonId}
             type="button"
             onClick={onAdd}
             className="w-full md:w-auto flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer border-0"
@@ -336,7 +348,10 @@ export function DataTable<T extends { id: number }>({
       </div>
 
       {/* Table Container */}
-      <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-xs">
+      <div
+        id={tableContainerId}
+        className="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-xs"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -354,6 +369,7 @@ export function DataTable<T extends { id: number }>({
 
                 {hasActions && (
                   <th
+                    id={actionsHeaderId}
                     className={`px-6 py-4 text-xs font-semibold uppercase text-primary-700 tracking-wider ${
                       groupByFn ? "text-center" : "text-right"
                     }`}

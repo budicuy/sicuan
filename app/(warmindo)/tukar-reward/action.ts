@@ -59,12 +59,12 @@ export async function getWarmindoRewardData() {
       userPoin: userProfile?.poin ?? 0,
       userProfile: userProfile
         ? {
-          id: userProfile.id,
-          name: userProfile.name,
-          jenisBank: userProfile.jenisBank,
-          noRekening: userProfile.noRekening,
-          alamat: userProfile.alamat,
-        }
+            id: userProfile.id,
+            name: userProfile.name,
+            jenisBank: userProfile.jenisBank,
+            noRekening: userProfile.noRekening,
+            alamat: userProfile.alamat,
+          }
         : null,
       rewards,
       history,

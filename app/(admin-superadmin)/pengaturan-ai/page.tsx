@@ -3,7 +3,65 @@
 import { Loader2, Save, ShieldAlert, Sliders } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getAppSettings, updateAppSettings } from "@/app/lib/settings-actions";
+
+const pengaturanAiTourSteps = [
+  {
+    element: "#tour-admin-ai-header",
+    popover: {
+      title: "Pengaturan Deteksi Gemini AI",
+      description:
+        "Selamat datang di menu Pengaturan AI! Halaman ini memungkinkan Administrator dan Superadmin untuk mengatur penggunaan kecerdasan buatan (Gemini AI Vision) dalam mendeteksi dan membaca angka timbangan setoran sampah secara otomatis.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ai-info",
+    popover: {
+      title: "Pemberitahuan Mode Manual",
+      description:
+        "Pemberitahuan ini menerangkan bahwa jika deteksi AI dinonaktifkan pada salah satu alur di bawah, formulir setoran terkait akan otomatis beralih ke pengisian manual tanpa perlu memindai foto timbangan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ai-flow-konsumen",
+    popover: {
+      title: "Kontrol AI Setoran Konsumen",
+      description:
+        "Sakelar ini mengontrol apakah penyetoran sampah mandiri oleh masyarakat umum (Konsumen) menggunakan pemindaian foto timbangan otomatis oleh AI, atau langsung mengisi angka berat secara manual.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ai-flow-bank-sampah",
+    popover: {
+      title: "Kontrol AI Setoran Bank Sampah",
+      description:
+        "Sakelar ini mengontrol pencatatan setoran langsung di lokasi oleh petugas Bank Sampah. Jika diaktifkan, petugas dapat memfoto timbangan untuk diverifikasi secara instan oleh AI.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ai-flow-warmindo",
+    popover: {
+      title: "Kontrol AI Penerimaan Sampah Warmindo",
+      description:
+        "Sakelar ini mengatur apakah verifikasi penerimaan fisik sampah kiriman mitra Warmindo oleh Bank Sampah memerlukan verifikasi foto timbangan oleh AI atau cukup konfirmasi berat manual.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ai-save",
+    popover: {
+      title: "Simpan Konfigurasi Sistem",
+      description:
+        "Setelah mengubah status sakelar di atas, klik tombol 'Simpan Pengaturan' ini untuk menerapkan konfigurasi AI ke seluruh sistem aplikasi SiCuan secara real-time.",
+      side: "left" as const,
+    },
+  },
+];
 
 export default function PengaturanAiPage() {
   const [disableAiWarmindo, setDisableAiWarmindo] = useState(false);
@@ -11,6 +69,15 @@ export default function PengaturanAiPage() {
   const [disableAiKonsumen, setDisableAiKonsumen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [_isTourActive, setIsTourActive] = useState(false);
+
+  const handleTourStart = () => {
+    setIsTourActive(true);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+  };
 
   const [feedback, setFeedback] = useState<{
     isOpen: boolean;
@@ -66,8 +133,14 @@ export default function PengaturanAiPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <TourGuide
+        steps={pengaturanAiTourSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
       {/* ── HEADER ── */}
-      <div className="flex items-center gap-3">
+      <div id="tour-admin-ai-header" className="flex items-center gap-3">
         <div className="p-2 bg-primary-50 rounded-xl text-primary-600">
           <Sliders className="w-6 h-6" />
         </div>
@@ -92,7 +165,10 @@ export default function PengaturanAiPage() {
       ) : (
         <div className="space-y-6">
           {/* Info Banner */}
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex gap-3 text-amber-800">
+          <div
+            id="tour-admin-ai-info"
+            className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex gap-3 text-amber-800"
+          >
             <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="text-xs leading-relaxed">
               <p className="font-bold">Pemberitahuan Penting:</p>
@@ -112,7 +188,10 @@ export default function PengaturanAiPage() {
 
             <div className="divide-y divide-neutral-100">
               {/* Flow 1: Konsumen */}
-              <div className="py-4 flex items-center justify-between gap-6">
+              <div
+                id="tour-admin-ai-flow-konsumen"
+                className="py-4 flex items-center justify-between gap-6"
+              >
                 <div className="space-y-1">
                   <h3 className="text-sm font-semibold text-neutral-800">
                     Alur Setor Sampah Konsumen
@@ -137,7 +216,10 @@ export default function PengaturanAiPage() {
               </div>
 
               {/* Flow 2: Bank Sampah */}
-              <div className="py-4 flex items-center justify-between gap-6">
+              <div
+                id="tour-admin-ai-flow-bank-sampah"
+                className="py-4 flex items-center justify-between gap-6"
+              >
                 <div className="space-y-1">
                   <h3 className="text-sm font-semibold text-neutral-800">
                     Alur Setor Sampah Bank Sampah
@@ -163,7 +245,10 @@ export default function PengaturanAiPage() {
               </div>
 
               {/* Flow 3: Terima Sampah Warmindo */}
-              <div className="py-4 flex items-center justify-between gap-6">
+              <div
+                id="tour-admin-ai-flow-warmindo"
+                className="py-4 flex items-center justify-between gap-6"
+              >
                 <div className="space-y-1">
                   <h3 className="text-sm font-semibold text-neutral-800">
                     Alur Terima Setoran Warmindo
@@ -192,6 +277,7 @@ export default function PengaturanAiPage() {
             {/* Save Button */}
             <div className="flex justify-end pt-4 border-t border-neutral-100">
               <button
+                id="tour-admin-ai-save"
                 type="button"
                 onClick={handleSave}
                 disabled={isPending}

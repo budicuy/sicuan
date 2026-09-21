@@ -16,8 +16,66 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getCurrentUser } from "@/app/lib/auth-actions";
 import type { ActionState, Ekspedisi } from "@/app/types";
+
+const ekspedisiTourSteps = [
+  {
+    element: "#tour-admin-ekspedisi-header",
+    popover: {
+      title: "Master Data Ekspedisi Logistik",
+      description:
+        "Selamat datang di halaman Master Data Ekspedisi! Di sini Administrator dan Superadmin dapat mengelola seluruh mitra penyedia armada pengiriman (seperti GoSend, GrabExpress, Logistik Internal, dsb) yang bertugas menjemput dan mengangkut sampah terpilah dari mitra Warmindo menuju Bank Sampah atau pabrik daur ulang Indofood.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-search",
+    popover: {
+      title: "Pencarian Vendor Cepat",
+      description:
+        "Ketikkan nama vendor ekspedisi atau nomor telepon pada kotak pencarian ini untuk menemukan data mitra logistik secara langsung tanpa harus menelusuri daftar satu per satu.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-filter",
+    popover: {
+      title: "Filter Status Operasional Vendor",
+      description:
+        "Gunakan menu dropdown filter ini untuk menyaring daftar vendor berdasarkan statusnya: 'Aktif' untuk vendor yang saat ini siap menerima order penjemputan sampah, atau 'Nonaktif' untuk vendor yang kerjasamanya sedang dijeda.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-add",
+    popover: {
+      title: "Pendaftaran Vendor Baru",
+      description:
+        "Klik tombol 'Tambah Vendor' ini untuk mendaftarkan mitra jasa ekspedisi atau kurir baru ke dalam sistem SiCuan dengan mengisi nama vendor, kontak telepon, dan status aktifnya.",
+      side: "left" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-table",
+    popover: {
+      title: "Tabel Informasi Mitra Vendor",
+      description:
+        "Tabel ini memuat rincian lengkap vendor: Nama Vendor Ekspedisi, Nomor Telepon/Kontak untuk koordinasi penjemputan limbah daur ulang, serta Status Keaktifan (hijau untuk Aktif dan merah untuk Nonaktif).",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-actions",
+    popover: {
+      title: "Aksi Pengelolaan & Hak Akses",
+      description:
+        "Pada kolom Aksi di setiap baris vendor, klik ikon pensil (Edit) untuk memperbarui rincian vendor seperti perubahan nomor telepon atau status. Khusus akun Superadmin, tersedia juga ikon tempat sampah (Hapus) untuk menghapus vendor jika diperlukan.",
+      side: "left" as const,
+    },
+  },
+];
 
 export default function EkspedisiPage() {
   const [data, setData] = useState<Ekspedisi[]>([]);
@@ -25,6 +83,15 @@ export default function EkspedisiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
+  const [_isTourActive, setIsTourActive] = useState(false);
+
+  const handleTourStart = () => {
+    setIsTourActive(true);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+  };
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     status: "",
@@ -224,7 +291,16 @@ export default function EkspedisiPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden">
+      <TourGuide
+        steps={ekspedisiTourSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
+      <div
+        id="tour-admin-ekspedisi-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
@@ -243,6 +319,12 @@ export default function EkspedisiPage() {
       </div>
 
       <DataTable
+        id="tour-admin-ekspedisi-table-root"
+        searchId="tour-admin-ekspedisi-search"
+        filterId="tour-admin-ekspedisi-filter"
+        addButtonId="tour-admin-ekspedisi-add"
+        tableContainerId="tour-admin-ekspedisi-table"
+        actionsHeaderId="tour-admin-ekspedisi-actions"
         data={data}
         columns={columns}
         totalItems={totalItems}

@@ -17,6 +17,37 @@ import {
   getRiwayatSetoran,
 } from "@/app/(bank-sampah)/nasabah/bank-sampah-setor/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+
+const setorNasabahTourSteps = [
+  {
+    element: "#tour-bank-sampah-setor-header",
+    popover: {
+      title: "Pencatatan Setoran Sampah Nasabah",
+      description:
+        "Layanan pencatatan setoran sampah langsung (on-the-spot) dari nasabah atau mitra Warmindo yang menyetorkan sampahnya langsung ke lokasi fisik Bank Sampah Anda.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-setor-form",
+    popover: {
+      title: "Formulir Penimbangan & Transaksi",
+      description:
+        "Cari dan pilih nama nasabah, tentukan jenis material sampah, masukkan bobot riil hasil timbangan (Kg), serta tetapkan harga per Kg untuk menghitung total kredit uang tunai yang akan masuk ke saldo nasabah.",
+      side: "right" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-setor-history",
+    popover: {
+      title: "Riwayat Transaksi Setoran",
+      description:
+        "Tabel ini merekam semua transaksi setoran yang telah Anda inputkan ke sistem secara kronologis lengkap dengan nomor setor, nama nasabah, tanggal, berat, total nilai rupiah, dan status verifikasinya.",
+      side: "left" as const,
+    },
+  },
+];
 
 interface NasabahItem {
   id: number;
@@ -168,7 +199,11 @@ export default function BankSampahSetorNasabahPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5">
+      <TourGuide steps={setorNasabahTourSteps} />
+      <div
+        id="tour-bank-sampah-setor-header"
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-5"
+      >
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 flex items-center gap-2">
             <Recycle className="w-7 h-7 text-primary-600" />
@@ -184,7 +219,7 @@ export default function BankSampahSetorNasabahPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Form Input Setoran */}
-        <div className="lg:col-span-2">
+        <div id="tour-bank-sampah-setor-form" className="lg:col-span-2">
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100 bg-primary-50/30 flex items-center gap-2">
               <FileCheck2 className="w-5 h-5 text-primary-600" />
@@ -428,7 +463,7 @@ export default function BankSampahSetorNasabahPage() {
         </div>
 
         {/* Tabel Riwayat Setoran */}
-        <div className="lg:col-span-3">
+        <div id="tour-bank-sampah-setor-history" className="lg:col-span-3">
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden h-full flex flex-col">
             <div className="px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 flex items-center gap-2">
               <FileText className="w-5 h-5 text-neutral-500" />

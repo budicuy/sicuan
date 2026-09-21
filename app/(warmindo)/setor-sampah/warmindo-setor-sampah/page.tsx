@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock, Loader2, Recycle, Truck, Upload } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   cancelSetorSampah,
   createSetorSampah,
@@ -15,94 +15,57 @@ import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
 
 export default function WarmindoSetorSampah() {
-  const [jenisSampah, setJenisSampah] = useState("Karton");
-  const [beratKg, setBeratKg] = useState("");
+  const [_jenisSampah, _setJenisSampah] = useState("Karton");
+  const [_beratKg, setBeratKg] = useState("");
   const [tanggalSetor, _setTanggalSetor] = useState(
     new Date().toISOString().split("T")[0],
   );
   const [catatan, setCatatan] = useState("");
 
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    jenisSampah: string;
-    beratKg: string;
-    selectedBankSampahId: string;
-    catatan: string;
-    history: SetorSampahItem[];
-  } | null>(null);
+  const [_isTourActive, setIsTourActive] = useState(false);
 
   const handleTourStart = () => {
-    savedStateRef.current = {
-      jenisSampah,
-      beratKg,
-      selectedBankSampahId,
-      catatan,
-      history,
-    };
     setIsTourActive(true);
-    setJenisSampah("Karton");
-    setBeratKg("");
-    setCatatan("");
-    if (bankSampahList.length === 0) {
-      setBankSampahList([
-        {
-          id: 999,
-          name: "Bank Sampah Demo",
-          username: "banksampah_demo",
-          alamat: "Jl. Demo No. 1, Banjarmasin",
-        },
-      ]);
-      setSelectedBankSampahId("999");
-    } else {
-      setSelectedBankSampahId(String(bankSampahList[0].id));
-    }
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setJenisSampah(savedStateRef.current.jenisSampah);
-      setBeratKg(savedStateRef.current.beratKg);
-      setSelectedBankSampahId(savedStateRef.current.selectedBankSampahId);
-      setCatatan(savedStateRef.current.catatan);
-      setHistory(savedStateRef.current.history);
-    }
   };
 
   const setorSteps = [
     {
       element: "#tour-warmindo-setor-tujuan",
       popover: {
-        title: "Pilih Tujuan Bank Sampah",
+        title: "1. Pilih Bank Sampah Tujuan",
         description:
-          "Pilih cabang Bank Sampah tujuan yang akan menjadi tempat verifikasi akhir sampah Anda.",
+          "Pilih cabang Bank Sampah mitra terdekat yang akan menerima dan memvalidasi sampah kemasan dari gerai Warmindo Anda.",
         side: "right" as const,
       },
     },
     {
       element: "#tour-warmindo-setor-catatan",
       popover: {
-        title: "Catatan (Opsional)",
+        title: "2. Catatan Kondisi Sampah (Opsional)",
         description:
-          "Tuliskan catatan tambahan mengenai kondisi sampah jika ada.",
+          "Tuliskan keterangan tambahan jika ada, misalnya 'Sampah kardus mie sudah diikat rapi dan kemasan bumbu sudah dikeringkan'.",
         side: "top" as const,
       },
     },
     {
       element: "#tour-warmindo-setor-submit",
       popover: {
-        title: "Simulasi Kirim Setoran",
+        title: "3. Tombol Kirim Pengajuan Setoran",
         description:
-          "Klik tombol ini untuk mengirim setoran secara simulasi. Alur akan dialihkan ke mode pengiriman ekspedisi tanpa masuk ke database riil.",
+          "Tekan tombol ini untuk mengajukan setoran sampah Anda. Sistem akan membuat nomor resi penyetoran resmi dan meneruskannya ke kurir penjemput atau Bank Sampah tujuan.",
         side: "top" as const,
       },
     },
     {
       element: "#tour-warmindo-setor-history",
       popover: {
-        title: "Riwayat Setoran",
+        title: "4. Riwayat & Pelacakan Status",
         description:
-          "Setelah Anda menyimulasikan setoran, detail pengajuan baru Anda beserta status ekspedisinya akan langsung muncul di panel ini.",
+          "Di panel kanan ini, Anda dapat memantau status setoran secara real-time: 'Pending' (menunggu verifikasi), 'Diverifikasi' (ekspedisi ditugaskan), 'Diserahkan' (paket dijemput kurir), hingga 'Diterima' (poin berhasil masuk ke akun).",
         side: "left" as const,
       },
     },
@@ -180,37 +143,6 @@ export default function WarmindoSetorSampah() {
     formData.set("metodeSetor", metodeSetor);
     formData.set("requestManualValidation", "false");
 
-    if (isTourActive) {
-      startTransition(async () => {
-        document.dispatchEvent(new CustomEvent("close-tour-guide"));
-        showFeedback(
-          "success",
-          "Setoran Berhasil! (Simulasi)",
-          `Simulasi: Setoran sampah ${jenisSampah} (${beratKg || "10.00"} kg) Anda via ${metodeSetor === "langsung" ? "datang langsung" : "ekspedisi"} telah diajukan. Data Anda tidak disimpan ke database.`,
-        );
-        setBeratKg("");
-        setCatatan("");
-        setHistory((prev) => [
-          {
-            id: Date.now(),
-            nomorSetor: `SIMULASI-W-${Math.floor(1000 + Math.random() * 9000)}`,
-            jenisSampah,
-            beratKg: Number(beratKg) || 10.0,
-            totalPoin: 0,
-            tanggalSetor: new Date().toISOString().split("T")[0],
-            status: "pending",
-            createdAt: new Date(),
-            metodeSetor,
-            catatan,
-            totalKredit: (Number(beratKg) || 10.0) * 1000,
-            fotoTimbangan: "/sampel_1.png",
-          },
-          ...prev,
-        ]);
-      });
-      return;
-    }
-
     startTransition(async () => {
       const result = await createSetorSampah({ success: false }, formData);
       if (result.success) {
@@ -241,19 +173,6 @@ export default function WarmindoSetorSampah() {
   const handleCancelConfirm = async () => {
     if (cancelId === null) return;
     const id = cancelId;
-
-    if (isTourActive) {
-      startTransition(async () => {
-        showFeedback(
-          "success",
-          "Berhasil!",
-          "Simulasi: Setoran berhasil dibatalkan.",
-        );
-        setHistory((prev) => prev.filter((item) => item.id !== id));
-        setCancelId(null);
-      });
-      return;
-    }
 
     startTransition(async () => {
       const res = await cancelSetorSampah(id);

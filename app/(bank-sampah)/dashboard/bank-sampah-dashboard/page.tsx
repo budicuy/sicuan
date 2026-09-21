@@ -8,7 +8,7 @@ import {
   ShoppingBag,
   TrendingUp,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -30,45 +30,45 @@ const dashboardSteps = [
   {
     element: "#tour-bank-sampah-dashboard-welcome",
     popover: {
-      title: "Selamat Datang Mitra!",
+      title: "Selamat Datang di Dashboard Bank Sampah",
       description:
-        "Ini adalah Dashboard Kemitraan Bank Sampah Anda. Di sini Anda dapat memantau status setoran dan kredit saldo hasil daur ulang sampah PT. Indofood.",
+        "Panel utama untuk memantau performa operasional Bank Sampah Anda dalam menerima, mengelola, dan menyalurkan kembali sampah kemasan PT. Indofood. Seluruh data yang tampil di sini adalah data asli akun Anda secara real-time.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-dashboard-points",
     popover: {
-      title: "Saldo Kredit Tersedia Bulan Ini",
+      title: "Saldo Kredit Hasil Setoran",
       description:
-        "Menampilkan saldo uang tunai yang berhasil Anda kumpulkan dari hasil verifikasi aktual sampah oleh Bank Sampah. Saldo ini dapat Anda cairkan kapan saja.",
+        "Menampilkan saldo kredit tunai yang Anda peroleh dari hasil penerimaan dan verifikasi timbangan sampah kemasan. Saldo ini milik Anda sepenuhnya dan dapat diajukan pencairannya ke rekening bank kapan saja.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-dashboard-metrics",
     popover: {
-      title: "Metrik Kemitraan",
+      title: "Ringkasan Metrik Operasional",
       description:
-        "Menampilkan total volume sampah yang disetor, serta status pencairan dana Anda secara ringkas.",
+        "Kartu-kartu indikator ringkas yang memperlihatkan total bobot sampah yang telah disetorkan (Kg), jumlah setoran yang menunggu verifikasi, setoran yang berhasil diterima, serta nominal dana yang telah dicairkan maupun sedang diproses.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-dashboard-performance",
     popover: {
-      title: "Grafik Riwayat Setoran",
+      title: "Grafik Tren Volume Setoran",
       description:
-        "Grafik ini memvisualisasikan tren volume setoran sampah (dalam kilogram) yang Anda lakukan setiap bulannya.",
+        "Grafik garis area ini memudahkan Anda melihat perkembangan volume setoran sampah (dalam satuan kilogram) dari bulan ke bulan, membantu evaluasi keaktifan pengumpulan sampah di wilayah Anda.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-dashboard-composition",
     popover: {
-      title: "Komposisi Bahan Sampah",
+      title: "Diagram Komposisi Jenis Sampah",
       description:
-        "Grafik lingkaran ini mengelompokkan sampah yang Anda kirimkan berdasarkan jenisnya (Karton, Etiket, Paper Cup).",
+        "Diagram lingkaran (pie chart) yang mengelompokkan sampah yang terkumpul berdasarkan jenisnya (Karton, Bungkus Etiket, Paper Cup, dll.), sehingga Anda mengetahui material sampah apa yang paling dominan.",
       side: "top" as const,
     },
   },
@@ -77,7 +77,7 @@ const dashboardSteps = [
     popover: {
       title: "Riwayat Transaksi Terbaru",
       description:
-        "Tabel ini menunjukkan aktivitas pengiriman ekspedisi dan pengajuan pencairan dana terbaru Anda beserta statusnya.",
+        "Daftar transaksi setoran terkini dari para mitra serta permohonan pencairan dana terbaru Anda lengkap dengan tanggal, jumlah bobot/nominal, dan status prosesnya saat ini.",
       side: "top" as const,
     },
   },
@@ -136,71 +136,6 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [_loading, setLoading] = useState(true);
 
-  const [_isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<typeof data | null>(null);
-
-  const handleTourStart = () => {
-    savedStateRef.current = data;
-    setIsTourActive(true);
-    setData({
-      success: true,
-      role: "bank-sampah",
-      name: "Bank Sampah Sejahtera (Demo)",
-      metrics: {
-        totalSetoranKg: 120,
-        totalSetoranPending: 30,
-        totalSetoranDiterima: 90,
-        totalPencairanBerhasil: 600000,
-        totalPencairanPending: 200000,
-      },
-      profile: {
-        poin: 0,
-        kredit: 450000,
-      },
-      composition: [
-        { name: "Karton", value: 60, color: "#f59e0b" },
-        { name: "Etiket", value: 40, color: "#10b981" },
-        { name: "Paper Cup", value: 20, color: "#3b82f6" },
-      ],
-      setoranHistory: [
-        { date: "Mei", Volume: 25, Poin: 0 },
-        { date: "Juni", Volume: 55, Poin: 0 },
-        { date: "Juli", Volume: 120, Poin: 0 },
-      ],
-      recentSetoran: [
-        {
-          id: 1,
-          nomorSetor: "SIMULASI-B01",
-          jenisSampah: "Karton",
-          beratKg: 15.0,
-          status: "pending",
-          tanggalSetor: new Date().toISOString().split("T")[0],
-        },
-        {
-          id: 2,
-          nomorSetor: "SIMULASI-B02",
-          jenisSampah: "Etiket",
-          beratKg: 10.0,
-          status: "diterima",
-          tanggalSetor: new Date().toISOString().split("T")[0],
-        },
-      ],
-      recentPencairan: [
-        {
-          id: 1,
-          jumlah: 200000,
-          status: "pending",
-          createdAt: new Date(),
-        },
-      ],
-    });
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    setData(savedStateRef.current as typeof data);
-  };
-
   const loadData = useCallback(() => {
     setLoading(true);
     getDashboardData().then((res) => {
@@ -224,11 +159,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
-      <TourGuide
-        steps={dashboardSteps}
-        onStart={handleTourStart}
-        onEnd={handleTourEnd}
-      />
+      <TourGuide steps={dashboardSteps} />
 
       {/* Welcome Board */}
       <div

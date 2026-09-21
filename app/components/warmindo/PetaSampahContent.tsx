@@ -24,6 +24,46 @@ import {
   Navigation,
   Scale,
 } from "lucide-react";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+
+const petaTourSteps = [
+  {
+    element: "#tour-peta-header",
+    popover: {
+      title: "Pelacakan Alur Sampah Warmindo",
+      description:
+        "Halaman ini menyajikan visualisasi peta digital alur perjalanan sampah kemasan yang Anda setorkan, mulai dari warung Anda, transit di Bank Sampah mitra, hingga proses akhir daur ulang di pabrik PT. Indofood.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-peta-list",
+    popover: {
+      title: "Daftar Setoran Sampah Warung Anda",
+      description:
+        "Daftar transaksi setoran riil milik warung Anda. Klik salah satu kartu setoran untuk melacak secara otomatis posisi sampah saat ini di peta beserta status verifikasinya.",
+      side: "right" as const,
+    },
+  },
+  {
+    element: "#tour-peta-map",
+    popover: {
+      title: "Peta Interaktif & Garis Jalur",
+      description:
+        "Peta interaktif menampilkan pin lokasi: Titik asal (Warmindo Anda), Bank Sampah pengolah, dan Pabrik Indofood. Garis jalur akan otomatis menghubungkan rute sesuai perjalanan sampah Anda.",
+      side: "left" as const,
+    },
+  },
+  {
+    element: "#tour-peta-legend",
+    popover: {
+      title: "Panduan Simbol Legenda",
+      description:
+        "Gunakan kotak legenda ini untuk memahami arti ikon warna penanda: Hijau untuk warung Anda, Emerald untuk Bank Sampah, Indigo untuk Pabrik Indofood, dan ikon keranjang untuk posisi fisik sampah saat ini.",
+      side: "top" as const,
+    },
+  },
+];
 
 interface Setoran {
   id: number;
@@ -269,6 +309,8 @@ export function PetaSampahContent({
 
   return (
     <div className="h-[calc(100vh-4rem)] lg:h-screen w-full relative bg-neutral-50">
+      <TourGuide steps={petaTourSteps} onStart={() => setIsCollapsed(false)} />
+
       {/* Floating Toggle Button for Collapsed Panel */}
       {isCollapsed && (
         <button
@@ -290,7 +332,10 @@ export function PetaSampahContent({
         }`}
       >
         {/* Card Header */}
-        <div className="p-5 pb-3 flex justify-between items-center bg-white/50 border-b border-neutral-100">
+        <div
+          id="tour-peta-header"
+          className="p-5 pb-3 flex justify-between items-center bg-white/50 border-b border-neutral-100"
+        >
           <div>
             <h1 className="text-sm font-black text-neutral-900 tracking-tight flex items-center gap-2">
               <Layers className="w-4 h-4 text-primary-600 animate-pulse" />{" "}
@@ -316,7 +361,10 @@ export function PetaSampahContent({
           </h3>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 relative min-h-0 scrollbar-thin">
+        <div
+          id="tour-peta-list"
+          className="flex-1 overflow-y-auto p-4 space-y-3 relative min-h-0 scrollbar-thin"
+        >
           {setoran.length > 0 ? (
             setoran.map((s) => (
               <button
@@ -376,7 +424,7 @@ export function PetaSampahContent({
       </div>
 
       {/* Map Container - Full Size */}
-      <div className="w-full h-full">
+      <div id="tour-peta-map" className="w-full h-full">
         <MapContainer
           center={warmindoCoords}
           zoom={12}
@@ -524,7 +572,10 @@ export function PetaSampahContent({
         </MapContainer>
 
         {/* Legend Overlay */}
-        <div className="hidden sm:block absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm border border-neutral-200 p-4 rounded-xl shadow-lg text-[10px] space-y-2.5 min-w-[160px] animate-fade-in">
+        <div
+          id="tour-peta-legend"
+          className="hidden sm:block absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm border border-neutral-200 p-4 rounded-xl shadow-lg text-[10px] space-y-2.5 min-w-[160px] animate-fade-in"
+        >
           <div className="font-extrabold text-neutral-800 tracking-wider uppercase border-b border-neutral-100 pb-1.5">
             Legenda Peta
           </div>

@@ -29,27 +29,36 @@ const rewardTourSteps = [
   {
     element: "#tour-konsumen-reward-points",
     popover: {
-      title: "Poin Reward Anda",
+      title: "1. Saldo Poin Reward Anda",
       description:
-        "Menampilkan total akumulasi poin aktif yang Anda peroleh dari setoran sampah. Poin ini dapat ditukarkan dengan hadiah barang fisik, voucher belanja, atau uang tunai.",
+        "Banner ini memperlihatkan total poin aktif yang Anda kumpulkan dari setiap kilogram sampah anorganik yang berhasil disetor. Poin ini siap ditukarkan kapan saja dengan berbagai hadiah pilihan.",
       side: "bottom" as const,
     },
   },
   {
-    element: "#tour-konsumen-reward-cards",
+    element: "#tour-konsumen-reward-tabs",
     popover: {
-      title: "Katalog Reward (Barang, Voucher & Uang)",
+      title: "2. Filter Kategori Hadiah",
       description:
-        "Pilih reward yang Anda inginkan. Tersedia pilihan Voucher belanja/diskon, Uang Tunai yang ditransfer langsung ke rekening/e-wallet Anda, atau Produk/Merchandise.",
+        "Gunakan tab filter ini untuk melihat hadiah berdasarkan kategori yang Anda inginkan: Uang Tunai (transfer rekening/e-wallet), Voucher Digital, atau Barang Fisik / Merchandise resmi.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-konsumen-reward-grid",
+    popover: {
+      title: "3. Katalog Hadiah & Tombol Tukar",
+      description:
+        "Daftar kartu hadiah yang tersedia beserta foto produk, jumlah poin yang dibutuhkan, dan sisa stok. Jika poin Anda mencukupi, tombol 'Tukar Hadiah' akan aktif dan Anda dapat mengisi formulir klaim.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-konsumen-reward-history",
     popover: {
-      title: "Riwayat Penukaran Poin",
+      title: "4. Riwayat Penukaran & Status Hadiah",
       description:
-        "Pantau status pengajuan penukaran reward Anda dari proses verifikasi admin hingga reward berhasil disalurkan beserta bukti transfer, kode voucher, atau nomor resi pengiriman.",
+        "Tabel ini memantau seluruh proses penukaran hadiah Anda dari status 'Pending' (sedang diverifikasi admin), hingga 'Berhasil'. Jika reward berupa uang atau barang, Anda dapat melihat bukti transfer atau nomor resi paket di kolom status.",
       side: "top" as const,
     },
   },
@@ -352,7 +361,7 @@ export default function TukarRewardKonsumenPage() {
 
       {/* Category Filter Tabs */}
       <div
-        id="tour-konsumen-reward-cards"
+        id="tour-konsumen-reward-tabs"
         className="flex items-center justify-between flex-wrap gap-3 border-b border-neutral-200 pb-3"
       >
         <div className="flex items-center gap-2 bg-neutral-100/80 p-1 rounded-xl border border-neutral-200 flex-wrap">
@@ -411,7 +420,10 @@ export default function TukarRewardKonsumenPage() {
       </div>
 
       {/* Rewards Catalog Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div
+        id="tour-konsumen-reward-grid"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+      >
         {filteredRewards.length > 0 ? (
           filteredRewards.map((reward) => {
             const canAfford = userPoin >= reward.poin;

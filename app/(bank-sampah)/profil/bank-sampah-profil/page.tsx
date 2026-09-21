@@ -11,7 +11,7 @@ import {
   Save,
   User,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   getProfileData,
   updatePassword,
@@ -25,26 +25,36 @@ const profilSteps = [
   {
     element: "#tour-bank-sampah-profil-tabs",
     popover: {
-      title: "Menu Profil",
+      title: "Tab Pengaturan Akun",
       description:
-        "Anda dapat berpindah tab antara melihat informasi data diri profil Bank Sampah atau mengganti password akun Anda secara terpisah.",
+        "Gunakan tab ini untuk berpindah antara formulir pembaruan 'Informasi Profil' (data identitas dan rekening) dan formulir 'Ubah Password' demi menjaga keamanan akun Bank Sampah Anda.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-profil-form",
     popover: {
-      title: "Detail Profil, Titik Lokasi & Google Maps",
+      title: "Data Identitas & Informasi Rekening",
       description:
-        "Seluruh data diri kemitraan Anda ditampilkan secara lengkap di sini, termasuk titik koordinat GPS dan tautan Google Maps untuk navigasi armada.",
+        "Formulir ini memuat identitas asli Bank Sampah Anda: Nama Lengkap, Nomor Kontak, Alamat, serta Nomor & Nama Bank tujuan transfer saat Anda mengajukan pencairan dana saldo kredit.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-bank-sampah-profil-location",
+    popover: {
+      title: "Titik Koordinat & Google Maps",
+      description:
+        "Tentukan titik koordinat GPS fisik Bank Sampah Anda menggunakan tombol 'Ambil Lokasi Saat Ini' atau masukkan manual latitude & longitude. Tautan Google Maps yang terisi akan digunakan armada pengangkut untuk menjemput sampah.",
       side: "top" as const,
     },
   },
   {
     element: "#tour-bank-sampah-profil-save",
     popover: {
-      title: "Simpan Perubahan",
-      description: "Klik tombol simpan untuk memperbarui profil (Simulasi).",
+      title: "Simpan Pembaruan Profil",
+      description:
+        "Setelah memeriksa seluruh isian data dengan teliti, klik tombol 'Simpan Profil' untuk menyimpan pembaruan langsung ke sistem pusat.",
       side: "top" as const,
     },
   },
@@ -60,53 +70,6 @@ export default function ProfilPage() {
   const [lngVal, setLngVal] = useState<string>("");
   const [mapsUrlVal, setMapsUrlVal] = useState<string>("");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<typeof profile | null>(null);
-
-  const handleTourStart = () => {
-    savedStateRef.current = profile;
-    setIsTourActive(true);
-    setProfile({
-      id: 999,
-      name: "Bank Sampah Sejahtera",
-      username: "banksampah_demo",
-      nik: "637101xxxxxxx",
-      noTelepon: "0882022xxxxx",
-      email: "demo-banksampah@gmail.com",
-      noRekening: "123456xxx",
-      jenisBank: "BNI",
-      status: "aktif",
-      alamat: "Jl. A. Yani No. 99 (Demo)",
-      role: "bank-sampah",
-      tanggalLahir: "1990-01-01",
-      latitude: -3.29826,
-      longitude: 114.58602,
-      googleMapsUrl: "https://maps.google.com/?q=-3.29826,114.58602",
-    });
-    setLatVal("-3.29826");
-    setLngVal("114.58602");
-    setMapsUrlVal("https://maps.google.com/?q=-3.29826,114.58602");
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    const prev = savedStateRef.current;
-    setProfile(prev as typeof profile);
-    if (prev) {
-      setLatVal(
-        prev.latitude !== null && prev.latitude !== undefined
-          ? String(prev.latitude)
-          : "",
-      );
-      setLngVal(
-        prev.longitude !== null && prev.longitude !== undefined
-          ? String(prev.longitude)
-          : "",
-      );
-      setMapsUrlVal(prev.googleMapsUrl || "");
-    }
-  };
 
   // Transition hooks for server actions
   const [isProfilePending, startProfileTransition] = useTransition();
@@ -235,16 +198,6 @@ export default function ProfilPage() {
     e.preventDefault();
     setProfileErrors({});
 
-    if (isTourActive) {
-      document.dispatchEvent(new CustomEvent("close-tour-guide"));
-      showFeedback(
-        "success",
-        "Profil Diperbarui! (Simulasi)",
-        "Simulasi: Detail data profil demo berhasil diperbarui.",
-      );
-      return;
-    }
-
     const formData = new FormData(e.currentTarget);
     startProfileTransition(async () => {
       const res = await updateProfileData(
@@ -337,11 +290,7 @@ export default function ProfilPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
-      <TourGuide
-        steps={profilSteps}
-        onStart={handleTourStart}
-        onEnd={handleTourEnd}
-      />
+      <TourGuide steps={profilSteps} />
       {/* Header Info Card */}
       <div className="relative overflow-hidden bg-linear-to-r from-primary-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
         <div className="absolute top-[-30%] right-[-10%] w-[45%] h-[150%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
@@ -616,7 +565,10 @@ export default function ProfilPage() {
             </div>
 
             {/* ── Titik Lokasi & Link Google Maps ── */}
-            <div className="pt-4 border-t border-neutral-100 md:col-span-2 space-y-4">
+            <div
+              id="tour-bank-sampah-profil-location"
+              className="pt-4 border-t border-neutral-100 md:col-span-2 space-y-4"
+            >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-primary-50 text-primary-600 rounded-lg">

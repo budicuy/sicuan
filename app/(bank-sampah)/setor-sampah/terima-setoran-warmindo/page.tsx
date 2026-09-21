@@ -26,29 +26,29 @@ import { TourGuide } from "@/app/components/shared/TourGuide";
 
 const terimaSteps = [
   {
+    element: "#tour-bank-sampah-terima-workflow",
+    popover: {
+      title: "Alur Verifikasi Setoran Warmindo",
+      description:
+        "Panduan tahapan alur pengiriman sampah: Dimulai dari pengajuan oleh Warmindo (Pending) → Validasi Admin & Penugasan Kurir (Diverifikasi) → Penyerahan Sampah ke Kurir (Dikirim) → Penerimaan & Penimbangan Aktual oleh Bank Sampah Anda (Diterima).",
+      side: "bottom" as const,
+    },
+  },
+  {
     element: "#tour-bank-sampah-terima-filters",
     popover: {
-      title: "Filter Pengiriman Setoran",
+      title: "Filter Status Kiriman",
       description:
-        "Anda dapat memfilter kiriman setoran dari Warmindo berdasarkan statusnya (seperti Sedang Dikirim, Diterima, dll).",
+        "Gunakan tab filter ini untuk menyortir daftar setoran berdasarkan statusnya: 'Pending', 'Diverifikasi', 'Dikirim' (dalam perjalanan menuju Bank Sampah Anda), 'Diterima', atau tampilkan 'Semua'.",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-bank-sampah-terima-list",
     popover: {
-      title: "Daftar Setoran Warmindo",
+      title: "Daftar Setoran Masuk dari Mitra",
       description:
-        "Daftar setoran sampah yang sedang dalam proses pengiriman oleh kurir ekspedisi. Klik tombol 'Terima & Konfirmasi' untuk memproses verifikasi fisik sampah.",
-      side: "top" as const,
-    },
-  },
-  {
-    element: "#tour-bank-sampah-terima-modal",
-    popover: {
-      title: "Verifikasi & Konfirmasi Penerimaan",
-      description:
-        "Timbang sampah secara aktual, masukkan berat aktualnya, lampirkan foto timbangan verifikasi, lalu klik 'Konfirmasi Penerimaan' untuk menyelesaikan proses.",
+        "Kartu-kartu setoran riil yang dikirimkan oleh mitra Warmindo. Di setiap kartu, Anda dapat melihat nama warung, nomor transaksi, jenis material, perkiraan berat, nama ekspedisi, serta tombol tindakan 'Validasi' ketika sampah tiba.",
       side: "top" as const,
     },
   },
@@ -78,74 +78,6 @@ export default function TerimaSetoranWarmindoPage() {
   const [isLoadingWarmindo, setIsLoadingWarmindo] = useState(false);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    warmindoSetoran: WarmindoSetoranItem[];
-    warmindoFilterStatus: string;
-  } | null>(null);
-
-  const handleTourStart = () => {
-    savedStateRef.current = {
-      warmindoSetoran,
-      warmindoFilterStatus,
-    };
-    setIsTourActive(true);
-    setWarmindoFilterStatus("diserahkan");
-    setWarmindoSetoran([
-      {
-        id: 999,
-        nomorSetor: "SIMULASI-W-01",
-        jenisSampah: "Karton",
-        beratKg: 25.0,
-        tanggalSetor: new Date().toISOString().split("T")[0],
-        status: "diserahkan",
-        catatan: "Setoran Karton Warmindo Demo",
-        createdAt: new Date(),
-        metodeSetor: "ekspedisi",
-        fotoTimbangan: "/sampel_1.png",
-        fotoBuktiTambahan: ["/sampel_1.png"],
-        user: {
-          id: 101,
-          name: "Warmindo Bakti Jaya",
-          username: "warmindo_demo",
-          role: "warmindo",
-        },
-        ekspedisi: {
-          id: 201,
-          namaVendor: "J&T Express",
-          noTelepon: "088888xxxx",
-        },
-      },
-      {
-        id: 998,
-        nomorSetor: "SIMULASI-W-02",
-        jenisSampah: "Etiket",
-        beratKg: 12.5,
-        tanggalSetor: new Date().toISOString().split("T")[0],
-        status: "pending",
-        catatan: "Setoran Etiket Warmindo Demo (Datang Langsung)",
-        createdAt: new Date(),
-        metodeSetor: "langsung",
-        fotoTimbangan: "/sampel_1.png",
-        fotoBuktiTambahan: ["/sampel_1.png"],
-        user: {
-          id: 101,
-          name: "Warmindo Bakti Jaya",
-          username: "warmindo_demo",
-          role: "warmindo",
-        },
-      },
-    ]);
-  };
-
-  const handleTourEnd = () => {
-    setIsTourActive(false);
-    if (savedStateRef.current) {
-      setWarmindoSetoran(savedStateRef.current.warmindoSetoran);
-      setWarmindoFilterStatus(savedStateRef.current.warmindoFilterStatus);
-    }
-  };
 
   const [selectedItemForTerima, setSelectedItemForTerima] =
     useState<WarmindoSetoranItem | null>(null);
@@ -251,17 +183,8 @@ export default function TerimaSetoranWarmindoPage() {
     setRequestManual(false);
     setIsValidatingAI(false);
     setIsWeightConfirmed(false);
-    if (isTourActive) {
-      setFotoTimbangan("/sampel_1.png");
-      setFotoBuktiList(["/sampel_1.png"]);
-      setAiValidated(true);
-      setBeratAiKg(10.0);
-      setBeratAktual("10.0");
-      setIsWeightConfirmed(true);
-    } else {
-      setFotoTimbangan(null);
-      setFotoBuktiList([]);
-    }
+    setFotoTimbangan(null);
+    setFotoBuktiList([]);
     setFormErrors({});
   };
 
@@ -327,35 +250,6 @@ export default function TerimaSetoranWarmindoPage() {
     }
 
     setProcessingId(selectedItemForTerima.id);
-    if (isTourActive) {
-      setTimeout(() => {
-        setProcessingId(null);
-        setWarmindoSetoran((prev) =>
-          prev.map((item) =>
-            item.id === selectedItemForTerima.id
-              ? {
-                  ...item,
-                  status: requestManual ? "pending" : "diterima",
-                  beratKg: beratNum,
-                  jenisSampah: jenisSampahAktual,
-                  fotoTimbangan: fotoTimbangan,
-                  fotoBuktiTambahan: fotoBuktiList,
-                }
-              : item,
-          ),
-        );
-        setSelectedItemForTerima(null);
-        document.dispatchEvent(new CustomEvent("close-tour-guide"));
-        showFeedback(
-          "success",
-          "Berhasil!",
-          requestManual
-            ? `Simulasi: Sukses mengajukan verifikasi manual setoran ${selectedItemForTerima.nomorSetor}.`
-            : `Simulasi: Sukses melakukan verifikasi dan menerima setoran ${selectedItemForTerima.nomorSetor} (${jenisSampahAktual}) seberat ${beratNum} kg.`,
-        );
-      }, 1000);
-      return;
-    }
 
     startTransition(async () => {
       const res = await bankSampahTerimaSetoran(
@@ -418,11 +312,7 @@ export default function TerimaSetoranWarmindoPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-4 md:p-6 lg:p-8">
-      <TourGuide
-        steps={terimaSteps}
-        onStart={handleTourStart}
-        onEnd={handleTourEnd}
-      />
+      <TourGuide steps={terimaSteps} />
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2.5 rounded-xl bg-primary-100">
@@ -493,7 +383,10 @@ export default function TerimaSetoranWarmindoPage() {
           </div>
         </div>
 
-        <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex gap-3 items-start">
+        <div
+          id="tour-bank-sampah-terima-workflow"
+          className="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex gap-3 items-start"
+        >
           <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
           <div className="text-xs text-sky-800 space-y-1">
             <p className="font-bold">Alur Verifikasi Setoran Warmindo:</p>

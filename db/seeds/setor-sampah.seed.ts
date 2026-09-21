@@ -1,75 +1,13 @@
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "@/db";
-import { setorSampah, users } from "@/db/schema";
-import { nasabah } from "@/db/schema/nasabah";
+import { setorSampah } from "@/db/schema";
 
 export async function seedSetorSampah() {
-  console.log("🌱 Seeding setor sampah for unified table...");
+  console.log("🌱 Seeding setor sampah (khusus Bank Sampah)...");
 
   await db.delete(setorSampah);
 
-  // Get active users
-  const budi = await db.query.users.findFirst({
-    where: eq(users.username, "konsumen"),
-  });
-  const warmindo = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo"),
-  });
-  const bankSampah = await db.query.users.findFirst({
-    where: eq(users.username, "banksampah"),
-  });
-
-  if (!budi || !warmindo || !bankSampah) {
-    throw new Error("Mandatory users not found during setor-sampah seeding!");
-  }
-
-  // Seed real setoran: Rosiana Dwi Hastuti (NIK 50023152)
-  const rosiana = await db.query.users.findFirst({
-    where: eq(users.username, "50023152"),
-  });
-
-  if (rosiana) {
-    const rosianaSetoran = [
-      {
-        nomorSetor: "1/K/NDL/BJM/09/07/2026",
-        userId: rosiana.id,
-        jenisSampah: "Etiket" as const,
-        beratKg: 0.45,
-        beratAiKg: 0.45,
-        tanggalSetor: "2026-07-09",
-        fotoTimbangan:
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/26667-b51af805-ab6a-46b7-a093-8d37652c32e9.webp",
-        fotoBuktiTambahan: [
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/26667-b51af805-ab6a-46b7-a093-8d37652c32e9.webp",
-        ],
-        totalPoin: 11,
-        status: "diterima" as const,
-        kategoriNasabah: "konsumen" as const,
-        metodeSetor: "langsung" as const,
-        createdAt: new Date("2026-07-09T07:20:53.346Z"),
-        updatedAt: new Date("2026-07-09T07:20:53.346Z"),
-      },
-    ];
-    await db.insert(setorSampah).values(rosianaSetoran);
-
-    // Sync points to nasabah table
-    await db
-      .update(nasabah)
-      .set({
-        poin: sql`${nasabah.poin} + 11`,
-      })
-      .where(eq(nasabah.id, rosiana.id));
-
-    console.log(
-      "✅ Seeded setoran Rosiana Dwi Hastuti (50023152) & disinkronkan 11 poin",
-    );
-  } else {
-    console.warn("⚠️ User Rosiana (50023152) tidak ditemukan, skip setoran.");
-  }
-
-  // ── DATA REAL: TPS 3R Sidoarjo (SPK-001) ──────────────────────────────────
-  // Dokumen: Mei 2026 | Tunai | Sampling produk 1 dus
-  // Plastik Kemasan: 2 kg → Total Tagihan: Rp25.000
+  // ── 1. DATA REAL: TPS 3R Sidoarjo (Agustus 2026) ───────────────────────────
   const bsSidoarjo = await db.query.nasabah.findFirst({
     where: (nasabah, { eq }) => eq(nasabah.username, "banksampah.sidoarjo"),
   });
@@ -77,39 +15,56 @@ export async function seedSetorSampah() {
   if (bsSidoarjo) {
     await db.insert(setorSampah).values([
       {
-        nomorSetor: "2/B/NDL/BJM/01/05/2026",
+        nomorSetor: "1/B/NDL/BJM/16/08/2026",
         userId: bsSidoarjo.id,
-        jenisSampah: "Etiket" as const, // Plastik Kemasan (Etiket = jenis plastik di enum)
-        beratKg: 2.0,
-        beratAiKg: 2.0,
-        tanggalSetor: "2026-05-01",
+        jenisSampah: "Etiket" as const,
+        beratKg: 4.5,
+        beratAiKg: null,
+        tanggalSetor: "2026-08-16",
         fotoTimbangan:
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/8139-7dd34e57-069c-4a5d-9bd9-1dd2dcc9fc25.webp",
+          "/api/media/setor-sampah/setoran-timbangan/51421-92b1bb0a-25fb-4d3c-b347-66d582a1b44d.webp",
         fotoBuktiTambahan: [
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/8139-1df2f2c9-c943-4a9a-ac95-cff35a0eb59d-1.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/8139-1df2f2c9-c943-4a9a-ac95-cff35a0eb59d-2.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/8139-1df2f2c9-c943-4a9a-ac95-cff35a0eb59d-3.webp",
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51421-ae690869-3d52-4436-b09f-32a279e779e8.webp",
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51421-d2c63e6c-f7d9-4a0f-9e6f-9eb1d01701a8.webp",
         ],
         catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,
-        metodeSetor: "langsung",
-        createdAt: new Date("2026-05-01T08:00:00.000Z"),
-        updatedAt: new Date("2026-05-01T08:00:00.000Z"),
+        metodeSetor: null,
+        createdAt: new Date("2026-09-16T05:24:06.654Z"),
+        updatedAt: new Date("2026-09-16T05:24:39.745Z"),
+      },
+      {
+        nomorSetor: "2/B/NDL/BJM/16/08/2026",
+        userId: bsSidoarjo.id,
+        jenisSampah: "Paper Cup" as const,
+        beratKg: 4.0,
+        beratAiKg: null,
+        tanggalSetor: "2026-08-16",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51421-4148c9f0-7201-4207-810e-33995bab3ec4.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51421-4ab4b35f-6e05-4367-912c-f08c7d49c391.webp",
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51421-ebf0c385-2eeb-437f-a6fb-60be4d35231c.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-16T05:25:36.972Z"),
+        updatedAt: new Date("2026-09-16T05:26:00.532Z"),
       },
     ]);
-    console.log("✅ Seeded setoran TPS 3R Sidoarjo (SPK-001) — Mei 2026");
+    console.log("✅ Seeded setoran TPS 3R Sidoarjo — Agustus 2026 (2 setoran)");
   } else {
     console.warn(
-      "⚠️ User banksampah.sidoarjo tidak ditemukan, skip setoran SPK-001.",
+      "⚠️ User banksampah.sidoarjo tidak ditemukan, skip setoran Sidoarjo.",
     );
   }
 
-  // ── DATA REAL: Bank Sampah Banjarbaru / TPS 3R Gotong Royong (SPK-002) ────
-  // Dokumen: Mei 2026 | Tunai | Sampling produk 1 dus
-  // Plastik Kemasan: 14.98 kg | Paper Cup: 15.01 kg | Karton: 1.50 kg
-  // Total: 31.49 kg → Total Tagihan: Rp200.000
+  // ── 2. DATA REAL: Bank Sampah Banjarbaru / TPS 3R Gotong Royong (Agustus 2026)
   const bsBanjarbaru = await db.query.nasabah.findFirst({
     where: (nasabah, { eq }) => eq(nasabah.username, "banksampah.banjarbaru"),
   });
@@ -117,327 +72,292 @@ export async function seedSetorSampah() {
   if (bsBanjarbaru) {
     await db.insert(setorSampah).values([
       {
-        nomorSetor: "3/B/NDL/BJM/01/05/2026",
+        nomorSetor: "3/B/NDL/BJM/21/09/2026",
         userId: bsBanjarbaru.id,
-        jenisSampah: "Etiket" as const, // Plastik Kemasan
-        beratKg: 14.98,
-        beratAiKg: 14.98,
-        tanggalSetor: "2026-05-01",
+        jenisSampah: "Etiket" as const,
+        beratKg: 3.0,
+        beratAiKg: 1.0,
+        tanggalSetor: "2026-08-01",
         fotoTimbangan:
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/9766-3c0f792a-f9c0-4793-b982-fdb2a2f76c80.webp",
+          "/api/media/setor-sampah/setoran-timbangan/51420-b2931e93-a480-401c-81d9-572daa1b3e39.webp",
         fotoBuktiTambahan: [
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-1.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-2.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-3.webp",
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-2c5175f4-7c0d-46a0-956f-cf0b5e61bc83.webp",
         ],
         catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,
-        metodeSetor: "langsung",
-        createdAt: new Date("2026-05-01T08:00:00.000Z"),
-        updatedAt: new Date("2026-05-01T08:00:00.000Z"),
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:33:19.717Z"),
+        updatedAt: new Date("2026-09-21T01:42:37.954Z"),
       },
       {
-        nomorSetor: "4/B/NDL/BJM/01/05/2026",
+        nomorSetor: "4/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 2.1,
+        beratAiKg: 2.1,
+        tanggalSetor: "2026-08-22",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-6806f8a9-57fd-46e3-b470-2eb9e1486277.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-a2b11f4d-3504-4ccf-b8fd-f80050b01a19.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:34:14.768Z"),
+        updatedAt: new Date("2026-09-21T01:43:01.897Z"),
+      },
+      {
+        nomorSetor: "5/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 3.235,
+        beratAiKg: 3.235,
+        tanggalSetor: "2026-08-08",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-1728e9c6-bbd8-4a8f-9705-f2e8b5b2c009.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-08ac4e6c-22e5-4c5e-b3d5-ebf07325ba1b.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:34:43.768Z"),
+        updatedAt: new Date("2026-09-21T01:43:20.221Z"),
+      },
+      {
+        nomorSetor: "6/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Etiket" as const,
+        beratKg: 2.86,
+        beratAiKg: 2.86,
+        tanggalSetor: "2026-08-15",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-5d6009d1-e07a-4fe0-b00f-5887d564803c.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-3d76ff4f-e412-4d52-b5e0-f59ccc2dbf1c.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:35:11.043Z"),
+        updatedAt: new Date("2026-09-21T01:43:35.574Z"),
+      },
+      {
+        nomorSetor: "7/B/NDL/BJM/21/09/2026",
         userId: bsBanjarbaru.id,
         jenisSampah: "Paper Cup" as const,
-        beratKg: 15.01,
-        beratAiKg: 15.01,
-        tanggalSetor: "2026-05-01",
+        beratKg: 2.665,
+        beratAiKg: 2.665,
+        tanggalSetor: "2026-08-08",
         fotoTimbangan:
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/9766-3c0f792a-f9c0-4793-b982-fdb2a2f76c80.webp",
+          "/api/media/setor-sampah/setoran-timbangan/51420-2b93703d-e3df-4045-89e8-e4d22e28cc0b.webp",
         fotoBuktiTambahan: [
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-1.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-2.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-3.webp",
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-dfc0fe14-da8b-4db5-bda7-36ce08d7a115.webp",
         ],
         catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,
-        metodeSetor: "langsung",
-        createdAt: new Date("2026-05-01T08:10:00.000Z"),
-        updatedAt: new Date("2026-05-01T08:10:00.000Z"),
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:35:58.215Z"),
+        updatedAt: new Date("2026-09-21T01:43:56.311Z"),
       },
       {
-        nomorSetor: "5/B/NDL/BJM/01/05/2026",
+        nomorSetor: "8/B/NDL/BJM/21/09/2026",
         userId: bsBanjarbaru.id,
-        jenisSampah: "Karton" as const,
-        beratKg: 1.5,
-        beratAiKg: 1.5,
-        tanggalSetor: "2026-05-01",
+        jenisSampah: "Paper Cup" as const,
+        beratKg: 2.65,
+        beratAiKg: 2.65,
+        tanggalSetor: "2026-08-01",
         fotoTimbangan:
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-timbangan/9766-3c0f792a-f9c0-4793-b982-fdb2a2f76c80.webp",
+          "/api/media/setor-sampah/setoran-timbangan/51420-cb32e995-1e67-44ed-a526-5a6c7f50006d.webp",
         fotoBuktiTambahan: [
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-1.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-2.webp",
-          "https://pub-2b4d39fb7c2c4418a4af69873887c95e.r2.dev/setor-sampah/setoran-bukti-tambahan/9766-c8da98c2-6bdd-4e71-b780-75162c8fd262-3.webp",
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-cd94ba99-d78a-474c-8d19-d71a87de376d.webp",
         ],
         catatan: null,
         totalPoin: 0,
         status: "diterima" as const,
         kategoriNasabah: "bank-sampah" as const,
-        metodeSetor: "langsung",
-        createdAt: new Date("2026-05-01T08:20:00.000Z"),
-        updatedAt: new Date("2026-05-01T08:20:00.000Z"),
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:36:24.794Z"),
+        updatedAt: new Date("2026-09-21T01:44:28.714Z"),
+      },
+      {
+        nomorSetor: "9/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Paper Cup" as const,
+        beratKg: 3.175,
+        beratAiKg: 3.175,
+        tanggalSetor: "2026-08-15",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-77f1b654-77cd-4390-a870-23835b148e29.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-bb7681dc-15b7-4ee4-a469-16ddf3a9f186.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:36:43.708Z"),
+        updatedAt: new Date("2026-09-21T01:44:43.911Z"),
+      },
+      {
+        nomorSetor: "10/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Paper Cup" as const,
+        beratKg: 3.08,
+        beratAiKg: 3.08,
+        tanggalSetor: "2026-08-22",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-7e6da981-b44b-4731-96b3-b4c3a70b2c0e.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-fdcbff8a-0ae3-40d2-91fd-f5df7414ffa6.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:37:10.869Z"),
+        updatedAt: new Date("2026-09-21T01:48:16.446Z"),
+      },
+      {
+        nomorSetor: "11/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 6.925,
+        beratAiKg: 6.925,
+        tanggalSetor: "2026-08-08",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-df5775fa-bef2-4d38-90e1-db4012347df5.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-76d28b3d-5784-4763-9985-0206a51a4cc8.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:37:33.285Z"),
+        updatedAt: new Date("2026-09-21T01:48:33.916Z"),
+      },
+      {
+        nomorSetor: "12/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 7.845,
+        beratAiKg: 7.845,
+        tanggalSetor: "2026-08-01",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-7ca12908-8e32-4208-8e04-0191f4aa6a3f.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-5b791eaa-12b8-4298-9fc4-5a517bda663b.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:37:49.805Z"),
+        updatedAt: new Date("2026-09-21T01:57:53.803Z"),
+      },
+      {
+        nomorSetor: "13/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 3.755,
+        beratAiKg: 3.755,
+        tanggalSetor: "2026-08-15",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-c4664fb1-18d3-4d8f-bca0-3ca90cb89216.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-490a0e41-ad81-4c93-99dc-a496b4e638e8.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:38:11.222Z"),
+        updatedAt: new Date("2026-09-21T01:48:56.480Z"),
+      },
+      {
+        nomorSetor: "14/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 2.86,
+        beratAiKg: 2.86,
+        tanggalSetor: "2026-08-22",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-3ec77cde-0992-4e2c-b6f5-c8ad33962c04.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-8441ebc3-c64c-43d2-9f7d-f20daa1a93f4.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T01:38:28.372Z"),
+        updatedAt: new Date("2026-09-21T01:49:09.631Z"),
+      },
+      {
+        nomorSetor: "15/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 5.72,
+        beratAiKg: 5.12,
+        tanggalSetor: "2026-08-01",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-653ac16b-3f7b-42ee-b656-4421ae2e9cce.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-6f4b0717-304f-4ade-a8b3-3b42877ad414.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T02:03:32.655Z"),
+        updatedAt: new Date("2026-09-21T02:05:08.330Z"),
+      },
+      {
+        nomorSetor: "16/B/NDL/BJM/21/09/2026",
+        userId: bsBanjarbaru.id,
+        jenisSampah: "Karton" as const,
+        beratKg: 4.35,
+        beratAiKg: 4.35,
+        tanggalSetor: "2026-08-01",
+        fotoTimbangan:
+          "/api/media/setor-sampah/setoran-timbangan/51420-f75428a7-56da-498a-aa61-0e8007bb768d.webp",
+        fotoBuktiTambahan: [
+          "/api/media/setor-sampah/setoran-bukti-tambahan/51420-10a58fe2-ac6d-4a38-a969-2f8bf23678f5.webp",
+        ],
+        catatan: null,
+        totalPoin: 0,
+        status: "diterima" as const,
+        kategoriNasabah: "bank-sampah" as const,
+        metodeSetor: null,
+        createdAt: new Date("2026-09-21T02:04:28.190Z"),
+        updatedAt: new Date("2026-09-21T02:05:17.069Z"),
       },
     ]);
     console.log(
-      "✅ Seeded setoran Bank Sampah Banjarbaru (SPK-002) — Mei 2026 (3 item: Plastik 14.98kg + Paper Cup 15.01kg + Karton 1.50kg)",
+      "✅ Seeded setoran Bank Sampah Banjarbaru — Agustus 2026 (14 setoran)",
     );
   } else {
     console.warn(
-      "⚠️ User banksampah.banjarbaru tidak ditemukan, skip setoran SPK-002.",
-    );
-  }
-
-  // ── DATA SEED BARU: 5 Setoran Warmindo & 5 Setoran Konsumen ─────────────────
-  const wDemo = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo"),
-  });
-  const wBerkah = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo.berkah"),
-  });
-  const wMandiri = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo.mandiri"),
-  });
-  const wJaya = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo.jaya"),
-  });
-  const wSejahtera = await db.query.users.findFirst({
-    where: eq(users.username, "warmindo.sejahtera"),
-  });
-
-  const ani = await db.query.users.findFirst({
-    where: eq(users.username, "50002842"),
-  });
-  const kurnia = await db.query.users.findFirst({
-    where: eq(users.username, "50173241"),
-  });
-  const tri = await db.query.users.findFirst({
-    where: eq(users.username, "50009840"),
-  });
-  const achmad = await db.query.users.findFirst({
-    where: eq(users.username, "50141512"),
-  });
-
-  const bankSampahDemo = await db.query.users.findFirst({
-    where: eq(users.username, "banksampah"),
-  });
-
-  if (wDemo && wBerkah && wMandiri && wJaya && wSejahtera && bankSampahDemo) {
-    await db.insert(setorSampah).values([
-      {
-        nomorSetor: "6/W/NDL/BJM/09/07/2026",
-        userId: wDemo.id,
-        jenisSampah: "Karton" as const,
-        beratKg: 3.5,
-        beratAiKg: 3.5,
-        tanggalSetor: "2026-07-09",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampah Ok",
-        totalPoin: 0,
-        status: "pending" as const,
-        kategoriNasabah: "warmindo" as const,
-        metodeSetor: "langsung" as const,
-        bankSampahId: bankSampahDemo.id,
-        createdAt: new Date("2026-07-09T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-09T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "7/W/NDL/BJM/10/07/2026",
-        userId: wBerkah.id,
-        jenisSampah: "Etiket" as const,
-        beratKg: 2.5,
-        beratAiKg: 2.5,
-        tanggalSetor: "2026-07-10",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampah sudah di pisahkan",
-        totalPoin: 0,
-        status: "pending" as const,
-        kategoriNasabah: "warmindo" as const,
-        metodeSetor: "langsung" as const,
-        bankSampahId: bankSampahDemo.id,
-        createdAt: new Date("2026-07-10T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-10T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "8/W/NDL/BJM/11/07/2026",
-        userId: wMandiri.id,
-        jenisSampah: "Paper Cup" as const,
-        beratKg: 12.34,
-        beratAiKg: 12.34,
-        tanggalSetor: "2026-07-11",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampah sudah di pisahkan dan bersih",
-        totalPoin: 0,
-        status: "diserahkan" as const,
-        kategoriNasabah: "warmindo" as const,
-        metodeSetor: "langsung" as const,
-        bankSampahId: bankSampahDemo.id,
-        createdAt: new Date("2026-07-11T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-11T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "9/W/NDL/BJM/12/07/2026",
-        userId: wJaya.id,
-        jenisSampah: "Karton" as const,
-        beratKg: 14.22,
-        beratAiKg: 14.22,
-        tanggalSetor: "2026-07-12",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Sampah belum di pisahkan",
-        totalPoin: 0,
-        status: "diterima" as const,
-        kategoriNasabah: "warmindo" as const,
-        metodeSetor: "langsung" as const,
-        bankSampahId: bankSampahDemo.id,
-        createdAt: new Date("2026-07-12T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-12T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "10/W/NDL/BJM/13/07/2026",
-        userId: wSejahtera.id,
-        jenisSampah: "Etiket" as const,
-        beratKg: 19.86,
-        beratAiKg: null,
-        tanggalSetor: "2026-07-13",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "beberapa sampah masih di campur",
-        totalPoin: 0,
-        status: "ditolak" as const,
-        kategoriNasabah: "warmindo" as const,
-        metodeSetor: "langsung" as const,
-        bankSampahId: bankSampahDemo.id,
-        createdAt: new Date("2026-07-13T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-13T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "11/W/NDL/BJM/15/06/2026",
-        userId: wJaya.id,
-        jenisSampah: "Paper Cup" as const,
-        beratKg: 12.34,
-        beratAiKg: 12.34,
-        tanggalSetor: "2026-06-15",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: "Setoran Warmindo Jaya bulan Juni",
-        totalPoin: 0,
-        status: "diterima" as const,
-        kategoriNasabah: "warmindo" as const,
-        metodeSetor: "langsung" as const,
-        bankSampahId: bankSampahDemo.id,
-        createdAt: new Date("2026-06-15T09:00:00.000Z"),
-        updatedAt: new Date("2026-06-15T09:00:00.000Z"),
-      },
-    ]);
-    console.log("✅ Seeded 6 Warmindo setoran");
-  }
-
-  if (rosiana && ani && kurnia && tri && achmad) {
-    await db.insert(setorSampah).values([
-      {
-        nomorSetor: "12/B/NDL/BJM/09/07/2026",
-        userId: rosiana.id,
-        jenisSampah: "Karton" as const,
-        beratKg: 8.52,
-        beratAiKg: null,
-        tanggalSetor: "2026-07-09",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: null,
-        totalPoin: 0,
-        status: "pending" as const,
-        kategoriNasabah: "konsumen" as const,
-        metodeSetor: null,
-        createdAt: new Date("2026-07-09T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-09T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "13/B/NDL/BJM/10/07/2026",
-        userId: ani.id,
-        jenisSampah: "Etiket" as const,
-        beratKg: 8.54,
-        beratAiKg: null,
-        tanggalSetor: "2026-07-10",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: null,
-        totalPoin: 0,
-        status: "diverifikasi" as const,
-        kategoriNasabah: "konsumen" as const,
-        metodeSetor: null,
-        createdAt: new Date("2026-07-10T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-10T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "14/B/NDL/BJM/11/07/2026",
-        userId: kurnia.id,
-        jenisSampah: "Paper Cup" as const,
-        beratKg: 9.79,
-        beratAiKg: null,
-        tanggalSetor: "2026-07-11",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: null,
-        totalPoin: 0,
-        status: "diserahkan" as const,
-        kategoriNasabah: "konsumen" as const,
-        metodeSetor: null,
-        createdAt: new Date("2026-07-11T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-11T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "15/B/NDL/BJM/12/07/2026",
-        userId: tri.id,
-        jenisSampah: "Karton" as const,
-        beratKg: 6.42,
-        beratAiKg: 6.42,
-        tanggalSetor: "2026-07-12",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: null,
-        totalPoin: 128,
-        status: "diterima" as const,
-        kategoriNasabah: "konsumen" as const,
-        metodeSetor: null,
-        createdAt: new Date("2026-07-12T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-12T09:00:00.000Z"),
-      },
-      {
-        nomorSetor: "16/B/NDL/BJM/13/07/2026",
-        userId: achmad.id,
-        jenisSampah: "Etiket" as const,
-        beratKg: 5.21,
-        beratAiKg: null,
-        tanggalSetor: "2026-07-13",
-        fotoTimbangan: null,
-        fotoBuktiTambahan: [],
-        catatan: null,
-        totalPoin: 0,
-        status: "ditolak" as const,
-        kategoriNasabah: "konsumen" as const,
-        metodeSetor: null,
-        createdAt: new Date("2026-07-13T09:00:00.000Z"),
-        updatedAt: new Date("2026-07-13T09:00:00.000Z"),
-      },
-    ]);
-
-    await db
-      .update(nasabah)
-      .set({
-        poin: sql`${nasabah.poin} + 128`,
-      })
-      .where(eq(nasabah.id, tri.id));
-
-    console.log(
-      "✅ Seeded 5 Konsumen setoran & updated points for Tri Anggono",
+      "⚠️ User banksampah.banjarbaru tidak ditemukan, skip setoran Banjarbaru.",
     );
   }
 
@@ -446,5 +366,5 @@ export async function seedSetorSampah() {
     sql`SELECT setval('setor_sampah_id_seq', (SELECT MAX(id) FROM setor_sampah))`,
   );
 
-  console.log("✅ Seeded split setoran and pencairan successfully");
+  console.log("✅ Seeded setor sampah khusus Bank Sampah successfully");
 }

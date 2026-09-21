@@ -27,7 +27,74 @@ import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import { DataTable } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { SetorSampahItem } from "@/app/types";
+
+const konsumenSteps = [
+  {
+    element: "#tour-admin-konsumen-header",
+    popover: {
+      title: "Laporan Setoran Konsumen",
+      description:
+        "Selamat datang di halaman Laporan Setoran Konsumen! Halaman ini digunakan oleh Administrator dan Superadmin untuk memantau, memvalidasi, dan mengelola seluruh aktivitas transaksi penyetoran sampah daur ulang yang diajukan oleh masyarakat umum (Konsumen).",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-konsumen-print",
+    popover: {
+      title: "Cetak Dokumen Laporan",
+      description:
+        "Gunakan tombol 'Cetak Laporan' ini untuk mengunduh atau mencetak rekapitulasi data setoran nasabah konsumen dalam format cetak (PDF/kertas) yang rapi untuk keperluan arsip atau pelaporan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-konsumen-metrics",
+    popover: {
+      title: "Rangkuman Metrik Utama",
+      description:
+        "Tiga kartu ini menampilkan ringkasan data setoran secara langsung: Total frekuensi transaksi yang masuk (kali), Total akumulasi berat sampah terpilah (kg), serta Total perolehan poin reward yang didapatkan oleh nasabah.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-konsumen-search",
+    popover: {
+      title: "Pencarian Transaksi Cepat",
+      description:
+        "Ketikkan Nomor Setor (misal: ST-xxxx) atau Nama Nasabah pada kolom pencarian ini untuk menemukan catatan setoran tertentu secara instan.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-konsumen-filter",
+    popover: {
+      title: "Penyaringan Jenis Sampah & Status",
+      description:
+        "Saring daftar setoran berdasarkan Kategori Sampah (Karton, Etiket, Paper Cup) atau Status Verifikasinya (Pending untuk setoran yang menunggu ditinjau, Diterima untuk yang disetujui, atau Ditolak).",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-konsumen-table",
+    popover: {
+      title: "Tabel Data Setoran Nasabah",
+      description:
+        "Tabel ini memuat rincian setiap transaksi setoran: Nomor Setor, Nama Nasabah, Jenis Sampah, Berat Riil Timbangan (kg), Nilai Poin Reward yang diperoleh, serta Status verifikasi saat ini.",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-konsumen-actions",
+    popover: {
+      title: "Aksi Validasi & Hak Akses",
+      description:
+        "Klik tombol 'Validasi' (pada status Pending) atau 'Detail' untuk memeriksa bukti foto timbangan dan hasil deteksi AI serta menyetujui setoran. Khusus Superadmin, tersedia pula tombol Edit dan Hapus data transaksi bila ada kekeliruan input.",
+      side: "left" as const,
+    },
+  },
+];
 
 export default function LaporanKonsumenPage() {
   const [data, setData] = useState<SetorSampahItem[]>([]);
@@ -36,6 +103,15 @@ export default function LaporanKonsumenPage() {
   const [totalPoin, setTotalPoin] = useState(0);
   const [_totalKredit, setTotalKredit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [_isTourActive, setIsTourActive] = useState(false);
+
+  const handleTourStart = () => {
+    setIsTourActive(true);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+  };
 
   // Table pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -570,8 +646,17 @@ export default function LaporanKonsumenPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      <TourGuide
+        steps={konsumenSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden">
+      <div
+        id="tour-admin-konsumen-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
@@ -606,6 +691,7 @@ export default function LaporanKonsumenPage() {
           </div>
 
           <button
+            id="tour-admin-konsumen-print"
             type="button"
             onClick={handlePrint}
             className="flex items-center justify-center gap-2 px-4 py-3 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-sm transition-colors cursor-pointer shadow-2xs h-[52px]"
@@ -617,7 +703,10 @@ export default function LaporanKonsumenPage() {
       </div>
 
       {/* Rangkuman Kartu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 print:grid-cols-3 print:gap-4">
+      <div
+        id="tour-admin-konsumen-metrics"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 print:grid-cols-3 print:gap-4"
+      >
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
             Total Setoran
@@ -666,6 +755,11 @@ export default function LaporanKonsumenPage() {
           </div>
         ) : (
           <DataTable
+            id="tour-admin-konsumen-table-root"
+            searchId="tour-admin-konsumen-search"
+            filterId="tour-admin-konsumen-filter"
+            tableContainerId="tour-admin-konsumen-table"
+            actionsHeaderId="tour-admin-konsumen-actions"
             data={data}
             columns={columnsWithSuperadmin}
             totalItems={totalItems}

@@ -29,27 +29,36 @@ const rewardTourSteps = [
   {
     element: "#tour-warmindo-reward-points",
     popover: {
-      title: "Poin Reward Anda",
+      title: "Saldo Poin Reward Anda",
       description:
-        "Menampilkan total akumulasi poin yang Anda peroleh dari setoran sampah kemasan Indofood (10 poin / 100 gram). Poin ini dapat ditukarkan dengan hadiah barang, voucher belanja, atau uang tunai.",
+        "Bagian ini menunjukkan akumulasi poin reward murni yang Anda kumpulkan dari setiap kilogram setoran sampah kemasan Indofood (10 poin / 100 gram). Poin ini menjadi modal untuk ditukarkan dengan beragam hadiah menarik tanpa dipungut biaya apapun.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-warmindo-reward-tabs",
+    popover: {
+      title: "Filter Kategori Hadiah",
+      description:
+        "Gunakan tombol filter ini untuk memilah reward berdasarkan jenisnya: Uang Tunai (langsung transfer ke rekening bank Anda), Voucher belanja, atau Barang Fisik (merchandise & alat operasional warung).",
       side: "bottom" as const,
     },
   },
   {
     element: "#tour-warmindo-reward-cards",
     popover: {
-      title: "Katalog Reward (Barang, Voucher & Uang)",
+      title: "Katalog & Penukaran Hadiah",
       description:
-        "Pilih reward yang Anda inginkan. Tersedia pilihan Voucher belanja/diskon, Uang Tunai yang ditransfer langsung ke rekening Anda, atau Merchandise/Peralatan operasional warung.",
+        "Daftar kartu reward yang tersedia lengkap dengan foto, nama, deskripsi, stok, dan jumlah poin yang dibutuhkan. Jika poin Anda mencukupi, klik tombol 'Tukar Sekarang' untuk mengisi data penerimaan hadiah (rekening bank atau alamat pengiriman).",
       side: "top" as const,
     },
   },
   {
     element: "#tour-warmindo-reward-history",
     popover: {
-      title: "Riwayat Penukaran Poin",
+      title: "Riwayat & Status Penukaran",
       description:
-        "Pantau status pengajuan penukaran reward Anda dari proses verifikasi admin hingga reward berhasil disalurkan beserta bukti transfer, kode voucher, atau nomor resi pengiriman.",
+        "Pantau progres setiap penukaran reward Anda di sini. Anda dapat memantau apakah status masih Menunggu Verifikasi, Sedang Diproses, Dikirimkan, Disetujui (lengkap dengan bukti transfer atau kode resi), ataupun Ditolak beserta alasannya.",
       side: "top" as const,
     },
   },
@@ -374,7 +383,7 @@ export default function TukarRewardWarmindoPage() {
 
       {/* Category Filter Tabs */}
       <div
-        id="tour-warmindo-reward-cards"
+        id="tour-warmindo-reward-tabs"
         className="flex items-center justify-between flex-wrap gap-3 border-b border-neutral-200 pb-3"
       >
         <div className="flex items-center gap-2 bg-neutral-100/80 p-1 rounded-xl border border-neutral-200">
@@ -433,7 +442,10 @@ export default function TukarRewardWarmindoPage() {
       </div>
 
       {/* Rewards Catalog Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div
+        id="tour-warmindo-reward-cards"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+      >
         {filteredRewards.length > 0 ? (
           filteredRewards.map((reward) => {
             const canAfford = userPoin >= reward.poin;

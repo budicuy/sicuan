@@ -24,7 +24,29 @@ import {
 } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { PenukaranRewardWarmindo } from "@/app/types";
+
+const penukaranRewardTourSteps = [
+  {
+    element: "#tour-admin-penukaran-header",
+    popover: {
+      title: "Pusat Persetujuan Klaim Reward",
+      description:
+        "Halaman kerja administrator untuk memvalidasi dan memproses setiap klaim penukaran reward (Uang Tunai, Voucher Belanja, atau Barang Fisik) yang diajukan oleh mitra Warmindo maupun nasabah Konsumen.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-penukaran-table",
+    popover: {
+      title: "Tabel Pengajuan Penukaran Poin",
+      description:
+        "Tabel yang memuat nama pemohon, tipe mitra, nama reward, poin yang dipotong, detail rekening atau alamat tujuan pengiriman, bukti transfer, dan status. Klik 'Proses' untuk mengunggah bukti penyaluran reward atau 'Tolak' jika data tidak valid.",
+      side: "top" as const,
+    },
+  },
+];
 
 type PenukaranWithUser = PenukaranRewardWarmindo & {
   user?: {
@@ -408,8 +430,13 @@ export default function PenukaranRewardWarmindoPage() {
 
   return (
     <div className="space-y-6">
+      <TourGuide steps={penukaranRewardTourSteps} />
+
       {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden print:hidden">
+      <div
+        id="tour-admin-penukaran-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden print:hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/20 shrink-0">
@@ -428,30 +455,32 @@ export default function PenukaranRewardWarmindoPage() {
       </div>
 
       {/* Data Table */}
-      <DataTable
-        data={data}
-        columns={columns}
-        totalItems={totalItems}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(e) => {
-          setPageSize(Number(e.target.value));
-          setCurrentPage(1);
-        }}
-        search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setCurrentPage(1);
-        }}
-        filters={filters}
-        filterValues={filterValues}
-        onFilterChange={(id, val) => {
-          setFilterValues((prev) => ({ ...prev, [id]: val }));
-          setCurrentPage(1);
-        }}
-        searchPlaceholder="Cari nama mitra, rekening, atau catatan..."
-      />
+      <div id="tour-admin-penukaran-table">
+        <DataTable
+          data={data}
+          columns={columns}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+          search={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setCurrentPage(1);
+          }}
+          filters={filters}
+          filterValues={filterValues}
+          onFilterChange={(id, val) => {
+            setFilterValues((prev) => ({ ...prev, [id]: val }));
+            setCurrentPage(1);
+          }}
+          searchPlaceholder="Cari nama mitra, rekening, atau catatan..."
+        />
+      </div>
 
       {/* Modal Approve / Selesaikan */}
       {selectedItemForApprove && (

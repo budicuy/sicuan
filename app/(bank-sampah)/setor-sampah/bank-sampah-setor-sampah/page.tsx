@@ -148,63 +148,14 @@ export default function BankSampahSetorSampah() {
   );
   const [catatan, setCatatan] = useState("");
 
-  const [isTourActive, setIsTourActive] = useState(false);
-  const savedStateRef = useRef<{
-    jenisSampah: string;
-    beratKg: string;
-    fotoTimbangan: string | null;
-    catatan: string;
-    history: SetorSampahItem[];
-    fotoBuktiList: string[];
-    aiValidated: boolean;
-    beratAiKg: number | null;
-    requestManual: boolean;
-    isWeightConfirmed: boolean;
-    aiError: string;
-  } | null>(null);
+  const [_isTourActive, setIsTourActive] = useState(false);
 
   const handleTourStart = () => {
-    savedStateRef.current = {
-      jenisSampah,
-      beratKg,
-      fotoTimbangan,
-      catatan,
-      history,
-      fotoBuktiList,
-      aiValidated,
-      beratAiKg,
-      requestManual,
-      isWeightConfirmed,
-      aiError,
-    };
     setIsTourActive(true);
-    setJenisSampah("Karton");
-    setBeratKg("1.5");
-    setFotoTimbangan("/sampel_1.png");
-    setFotoBuktiList(["/sampel_1.png"]);
-    setCatatan("");
-    setAiValidated(true);
-    setBeratAiKg(1.5);
-    setRequestManual(false);
-    setIsWeightConfirmed(true);
-    setAiError("");
   };
 
   const handleTourEnd = () => {
     setIsTourActive(false);
-    if (savedStateRef.current) {
-      setJenisSampah(savedStateRef.current.jenisSampah);
-      setBeratKg(savedStateRef.current.beratKg);
-      setFotoTimbangan(savedStateRef.current.fotoTimbangan);
-      setCatatan(savedStateRef.current.catatan);
-      setHistory(savedStateRef.current.history);
-      setFotoBuktiList(savedStateRef.current.fotoBuktiList);
-      setAiValidated(savedStateRef.current.aiValidated);
-      setBeratAiKg(savedStateRef.current.beratAiKg);
-      setRequestManual(savedStateRef.current.requestManual);
-      setIsWeightConfirmed(savedStateRef.current.isWeightConfirmed);
-      setAiError(savedStateRef.current.aiError);
-    }
   };
 
   const setorSteps = [
@@ -220,9 +171,9 @@ export default function BankSampahSetorSampah() {
     {
       element: "#tour-bank-sampah-setor-submit",
       popover: {
-        title: "Simulasi Kirim Setoran",
+        title: "Kirim Formulir Setoran",
         description:
-          "Klik tombol ini untuk mengirim setoran secara simulasi. Alur akan dialihkan ke mode pengiriman langsung tanpa masuk ke database riil.",
+          "Klik tombol 'Kirim Setoran' untuk menyimpan pengajuan setoran sampah terpilah ini ke dalam sistem secara resmi.",
         side: "top" as const,
       },
     },
@@ -231,7 +182,7 @@ export default function BankSampahSetorSampah() {
       popover: {
         title: "Riwayat Setoran Saya",
         description:
-          "Setelah Anda menyimulasikan setoran, detail pengajuan baru Anda beserta status verifikasinya akan langsung muncul di panel ini.",
+          "Panel ini memuat riwayat seluruh transaksi setoran sampah yang telah Anda catat, lengkap dengan status verifikasinya.",
         side: "left" as const,
       },
     },
@@ -323,17 +274,6 @@ export default function BankSampahSetorSampah() {
     setAiValidated(false);
     setIsWeightConfirmed(false);
 
-    if (isTourActive) {
-      setTimeout(() => {
-        setIsValidatingAI(false);
-        setAiValidated(true);
-        setBeratAiKg(1.5);
-        setBeratKg("1.5");
-        setJenisSampah("Karton");
-      }, 1000);
-      return;
-    }
-
     try {
       const result = await validateFotoTimbangan(foto);
       setIsValidatingAI(false);
@@ -367,12 +307,6 @@ export default function BankSampahSetorSampah() {
     setIsWeightConfirmed(false);
     setRequestManual(isAiDisabled);
 
-    if (isTourActive) {
-      setFotoTimbangan("/sampel_1.png");
-      runAiDetection("/sampel_1.png");
-      return;
-    }
-
     const withWatermark = await addWatermarkToImage(rawDataUrl, new Date());
     const compressed = await compressImage(withWatermark, 100 * 1024);
     setFotoTimbangan(compressed);
@@ -393,13 +327,6 @@ export default function BankSampahSetorSampah() {
     setBeratKg("");
     setIsWeightConfirmed(false);
     setRequestManual(isAiDisabled);
-
-    if (isTourActive) {
-      setFotoTimbangan("/sampel_1.png");
-      runAiDetection("/sampel_1.png");
-      if (e.target) e.target.value = "";
-      return;
-    }
 
     const file = e.target.files?.[0];
     if (!file) return;
@@ -449,42 +376,6 @@ export default function BankSampahSetorSampah() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormErrors({});
-
-    if (isTourActive) {
-      document.dispatchEvent(new CustomEvent("close-tour-guide"));
-      showFeedback(
-        "success",
-        "Setoran Berhasil! (Simulasi)",
-        `Simulasi: Setoran sampah ${jenisSampah} (${beratKg || "1.00"} kg) Anda berhasil dicatat. Data Anda tidak disimpan ke database.`,
-      );
-      setBeratKg("");
-      setCatatan("");
-      setFotoTimbangan(null);
-      setFotoBuktiList([]);
-      setAiValidated(false);
-      setRequestManual(isAiDisabled);
-      setIsWeightConfirmed(false);
-      setBeratAiKg(null);
-      setAiError("");
-      setHistory((prev) => [
-        {
-          id: Date.now(),
-          nomorSetor: `SIMULASI-B-${Math.floor(1000 + Math.random() * 9000)}`,
-          jenisSampah,
-          beratKg: Number(beratKg) || 1.0,
-          totalPoin: 0,
-          tanggalSetor: new Date().toISOString().split("T")[0],
-          status: "pending",
-          createdAt: new Date(),
-          metodeSetor: "langsung",
-          catatan,
-          totalKredit: (Number(beratKg) || 1.0) * 1000,
-          fotoTimbangan: "/sampel_1.png",
-        },
-        ...prev,
-      ]);
-      return;
-    }
 
     if (!fotoTimbangan) {
       setFormErrors({ fotoTimbangan: ["Wajib mengambil foto timbangan."] });

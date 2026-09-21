@@ -69,7 +69,7 @@ const bankSampahSteps = [
     popover: {
       title: "Aksi Validasi Setoran",
       description:
-        "Klik 'Validasi' untuk membuka detail dan memutuskan apakah setoran diterima atau ditolak. Pada mode tour ini adalah simulasi.",
+        "Klik 'Validasi' untuk membuka detail setoran sampah nasabah dan memutuskan apakah setoran disetujui (diterima) atau ditolak berdasarkan bukti foto fisik.",
       side: "left" as const,
     },
   },

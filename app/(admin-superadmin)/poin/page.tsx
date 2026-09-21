@@ -12,8 +12,30 @@ import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import { type Column, DataTable } from "@/app/components/shared/DataTable";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getCurrentUser } from "@/app/lib/auth-actions";
 import type { ActionState, PoinSampah } from "@/app/types";
+
+const poinTourSteps = [
+  {
+    element: "#tour-admin-poin-header",
+    popover: {
+      title: "Master Data Poin Konversi Sampah",
+      description:
+        "Halaman untuk mengelola konfigurasi nilai tukar poin dasar per kilogram sampah anorganik yang disetorkan oleh nasabah umum (Konsumen).",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-poin-table",
+    popover: {
+      title: "Tabel Konfigurasi Poin Sampah",
+      description:
+        "Tabel yang memuat jenis sampah (Karton, Etiket, Paper Cup) beserta perolehan poin per kilogramnya. Administrator dan Superadmin dapat mengedit nilai poin atau menambahkan jenis material sampah baru.",
+      side: "top" as const,
+    },
+  },
+];
 
 export default function PoinPage() {
   const [data, setData] = useState<PoinSampah[]>([]);
@@ -185,7 +207,11 @@ export default function PoinPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden">
+      <TourGuide steps={poinTourSteps} />
+      <div
+        id="tour-admin-poin-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
+      >
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
@@ -203,31 +229,33 @@ export default function PoinPage() {
         </div>
       </div>
 
-      <DataTable
-        data={data}
-        columns={columns}
-        totalItems={totalItems}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(e) => {
-          setPageSize(Number(e.target.value));
-          setCurrentPage(1);
-        }}
-        search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setCurrentPage(1);
-        }}
-        searchPlaceholder="Cari berdasarkan jenis sampah..."
-        onAdd={userRole === "superadmin" ? handleOpenAddModal : undefined}
-        addLabel="Tambah Master Poin"
-        onEdit={handleOpenEditModal}
-        onDelete={userRole === "superadmin" ? handleDelete : undefined}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSort={handleSort}
-      />
+      <div id="tour-admin-poin-table">
+        <DataTable
+          data={data}
+          columns={columns}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+          search={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setCurrentPage(1);
+          }}
+          searchPlaceholder="Cari berdasarkan jenis sampah..."
+          onAdd={userRole === "superadmin" ? handleOpenAddModal : undefined}
+          addLabel="Tambah Master Poin"
+          onEdit={handleOpenEditModal}
+          onDelete={userRole === "superadmin" ? handleDelete : undefined}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        />
+      </div>
 
       {/* CRUD Form Modal */}
       <FormModal
