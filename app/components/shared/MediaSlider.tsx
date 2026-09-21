@@ -96,16 +96,20 @@ export function MediaSlider({
     if (currentItem.tipe === "video") {
       const vid = videoRefs.current.get(currentItem.id);
       if (vid) {
+        vid.volume = 1.0;
         vid.muted = isMuted;
+
         if (autoPlay) {
           vid
             .play()
             .then(() => setIsPlaying(true))
             .catch((err) => {
-              // Jika browser memblokir autoplay dengan suara sebelum ada interaksi,
-              // lakukan fallback mute sementara agar video tetap berputar
-              if (err?.name === "NotAllowedError" && !isMuted) {
+              // Jika browser memblokir autoplay dengan suara sebelum ada interaksi pengguna,
+              // lakukan fallback mute sementara agar video tetap berputar visualnya,
+              // dan sinkronkan state isMuted agar UI menampilkan tombol yang sesuai
+              if (err?.name === "NotAllowedError") {
                 vid.muted = true;
+                setIsMuted(true);
                 vid
                   .play()
                   .then(() => setIsPlaying(true))
@@ -125,6 +129,50 @@ export function MediaSlider({
       }
     });
   }, [currentItem, isMuted, autoPlay]);
+
+  // Auto-unmute otomatis begitu pengguna berinteraksi pertama kali dengan halaman
+  // (misal klik field form, klik layar/scroll, atau tap di HP)
+  useEffect(() => {
+    if (!currentItem || currentItem.tipe !== "video") return;
+
+    const handleFirstInteraction = () => {
+      const vid = videoRefs.current.get(currentItem.id);
+      if (!vid) return;
+
+      const userExplicitlyMuted =
+        localStorage.getItem("sicuan_video_muted") === "true";
+
+      // Jika pengguna tidak sengaja mematikan suara secara eksplisit, aktifkan suara
+      if (!userExplicitlyMuted && (vid.muted || isMuted)) {
+        vid.muted = false;
+        vid.volume = 1.0;
+        setIsMuted(false);
+        if (vid.paused) {
+          vid
+            .play()
+            .then(() => setIsPlaying(true))
+            .catch(() => {});
+        }
+      }
+      cleanupListeners();
+    };
+
+    const events = ["click", "touchstart", "keydown", "pointerdown"];
+    const cleanupListeners = () => {
+      events.forEach((evt) => {
+        window.removeEventListener(evt, handleFirstInteraction);
+      });
+    };
+
+    events.forEach((evt) => {
+      window.addEventListener(evt, handleFirstInteraction, {
+        once: true,
+        passive: true,
+      });
+    });
+
+    return cleanupListeners;
+  }, [currentItem, isMuted]);
 
   const paginate = useCallback(
     (newDirection: number) => {
@@ -154,8 +202,42 @@ export function MediaSlider({
     }
   };
 
+  const handleVideoClick = () => {
+    if (!currentItem || currentItem.tipe !== "video") return;
+    const vid = videoRefs.current.get(currentItem.id);
+    if (!vid) return;
+
+    // Jika video sedang dibisukan (karena autoplay policy browser), klik pertama langsung bunyikan suara
+    if (vid.muted || isMuted) {
+      vid.muted = false;
+      vid.volume = 1.0;
+      setIsMuted(false);
+      try {
+        localStorage.setItem("sicuan_video_muted", "false");
+      } catch {
+        // ignore
+      }
+      if (vid.paused) {
+        vid
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {});
+      }
+      return;
+    }
+
+    // Jika video sudah bersuara, klik video untuk jeda / lanjut putar
+    togglePlay();
+  };
+
   const toggleMute = () => {
-    const newMuted = !isMuted;
+    if (!currentItem || currentItem.tipe !== "video") return;
+    const vid = videoRefs.current.get(currentItem.id);
+    if (!vid) return;
+
+    const currentRealMuted = vid.muted || isMuted;
+    const newMuted = !currentRealMuted;
+
     setIsMuted(newMuted);
     try {
       localStorage.setItem("sicuan_video_muted", String(newMuted));
@@ -163,17 +245,13 @@ export function MediaSlider({
       // ignore
     }
 
-    if (currentItem && currentItem.tipe === "video") {
-      const vid = videoRefs.current.get(currentItem.id);
-      if (vid) {
-        vid.muted = newMuted;
-        if (!newMuted && vid.paused) {
-          vid
-            .play()
-            .then(() => setIsPlaying(true))
-            .catch(() => {});
-        }
-      }
+    vid.muted = newMuted;
+    vid.volume = 1.0;
+    if (!newMuted && vid.paused) {
+      vid
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
     }
   };
 
@@ -314,7 +392,7 @@ export function MediaSlider({
                       [currentItem.id]: true,
                     }));
                   }}
-                  onClick={togglePlay}
+                  onClick={handleVideoClick}
                   className={`w-full h-full cursor-pointer transition-all duration-700 ease-out ${
                     isCurrentLoaded
                       ? "blur-none scale-100 opacity-100"
@@ -360,6 +438,21 @@ export function MediaSlider({
           <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-bold text-white/90 shadow-md pointer-events-none">
             {currentIndex + 1}/{validItems.length}
           </div>
+        )}
+
+        {/* Floating Sound Hint Prompt when video is muted and playing */}
+        {isCurrentVideo && isMuted && isPlaying && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMute();
+            }}
+            className="absolute bottom-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 hover:bg-black/90 text-white border border-white/20 backdrop-blur-md shadow-lg transition-all hover:scale-105 cursor-pointer text-xs font-semibold animate-pulse"
+          >
+            <VolumeX className="w-4 h-4 text-amber-300" />
+            <span>Ketuk untuk Aktifkan Suara</span>
+          </button>
         )}
 
         {/* Floating Controls (Top Right) */}
