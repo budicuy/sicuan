@@ -285,7 +285,7 @@ export default function BankSampahPencairanPage() {
     e.preventDefault();
     if (!withdrawPeriod) return;
 
-    if (!ttdBase64) {
+    if (metode !== "tunai" && !ttdBase64) {
       setTtdError("Tanda tangan penyerah wajib diunggah sebelum mengajukan.");
       return;
     }
@@ -307,7 +307,9 @@ export default function BankSampahPencairanPage() {
     formData.set("jumlah", withdrawPeriod.kredit.toString());
     formData.set("metodePembayaran", metode);
     formData.set("keterangan", keterangan);
-    formData.set("ttdPenyerah", ttdBase64);
+    if (ttdBase64) {
+      formData.set("ttdPenyerah", ttdBase64);
+    }
     formData.set("selectedYear", withdrawPeriod.year.toString());
     formData.set("selectedMonth", withdrawPeriod.month.toString());
 
@@ -1151,64 +1153,81 @@ export default function BankSampahPencairanPage() {
                 />
               </div>
 
-              {/* Tanda Tangan */}
-              <div>
-                <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block mb-1.5">
-                  Tanda Tangan Penyerah (Wajib)
-                </span>
-                <div className="border-2 border-dashed border-neutral-300 rounded-2xl p-4 text-center hover:border-primary-400 transition-colors">
-                  {ttdBase64 ? (
-                    <div className="space-y-3 flex flex-col items-center">
-                      <div className="bg-neutral-50 p-2 rounded-xl border border-neutral-200 max-h-36 max-w-full overflow-hidden">
-                        {/* biome-ignore lint/performance/noImgElement: user signature preview */}
-                        <img
-                          src={ttdBase64}
-                          alt="Tanda Tangan"
-                          className="max-h-32 object-contain"
+              {/* Tanda Tangan: Hanya tampil jika metode transfer */}
+              {metode === "tunai" ? (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+                  <Banknote className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h5 className="text-xs font-bold text-emerald-900">
+                      Pencairan Tunai Langsung (Cash)
+                    </h5>
+                    <p className="text-[11px] text-emerald-700 mt-1 leading-relaxed">
+                      Anda tidak perlu mengunggah foto tanda tangan digital.
+                      Penyerahan uang tunai dan penandatanganan dokumen bukti
+                      pembayaran fisik dilakukan langsung di tempat bersama
+                      petugas.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block mb-1.5">
+                    Tanda Tangan Penyerah (Wajib)
+                  </span>
+                  <div className="border-2 border-dashed border-neutral-300 rounded-2xl p-4 text-center hover:border-primary-400 transition-colors">
+                    {ttdBase64 ? (
+                      <div className="space-y-3 flex flex-col items-center">
+                        <div className="bg-neutral-50 p-2 rounded-xl border border-neutral-200 max-h-36 max-w-full overflow-hidden">
+                          {/* biome-ignore lint/performance/noImgElement: user signature preview */}
+                          <img
+                            src={ttdBase64}
+                            alt="Tanda Tangan"
+                            className="max-h-32 object-contain"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setTtdBase64(null)}
+                          className="text-xs font-bold text-red-600 hover:underline cursor-pointer bg-transparent border-0"
+                        >
+                          Ganti Tanda Tangan
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="cursor-pointer flex flex-col items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center">
+                          <UploadCloud className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-primary-600 hover:underline">
+                            Unggah Foto Tanda Tangan
+                          </span>
+                          <p className="text-[11px] text-neutral-400 mt-0.5">
+                            Format PNG, JPG, atau WEBP (Maks. 5MB)
+                          </p>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleTtdUpload}
+                          className="hidden"
                         />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setTtdBase64(null)}
-                        className="text-xs font-bold text-red-600 hover:underline cursor-pointer bg-transparent border-0"
-                      >
-                        Ganti Tanda Tangan
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer flex flex-col items-center gap-2">
-                      <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center">
-                        <UploadCloud className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold text-primary-600 hover:underline">
-                          Unggah Foto Tanda Tangan
-                        </span>
-                        <p className="text-[11px] text-neutral-400 mt-0.5">
-                          Format PNG, JPG, atau WEBP (Maks. 5MB)
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleTtdUpload}
-                        className="hidden"
-                      />
-                    </label>
+                      </label>
+                    )}
+                  </div>
+                  {isCompressingTtd && (
+                    <p className="text-[11px] text-primary-600 font-semibold mt-1 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Mengompresi
+                      gambar tanda tangan...
+                    </p>
+                  )}
+                  {ttdError && (
+                    <p className="text-[11px] text-red-600 font-semibold mt-1">
+                      {ttdError}
+                    </p>
                   )}
                 </div>
-                {isCompressingTtd && (
-                  <p className="text-[11px] text-primary-600 font-semibold mt-1 flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Mengompresi
-                    gambar tanda tangan...
-                  </p>
-                )}
-                {ttdError && (
-                  <p className="text-[11px] text-red-600 font-semibold mt-1">
-                    {ttdError}
-                  </p>
-                )}
-              </div>
+              )}
 
               {/* Tombol Submit Modal */}
               <div className="pt-3">
@@ -1216,9 +1235,8 @@ export default function BankSampahPencairanPage() {
                   type="submit"
                   disabled={
                     isPending ||
-                    isCompressingTtd ||
-                    (metode === "transfer" && !isBankSetup) ||
-                    !ttdBase64
+                    (metode === "transfer" &&
+                      (isCompressingTtd || !isBankSetup || !ttdBase64))
                   }
                   className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-md shadow-primary-600/20 cursor-pointer"
                 >

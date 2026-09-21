@@ -531,11 +531,11 @@ export async function requestDisbursement(
     };
   }
 
-  if (!ttdPenyerahBase64) {
+  if (metodePembayaran !== "tunai" && !ttdPenyerahBase64) {
     return {
       success: false,
       message: "Validasi gagal",
-      errors: { ttdPenyerah: ["Tanda tangan wajib diunggah"] },
+      errors: { ttdPenyerah: ["Tanda tangan wajib diunggah untuk transfer"] },
     };
   }
 
@@ -643,12 +643,15 @@ export async function requestDisbursement(
   }
 
   try {
-    const uuid = randomUUID();
-    const ttdPenyerahUrl = await uploadImageToR2(
-      ttdPenyerahBase64,
-      "ttd-penyerah",
-      `${user.id}-${uuid}`,
-    );
+    let ttdPenyerahUrl: string | null = null;
+    if (ttdPenyerahBase64) {
+      const uuid = randomUUID();
+      ttdPenyerahUrl = await uploadImageToR2(
+        ttdPenyerahBase64,
+        "ttd-penyerah",
+        `${user.id}-${uuid}`,
+      );
+    }
 
     const now = new Date();
     const finalMonth = selectedMonth > 0 ? selectedMonth : now.getMonth() + 1;

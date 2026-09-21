@@ -41,7 +41,18 @@ export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, null);
 
   useEffect(() => {
-    getActiveMediaSlider().then(setMediaItems);
+    fetch("/api/media-slider")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setMediaItems(data);
+        } else {
+          getActiveMediaSlider().then(setMediaItems);
+        }
+      })
+      .catch(() => {
+        getActiveMediaSlider().then(setMediaItems);
+      });
   }, []);
 
   // Redirect directly to dashboard when server action returns success

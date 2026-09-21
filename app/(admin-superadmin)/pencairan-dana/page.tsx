@@ -86,12 +86,17 @@ export default function PencairanAdminPage() {
     useState<DisbursementItem | null>(null);
   const [existingDocId, setExistingDocId] = useState<number | null>(null);
 
-  // Superadmin: Edit & Delete states
   const [deleteRequest, setDeleteRequest] = useState<DisbursementItem | null>(
     null,
   );
   const [editRequest, setEditRequest] = useState<DisbursementItem | null>(null);
   const [editForm, setEditForm] = useState<UpdatePencairanPayload>({});
+  const [editBuktiBase64, setEditBuktiBase64] = useState<string | null>(null);
+  const [editBuktiFileName, setEditBuktiFileName] = useState("");
+  const [editBuktiFileSize, setEditBuktiFileSize] = useState("");
+  const [editBuktiError, setEditBuktiError] = useState("");
+  const [hapusBuktiLama, setHapusBuktiLama] = useState(false);
+  const [isCompressingEditBukti, setIsCompressingEditBukti] = useState(false);
   const [isEditPending, startEditTransition] = useTransition();
   const [isDeletePending, startDeleteTransition] = useTransition();
 
@@ -164,13 +169,102 @@ export default function PencairanAdminPage() {
       noRekening: item.noRekening,
       keterangan: item.keterangan,
       status: item.status as "pending" | "berhasil" | "ditolak",
+      biayaTambahan: item.biayaTambahan || 0,
+      catatanBiayaTambahan: item.catatanBiayaTambahan || "",
     });
+    setEditBuktiBase64(null);
+    setEditBuktiFileName("");
+    setEditBuktiFileSize("");
+    setEditBuktiError("");
+    setHapusBuktiLama(false);
+  };
+
+  const handleEditBuktiUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    setEditBuktiError("");
+    if (!file) return;
+
+    const isTunai = editForm.metodePembayaran === "tunai";
+
+    if (isTunai) {
+      const isPdf =
+        file.type === "application/pdf" ||
+        file.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) {
+        setEditBuktiError("Harap unggah dokumen dalam format PDF (.pdf).");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setEditBuktiError("Ukuran berkas PDF maksimal 5 MB.");
+        return;
+      }
+      setIsCompressingEditBukti(true);
+      setEditBuktiFileName(file.name);
+      setEditBuktiFileSize((file.size / (1024 * 1024)).toFixed(2));
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEditBuktiBase64(reader.result as string);
+        setIsCompressingEditBukti(false);
+      };
+      reader.onerror = () => {
+        setEditBuktiError("Gagal membaca file PDF.");
+        setIsCompressingEditBukti(false);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      if (!file.type.startsWith("image/")) {
+        setEditBuktiError("File harus berupa gambar (JPG, PNG, WEBP).");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setEditBuktiError("Ukuran gambar maksimal 5 MB.");
+        return;
+      }
+      setIsCompressingEditBukti(true);
+      setEditBuktiFileName(file.name);
+      try {
+        const compressed = await imageCompression(file, {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true,
+        });
+        setEditBuktiFileSize((compressed.size / (1024 * 1024)).toFixed(2));
+        const reader = new FileReader();
+        reader.onload = () => {
+          setEditBuktiBase64(reader.result as string);
+          setIsCompressingEditBukti(false);
+        };
+        reader.onerror = () => {
+          setEditBuktiError("Gagal membaca file gambar.");
+          setIsCompressingEditBukti(false);
+        };
+        reader.readAsDataURL(compressed);
+      } catch {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setEditBuktiBase64(reader.result as string);
+          setIsCompressingEditBukti(false);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
   };
 
   const handleEdit = () => {
     if (!editRequest) return;
+    const isTunai = editForm.metodePembayaran === "tunai";
+    const payload: UpdatePencairanPayload = {
+      ...editForm,
+      hapusBuktiLama,
+      ...(isTunai
+        ? { buktiScanCashBase64: editBuktiBase64 || undefined }
+        : { buktiTransferBase64: editBuktiBase64 || undefined }),
+    };
+
     startEditTransition(async () => {
-      const res = await updatePencairan(editRequest.id, editForm);
+      const res = await updatePencairan(editRequest.id, payload);
       if (res.success) {
         showFeedback("success", "Berhasil Diperbarui", res.message);
         setEditRequest(null);
@@ -284,8 +378,12 @@ export default function PencairanAdminPage() {
     });
   };
 
-  const handleOpenBuktiPembayaran = async (item: DisbursementItem) => {
-    // Check if document already exists
+  const handleProsesPencairan = (item: DisbursementItem) => {
+    setExistingDocId(null);
+    setBuktiPembayaranItem(item);
+  };
+
+  const handleCetakPdf = async (item: DisbursementItem) => {
     const existing = await getBuktiPembayaranByPencairanId(item.id);
     if (existing) {
       handleDownloadPdf(existing.id);
@@ -494,7 +592,7 @@ export default function PencairanAdminPage() {
                 >
                   <button
                     type="button"
-                    onClick={() => handleOpenBuktiPembayaran(item)}
+                    onClick={() => handleProsesPencairan(item)}
                     className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all shadow-xs border-0 cursor-pointer flex items-center gap-1"
                   >
                     <CreditCard className="w-3 h-3" />
@@ -523,7 +621,7 @@ export default function PencairanAdminPage() {
                 )}
                 <button
                   type="button"
-                  onClick={() => handleOpenBuktiPembayaran(item)}
+                  onClick={() => handleCetakPdf(item)}
                   className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border-0"
                 >
                   <FileText className="w-3 h-3" />
@@ -877,18 +975,40 @@ export default function PencairanAdminPage() {
             </button>
             <h3 className="text-base font-bold text-neutral-800 pb-2 border-b border-neutral-150 flex items-center gap-2">
               <Eye className="w-5 h-5 text-primary-600" />
-              Bukti Foto Transfer Pencairan
+              Bukti Pembayaran / Pencairan
             </h3>
-            <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-100 flex items-center justify-center">
-              <Image
-                src={viewProofUrl}
-                alt="Bukti Transfer"
-                className="max-h-100 object-contain w-full"
-                width={400}
-                height={400}
-              />
+            <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 max-h-120 flex items-center justify-center">
+              {viewProofUrl.endsWith(".pdf") ||
+              viewProofUrl.includes("/dokumen/") ? (
+                <iframe
+                  src={viewProofUrl}
+                  title="Bukti Dokumen PDF"
+                  className="w-full h-96 rounded-xl border-0"
+                />
+              ) : (
+                <Image
+                  src={viewProofUrl}
+                  alt="Bukti Transfer"
+                  className="max-h-100 object-contain w-full"
+                  width={400}
+                  height={400}
+                />
+              )}
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center pt-1">
+              {viewProofUrl.endsWith(".pdf") ||
+              viewProofUrl.includes("/dokumen/") ? (
+                <a
+                  href={viewProofUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-bold text-primary-600 hover:text-primary-700 hover:underline inline-flex items-center gap-1"
+                >
+                  Buka Dokumen PDF di Tab Baru ↗
+                </a>
+              ) : (
+                <span />
+              )}
               <button
                 type="button"
                 onClick={() => setViewProofUrl(null)}
@@ -932,14 +1052,14 @@ export default function PencairanAdminPage() {
               </span>
             </div>
 
-            <div className="space-y-3 text-sm">
-              {/* Jumlah */}
+            <div className="space-y-3.5 text-sm max-h-[70vh] overflow-y-auto pr-1">
+              {/* Jumlah Pokok */}
               <div>
                 <label
                   htmlFor="edit-jumlah"
                   className="block text-xs font-bold text-neutral-700 mb-1"
                 >
-                  Jumlah (Rp)
+                  Jumlah Pokok (Rp) <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="edit-jumlah"
@@ -955,6 +1075,51 @@ export default function PencairanAdminPage() {
                 />
               </div>
 
+              {/* Biaya Tambahan */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label
+                    htmlFor="edit-biaya-tambahan"
+                    className="block text-xs font-bold text-neutral-700 mb-1"
+                  >
+                    Biaya Tambahan (Rp)
+                  </label>
+                  <input
+                    id="edit-biaya-tambahan"
+                    type="number"
+                    value={editForm.biayaTambahan ?? 0}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        biayaTambahan: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-catatan-tambahan"
+                    className="block text-xs font-bold text-neutral-700 mb-1"
+                  >
+                    Catatan Biaya
+                  </label>
+                  <input
+                    id="edit-catatan-tambahan"
+                    type="text"
+                    value={editForm.catatanBiayaTambahan ?? ""}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        catatanBiayaTambahan: e.target.value,
+                      }))
+                    }
+                    placeholder="Contoh: Biaya operasional"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
               {/* Metode Pembayaran */}
               <div>
                 <label
@@ -965,62 +1130,86 @@ export default function PencairanAdminPage() {
                 </label>
                 <select
                   id="edit-metode"
-                  value={editForm.metodePembayaran ?? ""}
-                  onChange={(e) =>
+                  value={editForm.metodePembayaran ?? "transfer"}
+                  onChange={(e) => {
+                    const val = e.target.value as "transfer" | "tunai";
                     setEditForm((f) => ({
                       ...f,
-                      metodePembayaran: e.target.value as
-                        | "transfer"
-                        | "tunai"
-                        | "qris",
-                    }))
-                  }
+                      metodePembayaran: val,
+                      ...(val === "tunai"
+                        ? { jenisBank: null, noRekening: null }
+                        : {}),
+                    }));
+                    setEditBuktiBase64(null);
+                    setEditBuktiFileName("");
+                    setEditBuktiFileSize("");
+                    setEditBuktiError("");
+                  }}
                   className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
                 >
-                  <option value="transfer">Transfer</option>
-                  <option value="tunai">Tunai</option>
+                  <option value="transfer">Transfer Bank</option>
+                  <option value="tunai">Tunai (Cash)</option>
                 </select>
               </div>
 
-              {/* Jenis Bank */}
-              <div>
-                <label
-                  htmlFor="edit-jenis-bank"
-                  className="block text-xs font-bold text-neutral-700 mb-1"
-                >
-                  Jenis Bank
-                </label>
-                <input
-                  id="edit-jenis-bank"
-                  type="text"
-                  value={editForm.jenisBank ?? ""}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, jenisBank: e.target.value }))
-                  }
-                  placeholder="Contoh: BCA, BNI, Mandiri"
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
-                />
-              </div>
-
-              {/* No. Rekening */}
-              <div>
-                <label
-                  htmlFor="edit-no-rekening"
-                  className="block text-xs font-bold text-neutral-700 mb-1"
-                >
-                  No. Rekening
-                </label>
-                <input
-                  id="edit-no-rekening"
-                  type="text"
-                  value={editForm.noRekening ?? ""}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, noRekening: e.target.value }))
-                  }
-                  placeholder="Nomor rekening tujuan"
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
-                />
-              </div>
+              {/* Rekening Bank (Jika Transfer) atau Pesan Khusus (Jika Tunai) */}
+              {editForm.metodePembayaran === "tunai" ? (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
+                  <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                    <Banknote className="w-3.5 h-3.5" />
+                    Pencairan Tunai Langsung
+                  </p>
+                  <p className="text-[11px] text-emerald-700 leading-relaxed">
+                    Tidak memerlukan rekening bank. Penyerahan uang dan tanda
+                    tangan kuitansi dilakukan langsung secara fisik.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label
+                      htmlFor="edit-jenis-bank"
+                      className="block text-xs font-bold text-neutral-700 mb-1"
+                    >
+                      Jenis Bank
+                    </label>
+                    <input
+                      id="edit-jenis-bank"
+                      type="text"
+                      value={editForm.jenisBank ?? ""}
+                      onChange={(e) =>
+                        setEditForm((f) => ({
+                          ...f,
+                          jenisBank: e.target.value,
+                        }))
+                      }
+                      placeholder="Contoh: BCA, BNI, Mandiri"
+                      className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="edit-no-rekening"
+                      className="block text-xs font-bold text-neutral-700 mb-1"
+                    >
+                      No. Rekening
+                    </label>
+                    <input
+                      id="edit-no-rekening"
+                      type="text"
+                      value={editForm.noRekening ?? ""}
+                      onChange={(e) =>
+                        setEditForm((f) => ({
+                          ...f,
+                          noRekening: e.target.value,
+                        }))
+                      }
+                      placeholder="Nomor rekening tujuan"
+                      className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Status */}
               <div>
@@ -1048,6 +1237,140 @@ export default function PencairanAdminPage() {
                   <option value="berhasil">Berhasil</option>
                   <option value="ditolak">Ditolak</option>
                 </select>
+              </div>
+
+              {/* Bukti Dokumen / Transfer Section */}
+              <div className="space-y-2 pt-1 border-t border-neutral-150">
+                <span className="block text-xs font-bold text-neutral-700">
+                  {editForm.metodePembayaran === "tunai"
+                    ? "Bukti Scan Dokumen Kuitansi Fisik (PDF)"
+                    : "Bukti Foto Transfer Bank"}
+                </span>
+
+                {/* Bukti yang sudah ada sebelumnya */}
+                {editRequest.buktiTransfer &&
+                  !editBuktiBase64 &&
+                  !hapusBuktiLama && (
+                    <div className="flex items-center justify-between p-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {editRequest.buktiTransfer.endsWith(".pdf") ||
+                        editRequest.metodePembayaran === "tunai" ? (
+                          <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-primary-500 shrink-0" />
+                        )}
+                        <span className="text-neutral-700 font-medium truncate">
+                          Bukti saat ini terpasang
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        <a
+                          href={editRequest.buktiTransfer}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-bold text-primary-600 hover:underline"
+                        >
+                          Lihat Dokumen ↗
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setHapusBuktiLama(true)}
+                          className="p-1 text-red-500 hover:bg-red-50 rounded-md border-0 cursor-pointer transition-colors"
+                          title="Hapus berkas bukti saat ini dari storage Cloudflare R2"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Indikator bahwa bukti lama akan dihapus permanen */}
+                {hapusBuktiLama && !editBuktiBase64 && (
+                  <div className="flex items-center justify-between p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs">
+                    <div className="flex items-center gap-2 min-w-0 text-red-700">
+                      <Trash2 className="w-4 h-4 shrink-0 text-red-500" />
+                      <span className="text-[11px] font-medium leading-tight">
+                        Berkas lama akan dihapus permanen dari storage R2 saat
+                        Anda menyimpan perubahan.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHapusBuktiLama(false)}
+                      className="text-[11px] font-bold text-neutral-600 hover:underline shrink-0 ml-2 border-0 bg-transparent cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                )}
+
+                {/* File baru yang dipilih */}
+                {isCompressingEditBukti ? (
+                  <div className="h-16 rounded-xl border-2 border-dashed border-neutral-300 flex items-center justify-center gap-2 bg-neutral-50">
+                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                    <span className="text-xs text-neutral-500">
+                      Memproses berkas...
+                    </span>
+                  </div>
+                ) : editBuktiBase64 ? (
+                  <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-bold text-emerald-800 truncate">
+                          {editBuktiFileName || "Berkas baru terpilih"}
+                        </p>
+                        {editBuktiFileSize && (
+                          <p className="text-[10px] text-emerald-600">
+                            {editBuktiFileSize} MB
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditBuktiBase64(null);
+                        setEditBuktiFileName("");
+                        setEditBuktiFileSize("");
+                      }}
+                      className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-all border-0 cursor-pointer shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="relative h-18 rounded-xl border-2 border-dashed border-neutral-300 hover:border-amber-400 transition-colors flex flex-col items-center justify-center gap-1 bg-neutral-50 hover:bg-white cursor-pointer p-2">
+                    <input
+                      type="file"
+                      accept={
+                        editForm.metodePembayaran === "tunai"
+                          ? "application/pdf,.pdf"
+                          : "image/*"
+                      }
+                      onChange={handleEditBuktiUpload}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-1.5 text-neutral-500">
+                      <Camera className="w-4 h-4 text-neutral-400" />
+                      <span className="text-xs font-semibold text-neutral-700">
+                        {editRequest.buktiTransfer
+                          ? "Klik untuk mengganti berkas bukti"
+                          : "Klik untuk mengunggah berkas bukti"}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-neutral-400">
+                      {editForm.metodePembayaran === "tunai"
+                        ? "Format: PDF saja (maks. 5MB)"
+                        : "Format: JPG, PNG, WEBP (maks. 5MB)"}
+                    </p>
+                  </label>
+                )}
+                {editBuktiError && (
+                  <p className="text-xs font-semibold text-red-500">
+                    {editBuktiError}
+                  </p>
+                )}
               </div>
 
               {/* Keterangan */}

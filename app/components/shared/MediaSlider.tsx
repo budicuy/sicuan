@@ -35,7 +35,7 @@ export function MediaSlider({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
-  // Default suara video: ON (isMuted: false)
+  // Default suara video: SELALU AKTIF (isMuted: false)
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadedMedia, setLoadedMedia] = useState<Record<number, boolean>>({});
@@ -43,15 +43,10 @@ export function MediaSlider({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Map<number, HTMLVideoElement>>(new Map());
 
-  // Load sound setting from localStorage on mount
+  // Pastikan suara selalu aktif by default saat halaman dimuat
   useEffect(() => {
     try {
-      const savedMuted = localStorage.getItem("sicuan_video_muted");
-      if (savedMuted !== null) {
-        setIsMuted(savedMuted === "true");
-      } else {
-        setIsMuted(false); // default ON
-      }
+      localStorage.removeItem("sicuan_video_muted");
     } catch {
       // ignore
     }
@@ -89,7 +84,7 @@ export function MediaSlider({
   const isCurrentVideo = currentItem?.tipe === "video";
   const isCurrentLoaded = Boolean(currentItem && loadedMedia[currentItem.id]);
 
-  // Handle playing the current video when slide changes
+  // Handle playing the current video when slide changes (suara by default aktif)
   useEffect(() => {
     if (!currentItem) return;
 
@@ -104,12 +99,10 @@ export function MediaSlider({
             .play()
             .then(() => setIsPlaying(true))
             .catch((err) => {
-              // Jika browser memblokir autoplay dengan suara sebelum ada interaksi pengguna,
-              // lakukan fallback mute sementara agar video tetap berputar visualnya,
-              // dan sinkronkan state isMuted agar UI menampilkan tombol yang sesuai
+              // Jika browser menolak pemutaran dengan suara sebelum interaksi pertama,
+              // putar visualnya sementara tanpa mengubah status default suara
               if (err?.name === "NotAllowedError") {
                 vid.muted = true;
-                setIsMuted(true);
                 vid
                   .play()
                   .then(() => setIsPlaying(true))
@@ -130,23 +123,16 @@ export function MediaSlider({
     });
   }, [currentItem, isMuted, autoPlay]);
 
-  // Auto-unmute otomatis begitu pengguna berinteraksi pertama kali dengan halaman
-  // (misal klik field form, klik layar/scroll, atau tap di HP)
+  // Begitu pengguna menyentuh/mengklik atau berinteraksi pertama kali dengan halaman,
+  // pastikan suara video langsung aktif penuh
   useEffect(() => {
     if (!currentItem || currentItem.tipe !== "video") return;
 
     const handleFirstInteraction = () => {
       const vid = videoRefs.current.get(currentItem.id);
-      if (!vid) return;
-
-      const userExplicitlyMuted =
-        localStorage.getItem("sicuan_video_muted") === "true";
-
-      // Jika pengguna tidak sengaja mematikan suara secara eksplisit, aktifkan suara
-      if (!userExplicitlyMuted && (vid.muted || isMuted)) {
+      if (vid && !isMuted) {
         vid.muted = false;
         vid.volume = 1.0;
-        setIsMuted(false);
         if (vid.paused) {
           vid
             .play()
@@ -157,7 +143,14 @@ export function MediaSlider({
       cleanupListeners();
     };
 
-    const events = ["click", "touchstart", "keydown", "pointerdown"];
+    const events = [
+      "pointerdown",
+      "touchstart",
+      "click",
+      "keydown",
+      "wheel",
+      "scroll",
+    ];
     const cleanupListeners = () => {
       events.forEach((evt) => {
         window.removeEventListener(evt, handleFirstInteraction);
@@ -212,11 +205,6 @@ export function MediaSlider({
       vid.muted = false;
       vid.volume = 1.0;
       setIsMuted(false);
-      try {
-        localStorage.setItem("sicuan_video_muted", "false");
-      } catch {
-        // ignore
-      }
       if (vid.paused) {
         vid
           .play()
@@ -239,11 +227,6 @@ export function MediaSlider({
     const newMuted = !currentRealMuted;
 
     setIsMuted(newMuted);
-    try {
-      localStorage.setItem("sicuan_video_muted", String(newMuted));
-    } catch {
-      // ignore
-    }
 
     vid.muted = newMuted;
     vid.volume = 1.0;
@@ -438,21 +421,6 @@ export function MediaSlider({
           <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-bold text-white/90 shadow-md pointer-events-none">
             {currentIndex + 1}/{validItems.length}
           </div>
-        )}
-
-        {/* Floating Sound Hint Prompt when video is muted and playing */}
-        {isCurrentVideo && isMuted && isPlaying && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleMute();
-            }}
-            className="absolute bottom-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 hover:bg-black/90 text-white border border-white/20 backdrop-blur-md shadow-lg transition-all hover:scale-105 cursor-pointer text-xs font-semibold animate-pulse"
-          >
-            <VolumeX className="w-4 h-4 text-amber-300" />
-            <span>Ketuk untuk Aktifkan Suara</span>
-          </button>
         )}
 
         {/* Floating Controls (Top Right) */}

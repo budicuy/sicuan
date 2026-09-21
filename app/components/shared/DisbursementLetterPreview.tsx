@@ -330,6 +330,10 @@ export function DisbursementLetterPreview({
                 alt="Tanda Tangan Pengaju"
                 className="max-h-12 object-contain"
               />
+            ) : metode === "tunai" ? (
+              <div className="text-[9px] text-emerald-700 font-semibold italic border border-dashed border-emerald-300 px-2 py-1 rounded-lg bg-emerald-50">
+                Tanda Tangan Fisik di Tempat
+              </div>
             ) : (
               <div className="text-[9px] text-neutral-400 italic border border-dashed border-neutral-300 px-3 py-1 rounded-lg bg-neutral-50">
                 Belum Diunggah
@@ -353,6 +357,10 @@ export function DisbursementLetterPreview({
                 alt="Tanda Tangan Admin"
                 className="max-h-12 object-contain"
               />
+            ) : metode === "tunai" ? (
+              <div className="text-[9px] text-emerald-700 font-semibold italic border border-dashed border-emerald-300 px-2 py-1 rounded-lg bg-emerald-50">
+                Tanda Tangan Fisik di Tempat
+              </div>
             ) : (
               <div className="text-[9px] text-neutral-400 italic border border-dashed border-neutral-300 px-3 py-1 rounded-lg bg-neutral-50">
                 Menunggu Approval

@@ -141,3 +141,32 @@ export async function uploadVideoToR2(
   await r2Client.send(command);
   return `/api/media/${key}`;
 }
+
+/**
+ * Upload dokumen PDF ke Cloudflare R2 tanpa sharp (menyimpan file binary PDF asli).
+ */
+export async function uploadPdfToR2(
+  pdfData: string | Buffer,
+  folder: string,
+  filename: string,
+): Promise<string> {
+  const rawBuffer =
+    typeof pdfData === "string"
+      ? Buffer.from(
+          pdfData.replace(/^data:application\/pdf;base64,/, ""),
+          "base64",
+        )
+      : pdfData;
+
+  const key = `dokumen/${folder}/${filename}.pdf`;
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME ?? "",
+    Key: key,
+    Body: rawBuffer,
+    ContentType: "application/pdf",
+    CacheControl: "public, max-age=31536000, immutable",
+  });
+
+  await r2Client.send(command);
+  return `/api/media/${key}`;
+}

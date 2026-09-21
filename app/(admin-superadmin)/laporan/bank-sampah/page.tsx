@@ -24,6 +24,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import type { UpdateSetorPayload } from "@/app/(admin-superadmin)/laporan/bank-sampah/action";
 import {
   deleteSetorSampah,
+  getAllBankSampahUsers,
   getCurrentUserRole,
   getMySetoran,
   updateSetorSampah,
@@ -100,8 +101,14 @@ export default function LaporanBankSampahPage() {
   const [sortBy, setSortBy] = useState<string>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  // Bank Sampah Users state for filter
+  const [bankSampahUsers, setBankSampahUsers] = useState<
+    { id: number; name: string; username: string }[]
+  >([]);
+
   // Filters state
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
+    userId: "",
     jenisSampah: "",
     status: "",
   });
@@ -316,6 +323,7 @@ export default function LaporanBankSampahPage() {
         search: searchQuery,
         jenisSampah: filterValues.jenisSampah,
         status: filterValues.status,
+        userId: filterValues.userId,
         sortBy,
         sortOrder,
         roleTarget: "bank-sampah",
@@ -350,10 +358,20 @@ export default function LaporanBankSampahPage() {
     }
   }, []);
 
+  const loadBankSampahUsers = useCallback(async () => {
+    try {
+      const list = await getAllBankSampahUsers();
+      setBankSampahUsers(list);
+    } catch (err) {
+      console.error("Gagal mengambil daftar user bank sampah:", err);
+    }
+  }, []);
+
   useEffect(() => {
     loadData();
     loadUserRole();
-  }, [loadData, loadUserRole]);
+    loadBankSampahUsers();
+  }, [loadData, loadUserRole, loadBankSampahUsers]);
 
   const handleStatusUpdate = async (
     id: number,
@@ -597,6 +615,14 @@ export default function LaporanBankSampahPage() {
   );
 
   const filters = [
+    {
+      id: "userId",
+      label: "Semua Bank Sampah",
+      options: bankSampahUsers.map((user) => ({
+        label: user.name || user.username || `Bank Sampah #${user.id}`,
+        value: String(user.id),
+      })),
+    },
     {
       id: "jenisSampah",
       label: "Semua Sampah",

@@ -14,7 +14,7 @@ import {
   sendPencairanSelesaiNotifToUser,
 } from "@/app/lib/email";
 import { getHargaForTotalBerat } from "@/app/lib/pricing";
-import { uploadImageToR2 } from "@/app/lib/r2";
+import { deleteFromR2, uploadImageToR2, uploadPdfToR2 } from "@/app/lib/r2";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import {
@@ -554,6 +554,13 @@ export async function deletePencairan(
       return { success: false, message: "Data pencairan tidak ditemukan." };
     }
 
+    if (existing.buktiTransfer) {
+      await deleteFromR2(existing.buktiTransfer);
+    }
+    if (existing.ttdPenyerahUrl) {
+      await deleteFromR2(existing.ttdPenyerahUrl);
+    }
+
     await db.delete(pencairanDana).where(eq(pencairanDana.id, id));
 
     revalidatePath("/pencairan-dana");
@@ -574,6 +581,11 @@ export interface UpdatePencairanPayload {
   noRekening?: string | null;
   keterangan?: string | null;
   status?: "pending" | "berhasil" | "ditolak";
+  biayaTambahan?: number;
+  catatanBiayaTambahan?: string | null;
+  buktiTransferBase64?: string | null;
+  buktiScanCashBase64?: string | null;
+  hapusBuktiLama?: boolean;
 }
 
 export async function updatePencairan(
@@ -594,23 +606,69 @@ export async function updatePencairan(
       return { success: false, message: "Data pencairan tidak ditemukan." };
     }
 
+    const isTunai =
+      payload.metodePembayaran === "tunai" ||
+      (payload.metodePembayaran === undefined &&
+        existing.metodePembayaran === "tunai");
+
+    let newBuktiUrl: string | undefined;
+
+    if (isTunai && payload.buktiScanCashBase64) {
+      const uuidProof = randomUUID();
+      newBuktiUrl = await uploadPdfToR2(
+        payload.buktiScanCashBase64,
+        "transfer",
+        `cash-${existing.userId}-${uuidProof}`,
+      );
+    } else if (!isTunai && payload.buktiTransferBase64) {
+      const uuidProof = randomUUID();
+      newBuktiUrl = await uploadImageToR2(
+        payload.buktiTransferBase64,
+        "transfer",
+        `${existing.userId}-${uuidProof}`,
+      );
+    }
+
+    // Hapus berkas lama dari R2 agar storage tidak menumpuk
+    if (newBuktiUrl) {
+      if (existing.buktiTransfer && existing.buktiTransfer !== newBuktiUrl) {
+        await deleteFromR2(existing.buktiTransfer);
+      }
+    } else if (payload.hapusBuktiLama && existing.buktiTransfer) {
+      await deleteFromR2(existing.buktiTransfer);
+    }
+
     await db
       .update(pencairanDana)
       .set({
         ...(payload.jumlah !== undefined && { jumlah: payload.jumlah }),
         ...(payload.metodePembayaran !== undefined && {
           metodePembayaran: payload.metodePembayaran,
+          ...(payload.metodePembayaran === "tunai" && {
+            jenisBank: null,
+            noRekening: null,
+          }),
         }),
-        ...(payload.jenisBank !== undefined && {
-          jenisBank: payload.jenisBank,
-        }),
-        ...(payload.noRekening !== undefined && {
-          noRekening: payload.noRekening,
-        }),
+        ...(payload.metodePembayaran !== "tunai" &&
+          payload.jenisBank !== undefined && {
+            jenisBank: payload.jenisBank,
+          }),
+        ...(payload.metodePembayaran !== "tunai" &&
+          payload.noRekening !== undefined && {
+            noRekening: payload.noRekening,
+          }),
         ...(payload.keterangan !== undefined && {
           keterangan: payload.keterangan,
         }),
         ...(payload.status !== undefined && { status: payload.status }),
+        ...(payload.biayaTambahan !== undefined && {
+          biayaTambahan: payload.biayaTambahan,
+        }),
+        ...(payload.catatanBiayaTambahan !== undefined && {
+          catatanBiayaTambahan: payload.catatanBiayaTambahan,
+        }),
+        ...(newBuktiUrl !== undefined && { buktiTransfer: newBuktiUrl }),
+        ...(payload.hapusBuktiLama && !newBuktiUrl && { buktiTransfer: null }),
       })
       .where(eq(pencairanDana.id, id));
 
@@ -660,6 +718,7 @@ export interface CreateBuktiPembayaranInput {
   namaPenerima?: string;
   jabatanPenerima?: string;
   buktiTransferBase64?: string;
+  buktiScanCashBase64?: string;
 }
 
 const BULAN_ROMAWI: Record<string, string> = {
@@ -685,10 +744,10 @@ export async function createBuktiPembayaran(
     return { success: false, message: "Akses ditolak" };
   }
 
-  if (!input.ttdPenerimaBase64) {
+  if (input.metodePembayaran !== "tunai" && !input.ttdPenerimaBase64) {
     return {
       success: false,
-      message: "Tanda tangan penerima (admin) wajib diunggah",
+      message: "Tanda tangan penerima (admin) wajib diunggah untuk transfer",
     };
   }
 
@@ -711,13 +770,16 @@ export async function createBuktiPembayaran(
       input.periodeTahun,
     );
 
-    // 3. Upload admin TTD to R2
-    const uuid = randomUUID();
-    const ttdPenerimaUrl = await uploadImageToR2(
-      input.ttdPenerimaBase64,
-      "ttd-penerima",
-      `admin-${user.id}-${uuid}`,
-    );
+    // 3. Upload admin TTD to R2 jika ada
+    let ttdPenerimaUrl: string | null = null;
+    if (input.ttdPenerimaBase64) {
+      const uuid = randomUUID();
+      ttdPenerimaUrl = await uploadImageToR2(
+        input.ttdPenerimaBase64,
+        "ttd-penerima",
+        `admin-${user.id}-${uuid}`,
+      );
+    }
 
     // 4. Insert buktiPembayaran record
     const [newDoc] = await db
@@ -751,12 +813,27 @@ export async function createBuktiPembayaran(
       })
       .returning({ id: buktiPembayaran.id });
 
-    // Transition pencairanDana status to berhasil and save transfer proof if provided
+    // Transition pencairanDana status to berhasil and save transfer/cash scan proof
     if (pencairan) {
       if (pencairan.metodePembayaran === "tunai") {
+        let scanUrl: string | null = null;
+        if (input.buktiScanCashBase64) {
+          const uuidProof = randomUUID();
+          scanUrl = await uploadPdfToR2(
+            input.buktiScanCashBase64,
+            "transfer",
+            `cash-${input.userId}-${uuidProof}`,
+          );
+          if (pencairan.buktiTransfer && pencairan.buktiTransfer !== scanUrl) {
+            await deleteFromR2(pencairan.buktiTransfer);
+          }
+        }
         await db
           .update(pencairanDana)
-          .set({ status: "berhasil" })
+          .set({
+            status: "berhasil",
+            buktiTransfer: scanUrl || pencairan.buktiTransfer,
+          })
           .where(eq(pencairanDana.id, input.pencairanDanaId));
       } else if (input.buktiTransferBase64) {
         const uuidProof = randomUUID();
@@ -765,6 +842,12 @@ export async function createBuktiPembayaran(
           "transfer",
           `${input.userId}-${uuidProof}`,
         );
+        if (
+          pencairan.buktiTransfer &&
+          pencairan.buktiTransfer !== buktiTransferUrl
+        ) {
+          await deleteFromR2(pencairan.buktiTransfer);
+        }
         await db
           .update(pencairanDana)
           .set({
@@ -1105,4 +1188,137 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     pdfBase64,
     fileName,
   };
+}
+
+/**
+ * Generate atau ambil PDF Surat Bukti Pembayaran untuk pencairan (khususnya Tunai)
+ * agar admin dapat mengunduh dan mencetak berkas untuk ditandatangani di tempat saat serah terima uang cash.
+ */
+export async function getDraftSuratPencairanPdf(pencairanId: number): Promise<{
+  success: boolean;
+  message?: string;
+  pdfBase64?: string;
+  fileName?: string;
+  docId?: number;
+}> {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return { success: false, message: "Akses ditolak" };
+  }
+
+  try {
+    // 1. Cek apakah dokumen bukti pembayaran sudah ada
+    const existingDoc = await db.query.buktiPembayaran.findFirst({
+      where: eq(buktiPembayaran.pencairanDanaId, pencairanId),
+    });
+
+    if (existingDoc) {
+      const pdfRes = await getBuktiPembayaranPdfBase64(existingDoc.id);
+      return { ...pdfRes, docId: existingDoc.id };
+    }
+
+    // 2. Ambil data pencairan
+    const pencairan = await db.query.pencairanDana.findFirst({
+      where: eq(pencairanDana.id, pencairanId),
+      with: { user: true },
+    });
+
+    if (!pencairan) {
+      return { success: false, message: "Data pencairan tidak ditemukan" };
+    }
+
+    const thisYear =
+      pencairan.periodeTahun || new Date(pencairan.createdAt).getFullYear();
+    const thisMonthNum =
+      pencairan.periodeBulan || new Date(pencairan.createdAt).getMonth() + 1;
+    const BULAN_LIST = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+    const thisMonth = BULAN_LIST[thisMonthNum - 1] || "Januari";
+
+    // Ambil data profil nasabah & data sampah bulanan
+    const nasabahProfile = await getNasabahProfileAndMonthlyWaste(
+      pencairan.userId,
+      thisYear,
+      thisMonth,
+    );
+
+    const namaBankSampah =
+      nasabahProfile.data?.namaBankSampah || pencairan.user.name;
+    const idPelanggan =
+      nasabahProfile.data?.idPelanggan ||
+      `SPK-${String(pencairan.userId).padStart(3, "0")}`;
+    const alamat = nasabahProfile.data?.alamat || "";
+    const noTelepon = nasabahProfile.data?.noTelepon || "";
+    const dataSampah =
+      nasabahProfile.data?.dataSampah &&
+      nasabahProfile.data.dataSampah.length > 0
+        ? nasabahProfile.data.dataSampah
+        : [{ jenis: "Karton", beratKg: 0, terlampir: true }];
+    const totalBeratKg = dataSampah.reduce(
+      (sum, s) => sum + (s.beratKg || 0),
+      0,
+    );
+    const biayaTambahan = pencairan.biayaTambahan || 0;
+    const tarifDasar = pencairan.jumlah - biayaTambahan;
+
+    const existingCount = await db
+      .select({ id: buktiPembayaran.id })
+      .from(buktiPembayaran);
+    const urutan = existingCount.length + 1;
+    const bulanRomawi = BULAN_ROMAWI[thisMonth] ?? "I";
+    const nomorDokumen = generateNomorDokumen(urutan, bulanRomawi, thisYear);
+
+    const [newDoc] = await db
+      .insert(buktiPembayaran)
+      .values({
+        nomorDokumen,
+        pencairanDanaId: pencairan.id,
+        userId: pencairan.userId,
+        namaBankSampah,
+        idPelanggan,
+        nama: pencairan.user.name,
+        alamat: alamat || null,
+        noTelepon: noTelepon || null,
+        periodeBulan: thisMonth,
+        periodeTahun: thisYear,
+        kategoriSumber:
+          pencairan.user.role === "warmindo" ? "tps_3r" : "bank_sampah_induk",
+        dataSampah,
+        totalBeratKg,
+        tarifDasar,
+        biayaTambahan,
+        totalTagihan: tarifDasar + biayaTambahan,
+        metodePembayaran: pencairan.metodePembayaran,
+        keterangan: pencairan.keterangan || null,
+        ttdPenyerahUrl: null, // tanda tangan basah di tempat
+        ttdPenerimaUrl: null, // tanda tangan basah di tempat
+        namaPenyerah: pencairan.user.name,
+        jabatanPenyerah:
+          pencairan.user.role === "warmindo"
+            ? "Pengelola Warmindo"
+            : "Pimpinan Bank Sampah",
+        namaPenerima: user.name || "Admin",
+        jabatanPenerima: "PT. Indofood Sukses Makmur Tbk,",
+        status: "draft",
+      })
+      .returning({ id: buktiPembayaran.id });
+
+    const pdfRes = await getBuktiPembayaranPdfBase64(newDoc.id);
+    return { ...pdfRes, docId: newDoc.id };
+  } catch (error) {
+    console.error("Gagal membuat draft surat pencairan:", error);
+    return { success: false, message: "Gagal membuat surat pencairan PDF" };
+  }
 }

@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "25mb",
+      allowedOrigins: [
+        "*.devtunnels.ms",
+        "*.asse.devtunnels.ms",
+        "*.ngrok-free.app",
+        "*.ngrok.io",
+        "*.loca.lt",
+        "localhost:3000",
+        "127.0.0.1:3000",
+      ],
     },
   },
   images: {

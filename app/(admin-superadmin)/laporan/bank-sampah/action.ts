@@ -1,7 +1,17 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -22,6 +32,31 @@ import { buildNomorSetor, getNextSetorId } from "@/app/lib/setor-helper";
 import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
+
+export async function getAllBankSampahUsers(): Promise<
+  { id: number; name: string; username: string }[]
+> {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return [];
+  }
+
+  try {
+    const list = await db.query.nasabah.findMany({
+      where: eq(nasabah.role, "bank-sampah"),
+      orderBy: [asc(nasabah.name)],
+      columns: {
+        id: true,
+        name: true,
+        username: true,
+      },
+    });
+    return list;
+  } catch (error) {
+    console.error("Gagal mengambil daftar user bank sampah:", error);
+    return [];
+  }
+}
 
 export async function getCurrentUserRole(): Promise<string | null> {
   const user = await getCurrentUser();
@@ -251,6 +286,7 @@ export async function getMySetoran(params: {
   search?: string;
   jenisSampah?: string;
   status?: string;
+  userId?: string | number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   roleTarget?: "konsumen" | "warmindo" | "bank-sampah";
@@ -268,6 +304,7 @@ export async function getMySetoran(params: {
   const search = params?.search ?? "";
   const jenisSampah = params?.jenisSampah ?? "";
   const status = params?.status ?? "";
+  const userId = params?.userId ?? "";
   const sortBy = params?.sortBy ?? "id";
   const sortOrder = params?.sortOrder ?? "desc";
   const roleTarget =
@@ -286,6 +323,8 @@ export async function getMySetoran(params: {
 
   if (!isAdmin) {
     filters.push(eq(setorSampah.userId, user.id));
+  } else if (userId && userId !== "Semua") {
+    filters.push(eq(setorSampah.userId, Number(userId)));
   }
 
   if (jenisSampah && jenisSampah !== "Semua") {
@@ -313,10 +352,22 @@ export async function getMySetoran(params: {
 
   let searchFilter: SQL | undefined;
   if (search) {
-    searchFilter = or(
+    const matchingUsers = await db
+      .select({ id: nasabah.id })
+      .from(nasabah)
+      .where(ilike(nasabah.name, `%${search}%`));
+    const userIds = matchingUsers.map((u) => u.id);
+
+    const searchConditions: SQL[] = [
       ilike(setorSampah.nomorSetor, `%${search}%`),
       ilike(setorSampah.catatan, `%${search}%`),
-    );
+    ];
+
+    if (userIds.length > 0) {
+      searchConditions.push(inArray(setorSampah.userId, userIds));
+    }
+
+    searchFilter = or(...searchConditions);
   }
 
   const combinedWhere =
