@@ -18,7 +18,7 @@ import {
 } from "@/app/lib/gemini-weight-reader";
 import { calculateSetoranReward } from "@/app/lib/pricing";
 import { deleteFromR2, uploadImageToR2 } from "@/app/lib/r2";
-import { buildNomorSetor, getNextSetorId } from "@/app/lib/setor-helper";
+import { formatNomorSetor, getNextNomorUrut } from "@/app/lib/setor-helper";
 import type { ActionState, SetoranType } from "@/app/types";
 import { db } from "@/db";
 import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
@@ -119,7 +119,11 @@ export async function updateSetorSampahStatus(
           email: depositor.email,
           name: depositor.name,
           role: depositor.role,
-          nomorSetor: item.nomorSetor,
+          nomorSetor: formatNomorSetor(
+            item.nomorSetor,
+            depositor.role,
+            item.tanggalSetor,
+          ),
           jenisSampah: item.jenisSampah,
           beratKg: item.beratKg,
           tanggalSetor: item.tanggalSetor,
@@ -411,7 +415,11 @@ export async function getMySetoran(params: {
 
     return {
       id: s.id,
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       userId: s.userId,
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,
@@ -538,18 +546,11 @@ export async function submitSetorSampah(
 
     const isPending = user.role === "konsumen" || user.role === "warmindo";
 
-    // Gunakan MAX(id)+1 agar nomor urut tidak loncat akibat gap sequence
-    const nextId = await getNextSetorId();
-
-    const nomorSetorFormatted = buildNomorSetor(
-      nextId,
-      user.role,
-      tanggalSetor,
-    );
+    // Dapatkan nomor urut tertinggi + 1
+    const nextNomorUrut = await getNextNomorUrut();
 
     const baseValues = {
-      id: nextId,
-      nomorSetor: nomorSetorFormatted,
+      nomorSetor: String(nextNomorUrut),
       userId: user.id,
       jenisSampah: jenisSampah as "Karton" | "Etiket" | "Paper Cup",
       beratKg,
@@ -969,11 +970,14 @@ export async function createSetorSampah(
     user.role,
   );
 
-  // Query next sequence value for auto-increment ID
-  // Gunakan MAX(id)+1 agar nomor urut tidak loncat akibat gap sequence
-  const nextId = await getNextSetorId();
-
-  const nomorSetor = buildNomorSetor(nextId, user.role, tanggalSetor);
+  // Dapatkan nomor urut tertinggi + 1
+  const nextNomorUrut = await getNextNomorUrut();
+  const nomorSetor = String(nextNomorUrut);
+  const nomorSetorFormatted = formatNomorSetor(
+    nextNomorUrut,
+    user.role,
+    tanggalSetor,
+  );
 
   // Upload foto timbangan ke R2
   let fotoTimbanganUrl: string;
@@ -1021,7 +1025,6 @@ export async function createSetorSampah(
     const isEkspedisi = metodeSetor === "ekspedisi";
     const isPending = isEkspedisi || requestManualValidation;
     const baseValues = {
-      id: nextId,
       nomorSetor,
       userId: user.id,
       jenisSampah: jenisSampah as "Karton" | "Etiket" | "Paper Cup",
@@ -1068,7 +1071,7 @@ export async function createSetorSampah(
         email: userWithEmail.email,
         name: user.name,
         role: user.role,
-        nomorSetor,
+        nomorSetor: nomorSetorFormatted,
         jenisSampah,
         beratKg,
         tanggalSetor,
@@ -1319,9 +1322,14 @@ export async function updateSetorSampah(
       }
     }
 
+    const cleanNomor = item.nomorSetor
+      ? item.nomorSetor.split("/")[0].trim()
+      : String(item.id);
+
     await db
       .update(setorSampah)
       .set({
+        nomorSetor: cleanNomor,
         ...(payload.jenisSampah !== undefined && {
           jenisSampah: payload.jenisSampah,
         }),

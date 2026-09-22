@@ -14,7 +14,6 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   type CreateBuktiPembayaranInput,
   createBuktiPembayaran,
-  getAdminName,
   getDraftSuratPencairanPdf,
   getNasabahProfileAndMonthlyWaste,
 } from "@/app/(admin-superadmin)/pencairan-dana/action";
@@ -83,15 +82,17 @@ export function BuktiPembayaranModal({
   const [tarifDasar, _setTarifDasar] = useState(initialTarifDasar);
   const [biayaTambahan, _setBiayaTambahan] = useState(initialBiayaTambahan);
   const [keterangan, _setKeterangan] = useState(item.keterangan ?? "");
-  const [namaPenyerah, _setNamaPenyerah] = useState(item.user.name);
+  const [namaPenyerah, _setNamaPenyerah] = useState(
+    "PT. Indofood Sukses Makmur Tbk.",
+  );
   const [jabatanPenyerah, _setJabatanPenyerah] = useState(
+    "Pimpinan Perusahaan",
+  );
+  const [namaPenerima, _setNamaPenerima] = useState(item.user.name);
+  const [jabatanPenerima, _setJabatanPenerima] = useState(
     item.user.role === "warmindo"
       ? "Pengelola Warmindo"
       : "Pimpinan Bank Sampah",
-  );
-  const [namaPenerima, setNamaPenerima] = useState("Admin");
-  const [jabatanPenerima, _setJabatanPenerima] = useState(
-    "PT. Indofood  Sukses Makmur Tbk,",
   );
 
   const isCash = item.metodePembayaran === "tunai";
@@ -120,11 +121,6 @@ export function BuktiPembayaranModal({
 
   // Fetch data on mount
   useEffect(() => {
-    // Get Admin Name
-    getAdminName().then((name) => {
-      setNamaPenerima(name);
-    });
-
     // Automatically pre-populate profile & monthly waste
     getNasabahProfileAndMonthlyWaste(
       item.userId,

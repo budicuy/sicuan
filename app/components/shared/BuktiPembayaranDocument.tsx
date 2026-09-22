@@ -668,23 +668,28 @@ export function BuktiPembayaranDocument({
 
         {/* ── TTD Area ─────────────────────────────────────── */}
         <View style={styles.ttdRow}>
-          {/* Kiri — Diserahkan Oleh */}
+          {/* Kiri — Diserahkan Oleh (PT. Indofood) */}
           <View style={styles.ttdBox}>
             <Text style={styles.ttdLabel}>Diserahkan Oleh,</Text>
             {data.ttdPenyerahUrl ? (
               <Image src={data.ttdPenyerahUrl} style={styles.ttdImage} />
             ) : null}
             <View style={{ marginTop: 4 }}>
-              {data.namaPenyerah ? (
-                <Text style={styles.ttdName}>({data.namaPenyerah})</Text>
-              ) : null}
-              {data.jabatanPenyerah ? (
-                <Text style={styles.ttdJabatan}>{data.jabatanPenyerah}</Text>
-              ) : null}
+              <Text
+                style={[
+                  styles.ttdName,
+                  { fontWeight: "bold", textDecoration: "underline" },
+                ]}
+              >
+                ({data.namaPenyerah || "PT. Indofood Sukses Makmur Tbk."})
+              </Text>
+              <Text style={styles.ttdJabatan}>
+                {data.jabatanPenyerah || "Pimpinan Perusahaan"}
+              </Text>
             </View>
           </View>
 
-          {/* Kanan — Diterima Oleh */}
+          {/* Kanan — Diterima Oleh (Bank Sampah / Mitra) */}
           <View style={[styles.ttdBox, { alignItems: "flex-start" }]}>
             <Text style={styles.ttdLabel}>Diterima Oleh,</Text>
             {data.ttdPenerimaUrl ? (
@@ -693,13 +698,18 @@ export function BuktiPembayaranDocument({
             <View style={{ marginTop: 4 }}>
               <Text
                 style={[
-                  styles.ttdJabatan,
+                  styles.ttdName,
                   { fontWeight: "bold", textDecoration: "underline" },
                 ]}
               >
-                (PT. Indofood Sukses Makmur Tbk,)
+                ({data.namaPenerima || data.nama})
               </Text>
-              <Text style={styles.ttdJabatan}>Pimpinan Perusahaan</Text>
+              <Text style={styles.ttdJabatan}>
+                {data.jabatanPenerima ||
+                  (data.kategoriSumber === "tps_3r"
+                    ? "Pengelola Warmindo"
+                    : "Pimpinan Bank Sampah")}
+              </Text>
             </View>
           </View>
         </View>

@@ -2,7 +2,7 @@
 
 import { and, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { buildNomorSetor, getNextSetorId } from "@/app/lib/setor-helper";
+import { formatNomorSetor, getNextNomorUrut } from "@/app/lib/setor-helper";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import { nasabah, setorSampah } from "@/db/schema";
@@ -97,18 +97,11 @@ export async function createSetoranNasabah(
       };
     }
 
-    // Gunakan MAX(id)+1 agar nomor urut tidak loncat akibat gap sequence
-    const nextId = await getNextSetorId();
-
-    const nomorSetorFormatted = buildNomorSetor(
-      nextId,
-      depositor.role,
-      tanggalSetor,
-    );
+    // Dapatkan nomor urut tertinggi + 1
+    const nextNomorUrut = await getNextNomorUrut();
 
     const baseValues = {
-      id: nextId,
-      nomorSetor: nomorSetorFormatted,
+      nomorSetor: String(nextNomorUrut),
       userId,
       jenisSampah: jenisSampah as "Karton" | "Etiket" | "Paper Cup",
       beratKg,
@@ -177,7 +170,11 @@ export async function getRiwayatSetoran(params?: {
 
     const merged = setoran.map((s) => ({
       id: s.id,
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       userId: s.userId,
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,

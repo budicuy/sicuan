@@ -15,6 +15,7 @@ import {
 } from "@/app/lib/email";
 import { getHargaForTotalBerat } from "@/app/lib/pricing";
 import { deleteFromR2, uploadImageToR2, uploadPdfToR2 } from "@/app/lib/r2";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
 import {
@@ -651,12 +652,12 @@ export async function updatePencairan(
         }),
         ...(payload.metodePembayaran !== "tunai" &&
           payload.jenisBank !== undefined && {
-            jenisBank: payload.jenisBank,
-          }),
+          jenisBank: payload.jenisBank,
+        }),
         ...(payload.metodePembayaran !== "tunai" &&
           payload.noRekening !== undefined && {
-            noRekening: payload.noRekening,
-          }),
+          noRekening: payload.noRekening,
+        }),
         ...(payload.keterangan !== undefined && {
           keterangan: payload.keterangan,
         }),
@@ -713,6 +714,7 @@ export interface CreateBuktiPembayaranInput {
   metodePembayaran: string;
   keterangan?: string | null;
   ttdPenerimaBase64?: string;
+  ttdPenyerahBase64?: string;
   namaPenyerah?: string;
   jabatanPenyerah?: string;
   namaPenerima?: string;
@@ -744,10 +746,12 @@ export async function createBuktiPembayaran(
     return { success: false, message: "Akses ditolak" };
   }
 
-  if (input.metodePembayaran !== "tunai" && !input.ttdPenerimaBase64) {
+  const adminTtdInput = input.ttdPenyerahBase64 || input.ttdPenerimaBase64;
+  if (input.metodePembayaran !== "tunai" && !adminTtdInput) {
     return {
       success: false,
-      message: "Tanda tangan penerima (admin) wajib diunggah untuk transfer",
+      message:
+        "Tanda tangan penyerah (admin/Indofood) wajib diunggah untuk transfer",
     };
   }
 
@@ -755,6 +759,7 @@ export async function createBuktiPembayaran(
     // 1. Get mitra TTD from pencairanDana record
     const pencairan = await db.query.pencairanDana.findFirst({
       where: eq(pencairanDana.id, input.pencairanDanaId),
+      with: { user: true },
     });
 
     // 2. Count existing docs this month/year for sequential numbering
@@ -770,16 +775,19 @@ export async function createBuktiPembayaran(
       input.periodeTahun,
     );
 
-    // 3. Upload admin TTD to R2 jika ada
-    let ttdPenerimaUrl: string | null = null;
-    if (input.ttdPenerimaBase64) {
+    // 3. Upload admin TTD (Pihak Penyerah: PT Indofood) to R2 jika ada
+    let ttdPenyerahUrl: string | null = null;
+    if (adminTtdInput) {
       const uuid = randomUUID();
-      ttdPenerimaUrl = await uploadImageToR2(
-        input.ttdPenerimaBase64,
-        "ttd-penerima",
+      ttdPenyerahUrl = await uploadImageToR2(
+        adminTtdInput,
+        "ttd-penyerah",
         `admin-${user.id}-${uuid}`,
       );
     }
+
+    // TTD pihak penerima (Bank Sampah/Mitra): dari pengajuan mitra
+    const ttdPenerimaUrl = pencairan?.ttdPenyerahUrl ?? null;
 
     // 4. Insert buktiPembayaran record
     const [newDoc] = await db
@@ -803,12 +811,17 @@ export async function createBuktiPembayaran(
         totalTagihan: input.totalTagihan,
         metodePembayaran: input.metodePembayaran,
         keterangan: input.keterangan ?? null,
-        ttdPenyerahUrl: pencairan?.ttdPenyerahUrl ?? null,
-        ttdPenerimaUrl,
-        namaPenyerah: input.namaPenyerah ?? null,
-        jabatanPenyerah: input.jabatanPenyerah ?? null,
-        namaPenerima: input.namaPenerima ?? null,
-        jabatanPenerima: input.jabatanPenerima ?? null,
+        ttdPenyerahUrl, // Pihak Penyerah (PT Indofood)
+        ttdPenerimaUrl, // Pihak Penerima (Bank Sampah/Mitra)
+        namaPenyerah: input.namaPenyerah ?? "PT. Indofood Sukses Makmur Tbk.",
+        jabatanPenyerah: input.jabatanPenyerah ?? "Pimpinan Perusahaan",
+        namaPenerima:
+          input.namaPenerima ?? (pencairan?.user?.name || input.nama),
+        jabatanPenerima:
+          input.jabatanPenerima ??
+          (pencairan?.user?.role === "warmindo"
+            ? "Pengelola Warmindo"
+            : "Pimpinan Bank Sampah"),
         status: "final",
       })
       .returning({ id: buktiPembayaran.id });
@@ -1158,7 +1171,11 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     ttdPenerimaUrl: penerimaPng,
     buktiTransferUrl: buktiTransferPng,
     setoranDetail: setoranDetail.map((s) => ({
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,
       tanggalSetor: s.tanggalSetor,
@@ -1263,7 +1280,7 @@ export async function getDraftSuratPencairanPdf(pencairanId: number): Promise<{
     const noTelepon = nasabahProfile.data?.noTelepon || "";
     const dataSampah =
       nasabahProfile.data?.dataSampah &&
-      nasabahProfile.data.dataSampah.length > 0
+        nasabahProfile.data.dataSampah.length > 0
         ? nasabahProfile.data.dataSampah
         : [{ jenis: "Karton", beratKg: 0, terlampir: true }];
     const totalBeratKg = dataSampah.reduce(
@@ -1302,15 +1319,15 @@ export async function getDraftSuratPencairanPdf(pencairanId: number): Promise<{
         totalTagihan: tarifDasar + biayaTambahan,
         metodePembayaran: pencairan.metodePembayaran,
         keterangan: pencairan.keterangan || null,
-        ttdPenyerahUrl: null, // tanda tangan basah di tempat
-        ttdPenerimaUrl: null, // tanda tangan basah di tempat
-        namaPenyerah: pencairan.user.name,
-        jabatanPenyerah:
+        ttdPenyerahUrl: null, // tanda tangan basah di tempat (PT. Indofood)
+        ttdPenerimaUrl: pencairan.ttdPenyerahUrl ?? null, // tanda tangan mitra (Bank Sampah/Warmindo)
+        namaPenyerah: "PT. Indofood Sukses Makmur Tbk.",
+        jabatanPenyerah: "Pimpinan Perusahaan",
+        namaPenerima: pencairan.user.name,
+        jabatanPenerima:
           pencairan.user.role === "warmindo"
             ? "Pengelola Warmindo"
             : "Pimpinan Bank Sampah",
-        namaPenerima: user.name || "Admin",
-        jabatanPenerima: "PT. Indofood Sukses Makmur Tbk,",
         status: "draft",
       })
       .returning({ id: buktiPembayaran.id });

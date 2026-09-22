@@ -65,6 +65,12 @@ interface DataTableProps<T> {
    * The actions column is rowspanned and centred.
    */
   groupByFn?: (item: T) => string;
+  selectable?: boolean;
+  selectedIds?: number[];
+  onSelectRow?: (id: number) => void;
+  onSelectAll?: () => void;
+  isAllSelected?: boolean;
+  bulkActions?: React.ReactNode;
 }
 
 export function DataTable<T extends { id: number }>({
@@ -95,6 +101,12 @@ export function DataTable<T extends { id: number }>({
   sortOrder,
   onSort,
   groupByFn,
+  selectable = false,
+  selectedIds = [],
+  onSelectRow,
+  onSelectAll,
+  isAllSelected = false,
+  bulkActions,
 }: DataTableProps<T>) {
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
   const activePage = Math.min(currentPage, totalPages);
@@ -177,6 +189,21 @@ export function DataTable<T extends { id: number }>({
               </td>
             )}
 
+            {selectable && isFirst && (
+              <td
+                rowSpan={rowSpan}
+                className="px-4 py-4 border-r border-neutral-100 align-middle text-center w-10"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(item.id)}
+                  onChange={() => onSelectRow?.(item.id)}
+                  className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-neutral-300 cursor-pointer"
+                  aria-label={`Pilih baris ${item.id}`}
+                />
+              </td>
+            )}
+
             {/* Grouped columns — rendered once per group */}
             {groupedCols.map((col) =>
               isFirst ? (
@@ -244,9 +271,24 @@ export function DataTable<T extends { id: number }>({
       <tr
         key={item.id}
         className={`hover:bg-primary-50/30 transition-all ${
-          idx % 2 === 1 ? "bg-neutral-50/40" : "bg-white"
+          selectedIds.includes(item.id)
+            ? "bg-primary-50/60"
+            : idx % 2 === 1
+              ? "bg-neutral-50/40"
+              : "bg-white"
         }`}
       >
+        {selectable && (
+          <td className="px-4 py-4 text-center w-10">
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(item.id)}
+              onChange={() => onSelectRow?.(item.id)}
+              className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-neutral-300 cursor-pointer"
+              aria-label={`Pilih baris ${item.id}`}
+            />
+          </td>
+        )}
         {columns.map((col) => (
           <td
             key={`${item.id}-${col.header}`}
@@ -347,6 +389,21 @@ export function DataTable<T extends { id: number }>({
         )}
       </div>
 
+      {/* Bulk Selection Bar */}
+      {selectable && selectedIds.length > 0 && (
+        <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2 text-primary-900 font-bold">
+            <span className="w-2 h-2 rounded-full bg-primary-600 animate-pulse" />
+            <span>{selectedIds.length} data terpilih</span>
+          </div>
+          {bulkActions && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {bulkActions}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Table Container */}
       <div
         id={tableContainerId}
@@ -356,6 +413,18 @@ export function DataTable<T extends { id: number }>({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-primary-100/50 border-b border-neutral-200">
+                {selectable && (
+                  <th className="px-4 py-4 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={onSelectAll}
+                      className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-neutral-300 cursor-pointer"
+                      aria-label="Pilih semua baris"
+                    />
+                  </th>
+                )}
+
                 {/* Auto NO header in grouped mode */}
                 {groupByFn && (
                   <th className="px-4 py-4 text-xs font-semibold uppercase text-primary-700 tracking-wider w-10 text-center">
@@ -384,6 +453,7 @@ export function DataTable<T extends { id: number }>({
                 <tr>
                   <td
                     colSpan={
+                      (selectable ? 1 : 0) +
                       (groupByFn ? 1 : 0) +
                       columns.length +
                       (hasActions ? 1 : 0)

@@ -1,13 +1,16 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { FileSpreadsheet, Loader2, Trash2, Upload, Users } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
+  bulkDeleteNasabah,
   createNasabah,
   deleteNasabah,
+  getAllNasabahForExport,
   getNasabah,
   updateNasabah,
 } from "@/app/(admin-superadmin)/nasabah/action";
+import { ImportNasabahModal } from "@/app/(admin-superadmin)/nasabah/ImportNasabahModal";
 import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
 import {
   type Column,
@@ -18,6 +21,7 @@ import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
 import { FormModal } from "@/app/components/shared/FormModal";
 import { TourGuide } from "@/app/components/shared/TourGuide";
 import { getCurrentUser } from "@/app/lib/auth-actions";
+import { exportNasabahToCSV } from "@/app/lib/nasabah-excel";
 import type { ActionState, NasabahWithUser } from "@/app/types";
 
 const nasabahSteps = [
@@ -31,11 +35,20 @@ const nasabahSteps = [
     },
   },
   {
+    element: "#tour-admin-nasabah-import-export",
+    popover: {
+      title: "Import & Export CSV",
+      description:
+        "Gunakan tombol ini untuk mengunduh template CSV, mengimpor data nasabah secara massal dari file CSV, atau mengekspor data nasabah ke file CSV.",
+      side: "bottom" as const,
+    },
+  },
+  {
     element: "#tour-admin-nasabah-table",
     popover: {
       title: "Tabel Data Nasabah",
       description:
-        "Anda dapat melihat, mencari, memfilter berdasarkan role, menambah nasabah baru, mengedit, atau menghapus data nasabah melalui tabel terintegrasi ini.",
+        "Anda dapat melihat, mencari, memfilter berdasarkan role, menambah nasabah baru, mengedit, memilih data untuk hapus massal (bulk delete), atau menghapus data nasabah melalui tabel terintegrasi ini.",
       side: "top" as const,
     },
   },
@@ -85,6 +98,11 @@ export default function NasabahPage() {
     null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const showFeedback = (
     type: "success" | "error",
@@ -92,6 +110,33 @@ export default function NasabahPage() {
     message: string,
   ) => {
     setFeedback({ isOpen: true, type, title, message });
+  };
+
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const allData = await getAllNasabahForExport({
+        search,
+        role: filterValues.role,
+        sortBy,
+        sortOrder,
+      });
+      exportNasabahToCSV(allData);
+      showFeedback(
+        "success",
+        "Export Berhasil",
+        `${allData.length} data nasabah berhasil diekspor ke file CSV.`,
+      );
+    } catch (err) {
+      console.error("Gagal export CSV:", err);
+      showFeedback(
+        "error",
+        "Export Gagal",
+        "Terjadi kesalahan saat mengekspor data ke CSV.",
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const refreshData = useCallback(() => {
@@ -178,12 +223,56 @@ export default function NasabahPage() {
         "Berhasil!",
         `Nasabah "${confirmDelete.user?.name || ""}" berhasil dihapus.`,
       );
+      setSelectedIds((prev) => prev.filter((id) => id !== confirmDelete.id));
       refreshData();
     } else {
       showFeedback(
         "error",
         "Gagal!",
         res.errors?._form?.[0] || "Gagal menghapus data nasabah",
+      );
+    }
+  };
+
+  const isAllSelected =
+    data.length > 0 && data.every((item) => selectedIds.includes(item.id));
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      const pageIds = new Set(data.map((item) => item.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    } else {
+      const pageIds = data.map((item) => item.id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleSelectRow = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsBulkDeleting(true);
+    const res = await bulkDeleteNasabah(selectedIds);
+    setIsBulkDeleting(false);
+    setIsBulkDeleteModalOpen(false);
+
+    if (res.success) {
+      showFeedback(
+        "success",
+        "Berhasil!",
+        `${selectedIds.length} data nasabah berhasil dihapus.`,
+      );
+      setSelectedIds([]);
+      refreshData();
+    } else {
+      showFeedback(
+        "error",
+        "Gagal!",
+        res.errors?._form?.[0] || "Gagal menghapus data nasabah terpilih",
       );
     }
   };
@@ -338,6 +427,37 @@ export default function NasabahPage() {
             </p>
           </div>
         </div>
+
+        {/* Action Buttons: Import & Export CSV */}
+        <div
+          id="tour-admin-nasabah-import-export"
+          className="flex flex-wrap items-center gap-2.5 w-full md:w-auto"
+        >
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 border border-emerald-300 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition-colors cursor-pointer shadow-2xs"
+            title="Import data nasabah dari file CSV"
+          >
+            <Upload className="w-4 h-4 text-emerald-600" />
+            Import CSV
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            disabled={isExporting}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+            title="Ekspor data nasabah ke file CSV"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            )}
+            Export CSV
+          </button>
+        </div>
       </div>
 
       <DataTable
@@ -371,6 +491,32 @@ export default function NasabahPage() {
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}
+        selectable={userRole === "superadmin"}
+        selectedIds={selectedIds}
+        onSelectRow={handleSelectRow}
+        onSelectAll={handleSelectAll}
+        isAllSelected={isAllSelected}
+        bulkActions={
+          userRole === "superadmin" ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="px-2.5 py-1.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 font-medium transition-colors cursor-pointer text-xs"
+              >
+                Batalkan Pilihan
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors cursor-pointer text-xs shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Hapus {selectedIds.length} Data Terpilih
+              </button>
+            </div>
+          ) : undefined
+        }
       />
 
       {/* Form Modal */}
@@ -696,6 +842,18 @@ export default function NasabahPage() {
         isPending={isDeleting}
       />
 
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={handleConfirmBulkDelete}
+        title="Konfirmasi Hapus Massal"
+        message={`Apakah Anda yakin ingin menghapus ${selectedIds.length} data nasabah yang dipilih? Akun login dan seluruh data profil nasabah terkait akan dihapus secara permanen.`}
+        confirmLabel="Ya, Hapus Semua"
+        isPending={isBulkDeleting}
+        variant="danger"
+      />
+
       {/* CRUD Feedback */}
       <FeedbackModal
         isOpen={feedback.isOpen}
@@ -703,6 +861,20 @@ export default function NasabahPage() {
         type={feedback.type}
         title={feedback.title}
         message={feedback.message}
+      />
+
+      {/* Import Modal */}
+      <ImportNasabahModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          refreshData();
+          showFeedback(
+            "success",
+            "Import Selesai",
+            "Data nasabah dari CSV berhasil diproses.",
+          );
+        }}
       />
     </div>
   );

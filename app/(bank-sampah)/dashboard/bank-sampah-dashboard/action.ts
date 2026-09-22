@@ -5,6 +5,7 @@ import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getHargaRange } from "@/app/lib/pricing";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import { db } from "@/db";
 import { nasabah, pencairanDana, setorSampah, videoPost } from "@/db/schema";
 
@@ -204,7 +205,11 @@ export async function getDashboardData() {
     setoranHistory,
     recentSetoran: mySetoran.slice(0, 5).map((s) => ({
       id: s.id,
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,
       status: s.status,

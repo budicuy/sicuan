@@ -320,8 +320,38 @@ export function DisbursementLetterPreview({
 
       {/* Tanda Tangan */}
       <div className="flex justify-between pt-3">
+        {/* Kiri - Diserahkan Oleh: PT. Indofood Sukses Makmur Tbk. */}
         <div className="w-40 text-center space-y-1">
           <p className="text-[10px] text-neutral-500">Diserahkan Oleh,</p>
+          <div className="h-14 flex items-center justify-center">
+            {ttdAdminBase64 ? (
+              // biome-ignore lint/performance/noImgElement: Admin TTD preview
+              <img
+                src={ttdAdminBase64}
+                alt="Tanda Tangan Admin"
+                className="max-h-12 object-contain"
+              />
+            ) : metode === "tunai" ? (
+              <div className="text-[9px] text-emerald-700 font-semibold italic border border-dashed border-emerald-300 px-2 py-1 rounded-lg bg-emerald-50">
+                Tanda Tangan Fisik di Tempat
+              </div>
+            ) : (
+              <div className="text-[9px] text-neutral-400 italic border border-dashed border-neutral-300 px-3 py-1 rounded-lg bg-neutral-50">
+                Menunggu Approval
+              </div>
+            )}
+          </div>
+          <p className="font-bold underline text-[10px] text-neutral-800">
+            (PT. Indofood Sukses Makmur Tbk.)
+          </p>
+          <p className="text-[9px] text-neutral-500 leading-tight">
+            Pimpinan Perusahaan
+          </p>
+        </div>
+
+        {/* Kanan - Diterima Oleh: Bank Sampah / Mitra */}
+        <div className="w-40 text-center space-y-1">
+          <p className="text-[10px] text-neutral-500">Diterima Oleh,</p>
           <div className="h-14 flex items-center justify-center">
             {ttdBase64 ? (
               // biome-ignore lint/performance/noImgElement: TTD preview
@@ -345,34 +375,6 @@ export function DisbursementLetterPreview({
           </p>
           <p className="text-[9px] text-neutral-500 leading-tight">
             {labelJabatan}
-          </p>
-        </div>
-        <div className="w-40 text-center space-y-1">
-          <p className="text-[10px] text-neutral-500">Diterima Oleh,</p>
-          <div className="h-14 flex items-center justify-center">
-            {ttdAdminBase64 ? (
-              // biome-ignore lint/performance/noImgElement: Admin TTD preview
-              <img
-                src={ttdAdminBase64}
-                alt="Tanda Tangan Admin"
-                className="max-h-12 object-contain"
-              />
-            ) : metode === "tunai" ? (
-              <div className="text-[9px] text-emerald-700 font-semibold italic border border-dashed border-emerald-300 px-2 py-1 rounded-lg bg-emerald-50">
-                Tanda Tangan Fisik di Tempat
-              </div>
-            ) : (
-              <div className="text-[9px] text-neutral-400 italic border border-dashed border-neutral-300 px-3 py-1 rounded-lg bg-neutral-50">
-                Menunggu Approval
-              </div>
-            )}
-          </div>
-          <div className="mt-1" />
-          <p className="font-bold underline text-[10px] text-neutral-800">
-            (PT. Indofood Sukses Makmur Tbk,)
-          </p>
-          <p className="text-[9px] text-neutral-500 leading-tight">
-            Pimpinan Perusahaan
           </p>
         </div>
       </div>

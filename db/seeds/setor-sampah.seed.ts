@@ -15,7 +15,7 @@ export async function seedSetorSampah() {
   if (bsSidoarjo) {
     await db.insert(setorSampah).values([
       {
-        nomorSetor: "1/B/NDL/BJM/16/08/2026",
+        nomorSetor: "1",
         userId: bsSidoarjo.id,
         jenisSampah: "Etiket" as const,
         beratKg: 4.5,
@@ -36,7 +36,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-16T05:24:39.745Z"),
       },
       {
-        nomorSetor: "2/B/NDL/BJM/16/08/2026",
+        nomorSetor: "2",
         userId: bsSidoarjo.id,
         jenisSampah: "Paper Cup" as const,
         beratKg: 4.0,
@@ -72,7 +72,7 @@ export async function seedSetorSampah() {
   if (bsBanjarbaru) {
     await db.insert(setorSampah).values([
       {
-        nomorSetor: "3/B/NDL/BJM/21/09/2026",
+        nomorSetor: "3",
         userId: bsBanjarbaru.id,
         jenisSampah: "Etiket" as const,
         beratKg: 3.0,
@@ -92,7 +92,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:42:37.954Z"),
       },
       {
-        nomorSetor: "4/B/NDL/BJM/21/09/2026",
+        nomorSetor: "4",
         userId: bsBanjarbaru.id,
         jenisSampah: "Etiket" as const,
         beratKg: 2.1,
@@ -112,7 +112,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:43:01.897Z"),
       },
       {
-        nomorSetor: "5/B/NDL/BJM/21/09/2026",
+        nomorSetor: "5",
         userId: bsBanjarbaru.id,
         jenisSampah: "Etiket" as const,
         beratKg: 3.235,
@@ -132,7 +132,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:43:20.221Z"),
       },
       {
-        nomorSetor: "6/B/NDL/BJM/21/09/2026",
+        nomorSetor: "6",
         userId: bsBanjarbaru.id,
         jenisSampah: "Etiket" as const,
         beratKg: 2.86,
@@ -152,7 +152,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:43:35.574Z"),
       },
       {
-        nomorSetor: "7/B/NDL/BJM/21/09/2026",
+        nomorSetor: "7",
         userId: bsBanjarbaru.id,
         jenisSampah: "Paper Cup" as const,
         beratKg: 2.665,
@@ -172,7 +172,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:43:56.311Z"),
       },
       {
-        nomorSetor: "8/B/NDL/BJM/21/09/2026",
+        nomorSetor: "8",
         userId: bsBanjarbaru.id,
         jenisSampah: "Paper Cup" as const,
         beratKg: 2.65,
@@ -192,7 +192,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:44:28.714Z"),
       },
       {
-        nomorSetor: "9/B/NDL/BJM/21/09/2026",
+        nomorSetor: "9",
         userId: bsBanjarbaru.id,
         jenisSampah: "Paper Cup" as const,
         beratKg: 3.175,
@@ -212,7 +212,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:44:43.911Z"),
       },
       {
-        nomorSetor: "10/B/NDL/BJM/21/09/2026",
+        nomorSetor: "10",
         userId: bsBanjarbaru.id,
         jenisSampah: "Paper Cup" as const,
         beratKg: 3.08,
@@ -232,7 +232,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:48:16.446Z"),
       },
       {
-        nomorSetor: "11/B/NDL/BJM/21/09/2026",
+        nomorSetor: "11",
         userId: bsBanjarbaru.id,
         jenisSampah: "Karton" as const,
         beratKg: 6.925,
@@ -252,7 +252,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:48:33.916Z"),
       },
       {
-        nomorSetor: "12/B/NDL/BJM/21/09/2026",
+        nomorSetor: "12",
         userId: bsBanjarbaru.id,
         jenisSampah: "Karton" as const,
         beratKg: 7.845,
@@ -272,7 +272,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:57:53.803Z"),
       },
       {
-        nomorSetor: "13/B/NDL/BJM/21/09/2026",
+        nomorSetor: "13",
         userId: bsBanjarbaru.id,
         jenisSampah: "Karton" as const,
         beratKg: 3.755,
@@ -292,7 +292,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:48:56.480Z"),
       },
       {
-        nomorSetor: "14/B/NDL/BJM/21/09/2026",
+        nomorSetor: "14",
         userId: bsBanjarbaru.id,
         jenisSampah: "Karton" as const,
         beratKg: 2.86,
@@ -312,7 +312,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T01:49:09.631Z"),
       },
       {
-        nomorSetor: "15/B/NDL/BJM/21/09/2026",
+        nomorSetor: "15",
         userId: bsBanjarbaru.id,
         jenisSampah: "Karton" as const,
         beratKg: 5.72,
@@ -332,7 +332,7 @@ export async function seedSetorSampah() {
         updatedAt: new Date("2026-09-21T02:05:08.330Z"),
       },
       {
-        nomorSetor: "16/B/NDL/BJM/21/09/2026",
+        nomorSetor: "16",
         userId: bsBanjarbaru.id,
         jenisSampah: "Karton" as const,
         beratKg: 4.35,

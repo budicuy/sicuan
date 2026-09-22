@@ -93,6 +93,7 @@ export interface DistributionItem {
 
 export interface DetailSetoranItem {
   id: number;
+  userId?: number;
   nomorSetor: string;
   nasabah: string;
   kategoriNasabah: string;
@@ -103,6 +104,36 @@ export interface DetailSetoranItem {
   metodeSetor: string | null;
   totalPoin: number;
   kredit: number;
+}
+
+export interface BankSampahJenisDetail {
+  jenisSampah: string;
+  totalBeratKg: number;
+  persentase?: number;
+  rangeLabel?: string;
+  harga?: number;
+}
+
+export interface BankSampahMonthlyDetailResult {
+  nasabahName: string;
+  nasabahUsername?: string;
+  bulan: number;
+  bulanNama: string;
+  tahun: number;
+  totalSetoranDiterima: number;
+  rincianJenis: BankSampahJenisDetail[];
+  grandTotalBeratKg: number;
+  globalRangeLabel?: string;
+  grandTotalKredit: number;
+  transaksiList: {
+    id: number;
+    nomorSetor: string;
+    tanggalSetor: string;
+    jenisSampah: string;
+    beratKg: number;
+    status: string;
+    metodeSetor: string | null;
+  }[];
 }
 
 export interface TrendPoint {

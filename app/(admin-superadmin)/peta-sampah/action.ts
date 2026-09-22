@@ -4,6 +4,7 @@ import { and, desc, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import { db } from "@/db";
 import { setorSampah } from "@/db/schema";
 
@@ -97,7 +98,11 @@ export async function getAdminPetaSampahData(month?: number, year?: number) {
 
     return {
       id: `${s.kategoriNasabah}-${s.id}`,
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,
       tanggalSetor: s.tanggalSetor,

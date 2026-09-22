@@ -1,6 +1,7 @@
 "use server";
 
 import { desc, inArray } from "drizzle-orm";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import { db } from "@/db";
 import { setorSampah } from "@/db/schema";
 
@@ -51,7 +52,11 @@ export async function getLaporanSetoranNasabah(params?: {
     // 2. Map into a unified list
     let merged: SetoranReportItem[] = setoran.map((s) => ({
       id: s.id,
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       userId: s.userId,
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,

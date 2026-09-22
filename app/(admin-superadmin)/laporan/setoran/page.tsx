@@ -38,9 +38,10 @@ import {
   getExportDataAction,
   getUnifiedReport,
 } from "@/app/(admin-superadmin)/laporan/setoran/action";
+import { DetailTotalSetoranModal } from "@/app/(admin-superadmin)/laporan/setoran/DetailTotalSetoranModal";
 import { AnimatedCounter } from "@/app/components/shared/AnimatedCounter";
 import { TourGuide } from "@/app/components/shared/TourGuide";
-import type { UnifiedReportData } from "@/app/types";
+import type { DetailSetoranItem, UnifiedReportData } from "@/app/types";
 
 // ── Tour Guide Steps ─────────────────────────────────────────────────
 
@@ -266,6 +267,35 @@ export default function LaporanSetoranPage() {
   const [exportCount, setExportCount] = useState<number>(0);
   const [isCounting, setIsCounting] = useState(false);
 
+  // Modal Bank Sampah Akumulasi Bulanan
+  const [bankSampahModalTarget, setBankSampahModalTarget] = useState<{
+    userId: number;
+    nasabahName: string;
+    year: number;
+    month: number;
+  } | null>(null);
+
+  const handleOpenBankSampahDetail = (row: DetailSetoranItem) => {
+    if (!row.userId) return;
+    let targetYear = tableYear;
+    let targetMonth = tableMonth ?? 1;
+
+    if (row.tanggalSetor?.includes("-")) {
+      const parts = row.tanggalSetor.split("-");
+      if (parts.length >= 2) {
+        targetYear = parseInt(parts[0], 10) || tableYear;
+        targetMonth = parseInt(parts[1], 10) || targetMonth;
+      }
+    }
+
+    setBankSampahModalTarget({
+      userId: row.userId,
+      nasabahName: row.nasabah,
+      year: targetYear,
+      month: targetMonth,
+    });
+  };
+
   // Effect to fetch count dynamically
   useEffect(() => {
     if (!isExportModalOpen) return;
@@ -397,7 +427,7 @@ export default function LaporanSetoranPage() {
             "Total Kredit",
             `Rp ${res.summary.totalKredit.toLocaleString("id-ID")}`,
             "Total Poin",
-            `${res.summary.totalPoin} pt`,
+            `+ ${res.summary.totalPoin.toLocaleString("id-ID")} Poin`,
           ]);
           csvRows.push([]);
 
@@ -446,8 +476,12 @@ export default function LaporanSetoranPage() {
                     ? "Ekspedisi"
                     : "Langsung";
                 case "kredit":
-                  if (item.kredit > 0) return `Rp ${item.kredit}`;
-                  if (item.totalPoin > 0) return `${item.totalPoin} pt`;
+                  if (item.kategoriNasabah === "bank-sampah")
+                    return "Akumulasi Bulanan";
+                  if (item.kredit > 0)
+                    return `Rp ${item.kredit.toLocaleString("id-ID")}`;
+                  if (item.totalPoin > 0)
+                    return `+ ${item.totalPoin.toLocaleString("id-ID")} Poin`;
                   return "-";
                 default:
                   return "";
@@ -1584,11 +1618,25 @@ export default function LaporanSetoranPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-neutral-800 whitespace-nowrap">
-                          {row.kredit > 0
-                            ? `Rp ${row.kredit.toLocaleString("id-ID")}`
-                            : row.totalPoin > 0
-                              ? `${row.totalPoin.toLocaleString("id-ID")} pt`
-                              : "–"}
+                          {row.kategoriNasabah === "bank-sampah" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenBankSampahDetail(row)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 transition-colors shadow-2xs cursor-pointer"
+                              title="Lihat akumulasi total setoran dan perhitungan range reward bulan ini"
+                            >
+                              <Scale className="w-3.5 h-3.5 text-purple-600" />
+                              <span>Detail Total Setoran</span>
+                            </button>
+                          ) : row.kredit > 0 ? (
+                            `Rp ${row.kredit.toLocaleString("id-ID")}`
+                          ) : row.totalPoin > 0 ? (
+                            <span className="text-emerald-700 font-bold">
+                              + {row.totalPoin.toLocaleString("id-ID")} Poin
+                            </span>
+                          ) : (
+                            "–"
+                          )}
                         </td>
                       </tr>
                     ))
@@ -2025,6 +2073,13 @@ export default function LaporanSetoranPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Detail Total Setoran Bank Sampah */}
+      <DetailTotalSetoranModal
+        isOpen={!!bankSampahModalTarget}
+        onClose={() => setBankSampahModalTarget(null)}
+        targetData={bankSampahModalTarget}
+      />
     </div>
   );
 }

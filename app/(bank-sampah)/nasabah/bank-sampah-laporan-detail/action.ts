@@ -6,6 +6,7 @@ import React from "react";
 import { LaporanNasabahDocument } from "@/app/components/shared/LaporanNasabahDocument";
 import { sendEmail } from "@/app/lib/email";
 import { getHargaRange } from "@/app/lib/pricing";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import { db } from "@/db";
 import { nasabah, pencairanDana, setorSampah } from "@/db/schema";
 
@@ -189,7 +190,11 @@ export async function getNasabahDetailAndSetoran(nasabahId: number) {
       },
       setoran: setoranList.map((s) => ({
         id: s.id,
-        nomorSetor: s.nomorSetor,
+        nomorSetor: formatNomorSetor(
+          s.nomorSetor,
+          s.kategoriNasabah,
+          s.tanggalSetor,
+        ),
         jenisSampah: s.jenisSampah,
         beratKg: s.beratKg,
         tanggalSetor: s.tanggalSetor,

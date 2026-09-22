@@ -4,6 +4,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import { db } from "@/db";
 import {
   nasabah,
@@ -154,7 +155,11 @@ export async function getDashboardData() {
     setoranHistory,
     recentSetoran: mySetoran.slice(0, 5).map((s) => ({
       id: s.id,
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,
       status: s.status,

@@ -7,6 +7,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
@@ -46,7 +47,7 @@ export const users = pgTable(
   },
   (table) => [
     index("users_username_idx").on(table.username),
-    index("users_email_idx").on(table.email),
+    uniqueIndex("users_email_unique_idx").on(table.email),
     index("users_role_idx").on(table.role),
   ],
 );
@@ -85,7 +86,8 @@ export const nasabah = pgTable(
   },
   (table) => [
     index("nasabah_username_idx").on(table.username),
-    index("nasabah_email_idx").on(table.email),
+    uniqueIndex("nasabah_nik_unique_idx").on(table.nik),
+    uniqueIndex("nasabah_email_unique_idx").on(table.email),
     index("nasabah_role_idx").on(table.role),
   ],
 );

@@ -1,12 +1,15 @@
 "use server";
 
 import { renderToStream } from "@react-pdf/renderer";
-import { and, asc, desc, eq, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, or, type SQL, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import React from "react";
 import { LaporanSetoranDocument } from "@/app/components/shared/LaporanSetoranDocument";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import type {
+  BankSampahJenisDetail,
+  BankSampahMonthlyDetailResult,
   DetailSetoranItem,
   DistributionItem,
   MonthlyTrendItem,
@@ -14,7 +17,7 @@ import type {
   UnifiedReportSummary,
 } from "@/app/types";
 import { db } from "@/db";
-import { hargaSampah, setorSampah } from "@/db/schema";
+import { hargaSampah, setorSampah, users } from "@/db/schema";
 
 // ── Auth Helper ───────────────────────────────────────────────────────
 
@@ -222,6 +225,7 @@ export async function getUnifiedReport(params: {
       db
         .select({
           id: setorSampah.id,
+          userId: setorSampah.userId,
           beratKg: setorSampah.beratKg,
           totalPoin: setorSampah.totalPoin,
           jenisSampah: setorSampah.jenisSampah,
@@ -285,23 +289,33 @@ export async function getUnifiedReport(params: {
     }
   >();
 
+  // Map untuk akumulasi bulanan bank sampah: key = `${userId}_${monthIdx}` (semua kategori sampah digabung)
+  const bankSampahAccumMap = new Map<string, number>();
+
   for (const row of allRows) {
     totalBerat += row.beratKg;
     totalPoin += row.totalPoin;
 
-    // Kredit calculation (for warmindo and bank-sampah categories only, status diterima)
-    if (
-      row.status === "diterima" &&
-      (row.kategoriNasabah === "warmindo" ||
-        row.kategoriNasabah === "bank-sampah")
-    ) {
-      const range = allRanges.find(
-        (r) =>
-          r.jenisSampah === row.jenisSampah &&
-          row.beratKg >= r.minBerat &&
-          (r.maxBerat === null || row.beratKg <= r.maxBerat),
-      );
-      totalKredit += range?.harga ?? 0;
+    // Kredit calculation:
+    // - Warmindo: per transaksi diterima
+    // - Bank Sampah: akumulasi bulanan gabungan seluruh kategori per nasabah
+    if (row.status === "diterima") {
+      if (row.kategoriNasabah === "warmindo") {
+        const range = allRanges.find(
+          (r) =>
+            r.jenisSampah === row.jenisSampah &&
+            row.beratKg >= r.minBerat &&
+            (r.maxBerat === null || row.beratKg <= r.maxBerat),
+        );
+        totalKredit += range?.harga ?? 0;
+      } else if (row.kategoriNasabah === "bank-sampah") {
+        const mIdx = row.createdAt.getMonth();
+        const bsKey = `${row.userId}_${mIdx}`;
+        bankSampahAccumMap.set(
+          bsKey,
+          (bankSampahAccumMap.get(bsKey) ?? 0) + row.beratKg,
+        );
+      }
     }
 
     // Status counts
@@ -353,6 +367,17 @@ export async function getUnifiedReport(params: {
       monthEntry.bankSampah += row.beratKg;
     else monthEntry.konsumen += row.beratKg;
     monthlyMap.set(monthIdx, monthEntry);
+  }
+
+  // Hitung total kredit untuk akumulasi bulanan bank sampah (seluruh kategori ditotal)
+  for (const [, totalWeight] of bankSampahAccumMap.entries()) {
+    const range = allRanges.find(
+      (r) =>
+        r.jenisSampah === "Karton" &&
+        totalWeight >= r.minBerat &&
+        (r.maxBerat === null || totalWeight <= r.maxBerat),
+    );
+    totalKredit += range?.harga ?? 0;
   }
 
   const totalSetoran = allRows.length;
@@ -431,20 +456,27 @@ export async function getUnifiedReport(params: {
   // ── Detail Data ──────────────────────────────────────────────────
 
   const detailData: DetailSetoranItem[] = paginatedRows.map((row) => {
-    const range = allRanges.find(
-      (r) =>
-        r.jenisSampah === row.jenisSampah &&
-        row.beratKg >= r.minBerat &&
-        (r.maxBerat === null || row.beratKg <= r.maxBerat),
-    );
-    const isMoneyCategory =
-      row.kategoriNasabah === "warmindo" ||
-      row.kategoriNasabah === "bank-sampah";
-    const kredit = isMoneyCategory ? (range?.harga ?? 0) : 0;
+    // Kredit individual hanya berlaku untuk warmindo per baris.
+    // Untuk bank-sampah, kredit dihitung dari akumulasi bulanan per jenis sampah via modal.
+    let kredit = 0;
+    if (row.kategoriNasabah === "warmindo") {
+      const range = allRanges.find(
+        (r) =>
+          r.jenisSampah === row.jenisSampah &&
+          row.beratKg >= r.minBerat &&
+          (r.maxBerat === null || row.beratKg <= r.maxBerat),
+      );
+      kredit = range?.harga ?? 0;
+    }
 
     return {
       id: row.id,
-      nomorSetor: row.nomorSetor,
+      userId: row.userId,
+      nomorSetor: formatNomorSetor(
+        row.nomorSetor,
+        row.kategoriNasabah,
+        row.tanggalSetor,
+      ),
       nasabah: row.user?.name ?? "–",
       kategoriNasabah: row.kategoriNasabah,
       jenisSampah: row.jenisSampah,
@@ -590,28 +622,41 @@ export async function generateUnifiedReportPdfAction(params: {
     let totalBerat = 0;
     let totalPoin = 0;
     let totalKredit = 0;
+    const bsAccumMap = new Map<string, number>();
 
     const items = allRows.map((row) => {
       totalBerat += row.beratKg;
       totalPoin += row.totalPoin;
 
-      const range = allRanges.find(
-        (r) =>
-          r.jenisSampah === row.jenisSampah &&
-          row.beratKg >= r.minBerat &&
-          (r.maxBerat === null || row.beratKg <= r.maxBerat),
-      );
-      const isMoneyCategory =
-        row.kategoriNasabah === "warmindo" ||
-        row.kategoriNasabah === "bank-sampah";
-      const kredit = isMoneyCategory ? (range?.harga ?? 0) : 0;
-      if (row.status === "diterima") {
-        totalKredit += kredit;
+      let kredit = 0;
+      if (row.kategoriNasabah === "warmindo") {
+        const range = allRanges.find(
+          (r) =>
+            r.jenisSampah === row.jenisSampah &&
+            row.beratKg >= r.minBerat &&
+            (r.maxBerat === null || row.beratKg <= r.maxBerat),
+        );
+        kredit = range?.harga ?? 0;
+        if (row.status === "diterima") {
+          totalKredit += kredit;
+        }
+      } else if (
+        row.kategoriNasabah === "bank-sampah" &&
+        row.status === "diterima"
+      ) {
+        const mIdx = row.createdAt.getMonth();
+        const bsKey = `${row.userId}_${mIdx}`;
+        bsAccumMap.set(bsKey, (bsAccumMap.get(bsKey) ?? 0) + row.beratKg);
       }
 
       return {
         id: row.id,
-        nomorSetor: row.nomorSetor,
+        userId: row.userId,
+        nomorSetor: formatNomorSetor(
+          row.nomorSetor,
+          row.kategoriNasabah,
+          row.tanggalSetor,
+        ),
         nasabah: row.user?.name ?? "–",
         kategoriNasabah: row.kategoriNasabah,
         jenisSampah: row.jenisSampah,
@@ -623,6 +668,16 @@ export async function generateUnifiedReportPdfAction(params: {
         kredit,
       };
     });
+
+    for (const [, totalWeight] of bsAccumMap.entries()) {
+      const range = allRanges.find(
+        (r) =>
+          r.jenisSampah === "Karton" &&
+          totalWeight >= r.minBerat &&
+          (r.maxBerat === null || totalWeight <= r.maxBerat),
+      );
+      totalKredit += range?.harga ?? 0;
+    }
 
     const BULAN_NAMES = [
       "Januari",
@@ -762,28 +817,41 @@ export async function getExportDataAction(params: {
     let totalBerat = 0;
     let totalPoin = 0;
     let totalKredit = 0;
+    const bsAccumMap = new Map<string, number>();
 
     const items = allRows.map((row) => {
       totalBerat += row.beratKg;
       totalPoin += row.totalPoin;
 
-      const range = allRanges.find(
-        (r) =>
-          r.jenisSampah === row.jenisSampah &&
-          row.beratKg >= r.minBerat &&
-          (r.maxBerat === null || row.beratKg <= r.maxBerat),
-      );
-      const isMoneyCategory =
-        row.kategoriNasabah === "warmindo" ||
-        row.kategoriNasabah === "bank-sampah";
-      const kredit = isMoneyCategory ? (range?.harga ?? 0) : 0;
-      if (row.status === "diterima") {
-        totalKredit += kredit;
+      let kredit = 0;
+      if (row.kategoriNasabah === "warmindo") {
+        const range = allRanges.find(
+          (r) =>
+            r.jenisSampah === row.jenisSampah &&
+            row.beratKg >= r.minBerat &&
+            (r.maxBerat === null || row.beratKg <= r.maxBerat),
+        );
+        kredit = range?.harga ?? 0;
+        if (row.status === "diterima") {
+          totalKredit += kredit;
+        }
+      } else if (
+        row.kategoriNasabah === "bank-sampah" &&
+        row.status === "diterima"
+      ) {
+        const mIdx = row.createdAt.getMonth();
+        const bsKey = `${row.userId}_${mIdx}`;
+        bsAccumMap.set(bsKey, (bsAccumMap.get(bsKey) ?? 0) + row.beratKg);
       }
 
       return {
         id: row.id,
-        nomorSetor: row.nomorSetor,
+        userId: row.userId,
+        nomorSetor: formatNomorSetor(
+          row.nomorSetor,
+          row.kategoriNasabah,
+          row.tanggalSetor,
+        ),
         nasabah: row.user?.name ?? "–",
         kategoriNasabah: row.kategoriNasabah,
         jenisSampah: row.jenisSampah,
@@ -795,6 +863,16 @@ export async function getExportDataAction(params: {
         kredit,
       };
     });
+
+    for (const [, totalWeight] of bsAccumMap.entries()) {
+      const range = allRanges.find(
+        (r) =>
+          r.jenisSampah === "Karton" &&
+          totalWeight >= r.minBerat &&
+          (r.maxBerat === null || totalWeight <= r.maxBerat),
+      );
+      totalKredit += range?.harga ?? 0;
+    }
 
     return {
       success: true,
@@ -891,4 +969,125 @@ export async function getExportCountAction(params: {
       count: 0,
     };
   }
+}
+
+/**
+ * Mengambil akumulasi setoran bulanan nasabah bank sampah beserta rincian range harga per jenis sampah.
+ */
+export async function getBankSampahMonthlyDetail(params: {
+  userId: number;
+  year: number;
+  month: number;
+}): Promise<BankSampahMonthlyDetailResult | null> {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+    return null;
+  }
+
+  const { userId, year, month } = params;
+
+  // 1. Ambil info nasabah
+  const depositor = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { id: true, name: true, username: true },
+  });
+
+  if (!depositor) return null;
+
+  // 2. Ambil seluruh setoran bank sampah yang berstatus diterima pada bulan & tahun tersebut
+  const rows = await db.query.setorSampah.findMany({
+    where: and(
+      eq(setorSampah.userId, userId),
+      eq(setorSampah.status, "diterima"),
+      or(
+        and(
+          sql`extract(year from ${setorSampah.tanggalSetor}) = ${year}`,
+          sql`extract(month from ${setorSampah.tanggalSetor}) = ${month}`,
+        ),
+        and(
+          sql`extract(year from ${setorSampah.createdAt}) = ${year}`,
+          sql`extract(month from ${setorSampah.createdAt}) = ${month}`,
+        ),
+      ),
+    ),
+    orderBy: [asc(setorSampah.tanggalSetor), asc(setorSampah.id)],
+  });
+
+  // 3. Ambil range harga sampah
+  const allRanges = await db.select().from(hargaSampah);
+
+  // 4. Hitung akumulasi gabungan seluruh kategori sampah
+  const wasteTypes = ["Karton", "Etiket", "Paper Cup"];
+  const rincianJenis: BankSampahJenisDetail[] = [];
+  let grandTotalBeratKg = 0;
+
+  for (const jenis of wasteTypes) {
+    const rowsOfJenis = rows.filter((r) => r.jenisSampah === jenis);
+    const totalBerat = rowsOfJenis.reduce((acc, curr) => acc + curr.beratKg, 0);
+    const roundedBerat = Math.round(totalBerat * 1000) / 1000;
+    grandTotalBeratKg += roundedBerat;
+
+    rincianJenis.push({
+      jenisSampah: jenis,
+      totalBeratKg: roundedBerat,
+      persentase: 0,
+    });
+  }
+
+  grandTotalBeratKg = Math.round(grandTotalBeratKg * 1000) / 1000;
+
+  for (const item of rincianJenis) {
+    item.persentase =
+      grandTotalBeratKg > 0
+        ? Math.round((item.totalBeratKg / grandTotalBeratKg) * 1000) / 10
+        : 0;
+  }
+
+  // 5. Cocokkan grandTotalBeratKg ke range harga sampah global
+  const matchedRange = allRanges.find(
+    (r) =>
+      r.jenisSampah === "Karton" &&
+      grandTotalBeratKg >= r.minBerat &&
+      (r.maxBerat === null || grandTotalBeratKg <= r.maxBerat),
+  );
+
+  const grandTotalKredit = matchedRange?.harga ?? 0;
+  let globalRangeLabel = "";
+  if (matchedRange) {
+    globalRangeLabel = matchedRange.maxBerat
+      ? `${matchedRange.minBerat} – ${matchedRange.maxBerat} kg (Rp ${matchedRange.harga.toLocaleString("id-ID")})`
+      : `> ${matchedRange.minBerat} kg (Rp ${matchedRange.harga.toLocaleString("id-ID")})`;
+  } else if (grandTotalBeratKg > 0) {
+    globalRangeLabel = "< 1 kg (Belum mencapai batas range minimal)";
+  } else {
+    globalRangeLabel = "Tidak ada setoran diterima";
+  }
+
+  const bulanNama = BULAN_NAMES[month - 1] ?? `Bulan ${month}`;
+
+  return {
+    nasabahName: depositor.name,
+    nasabahUsername: depositor.username,
+    bulan: month,
+    bulanNama,
+    tahun: year,
+    totalSetoranDiterima: rows.length,
+    rincianJenis,
+    grandTotalBeratKg,
+    globalRangeLabel,
+    grandTotalKredit,
+    transaksiList: rows.map((r) => ({
+      id: r.id,
+      nomorSetor: formatNomorSetor(
+        r.nomorSetor,
+        r.kategoriNasabah,
+        r.tanggalSetor,
+      ),
+      tanggalSetor: r.tanggalSetor,
+      jenisSampah: r.jenisSampah,
+      beratKg: r.beratKg,
+      status: r.status,
+      metodeSetor: r.metodeSetor,
+    })),
+  };
 }

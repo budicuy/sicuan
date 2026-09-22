@@ -221,9 +221,10 @@ export function LaporanSetoranDocument({
       case "metodeSetor":
         return item.metodeSetor === "ekspedisi" ? "Ekspedisi" : "Langsung";
       case "kredit":
+        if (item.kategoriNasabah === "bank-sampah") return "Akumulasi Bulanan";
         if (item.kredit > 0) return `Rp ${item.kredit.toLocaleString("id-ID")}`;
         if (item.totalPoin > 0)
-          return `${item.totalPoin.toLocaleString("id-ID")} pt`;
+          return `+ ${item.totalPoin.toLocaleString("id-ID")} Poin`;
         return "-";
       default:
         return "";

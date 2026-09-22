@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import type { SetoranType } from "@/app/types";
 import { db } from "@/db";
 import {
@@ -175,6 +176,8 @@ export async function getDashboardData(
           nomorSetor: true,
           jenisSampah: true,
           beratKg: true,
+          tanggalSetor: true,
+          kategoriNasabah: true,
           status: true,
           createdAt: true,
         },
@@ -416,7 +419,11 @@ export async function getDashboardData(
       allNasabahCount: totalNasabahCount,
       unverifiedSubmissions: unverifiedSubmissions.map((s) => ({
         id: s.id,
-        nomorSetor: s.nomorSetor,
+        nomorSetor: formatNomorSetor(
+          s.nomorSetor,
+          s.kategoriNasabah,
+          s.tanggalSetor,
+        ),
         name: s.user?.name ?? "Pengguna Tidak Dikenal",
         role: s.user?.role ?? "konsumen",
         jenisSampah: s.jenisSampah,
@@ -553,7 +560,11 @@ export async function getDashboardData(
       setoranHistory,
       recentSetoran: mySetoran.slice(0, 5).map((s) => ({
         id: s.id,
-        nomorSetor: s.nomorSetor,
+        nomorSetor: formatNomorSetor(
+          s.nomorSetor,
+          s.kategoriNasabah,
+          s.tanggalSetor,
+        ),
         jenisSampah: s.jenisSampah,
         beratKg: s.beratKg,
         status: s.status,

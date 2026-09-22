@@ -3,6 +3,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
+import { formatNomorSetor } from "@/app/lib/setor-helper";
 import { db } from "@/db";
 import { nasabah, setorSampah } from "@/db/schema";
 
@@ -67,7 +68,11 @@ export async function getPetaSampahData() {
       : null,
     setoran: mySetoran.map((s) => ({
       id: s.id,
-      nomorSetor: s.nomorSetor,
+      nomorSetor: formatNomorSetor(
+        s.nomorSetor,
+        s.kategoriNasabah,
+        s.tanggalSetor,
+      ),
       jenisSampah: s.jenisSampah,
       beratKg: s.beratKg,
       tanggalSetor: s.tanggalSetor,
