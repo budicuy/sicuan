@@ -44,3 +44,6 @@ next-env.d.ts
 # WhatsApp session cache
 .wwebjs_auth/
 .wwebjs_cache/
+
+# database backups
+/backups/
