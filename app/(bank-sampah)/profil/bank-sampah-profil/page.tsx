@@ -7,7 +7,6 @@ import {
   Loader2,
   Lock,
   MapPin,
-  Navigation,
   Save,
   User,
 } from "lucide-react";
@@ -18,6 +17,7 @@ import {
   updateProfileData,
 } from "@/app/(bank-sampah)/profil/bank-sampah-profil/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { DynamicLocationPickerMap } from "@/app/components/shared/maps/DynamicMaps";
 import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { ProfileData } from "@/app/types";
 
@@ -45,7 +45,7 @@ const profilSteps = [
     popover: {
       title: "Titik Koordinat & Google Maps",
       description:
-        "Tentukan titik koordinat GPS fisik Bank Sampah Anda menggunakan tombol 'Ambil Lokasi Saat Ini' atau masukkan manual latitude & longitude. Tautan Google Maps yang terisi akan digunakan armada pengangkut untuk menjemput sampah.",
+        "Tentukan titik koordinat GPS fisik Bank Sampah Anda melalui peta interaktif, tombol 'Gunakan Lokasi Saya', atau koordinat manual. Tautan Google Maps yang terisi akan digunakan armada pengangkut untuk menjemput sampah.",
       side: "top" as const,
     },
   },
@@ -65,11 +65,9 @@ export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
-  // Lokasi & Google Maps state
+  // Lokasi koordinat state
   const [latVal, setLatVal] = useState<string>("");
   const [lngVal, setLngVal] = useState<string>("");
-  const [mapsUrlVal, setMapsUrlVal] = useState<string>("");
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   // Transition hooks for server actions
   const [isProfilePending, startProfileTransition] = useTransition();
@@ -141,58 +139,8 @@ export default function ProfilPage() {
           ? String(profile.longitude)
           : "",
       );
-      setMapsUrlVal(profile.googleMapsUrl || "");
     }
   }, [profile]);
-
-  const handleDetectLocation = () => {
-    if (!navigator.geolocation) {
-      showFeedback(
-        "error",
-        "Geolocation Tidak Didukung",
-        "Browser Anda tidak mendukung deteksi lokasi otomatis.",
-      );
-      return;
-    }
-    setIsDetectingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setLatVal(lat.toFixed(6));
-        setLngVal(lng.toFixed(6));
-        if (!mapsUrlVal) {
-          setMapsUrlVal(`https://www.google.com/maps?q=${lat},${lng}`);
-        }
-        setIsDetectingLocation(false);
-        showFeedback(
-          "success",
-          "Lokasi Terdeteksi",
-          `Titik koordinat berhasil didapatkan: ${lat.toFixed(5)}, ${lng.toFixed(5)}.`,
-        );
-      },
-      (err) => {
-        setIsDetectingLocation(false);
-        showFeedback(
-          "error",
-          "Gagal Mendeteksi Lokasi",
-          err.message || "Mohon izinkan akses lokasi pada peramban Anda.",
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  };
-
-  const handleGenerateMapsLink = () => {
-    if (latVal && lngVal) {
-      setMapsUrlVal(`https://www.google.com/maps?q=${latVal},${lngVal}`);
-      showFeedback(
-        "success",
-        "Tautan Dibuat",
-        "Tautan Google Maps berhasil dibuat dari titik koordinat.",
-      );
-    }
-  };
 
   const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -569,37 +517,28 @@ export default function ProfilPage() {
               id="tour-bank-sampah-profil-location"
               className="pt-4 border-t border-neutral-100 md:col-span-2 space-y-4"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-primary-50 text-primary-600 rounded-lg">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-neutral-800">
-                      Titik Lokasi & Google Maps
-                    </h3>
-                    <p className="text-[11px] text-neutral-400">
-                      Tentukan koordinat operasional dan tautan peta lokasi
-                      Anda.
-                    </p>
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary-50 text-primary-600 rounded-lg">
+                  <MapPin className="w-4 h-4" />
                 </div>
-                <button
-                  type="button"
-                  onClick={handleDetectLocation}
-                  disabled={isDetectingLocation}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold border border-emerald-200 transition-colors cursor-pointer disabled:opacity-50 self-start sm:self-auto"
-                >
-                  {isDetectingLocation ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-                  ) : (
-                    <Navigation className="w-3.5 h-3.5 text-emerald-600" />
-                  )}
-                  {isDetectingLocation
-                    ? "Mendeteksi GPS..."
-                    : "Ambil Lokasi Saat Ini"}
-                </button>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-800">
+                    Titik Lokasi & Google Maps
+                  </h3>
+                  <p className="text-[11px] text-neutral-400">
+                    Tentukan koordinat operasional dan tautan peta lokasi Anda.
+                  </p>
+                </div>
               </div>
+
+              <DynamicLocationPickerMap
+                latitude={latVal ? Number.parseFloat(latVal) : null}
+                longitude={lngVal ? Number.parseFloat(lngVal) : null}
+                onChange={(lat, lng) => {
+                  setLatVal(lat.toString());
+                  setLngVal(lng.toString());
+                }}
+              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Latitude */}
@@ -653,62 +592,29 @@ export default function ProfilPage() {
                 </div>
               </div>
 
-              {/* Link Google Maps */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="googleMapsUrl"
-                    className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
-                  >
-                    Tautan / Link Google Maps
-                  </label>
-                  {latVal && lngVal && (
-                    <button
-                      type="button"
-                      onClick={handleGenerateMapsLink}
-                      className="text-[11px] font-bold text-primary-600 hover:underline cursor-pointer bg-transparent border-0 p-0"
-                    >
-                      Salin Koordinat ke Tautan
-                    </button>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      id="googleMapsUrl"
-                      name="googleMapsUrl"
-                      type="url"
-                      value={mapsUrlVal}
-                      onChange={(e) => setMapsUrlVal(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/15 focus:border-primary-600 transition-all"
-                      placeholder="https://maps.app.goo.gl/... atau https://maps.google.com/?q=..."
-                    />
+              {/* Status Koordinat & Tombol Buka di Google Maps */}
+              {latVal && lngVal && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/80">
+                  <div className="flex items-center gap-2.5 text-xs text-blue-900 font-medium">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
+                    <span>
+                      Titik koordinat operasional terpasang:{" "}
+                      <strong className="font-mono font-bold">
+                        {Number(latVal).toFixed(5)}, {Number(lngVal).toFixed(5)}
+                      </strong>
+                    </span>
                   </div>
-                  {(mapsUrlVal || (latVal && lngVal)) && (
-                    <a
-                      href={
-                        mapsUrlVal ||
-                        `https://www.google.com/maps?q=${latVal},${lngVal}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3.5 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border border-neutral-200"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5 text-primary-600" />
-                      Buka Peta
-                    </a>
-                  )}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${latVal},${lngVal}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Buka di Google Maps</span>
+                  </a>
                 </div>
-                {profileErrors.googleMapsUrl && (
-                  <p className="text-[11px] font-semibold text-red-600">
-                    {profileErrors.googleMapsUrl[0]}
-                  </p>
-                )}
-                <p className="text-[11px] text-neutral-400">
-                  Tautan Google Maps membantu armada pengangkut dan sistem
-                  logistik menemukan lokasi operasional secara presisi.
-                </p>
-              </div>
+              )}
             </div>
           </div>
 

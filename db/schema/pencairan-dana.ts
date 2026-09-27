@@ -37,6 +37,7 @@ export const pencairanDana = pgTable(
       .notNull()
       .default("transfer"),
     keterangan: text("keterangan"), // catatan tambahan
+    tarifDasar: integer("tarif_dasar").default(0),
     biayaTambahan: integer("biaya_tambahan").default(0).notNull(),
     catatanBiayaTambahan: text("catatan_biaya_tambahan"),
     ttdPenyerahUrl: text("ttd_penyerah_url"), // TTD mitra (uploaded when submitting)

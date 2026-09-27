@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   Sliders,
   Star,
+  Trophy,
   Truck,
   User,
   Users,
@@ -51,6 +52,7 @@ const IconMap: Record<string, LucideIcon> = {
   Images,
   Award,
   Gift,
+  Trophy,
 };
 
 function getIcon(name: string): LucideIcon {

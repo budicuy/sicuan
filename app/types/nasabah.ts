@@ -15,7 +15,6 @@ export interface NasabahWithUser {
   poin: number;
   latitude?: number | null;
   longitude?: number | null;
-  googleMapsUrl?: string | null;
   user: {
     name: string;
     username: string;
@@ -44,5 +43,4 @@ export interface ProfileData {
   email: string;
   latitude?: number | null;
   longitude?: number | null;
-  googleMapsUrl?: string | null;
 }

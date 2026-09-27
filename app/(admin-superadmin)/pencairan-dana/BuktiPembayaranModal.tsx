@@ -78,9 +78,17 @@ export function BuktiPembayaranModal({
     { jenis: "Karton", beratKg: 0, terlampir: true },
   ]);
   const initialBiayaTambahan = item.biayaTambahan || 0;
-  const initialTarifDasar = item.jumlah - initialBiayaTambahan;
-  const [tarifDasar, _setTarifDasar] = useState(initialTarifDasar);
-  const [biayaTambahan, _setBiayaTambahan] = useState(initialBiayaTambahan);
+  const estimasiKredit = Math.max(0, item.jumlah - initialBiayaTambahan);
+  const initialTarifDasar =
+    item.tarifDasar && item.tarifDasar > 0 ? item.tarifDasar : estimasiKredit;
+  const [tarifDasar, setTarifDasar] = useState(initialTarifDasar);
+  const [tarifDasarError, setTarifDasarError] = useState("");
+  const [biayaTambahan, setBiayaTambahan] = useState(initialBiayaTambahan);
+  const [catatanBiayaTambahan, setCatatanBiayaTambahan] = useState(
+    item.catatanBiayaTambahan ?? "",
+  );
+  const [catatanBiayaTambahanError, setCatatanBiayaTambahanError] =
+    useState("");
   const [keterangan, _setKeterangan] = useState(item.keterangan ?? "");
   const [namaPenyerah, _setNamaPenyerah] = useState(
     "PT. Indofood Sukses Makmur Tbk.",
@@ -118,6 +126,17 @@ export function BuktiPembayaranModal({
   );
   const [buktiTransferError, setBuktiTransferError] = useState("");
   const [isCompressingBukti, setIsCompressingBukti] = useState(false);
+  const [setoranDetail, setSetoranDetail] = useState<
+    {
+      id?: number;
+      nomorSetor: string;
+      jenisSampah: string;
+      beratKg: number;
+      tanggalSetor: string;
+      fotoTimbangan?: string | null;
+      fotoBuktiTambahan?: string[];
+    }[]
+  >([]);
 
   // Fetch data on mount
   useEffect(() => {
@@ -136,6 +155,9 @@ export function BuktiPembayaranModal({
           setDataSampah(res.data.dataSampah);
         } else {
           setDataSampah([{ jenis: "Karton", beratKg: 0, terlampir: true }]);
+        }
+        if (res.data.setoranDetail) {
+          setSetoranDetail(res.data.setoranDetail);
         }
       }
     });
@@ -312,6 +334,18 @@ export function BuktiPembayaranModal({
   };
 
   const handleSubmit = () => {
+    if (!tarifDasar || tarifDasar <= 0) {
+      setTarifDasarError("Tarif Dasar Pengelolaan wajib diisi oleh Admin.");
+      return;
+    }
+
+    if (biayaTambahan > 0 && !catatanBiayaTambahan.trim()) {
+      setCatatanBiayaTambahanError(
+        "Catatan rincian biaya tambahan wajib diisi jika ada biaya tambahan.",
+      );
+      return;
+    }
+
     if (!isCash && !ttdAdminBase64) {
       setTtdError("Tanda tangan admin wajib diunggah sebelum membuat dokumen.");
       return;
@@ -353,6 +387,7 @@ export function BuktiPembayaranModal({
       totalBeratKg,
       tarifDasar,
       biayaTambahan,
+      catatanBiayaTambahan: catatanBiayaTambahan.trim() || null,
       totalTagihan,
       metodePembayaran: item.metodePembayaran,
       keterangan,
@@ -680,6 +715,141 @@ export function BuktiPembayaranModal({
               </>
             )}
 
+            {/* Rincian & Penyesuaian Biaya Pengelolaan */}
+            <div className="bg-neutral-50/80 border border-neutral-200 rounded-2xl p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200/70 pb-3">
+                <div>
+                  <span className="text-xs font-bold text-neutral-800 uppercase tracking-wider block">
+                    Penyesuaian Biaya Pengelolaan
+                  </span>
+                  <p className="text-[11px] text-neutral-500 mt-0.5">
+                    Admin dapat menyesuaikan Tarif Dasar atau Biaya Tambahan
+                    jika pengajuan mitra tidak sesuai.
+                  </p>
+                </div>
+                <div className="sm:text-right shrink-0">
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Total Tagihan
+                  </span>
+                  <span className="text-sm font-extrabold text-primary-700">
+                    Rp {totalTagihan.toLocaleString("id-ID")}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label
+                      htmlFor="admin-tarif-dasar"
+                      className="block text-xs font-bold text-neutral-700"
+                    >
+                      Tarif Dasar Pengelolaan (Rp){" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    {estimasiKredit > 0 && tarifDasar !== estimasiKredit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTarifDasar(estimasiKredit);
+                          setTarifDasarError("");
+                        }}
+                        className="text-[10px] text-primary-600 hover:text-primary-700 font-semibold hover:underline bg-transparent border-0 cursor-pointer p-0"
+                      >
+                        Pakai Estimasi ({estimasiKredit.toLocaleString("id-ID")}
+                        )
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    id="admin-tarif-dasar"
+                    type="number"
+                    min={0}
+                    value={tarifDasar || ""}
+                    onChange={(e) => {
+                      const val = Math.max(0, Number(e.target.value) || 0);
+                      setTarifDasar(val);
+                      if (val > 0) setTarifDasarError("");
+                    }}
+                    placeholder="Masukkan tarif dasar yang disetujui"
+                    className={`w-full px-3 py-2 rounded-xl border text-xs font-semibold text-neutral-800 bg-white focus:outline-none focus:ring-2 transition-all ${
+                      tarifDasarError
+                        ? "border-red-400 focus:ring-red-400/30 focus:border-red-500"
+                        : "border-neutral-200 focus:ring-primary-500/30 focus:border-primary-500"
+                    }`}
+                  />
+                  {tarifDasarError ? (
+                    <p className="text-[11px] font-semibold text-red-500 mt-1">
+                      {tarifDasarError}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-neutral-400 mt-1">
+                      Diisi oleh Admin sebagai imbalan dasar pengelolaan sampah
+                      yang disetujui.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="admin-biaya-tambahan"
+                    className="block text-xs font-bold text-neutral-700 mb-1"
+                  >
+                    Biaya Tambahan (Rp)
+                  </label>
+                  <input
+                    id="admin-biaya-tambahan"
+                    type="number"
+                    min={0}
+                    value={biayaTambahan}
+                    onChange={(e) => {
+                      const val = Math.max(0, Number(e.target.value) || 0);
+                      setBiayaTambahan(val);
+                      if (val === 0) setCatatanBiayaTambahanError("");
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
+                  />
+                  <p className="text-[10px] text-neutral-400 mt-1">
+                    Operasional khusus, transportasi, dsb.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="admin-catatan-biaya"
+                  className="block text-xs font-bold text-neutral-700 mb-1"
+                >
+                  Catatan Rincian Biaya Tambahan{" "}
+                  {biayaTambahan > 0 && <span className="text-red-500">*</span>}
+                </label>
+                <input
+                  id="admin-catatan-biaya"
+                  type="text"
+                  value={catatanBiayaTambahan}
+                  onChange={(e) => {
+                    setCatatanBiayaTambahan(e.target.value);
+                    if (e.target.value.trim()) setCatatanBiayaTambahanError("");
+                  }}
+                  placeholder={
+                    biayaTambahan > 0
+                      ? "Contoh: Biaya sewa pikap angkut sampah tambahan..."
+                      : "Catatan penjelasan biaya (opsional jika tidak ada biaya tambahan)"
+                  }
+                  className={`w-full px-3 py-2 rounded-xl border text-xs text-neutral-800 bg-white focus:outline-none focus:ring-2 transition-all ${
+                    catatanBiayaTambahanError
+                      ? "border-red-400 focus:ring-red-400/30 focus:border-red-500"
+                      : "border-neutral-200 focus:ring-primary-500/30 focus:border-primary-500"
+                  }`}
+                />
+                {catatanBiayaTambahanError && (
+                  <p className="text-[11px] font-semibold text-red-500 mt-1">
+                    {catatanBiayaTambahanError}
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Live Letter Preview */}
             <div className="space-y-2.5">
               <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
@@ -708,7 +878,11 @@ export function BuktiPembayaranModal({
                   kategoriSumber={letterKategori}
                   ttdAdminBase64={ttdAdminBase64}
                   biayaTambahan={biayaTambahan}
-                  catatanBiayaTambahan={item.catatanBiayaTambahan}
+                  catatanBiayaTambahan={catatanBiayaTambahan}
+                  setoranDetail={setoranDetail}
+                  nomorDokumen={`(Draft Otomatis Dibuat Admin)`}
+                  periodeBulan={periodeBulan}
+                  periodeTahun={periodeTahun}
                 />
               </div>
             </div>

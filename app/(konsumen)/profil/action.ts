@@ -62,6 +62,29 @@ const profileSchema = z.object({
       message: "Format email tidak valid",
     })
     .transform((val) => (val === "" ? null : val)),
+  latitude: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) =>
+      val && val.trim() !== "" ? Number.parseFloat(val) : null,
+    )
+    .refine(
+      (val) => val === null || (!Number.isNaN(val) && val >= -90 && val <= 90),
+      { message: "Latitude harus berada di antara -90 dan 90" },
+    ),
+  longitude: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) =>
+      val && val.trim() !== "" ? Number.parseFloat(val) : null,
+    )
+    .refine(
+      (val) =>
+        val === null || (!Number.isNaN(val) && val >= -180 && val <= 180),
+      { message: "Longitude harus berada di antara -180 dan 180" },
+    ),
 });
 
 const passwordSchema = z
@@ -106,6 +129,8 @@ export async function getProfileData() {
         alamat: nasabah.alamat,
         jenisBank: nasabah.jenisBank,
         noRekening: nasabah.noRekening,
+        latitude: nasabah.latitude,
+        longitude: nasabah.longitude,
       })
       .from(users)
       .innerJoin(nasabah, eq(nasabah.id, users.id))
@@ -131,6 +156,8 @@ export async function getProfileData() {
         jenisBank: profileData.jenisBank || "",
         noRekening: profileData.noRekening || "",
         email: profileData.email || "",
+        latitude: profileData.latitude ?? null,
+        longitude: profileData.longitude ?? null,
       },
     };
   } catch (error) {
@@ -159,6 +186,8 @@ export async function updateProfileData(
       jenisBank: (formData.get("jenisBank") as string) || null,
       noRekening: (formData.get("noRekening") as string) || null,
       email: (formData.get("email") as string) || null,
+      latitude: (formData.get("latitude") as string) || null,
+      longitude: (formData.get("longitude") as string) || null,
     };
 
     const parsed = profileSchema.safeParse(rawData);
@@ -191,6 +220,8 @@ export async function updateProfileData(
           jenisBank: parsed.data.jenisBank,
           noRekening: parsed.data.noRekening,
           email: parsed.data.email,
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, userId));

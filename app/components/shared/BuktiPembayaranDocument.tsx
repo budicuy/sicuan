@@ -246,6 +246,124 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: "#888888",
   },
+  fotoCard: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 4,
+    marginBottom: 8,
+    backgroundColor: "#ffffff",
+  },
+  fotoCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  fotoCardTitle: {
+    fontSize: 8.5,
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  fotoCardSubtitle: {
+    fontSize: 8,
+    color: "#4b5563",
+  },
+  fotoCardBody: {
+    flexDirection: "row",
+    padding: 6,
+    gap: 8,
+    alignItems: "stretch",
+  },
+  fotoSectionLeft: {
+    width: "48%",
+  },
+  fotoWrapper: {
+    width: "100%",
+    height: 132,
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 3,
+    padding: 4,
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  fotoHeader: {
+    width: "100%",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    paddingBottom: 2,
+    marginBottom: 3,
+  },
+  fotoSubLabel: {
+    fontSize: 7.5,
+    fontWeight: "bold",
+    color: "#374151",
+    textAlign: "center",
+  },
+  fotoImageContainer: {
+    width: "100%",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fotoImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+  },
+  noFotoText: {
+    fontSize: 7.5,
+    color: "#9ca3af",
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+  detailSectionRight: {
+    width: "49%",
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 3,
+    padding: 6,
+    justifyContent: "center",
+  },
+  detailSectionTitle: {
+    fontSize: 8,
+    fontWeight: "bold",
+    color: "#1e293b",
+    borderBottomWidth: 1,
+    borderBottomColor: "#cbd5e1",
+    paddingBottom: 2,
+    marginBottom: 4,
+  },
+  detailRow: {
+    flexDirection: "row",
+    marginBottom: 2.5,
+  },
+  detailLabel: {
+    width: 62,
+    fontSize: 7.5,
+    color: "#64748b",
+  },
+  detailColon: {
+    width: 6,
+    fontSize: 7.5,
+    color: "#64748b",
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: 7.5,
+    fontWeight: "bold",
+    color: "#0f172a",
+  },
+  ringkasanContainer: {
+    marginTop: 10,
+  },
 });
 
 function angkaTerbilang(n: number): string {
@@ -351,6 +469,8 @@ export interface BuktiPembayaranData {
     jenisSampah: string;
     beratKg: number;
     tanggalSetor: string;
+    fotoTimbanganUrl?: string | null;
+    fotoBuktiTambahanUrls?: string[];
   }[];
   namaPenyerah?: string | null;
   jabatanPenyerah?: string | null;
@@ -722,89 +842,239 @@ export function BuktiPembayaranDocument({
         />
       </Page>
 
-      {/* ── Page 2: Rincian Detail Setoran ── */}
-      <Page size="A4" style={styles.page}>
-        <View style={styles.headerRule} />
-        <View style={styles.headerRuleThin} />
-        <Text style={styles.headerTitle}>LAMPIRAN DETAIL SETORAN SAMPAH</Text>
-        <View style={[styles.headerRule, { marginTop: 4 }]} />
-
-        <View style={[styles.headerRow, { marginTop: 6 }]}>
-          <Text style={styles.docNumber}>
-            No. Dokumen : {data.nomorDokumen}
+      {/* ── Page 2+: Lampiran Detail & Dokumentasi Setoran Sampah ── */}
+      {data.setoranDetail && data.setoranDetail.length > 0 ? (
+        <Page size="A4" style={styles.page}>
+          <View style={styles.headerRule} />
+          <View style={styles.headerRuleThin} />
+          <Text style={styles.headerTitle}>
+            LAMPIRAN DETAIL &amp; DOKUMENTASI SETORAN SAMPAH
           </Text>
-          <Text style={styles.docDate}>
-            Periode: {data.periodeBulan} {data.periodeTahun}
-          </Text>
-        </View>
+          <View style={[styles.headerRule, { marginTop: 4 }]} />
 
-        <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
-          RINCIAN DATA SETORAN :
-        </Text>
-
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={[styles.colNo, { fontWeight: "bold" }]}>No</Text>
-            <Text style={[styles.colTanggal, { fontWeight: "bold" }]}>
-              Tanggal Setor
+          <View style={[styles.headerRow, { marginTop: 6, marginBottom: 6 }]}>
+            <Text style={styles.docNumber}>
+              No. Dokumen : {data.nomorDokumen}
             </Text>
-            <Text style={[styles.colNomor, { fontWeight: "bold" }]}>
-              Nomor Setoran
-            </Text>
-            <Text style={[styles.colJenis, { fontWeight: "bold" }]}>
-              Jenis Sampah
-            </Text>
-            <Text
-              style={[styles.colBerat, { fontWeight: "bold", paddingRight: 5 }]}
-            >
-              Berat (kg)
+            <Text style={styles.docDate}>
+              Periode: {data.periodeBulan} {data.periodeTahun}
             </Text>
           </View>
 
-          {/* Table Rows */}
-          {data.setoranDetail && data.setoranDetail.length > 0 ? (
-            data.setoranDetail.map((item, i) => (
-              <View key={item.nomorSetor} style={styles.tableRow}>
-                <Text style={styles.colNo}>{i + 1}</Text>
-                <Text style={styles.colTanggal}>
+          <Text
+            style={[styles.sectionTitle, { marginTop: 2, marginBottom: 6 }]}
+          >
+            DOKUMENTASI FOTO &amp; DETAIL TRANSAKSI SETORAN :
+          </Text>
+
+          {/* Looping Kartu Setoran: Gambar di Kiri, Detail di Kanan */}
+          {data.setoranDetail.map((item, i) => (
+            <View
+              key={`card-${item.nomorSetor}-${i}`}
+              wrap={false}
+              style={styles.fotoCard}
+            >
+              <View style={styles.fotoCardHeader}>
+                <Text style={styles.fotoCardTitle}>
+                  Setoran #{i + 1} — No. {item.nomorSetor} ({item.jenisSampah})
+                </Text>
+                <Text style={styles.fotoCardSubtitle}>
+                  Tanggal Setor:{" "}
                   {new Date(item.tanggalSetor).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
                   })}
                 </Text>
-                <Text style={styles.colNomor}>{item.nomorSetor}</Text>
-                <Text style={styles.colJenis}>{item.jenisSampah}</Text>
-                <Text style={[styles.colBerat, { paddingRight: 5 }]}>
-                  {item.beratKg.toFixed(2)}
+              </View>
+
+              <View style={styles.fotoCardBody}>
+                {/* ── Sisi Kiri: Foto Timbangan di Dalam Card ── */}
+                <View style={styles.fotoSectionLeft}>
+                  <View style={styles.fotoWrapper}>
+                    <View style={styles.fotoHeader}>
+                      <Text style={styles.fotoSubLabel}>
+                        Foto Timbangan ({item.beratKg.toFixed(2)} kg)
+                      </Text>
+                    </View>
+                    <View style={styles.fotoImageContainer}>
+                      {item.fotoTimbanganUrl ? (
+                        <Image
+                          src={item.fotoTimbanganUrl}
+                          style={styles.fotoImage}
+                        />
+                      ) : (
+                        <Text style={styles.noFotoText}>
+                          Foto timbangan tidak tersedia
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                </View>
+
+                {/* ── Sisi Kanan: Detail Setoran Tersebut ── */}
+                <View style={styles.detailSectionRight}>
+                  <Text style={styles.detailSectionTitle}>DETAIL SETORAN</Text>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>No. Setoran</Text>
+                    <Text style={styles.detailColon}>:</Text>
+                    <Text style={styles.detailValue}>{item.nomorSetor}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Tanggal</Text>
+                    <Text style={styles.detailColon}>:</Text>
+                    <Text style={styles.detailValue}>
+                      {new Date(item.tanggalSetor).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Jenis Sampah</Text>
+                    <Text style={styles.detailColon}>:</Text>
+                    <Text style={styles.detailValue}>{item.jenisSampah}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Berat (kg)</Text>
+                    <Text style={styles.detailColon}>:</Text>
+                    <Text style={styles.detailValue}>
+                      {item.beratKg.toFixed(2)} kg
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Status</Text>
+                    <Text style={styles.detailColon}>:</Text>
+                    <Text style={[styles.detailValue, { color: "#166534" }]}>
+                      Terverifikasi (Valid)
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Dokumentasi</Text>
+                    <Text style={styles.detailColon}>:</Text>
+                    <Text style={styles.detailValue}>
+                      {item.fotoTimbanganUrl
+                        ? "Foto Timbangan Terlampir"
+                        : "Tanpa Foto"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          ))}
+
+          {/* ── Di Paling Bawah: Ringkasan Data Setoran ── */}
+          <View wrap={false} style={styles.ringkasanContainer}>
+            <View style={styles.headerRule} />
+            <Text
+              style={[styles.sectionTitle, { marginTop: 4, marginBottom: 4 }]}
+            >
+              RINGKASAN DATA SETORAN SAMPAH :
+            </Text>
+
+            <View style={styles.table}>
+              {/* Table Header */}
+              <View style={styles.tableHeader}>
+                <Text style={[styles.colNo, { fontWeight: "bold" }]}>No</Text>
+                <Text style={[styles.colTanggal, { fontWeight: "bold" }]}>
+                  Tanggal Setor
+                </Text>
+                <Text style={[styles.colNomor, { fontWeight: "bold" }]}>
+                  Nomor Setoran
+                </Text>
+                <Text style={[styles.colJenis, { fontWeight: "bold" }]}>
+                  Jenis Sampah
+                </Text>
+                <Text
+                  style={[
+                    styles.colBerat,
+                    { fontWeight: "bold", paddingRight: 5 },
+                  ]}
+                >
+                  Berat (kg)
                 </Text>
               </View>
-            ))
-          ) : (
-            <View style={styles.tableRow}>
-              <Text
-                style={{
-                  width: "100%",
-                  textAlign: "center",
-                  fontSize: 8,
-                  paddingVertical: 10,
-                  color: "#888",
-                }}
+
+              {/* Table Rows */}
+              {data.setoranDetail.map((item, i) => (
+                <View
+                  key={`ringkasan-${item.nomorSetor}-${i}`}
+                  style={styles.tableRow}
+                >
+                  <Text style={styles.colNo}>{i + 1}</Text>
+                  <Text style={styles.colTanggal}>
+                    {new Date(item.tanggalSetor).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </Text>
+                  <Text style={styles.colNomor}>{item.nomorSetor}</Text>
+                  <Text style={styles.colJenis}>{item.jenisSampah}</Text>
+                  <Text style={[styles.colBerat, { paddingRight: 5 }]}>
+                    {item.beratKg.toFixed(2)}
+                  </Text>
+                </View>
+              ))}
+
+              {/* Table Summary */}
+              <View
+                style={[
+                  styles.tableRow,
+                  {
+                    backgroundColor: "#f9fafb",
+                    borderTopWidth: 1.5,
+                    borderTopColor: "#999",
+                  },
+                ]}
               >
-                Tidak ada data setoran detail untuk periode ini.
-              </Text>
+                <Text
+                  style={[
+                    styles.colNo,
+                    {
+                      fontWeight: "bold",
+                      width: "85%",
+                      textAlign: "right",
+                      paddingRight: 8,
+                    },
+                  ]}
+                >
+                  TOTAL BERAT ({data.setoranDetail.length} Setoran) :
+                </Text>
+                <Text
+                  style={[
+                    styles.colBerat,
+                    { fontWeight: "bold", paddingRight: 5 },
+                  ]}
+                >
+                  {data.totalBeratKg.toFixed(2)}
+                </Text>
+              </View>
             </View>
-          )}
-        </View>
-        <Text
-          style={styles.pageNumber}
-          render={({ pageNumber, totalPages }) =>
-            `Halaman ${pageNumber} dari ${totalPages}`
-          }
-          fixed
-        />
-      </Page>
+
+            <Text
+              style={{
+                fontSize: 7.5,
+                color: "#6b7280",
+                fontStyle: "italic",
+                marginTop: 4,
+              }}
+            >
+              * Seluruh data transaksi di atas telah diverifikasi dengan bukti
+              foto timbangan dan fisik sampah yang terlampir.
+            </Text>
+          </View>
+
+          <Text
+            style={styles.pageNumber}
+            render={({ pageNumber, totalPages }) =>
+              `Halaman ${pageNumber} dari ${totalPages}`
+            }
+            fixed
+          />
+        </Page>
+      ) : null}
 
       {/* ── Page 3: Bukti Transfer ── */}
       {data.buktiTransferUrl ? (

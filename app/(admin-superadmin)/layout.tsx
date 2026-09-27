@@ -145,6 +145,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       },
       {
         type: "link",
+        href: "/reward-top-kontributor",
+        label: "Reward Kontributor",
+        icon: "Trophy",
+      },
+      {
+        type: "link",
         href: "/pencairan-dana",
         label: "Pencairan Dana",
         icon: "Coins",
@@ -175,6 +181,12 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
             badgeCount: countKonsumen,
           },
         ],
+      },
+      {
+        type: "link",
+        href: "/pelacak-lokasi",
+        label: "Pelacak Lokasi",
+        icon: "Map",
       },
       {
         type: "link",

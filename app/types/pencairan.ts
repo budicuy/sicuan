@@ -21,6 +21,7 @@ export interface DisbursementItem {
   status: string;
   metodePembayaran: string;
   keterangan: string | null;
+  tarifDasar?: number | null;
   biayaTambahan?: number | null;
   catatanBiayaTambahan?: string | null;
   ttdPenyerahUrl: string | null;
@@ -50,6 +51,7 @@ export interface DisbursementHistoryItem {
   status: string;
   metodePembayaran: string;
   buktiTransfer: string | null;
+  tarifDasar?: number | null;
   biayaTambahan?: number | null;
   catatanBiayaTambahan?: string | null;
   periodeBulan?: number | null;

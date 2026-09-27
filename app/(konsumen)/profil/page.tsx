@@ -1,6 +1,15 @@
 "use client";
 
-import { Info, Key, Loader2, Lock, Save, User } from "lucide-react";
+import {
+  ExternalLink,
+  Info,
+  Key,
+  Loader2,
+  Lock,
+  MapPin,
+  Save,
+  User,
+} from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   getProfileData,
@@ -8,6 +17,7 @@ import {
   updateProfileData,
 } from "@/app/(konsumen)/profil/action";
 import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { DynamicLocationPickerMap } from "@/app/components/shared/maps/DynamicMaps";
 import { TourGuide } from "@/app/components/shared/TourGuide";
 import type { ProfileData } from "@/app/types";
 
@@ -52,6 +62,10 @@ export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
+  // Lokasi Coordinates state
+  const [latVal, setLatVal] = useState<string>("");
+  const [lngVal, setLngVal] = useState<string>("");
+
   // Transition hooks for server actions
   const [isProfilePending, startProfileTransition] = useTransition();
   const [isPasswordPending, startPasswordTransition] = useTransition();
@@ -95,6 +109,16 @@ export default function ProfilPage() {
     getProfileData().then((res) => {
       if (res.success && res.data) {
         setProfile(res.data as ProfileData);
+        if (res.data.latitude !== undefined && res.data.latitude !== null) {
+          setLatVal(res.data.latitude.toString());
+        } else {
+          setLatVal("");
+        }
+        if (res.data.longitude !== undefined && res.data.longitude !== null) {
+          setLngVal(res.data.longitude.toString());
+        } else {
+          setLngVal("");
+        }
       } else {
         showFeedback(
           "error",
@@ -479,6 +503,60 @@ export default function ProfilPage() {
                   {profileErrors.noRekening[0]}
                 </p>
               )}
+            </div>
+
+            {/* ── Titik Lokasi Peta (React Leaflet) ── */}
+            <div className="pt-4 border-t border-neutral-100 md:col-span-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary-50 text-primary-600 rounded-lg">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-800">
+                    Titik Lokasi Rumah / Penyerahan Sampah
+                  </h3>
+                  <p className="text-[11px] text-neutral-400">
+                    Tentukan titik koordinat lokasi Anda pada peta agar dapat
+                    dilacak dan dijangkau oleh sistem &amp; admin.
+                  </p>
+                </div>
+              </div>
+
+              <DynamicLocationPickerMap
+                latitude={latVal ? Number.parseFloat(latVal) : null}
+                longitude={lngVal ? Number.parseFloat(lngVal) : null}
+                onChange={(lat, lng) => {
+                  setLatVal(lat.toString());
+                  setLngVal(lng.toString());
+                }}
+              />
+
+              {/* Status Koordinat & Tombol Buka di Google Maps */}
+              {latVal && lngVal && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/80">
+                  <div className="flex items-center gap-2.5 text-xs text-blue-900 font-medium">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
+                    <span>
+                      Titik lokasi terpasang:{" "}
+                      <strong className="font-mono font-bold">
+                        {Number(latVal).toFixed(5)}, {Number(lngVal).toFixed(5)}
+                      </strong>
+                    </span>
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${latVal},${lngVal}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Buka di Google Maps</span>
+                  </a>
+                </div>
+              )}
+
+              <input type="hidden" name="latitude" value={latVal} />
+              <input type="hidden" name="longitude" value={lngVal} />
             </div>
           </div>
 

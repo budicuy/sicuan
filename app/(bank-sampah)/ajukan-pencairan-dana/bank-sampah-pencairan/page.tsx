@@ -98,6 +98,11 @@ function formatTanggal(date: string | Date) {
   });
 }
 
+function formatBerat(val: number | null | undefined): string {
+  if (val === null || val === undefined || Number.isNaN(val)) return "0";
+  return (Math.round(Number(val) * 1000) / 1000).toString();
+}
+
 function StatusBadge({
   status,
   isCurrentMonth,
@@ -175,12 +180,27 @@ export default function BankSampahPencairanPage() {
   const [withdrawPeriod, setWithdrawPeriod] = useState<PeriodItem | null>(null);
 
   // Withdrawal form inputs
+  const [biayaTambahan, setBiayaTambahan] = useState<number>(0);
+  const [catatanBiayaTambahan, setCatatanBiayaTambahan] = useState<string>("");
+  const [catatanBiayaTambahanError, setCatatanBiayaTambahanError] =
+    useState<string>("");
   const [metode, setMetode] = useState<MetodePembayaran>("transfer");
   const [keterangan, setKeterangan] = useState("");
   const [ttdBase64, setTtdBase64] = useState<string | null>(null);
   const [ttdError, setTtdError] = useState("");
   const [isCompressingTtd, setIsCompressingTtd] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const handleOpenWithdrawModal = (period: PeriodItem) => {
+    setWithdrawPeriod(period);
+    setBiayaTambahan(0);
+    setCatatanBiayaTambahan("");
+    setCatatanBiayaTambahanError("");
+    setKeterangan("");
+    setMetode("transfer");
+    setTtdBase64(null);
+    setTtdError("");
+  };
 
   // Proof Image Preview Modal
   const [viewProofUrl, setViewProofUrl] = useState<string | null>(null);
@@ -285,6 +305,13 @@ export default function BankSampahPencairanPage() {
     e.preventDefault();
     if (!withdrawPeriod) return;
 
+    if (biayaTambahan > 0 && !catatanBiayaTambahan.trim()) {
+      setCatatanBiayaTambahanError(
+        "Catatan biaya tambahan wajib diisi jika terdapat biaya tambahan.",
+      );
+      return;
+    }
+
     if (metode !== "tunai" && !ttdBase64) {
       setTtdError("Tanda tangan penyerah wajib diunggah sebelum mengajukan.");
       return;
@@ -302,9 +329,23 @@ export default function BankSampahPencairanPage() {
       return;
     }
 
+    const totalPengajuan = withdrawPeriod.kredit + (biayaTambahan || 0);
+    if (totalPengajuan < 10000) {
+      showFeedback(
+        "error",
+        "Nominal Tidak Valid",
+        "Minimal total pengajuan pencairan adalah Rp 10.000.",
+      );
+      return;
+    }
+
     const formData = new FormData();
-    // Kirim nominal sesuai kredit bulan tersebut (backend akan validasi dan hitung ulang dari database)
-    formData.set("jumlah", withdrawPeriod.kredit.toString());
+    formData.set("jumlah", totalPengajuan.toString());
+    formData.set("tarifDasar", "0");
+    formData.set("biayaTambahan", (biayaTambahan || 0).toString());
+    if (catatanBiayaTambahan.trim()) {
+      formData.set("catatanBiayaTambahan", catatanBiayaTambahan.trim());
+    }
     formData.set("metodePembayaran", metode);
     formData.set("keterangan", keterangan);
     if (ttdBase64) {
@@ -323,6 +364,8 @@ export default function BankSampahPencairanPage() {
         setTtdBase64(null);
         setKeterangan("");
         setTtdError("");
+        setCatatanBiayaTambahan("");
+        setCatatanBiayaTambahanError("");
         showFeedback("success", "Pengajuan Berhasil", res.message || "");
         loadAllData();
       } else {
@@ -750,7 +793,9 @@ export default function BankSampahPencairanPage() {
                           className="px-2.5 py-1 bg-neutral-100 text-neutral-700 rounded-lg text-xs font-medium"
                         >
                           {ds.jenis}:{" "}
-                          <span className="font-bold">{ds.beratKg} kg</span>
+                          <span className="font-bold">
+                            {formatBerat(ds.beratKg)} kg
+                          </span>
                         </span>
                       ))}
                     </div>
@@ -821,7 +866,7 @@ export default function BankSampahPencairanPage() {
                   {item.canWithdraw && (
                     <button
                       type="button"
-                      onClick={() => setWithdrawPeriod(item)}
+                      onClick={() => handleOpenWithdrawModal(item)}
                       className="flex-1 py-2.5 px-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-primary-600/20 cursor-pointer"
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5" />
@@ -938,7 +983,7 @@ export default function BankSampahPencairanPage() {
                           {s.jenis}
                         </span>
                         <span className="text-neutral-500 ml-2">
-                          ({s.beratKg} kg)
+                          ({formatBerat(s.beratKg)} kg)
                         </span>
                       </div>
                       <span className="font-bold text-neutral-700">
@@ -948,7 +993,8 @@ export default function BankSampahPencairanPage() {
                   ))}
                   <div className="px-4 py-3 bg-neutral-50 flex items-center justify-between text-xs font-bold text-neutral-900">
                     <span>
-                      Total ({selectedPeriodDetail.totalBeratKg.toFixed(2)} kg)
+                      Total ({formatBerat(selectedPeriodDetail.totalBeratKg)}{" "}
+                      kg)
                     </span>
                     <span className="text-emerald-700">
                       {formatRp(selectedPeriodDetail.kredit)}
@@ -1058,18 +1104,138 @@ export default function BankSampahPencairanPage() {
               onSubmit={handleSubmitWithdrawal}
               className="flex-1 overflow-y-auto p-6 space-y-5"
             >
-              {/* Nominal Terkunci Sesuai Akumulasi Database */}
-              <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100 border border-emerald-200 rounded-2xl p-4 text-center">
-                <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
-                  Nominal Pencairan Periode Ini
-                </p>
-                <p className="text-3xl font-black text-emerald-700 mt-1">
-                  {formatRp(withdrawPeriod.kredit)}
-                </p>
-                <p className="text-[11px] text-emerald-600 mt-1">
-                  Nominal dihitung secara otomatis dan dikunci berdasarkan
-                  setoran diterima ({withdrawPeriod.totalBeratKg} kg).
-                </p>
+              {/* Rincian Biaya & Pengelolaan */}
+              <div className="bg-neutral-50/70 border border-neutral-200 rounded-2xl p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-xs font-bold text-neutral-800 uppercase tracking-wide">
+                      Rincian Biaya Pengelolaan
+                    </h4>
+                  </div>
+                  <span className="text-[10px] text-neutral-500 font-mono">
+                    Total Berat: {withdrawPeriod.totalBeratKg} kg
+                  </span>
+                </div>
+
+                {/* Ringkasan Estimasi Nilai Kredit Sampah & Info Tarif Dasar */}
+                <div className="bg-white border border-neutral-200 rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        Estimasi Nilai Kredit Sampah
+                      </span>
+                      <span className="text-base font-black text-emerald-600 font-mono">
+                        {formatRp(withdrawPeriod.kredit)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-primary-700 bg-primary-50 border border-primary-200 px-2.5 py-1 rounded-lg font-semibold">
+                      Tarif Dasar Diisi Admin
+                    </span>
+                  </div>
+                  <p className="text-[10.5px] text-neutral-500 leading-relaxed border-t border-neutral-100 pt-2">
+                    ℹ️ <strong className="text-neutral-700">Catatan:</strong>{" "}
+                    Tarif Dasar Pengelolaan akan diverifikasi dan ditentukan
+                    oleh pihak Admin Indofood pada saat dokumen pembayaran
+                    diproses.
+                  </p>
+                </div>
+
+                {/* Biaya Tambahan */}
+                <div className="space-y-1">
+                  <label
+                    htmlFor="biaya-tambahan-input"
+                    className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+                  >
+                    Biaya Tambahan (Rp) (Opsional)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">
+                      Rp
+                    </span>
+                    <input
+                      id="biaya-tambahan-input"
+                      type="number"
+                      min={0}
+                      value={biayaTambahan || ""}
+                      onChange={(e) => {
+                        const val = Math.max(0, Number(e.target.value));
+                        setBiayaTambahan(val);
+                        if (val > 0) {
+                          setCatatanBiayaTambahanError("");
+                        }
+                      }}
+                      placeholder="0"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-neutral-300 text-xs font-mono font-bold text-neutral-800 bg-white focus:ring-2 focus:ring-primary-500 focus:outline-hidden"
+                    />
+                  </div>
+                  <p className="text-[10.5px] text-neutral-400">
+                    Tambahan biaya operasional, transport, sorting, atau
+                    kebutuhan lapangan lain jika ada.
+                  </p>
+                </div>
+
+                {/* Catatan Biaya Tambahan */}
+                <div className="space-y-1">
+                  <label
+                    htmlFor="catatan-biaya-tambahan-input"
+                    className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+                  >
+                    Catatan Rincian Biaya Tambahan{" "}
+                    {biayaTambahan > 0 ? (
+                      <span className="text-red-500">* (Wajib diisi)</span>
+                    ) : (
+                      <span className="text-neutral-400 font-normal">
+                        (Opsional)
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    id="catatan-biaya-tambahan-input"
+                    type="text"
+                    value={catatanBiayaTambahan}
+                    onChange={(e) => {
+                      setCatatanBiayaTambahan(e.target.value);
+                      if (e.target.value.trim()) {
+                        setCatatanBiayaTambahanError("");
+                      }
+                    }}
+                    placeholder={
+                      biayaTambahan > 0
+                        ? "Jelaskan rincian biaya tambahan (misal: Biaya sewa pikap angkut sampah)"
+                        : "Catatan penjelasan biaya tambahan jika ada"
+                    }
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-xs bg-white focus:ring-2 focus:ring-primary-500 focus:outline-hidden ${
+                      catatanBiayaTambahanError
+                        ? "border-red-400 ring-1 ring-red-400"
+                        : "border-neutral-300"
+                    }`}
+                  />
+                  {catatanBiayaTambahanError && (
+                    <p className="text-xs font-semibold text-red-500 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {catatanBiayaTambahanError}
+                    </p>
+                  )}
+                </div>
+
+                {/* Ringkasan Total Tagihan */}
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                      Total Estimasi yang Diajukan
+                    </span>
+                    <span className="text-[10.5px] text-emerald-600">
+                      Nilai Kredit Sampah ({formatRp(withdrawPeriod.kredit)})
+                      {biayaTambahan > 0
+                        ? ` + Biaya Tambahan (${formatRp(biayaTambahan)})`
+                        : ""}
+                    </span>
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-emerald-700 font-mono shrink-0">
+                    {formatRp(withdrawPeriod.kredit + (biayaTambahan || 0))}
+                  </div>
+                </div>
               </div>
 
               {/* Rekening Tujuan */}

@@ -85,21 +85,6 @@ const profileSchema = z.object({
         message: "Longitude harus berupa angka valid antara -180 dan 180",
       },
     ),
-  googleMapsUrl: z
-    .string()
-    .nullable()
-    .transform((val) => (val ? val.trim() : ""))
-    .refine(
-      (val) =>
-        val === "" ||
-        val.startsWith("http://") ||
-        val.startsWith("https://") ||
-        val.includes("maps"),
-      {
-        message: "Tautan Google Maps harus berupa URL valid",
-      },
-    )
-    .transform((val) => (val === "" ? null : val)),
 });
 
 const passwordSchema = z
@@ -146,7 +131,6 @@ export async function getProfileData() {
         noRekening: nasabah.noRekening,
         latitude: nasabah.latitude,
         longitude: nasabah.longitude,
-        googleMapsUrl: nasabah.googleMapsUrl,
       })
       .from(users)
       .innerJoin(nasabah, eq(nasabah.id, users.id))
@@ -174,7 +158,6 @@ export async function getProfileData() {
         email: profileData.email || "",
         latitude: profileData.latitude ?? null,
         longitude: profileData.longitude ?? null,
-        googleMapsUrl: profileData.googleMapsUrl || "",
       },
     };
   } catch (error) {
@@ -205,7 +188,6 @@ export async function updateProfileData(
       email: (formData.get("email") as string) || null,
       latitude: (formData.get("latitude") as string) || null,
       longitude: (formData.get("longitude") as string) || null,
-      googleMapsUrl: (formData.get("googleMapsUrl") as string) || null,
     };
 
     const parsed = profileSchema.safeParse(rawData);
@@ -240,7 +222,6 @@ export async function updateProfileData(
           email: parsed.data.email,
           latitude: parsed.data.latitude,
           longitude: parsed.data.longitude,
-          googleMapsUrl: parsed.data.googleMapsUrl,
           updatedAt: new Date(),
         })
         .where(eq(nasabah.id, userId));

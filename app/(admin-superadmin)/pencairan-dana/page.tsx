@@ -162,14 +162,18 @@ export default function PencairanAdminPage() {
 
   const handleOpenEditModal = (item: DisbursementItem) => {
     setEditRequest(item);
+    const initialBiayaTambahan = item.biayaTambahan || 0;
+    const initialTarifDasar =
+      item.tarifDasar ?? item.jumlah - initialBiayaTambahan;
     setEditForm({
       jumlah: item.jumlah,
+      tarifDasar: initialTarifDasar,
       metodePembayaran: item.metodePembayaran as "transfer" | "tunai" | "qris",
       jenisBank: item.jenisBank,
       noRekening: item.noRekening,
       keterangan: item.keterangan,
       status: item.status as "pending" | "berhasil" | "ditolak",
-      biayaTambahan: item.biayaTambahan || 0,
+      biayaTambahan: initialBiayaTambahan,
       catatanBiayaTambahan: item.catatanBiayaTambahan || "",
     });
     setEditBuktiBase64(null);
@@ -538,28 +542,35 @@ export default function PencairanAdminPage() {
     },
     {
       header: "Nominal",
-      render: (item) => (
-        <div>
-          <span className="font-extrabold text-neutral-800 text-sm block">
-            Rp {item.jumlah.toLocaleString("id-ID")}
-          </span>
-          {item.biayaTambahan && item.biayaTambahan > 0 ? (
-            <>
-              <div className="text-[10px] text-amber-600 font-bold mt-0.5">
-                + Tambahan: Rp {item.biayaTambahan.toLocaleString("id-ID")}
-              </div>
-              {item.catatanBiayaTambahan && (
-                <div
-                  className="text-[9px] text-neutral-400 italic max-w-32 truncate"
-                  title={item.catatanBiayaTambahan}
-                >
-                  ({item.catatanBiayaTambahan})
+      render: (item) => {
+        const dasar =
+          item.tarifDasar ?? item.jumlah - (item.biayaTambahan || 0);
+        return (
+          <div>
+            <span className="font-extrabold text-neutral-800 text-sm block">
+              Rp {item.jumlah.toLocaleString("id-ID")}
+            </span>
+            {item.biayaTambahan && item.biayaTambahan > 0 ? (
+              <>
+                <div className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                  Dasar: Rp {dasar.toLocaleString("id-ID")}
                 </div>
-              )}
-            </>
-          ) : null}
-        </div>
-      ),
+                <div className="text-[10px] text-amber-600 font-bold mt-0.5">
+                  + Tambahan: Rp {item.biayaTambahan.toLocaleString("id-ID")}
+                </div>
+                {item.catatanBiayaTambahan && (
+                  <div
+                    className="text-[9px] text-neutral-400 italic max-w-36 truncate"
+                    title={item.catatanBiayaTambahan}
+                  >
+                    ({item.catatanBiayaTambahan})
+                  </div>
+                )}
+              </>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       header: "Tanggal",
@@ -1053,29 +1064,53 @@ export default function PencairanAdminPage() {
             </div>
 
             <div className="space-y-3.5 text-sm max-h-[70vh] overflow-y-auto pr-1">
-              {/* Jumlah Pokok */}
-              <div>
-                <label
-                  htmlFor="edit-jumlah"
-                  className="block text-xs font-bold text-neutral-700 mb-1"
-                >
-                  Jumlah Pokok (Rp) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="edit-jumlah"
-                  type="number"
-                  value={editForm.jumlah ?? ""}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      jumlah: Number(e.target.value),
-                    }))
-                  }
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
-                />
+              {/* Tarif Dasar Pengelolaan & Total */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label
+                    htmlFor="edit-tarif-dasar"
+                    className="block text-xs font-bold text-neutral-700 mb-1"
+                  >
+                    Tarif Dasar (Rp) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="edit-tarif-dasar"
+                    type="number"
+                    value={editForm.tarifDasar ?? ""}
+                    onChange={(e) => {
+                      const newDasar = Number(e.target.value);
+                      setEditForm((f) => ({
+                        ...f,
+                        tarifDasar: newDasar,
+                        jumlah: newDasar + (f.biayaTambahan || 0),
+                      }));
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-jumlah"
+                    className="block text-xs font-bold text-neutral-700 mb-1"
+                  >
+                    Total Pencairan (Rp) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="edit-jumlah"
+                    type="number"
+                    value={editForm.jumlah ?? ""}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        jumlah: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm font-bold text-neutral-800 bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  />
+                </div>
               </div>
 
-              {/* Biaya Tambahan */}
+              {/* Biaya Tambahan & Catatan */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                   <label
@@ -1088,12 +1123,14 @@ export default function PencairanAdminPage() {
                     id="edit-biaya-tambahan"
                     type="number"
                     value={editForm.biayaTambahan ?? 0}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const newTambahan = Number(e.target.value);
                       setEditForm((f) => ({
                         ...f,
-                        biayaTambahan: Number(e.target.value),
-                      }))
-                    }
+                        biayaTambahan: newTambahan,
+                        jumlah: (f.tarifDasar || 0) + newTambahan,
+                      }));
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-800 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
                   />
                 </div>
@@ -1102,7 +1139,7 @@ export default function PencairanAdminPage() {
                     htmlFor="edit-catatan-tambahan"
                     className="block text-xs font-bold text-neutral-700 mb-1"
                   >
-                    Catatan Biaya
+                    Catatan Biaya Tambahan
                   </label>
                   <input
                     id="edit-catatan-tambahan"

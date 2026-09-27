@@ -66,13 +66,15 @@ async function calcMonthlyKredit(
     wasteMap[r.jenisSampah] = (wasteMap[r.jenisSampah] || 0) + r.beratKg;
   }
 
-  const totalBerat = records.reduce((sum, r) => sum + r.beratKg, 0);
+  const totalBerat =
+    Math.round(records.reduce((sum, r) => sum + r.beratKg, 0) * 1000) / 1000;
   const totalKredit = await getHargaForTotalBerat(totalBerat);
 
   const dataSampah: { jenis: string; beratKg: number; kredit: number }[] = [];
   const entries = Object.entries(wasteMap);
   for (let i = 0; i < entries.length; i++) {
-    const [jenis, berat] = entries[i];
+    const [jenis, rawBerat] = entries[i];
+    const berat = Math.round(rawBerat * 1000) / 1000;
     let proportionalKredit = 0;
     if (i === entries.length - 1) {
       const sumAllocated = dataSampah.reduce((sum, d) => sum + d.kredit, 0);
@@ -145,6 +147,9 @@ export interface PeriodItem {
     metodePembayaran: string;
     createdAt: Date;
     keterangan: string | null;
+    tarifDasar?: number | null;
+    biayaTambahan?: number | null;
+    catatanBiayaTambahan?: string | null;
     buktiTransfer: string | null;
     buktiPembayaranId?: number | null;
     ttdPenyerahUrl?: string | null;
@@ -229,7 +234,8 @@ export async function getBankSampahPeriodsWithSetoran() {
       year,
       month,
     );
-    const totalBerat = dataSampah.reduce((s, d) => s + d.beratKg, 0);
+    const totalBerat =
+      Math.round(dataSampah.reduce((s, d) => s + d.beratKg, 0) * 1000) / 1000;
 
     const disbursementsInPeriod = allDisbursements.filter(
       (d) => d.periodeTahun === year && d.periodeBulan === month,
@@ -275,7 +281,7 @@ export async function getBankSampahPeriodsWithSetoran() {
       year,
       month,
       monthName: BULAN_NAMES[month] || `Bulan ${month}`,
-      totalBeratKg: Math.round(totalBerat * 100) / 100,
+      totalBeratKg: totalBerat,
       kredit,
       dataSampah,
       statusPencairan,
@@ -289,6 +295,13 @@ export async function getBankSampahPeriodsWithSetoran() {
             metodePembayaran: latestDisbursement.metodePembayaran,
             createdAt: latestDisbursement.createdAt,
             keterangan: latestDisbursement.keterangan || null,
+            tarifDasar:
+              latestDisbursement.tarifDasar ??
+              latestDisbursement.jumlah -
+                (latestDisbursement.biayaTambahan || 0),
+            biayaTambahan: latestDisbursement.biayaTambahan ?? 0,
+            catatanBiayaTambahan:
+              latestDisbursement.catatanBiayaTambahan || null,
             buktiTransfer: latestDisbursement.buktiTransfer || null,
             buktiPembayaranId,
             ttdPenyerahUrl: latestDisbursement.ttdPenyerahUrl || null,
@@ -384,6 +397,9 @@ export async function getDisbursementDataForMonth(
             metodePembayaran: pencairanAktif.metodePembayaran,
             createdAt: pencairanAktif.createdAt,
             keterangan: pencairanAktif.keterangan || "",
+            tarifDasar:
+              pencairanAktif.tarifDasar ??
+              pencairanAktif.jumlah - (pencairanAktif.biayaTambahan || 0),
             biayaTambahan: pencairanAktif.biayaTambahan,
             catatanBiayaTambahan: pencairanAktif.catatanBiayaTambahan,
             ttdPenyerahUrl: pencairanAktif.ttdPenyerahUrl || null,
@@ -496,6 +512,10 @@ export async function requestDisbursement(
 
   const jumlahStr = formData.get("jumlah") as string;
   const jumlah = Number.parseInt(jumlahStr, 10);
+  const tarifDasarStr = formData.get("tarifDasar") as string;
+  const inputTarifDasar = tarifDasarStr
+    ? Number.parseInt(tarifDasarStr, 10)
+    : 0;
   const metodePembayaran =
     (formData.get("metodePembayaran") as string) || "transfer";
   const keterangan = (formData.get("keterangan") as string) || "";
@@ -504,7 +524,7 @@ export async function requestDisbursement(
     ? Number.parseInt(biayaTambahanStr, 10)
     : 0;
   const catatanBiayaTambahan =
-    (formData.get("catatanBiayaTambahan") as string) || null;
+    (formData.get("catatanBiayaTambahan") as string)?.trim() || null;
   const ttdPenyerahBase64 = (formData.get("ttdPenyerah") as string) || "";
   const selectedYear = Number.parseInt(
     (formData.get("selectedYear") as string) || "0",
@@ -514,6 +534,18 @@ export async function requestDisbursement(
     (formData.get("selectedMonth") as string) || "0",
     10,
   );
+
+  if (biayaTambahan > 0 && !catatanBiayaTambahan) {
+    return {
+      success: false,
+      message: "Validasi gagal",
+      errors: {
+        catatanBiayaTambahan: [
+          "Catatan biaya tambahan wajib diisi jika terdapat biaya tambahan.",
+        ],
+      },
+    };
+  }
 
   if (Number.isNaN(jumlah) || jumlah <= 0) {
     return {
@@ -562,6 +594,7 @@ export async function requestDisbursement(
     }
   }
 
+  let finalTarifDasar = 0;
   let finalJumlah = 0;
 
   // Untuk bank-sampah: cek pencairan sudah ada di bulan tsb, dan hitung kredit dinamis
@@ -609,7 +642,7 @@ export async function requestDisbursement(
       };
     }
 
-    // Hitung kredit di backend — JANGAN PERCAYA INPUT JUMLAH DARI FRONTEND
+    // Hitung kredit di backend
     const { kredit, dataSampah } = await calcMonthlyKredit(
       user.id,
       selectedYear,
@@ -627,19 +660,21 @@ export async function requestDisbursement(
       };
     }
 
-    // Tetapkan jumlah secara mutlak dari kredit hasil hitungan backend
-    finalJumlah = kredit;
+    // Tarif dasar akan diisi oleh admin saat proses verifikasi dokumen.
+    finalTarifDasar = inputTarifDasar > 0 ? inputTarifDasar : 0;
+    finalJumlah = kredit + biayaTambahan;
   } else if (user.role === "warmindo") {
     const credit = await getWarmindoMonthlyCredit(user.id);
-    const baseKredit = jumlah - biayaTambahan;
-    if (credit < baseKredit) {
+    finalTarifDasar =
+      inputTarifDasar > 0 ? inputTarifDasar : jumlah - biayaTambahan;
+    if (credit < finalTarifDasar) {
       return {
         success: false,
         message: `Saldo kredit tidak mencukupi. Saldo Anda saat ini Rp ${credit.toLocaleString("id-ID")}`,
         errors: { jumlah: ["Saldo kredit tidak mencukupi"] },
       };
     }
-    finalJumlah = jumlah;
+    finalJumlah = finalTarifDasar + biayaTambahan;
   }
 
   try {
@@ -660,6 +695,7 @@ export async function requestDisbursement(
     await db.insert(pencairanDana).values({
       userId: user.id,
       jumlah: finalJumlah,
+      tarifDasar: finalTarifDasar,
       jenisBank:
         metodePembayaran !== "tunai" ? (profile.jenisBank ?? "") : null,
       noRekening:

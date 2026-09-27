@@ -3,6 +3,7 @@ import { buktiPembayaran } from "@/db/schema/bukti-pembayaran";
 import { ekspedisi } from "@/db/schema/ekspedisi";
 import { nasabah, users } from "@/db/schema/nasabah";
 import { pencairanDana } from "@/db/schema/pencairan-dana";
+import { rewardTopKontributor } from "@/db/schema/reward-top-kontributor";
 import {
   penukaranRewardWarmindo,
   rewardWarmindo,
@@ -82,6 +83,20 @@ export const penukaranRewardWarmindoRelations = relations(
     reward: one(rewardWarmindo, {
       fields: [penukaranRewardWarmindo.rewardId],
       references: [rewardWarmindo.id],
+    }),
+  }),
+);
+
+export const rewardTopKontributorRelations = relations(
+  rewardTopKontributor,
+  ({ one }) => ({
+    user: one(nasabah, {
+      fields: [rewardTopKontributor.userId],
+      references: [nasabah.id],
+    }),
+    admin: one(users, {
+      fields: [rewardTopKontributor.adminId],
+      references: [users.id],
     }),
   }),
 );

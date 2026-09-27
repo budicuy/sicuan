@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { renderToStream } from "@react-pdf/renderer";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { decodeJwt } from "jose";
@@ -321,6 +322,7 @@ export async function getAllDisbursementsForAdmin() {
       id: pencairanDana.id,
       userId: pencairanDana.userId,
       jumlah: pencairanDana.jumlah,
+      tarifDasar: pencairanDana.tarifDasar,
       jenisBank: pencairanDana.jenisBank,
       noRekening: pencairanDana.noRekening,
       status: pencairanDana.status,
@@ -577,6 +579,7 @@ export async function deletePencairan(
 
 export interface UpdatePencairanPayload {
   jumlah?: number;
+  tarifDasar?: number;
   metodePembayaran?: "transfer" | "tunai" | "qris";
   jenisBank?: string | null;
   noRekening?: string | null;
@@ -643,6 +646,9 @@ export async function updatePencairan(
       .update(pencairanDana)
       .set({
         ...(payload.jumlah !== undefined && { jumlah: payload.jumlah }),
+        ...(payload.tarifDasar !== undefined && {
+          tarifDasar: payload.tarifDasar,
+        }),
         ...(payload.metodePembayaran !== undefined && {
           metodePembayaran: payload.metodePembayaran,
           ...(payload.metodePembayaran === "tunai" && {
@@ -652,12 +658,12 @@ export async function updatePencairan(
         }),
         ...(payload.metodePembayaran !== "tunai" &&
           payload.jenisBank !== undefined && {
-          jenisBank: payload.jenisBank,
-        }),
+            jenisBank: payload.jenisBank,
+          }),
         ...(payload.metodePembayaran !== "tunai" &&
           payload.noRekening !== undefined && {
-          noRekening: payload.noRekening,
-        }),
+            noRekening: payload.noRekening,
+          }),
         ...(payload.keterangan !== undefined && {
           keterangan: payload.keterangan,
         }),
@@ -710,6 +716,7 @@ export interface CreateBuktiPembayaranInput {
   totalBeratKg: number;
   tarifDasar: number;
   biayaTambahan: number;
+  catatanBiayaTambahan?: string | null;
   totalTagihan: number;
   metodePembayaran: string;
   keterangan?: string | null;
@@ -826,49 +833,54 @@ export async function createBuktiPembayaran(
       })
       .returning({ id: buktiPembayaran.id });
 
-    // Transition pencairanDana status to berhasil and save transfer/cash scan proof
+    // Transition pencairanDana status to berhasil and save transfer/cash scan proof,
+    // as well as any fee adjustments (tarifDasar, biayaTambahan, catatanBiayaTambahan, jumlah) made by admin.
     if (pencairan) {
+      let finalBuktiTransfer = pencairan.buktiTransfer;
       if (pencairan.metodePembayaran === "tunai") {
-        let scanUrl: string | null = null;
         if (input.buktiScanCashBase64) {
           const uuidProof = randomUUID();
-          scanUrl = await uploadPdfToR2(
+          finalBuktiTransfer = await uploadPdfToR2(
             input.buktiScanCashBase64,
             "transfer",
             `cash-${input.userId}-${uuidProof}`,
           );
-          if (pencairan.buktiTransfer && pencairan.buktiTransfer !== scanUrl) {
+          if (
+            pencairan.buktiTransfer &&
+            pencairan.buktiTransfer !== finalBuktiTransfer
+          ) {
             await deleteFromR2(pencairan.buktiTransfer);
           }
         }
-        await db
-          .update(pencairanDana)
-          .set({
-            status: "berhasil",
-            buktiTransfer: scanUrl || pencairan.buktiTransfer,
-          })
-          .where(eq(pencairanDana.id, input.pencairanDanaId));
       } else if (input.buktiTransferBase64) {
         const uuidProof = randomUUID();
-        const buktiTransferUrl = await uploadImageToR2(
+        finalBuktiTransfer = await uploadImageToR2(
           input.buktiTransferBase64,
           "transfer",
           `${input.userId}-${uuidProof}`,
         );
         if (
           pencairan.buktiTransfer &&
-          pencairan.buktiTransfer !== buktiTransferUrl
+          pencairan.buktiTransfer !== finalBuktiTransfer
         ) {
           await deleteFromR2(pencairan.buktiTransfer);
         }
-        await db
-          .update(pencairanDana)
-          .set({
-            status: "berhasil",
-            buktiTransfer: buktiTransferUrl,
-          })
-          .where(eq(pencairanDana.id, input.pencairanDanaId));
       }
+
+      await db
+        .update(pencairanDana)
+        .set({
+          status: "berhasil",
+          tarifDasar: input.tarifDasar,
+          biayaTambahan: input.biayaTambahan,
+          catatanBiayaTambahan:
+            input.catatanBiayaTambahan !== undefined
+              ? input.catatanBiayaTambahan
+              : pencairan.catatanBiayaTambahan,
+          jumlah: input.totalTagihan,
+          buktiTransfer: finalBuktiTransfer,
+        })
+        .where(eq(pencairanDana.id, input.pencairanDanaId));
     }
 
     // Kirim notif email ke nasabah beserta lampiran PDF (di-await untuk menjamin pengiriman pada Vercel Serverless)
@@ -1034,7 +1046,7 @@ export async function getNasabahProfileAndMonthlyWaste(
 
   const dataSampah = Object.entries(wasteMap).map(([jenis, berat]) => ({
     jenis,
-    beratKg: berat,
+    beratKg: Math.round(berat * 1000) / 1000,
     terlampir: true,
   }));
 
@@ -1049,23 +1061,129 @@ export async function getNasabahProfileAndMonthlyWaste(
       alamat: profile?.alamat || "",
       noTelepon: profile?.noTelepon || "",
       dataSampah,
-      totalBeratKg: dataSampah.reduce((sum, s) => sum + s.beratKg, 0),
+      totalBeratKg:
+        Math.round(dataSampah.reduce((sum, s) => sum + s.beratKg, 0) * 1000) /
+        1000,
+      setoranDetail: records.map((s) => ({
+        id: s.id,
+        nomorSetor: formatNomorSetor(
+          s.nomorSetor,
+          s.kategoriNasabah,
+          s.tanggalSetor,
+        ),
+        jenisSampah: s.jenisSampah,
+        beratKg: s.beratKg,
+        tanggalSetor: s.tanggalSetor,
+        fotoTimbangan: s.fotoTimbangan,
+        fotoBuktiTambahan: s.fotoBuktiTambahan || [],
+      })),
     },
   };
 }
 
-async function convertWebPToPngBase64(url: string): Promise<string | null> {
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID ?? ""}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
+  },
+});
+
+async function getImageBufferFromUrlOrPath(
+  urlOrPath: string,
+): Promise<Buffer | null> {
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const arrayBuffer = await res.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    if (urlOrPath.startsWith("data:image/")) {
+      const base64Data = urlOrPath.replace(
+        /^data:image\/[a-zA-Z0-9+.-]+;base64,/,
+        "",
+      );
+      return Buffer.from(base64Data, "base64");
+    }
 
+    if (urlOrPath.startsWith("/api/media/")) {
+      const key = urlOrPath.replace(/^\/api\/media\//, "");
+      const res = await r2Client.send(
+        new GetObjectCommand({
+          Bucket: process.env.R2_BUCKET_NAME ?? "",
+          Key: key,
+        }),
+      );
+      if (!res.Body) return null;
+      const bytes = await res.Body.transformToByteArray();
+      return Buffer.from(bytes);
+    }
+
+    if (urlOrPath.startsWith("http://") || urlOrPath.startsWith("https://")) {
+      if (urlOrPath.includes(".r2.dev/")) {
+        const key = urlOrPath.split(".r2.dev/")[1];
+        const res = await r2Client.send(
+          new GetObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME ?? "",
+            Key: key,
+          }),
+        );
+        if (res.Body) {
+          const bytes = await res.Body.transformToByteArray();
+          return Buffer.from(bytes);
+        }
+      }
+      const fetchRes = await fetch(urlOrPath);
+      if (fetchRes.ok) {
+        const arrayBuf = await fetchRes.arrayBuffer();
+        return Buffer.from(arrayBuf);
+      }
+    }
+
+    return null;
+  } catch (err) {
+    console.error("Error reading image buffer for:", urlOrPath, err);
+    return null;
+  }
+}
+
+async function convertSignatureToPdfDataUri(
+  urlOrPath: string | null | undefined,
+): Promise<string | null> {
+  if (!urlOrPath) return null;
+  try {
+    if (urlOrPath.startsWith("data:image/png")) {
+      return urlOrPath;
+    }
+    const buffer = await getImageBufferFromUrlOrPath(urlOrPath);
+    if (!buffer) return null;
     const pngBuffer = await sharp(buffer).png().toBuffer();
-
     return `data:image/png;base64,${pngBuffer.toString("base64")}`;
   } catch (err) {
-    console.error("Error converting WebP to PNG for PDF:", err);
+    console.error("Error converting signature for PDF:", err);
+    return null;
+  }
+}
+
+async function convertImageToPdfDataUri(
+  urlOrPath: string | null | undefined,
+): Promise<string | null> {
+  if (!urlOrPath) return null;
+  try {
+    const buffer = await getImageBufferFromUrlOrPath(urlOrPath);
+    if (!buffer) return null;
+
+    // High quality JPEG for photo attachments (clear and sharp, with auto-orientation)
+    const jpegBuffer = await sharp(buffer)
+      .rotate()
+      .resize({
+        width: 1200,
+        height: 1200,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 88, mozjpeg: true })
+      .toBuffer();
+
+    return `data:image/jpeg;base64,${jpegBuffer.toString("base64")}`;
+  } catch (err) {
+    console.error("Error converting image for PDF:", err);
     return null;
   }
 }
@@ -1098,12 +1216,12 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
   // because @react-pdf/renderer does not support rendering WebP format out of the box.
   let penyerahPng: string | null = null;
   if (doc.ttdPenyerahUrl) {
-    penyerahPng = await convertWebPToPngBase64(doc.ttdPenyerahUrl);
+    penyerahPng = await convertSignatureToPdfDataUri(doc.ttdPenyerahUrl);
   }
 
   let penerimaPng: string | null = null;
   if (doc.ttdPenerimaUrl) {
-    penerimaPng = await convertWebPToPngBase64(doc.ttdPenerimaUrl);
+    penerimaPng = await convertSignatureToPdfDataUri(doc.ttdPenerimaUrl);
   }
 
   let pencairan: Awaited<ReturnType<typeof db.query.pencairanDana.findFirst>>;
@@ -1114,7 +1232,9 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     });
 
     if (pencairan?.buktiTransfer) {
-      buktiTransferPng = await convertWebPToPngBase64(pencairan.buktiTransfer);
+      buktiTransferPng = await convertImageToPdfDataUri(
+        pencairan.buktiTransfer,
+      );
     }
   }
 
@@ -1148,6 +1268,32 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     orderBy: desc(setorSampah.tanggalSetor),
   });
 
+  const processedSetoranDetail = await Promise.all(
+    setoranDetail.map(async (s) => {
+      const fotoTimbanganUrl = await convertImageToPdfDataUri(s.fotoTimbangan);
+      const fotoBuktiTambahanUrls = s.fotoBuktiTambahan?.length
+        ? (
+            await Promise.all(
+              s.fotoBuktiTambahan.map((url) => convertImageToPdfDataUri(url)),
+            )
+          ).filter((u): u is string => u !== null)
+        : [];
+
+      return {
+        nomorSetor: formatNomorSetor(
+          s.nomorSetor,
+          s.kategoriNasabah,
+          s.tanggalSetor,
+        ),
+        jenisSampah: s.jenisSampah,
+        beratKg: s.beratKg,
+        tanggalSetor: s.tanggalSetor,
+        fotoTimbanganUrl,
+        fotoBuktiTambahanUrls,
+      };
+    }),
+  );
+
   const data = {
     nomorDokumen: doc.nomorDokumen,
     tanggal: doc.createdAt,
@@ -1170,16 +1316,7 @@ export async function getBuktiPembayaranPdfBase64(docId: number) {
     ttdPenyerahUrl: penyerahPng,
     ttdPenerimaUrl: penerimaPng,
     buktiTransferUrl: buktiTransferPng,
-    setoranDetail: setoranDetail.map((s) => ({
-      nomorSetor: formatNomorSetor(
-        s.nomorSetor,
-        s.kategoriNasabah,
-        s.tanggalSetor,
-      ),
-      jenisSampah: s.jenisSampah,
-      beratKg: s.beratKg,
-      tanggalSetor: s.tanggalSetor,
-    })),
+    setoranDetail: processedSetoranDetail,
     namaPenyerah: doc.namaPenyerah,
     jabatanPenyerah: doc.jabatanPenyerah,
     namaPenerima: doc.namaPenerima,
@@ -1280,7 +1417,7 @@ export async function getDraftSuratPencairanPdf(pencairanId: number): Promise<{
     const noTelepon = nasabahProfile.data?.noTelepon || "";
     const dataSampah =
       nasabahProfile.data?.dataSampah &&
-        nasabahProfile.data.dataSampah.length > 0
+      nasabahProfile.data.dataSampah.length > 0
         ? nasabahProfile.data.dataSampah
         : [{ jenis: "Karton", beratKg: 0, terlampir: true }];
     const totalBeratKg = dataSampah.reduce(
@@ -1288,7 +1425,7 @@ export async function getDraftSuratPencairanPdf(pencairanId: number): Promise<{
       0,
     );
     const biayaTambahan = pencairan.biayaTambahan || 0;
-    const tarifDasar = pencairan.jumlah - biayaTambahan;
+    const tarifDasar = pencairan.tarifDasar ?? pencairan.jumlah - biayaTambahan;
 
     const existingCount = await db
       .select({ id: buktiPembayaran.id })
