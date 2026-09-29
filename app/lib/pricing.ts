@@ -80,15 +80,25 @@ export async function getHargaRange(
 
 /**
  * Menghitung total poin dan kredit uang dari setoran sampah.
+<<<<<<< HEAD
  * - Konsumen: dapat poin (poin_sampah)
  * - Warmindo: dapat poin khusus warmindo (poin_sampah_warmindo: default 10 poin per 100 gram)
  * - Bank Sampah: tidak mendapatkan poin langsung (berupa setoran fasilitas)
+=======
+ * - Konsumen & Bank Sampah Tipe B (bank-sampah-b): dapat poin (poin_sampah)
+ * - Warmindo: dapat poin khusus warmindo (poin_sampah_warmindo: default 10 poin per 100 gram)
+ * - Bank Sampah Tipe A (bank-sampah): tidak mendapatkan poin langsung (berupa setoran fasilitas kredit bulanan)
+>>>>>>> backup-lokal-fa650a6
  */
 export async function calculateSetoranReward(
   jenis: string,
   berat: number,
   role: string,
 ): Promise<{ totalPoin: number; totalKredit: number }> {
+<<<<<<< HEAD
+=======
+  // Bank Sampah Tipe A tidak mendapatkan poin langsung
+>>>>>>> backup-lokal-fa650a6
   if (role === "bank-sampah") {
     return { totalPoin: 0, totalKredit: 0 };
   }
@@ -100,6 +110,10 @@ export async function calculateSetoranReward(
     return { totalPoin, totalKredit: 0 };
   }
 
+<<<<<<< HEAD
+=======
+  // Konsumen & Bank Sampah Tipe B mendapatkan poin per kg sesuai master data
+>>>>>>> backup-lokal-fa650a6
   const pointPerKg = await getPoinPerKg(jenis);
   const totalPoin = Math.floor(berat * pointPerKg);
 

@@ -62,14 +62,28 @@ export async function getDashboardData(
     const countNasabahRes = await db
       .select({ count: sql<number>`count(*)` })
       .from(nasabah)
-      .where(inArray(nasabah.role, ["konsumen", "warmindo", "bank-sampah"]));
+      .where(
+        inArray(nasabah.role, [
+          "konsumen",
+          "warmindo",
+          "bank-sampah",
+          "bank-sampah-b",
+        ]),
+      );
     const totalNasabahCount = Number(countNasabahRes[0]?.count ?? 0);
 
-    // 2. Get total count of users with role in ['konsumen', 'warmindo', 'bank-sampah']
+    // 2. Get total count of users with role in ['konsumen', 'warmindo', 'bank-sampah', 'bank-sampah-b']
     const countUsersRes = await db
       .select({ count: sql<number>`count(*)` })
       .from(nasabah)
-      .where(inArray(nasabah.role, ["konsumen", "warmindo", "bank-sampah"]));
+      .where(
+        inArray(nasabah.role, [
+          "konsumen",
+          "warmindo",
+          "bank-sampah",
+          "bank-sampah-b",
+        ]),
+      );
     const totalUsers = Number(countUsersRes[0]?.count ?? 0);
 
     const [
@@ -452,7 +466,11 @@ export async function getDashboardData(
         eq(setorSampah.userId, user.id),
         eq(
           setorSampah.kategoriNasabah,
-          user.role as "konsumen" | "warmindo" | "bank-sampah",
+          user.role as
+            | "konsumen"
+            | "warmindo"
+            | "bank-sampah"
+            | "bank-sampah-b",
         ),
       ),
       with: { ekspedisi: true },

@@ -827,7 +827,12 @@ export default function DashboardPage() {
           data.unverifiedSubmissions.length > 0 ? (
             <div className="divide-y divide-neutral-100">
               {data.unverifiedSubmissions.map((item) => {
+<<<<<<< HEAD
                 const isBS = item.role === "bank-sampah";
+=======
+                const isBS =
+                  item.role === "bank-sampah" || item.role === "bank-sampah-b";
+>>>>>>> backup-lokal-fa650a6
                 const isWM = item.role === "warmindo";
 
                 const badgeColor =
@@ -837,11 +842,22 @@ export default function DashboardPage() {
                       ? "bg-blue-50 text-blue-700 border-blue-200"
                       : "bg-neutral-50 text-neutral-600 border-neutral-200";
 
+<<<<<<< HEAD
                 const roleBadgeColor = isBS
                   ? "bg-indigo-50 text-indigo-700 border-indigo-200"
                   : isWM
                     ? "bg-amber-50 text-amber-700 border-amber-200"
                     : "bg-emerald-50 text-emerald-700 border-emerald-200";
+=======
+                const roleBadgeColor =
+                  item.role === "bank-sampah-b"
+                    ? "bg-teal-50 text-teal-700 border-teal-200"
+                    : isBS
+                      ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                      : isWM
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-200";
+>>>>>>> backup-lokal-fa650a6
 
                 // Redirect link based on role
                 const redirectPath = isBS
@@ -867,10 +883,19 @@ export default function DashboardPage() {
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleBadgeColor}`}
                         >
                           {item.role === "bank-sampah"
+<<<<<<< HEAD
                             ? "Bank Sampah"
                             : item.role === "warmindo"
                               ? "Mitra Warmindo"
                               : "Konsumen"}
+=======
+                            ? "Bank Sampah (A)"
+                            : item.role === "bank-sampah-b"
+                              ? "Bank Sampah (B)"
+                              : item.role === "warmindo"
+                                ? "Mitra Warmindo"
+                                : "Konsumen"}
+>>>>>>> backup-lokal-fa650a6
                         </span>
                       </div>
                       <p className="text-xs text-neutral-500">

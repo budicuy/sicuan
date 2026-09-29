@@ -15,6 +15,10 @@ import {
   Printer,
   Scale,
   Trash2,
+<<<<<<< HEAD
+=======
+  Truck,
+>>>>>>> backup-lokal-fa650a6
   User,
   X,
   XCircle,
@@ -480,11 +484,37 @@ export default function LaporanBankSampahPage() {
       ),
     },
     {
+<<<<<<< HEAD
       header: "Nasabah",
       render: (item: SetorSampahItem) => (
         <span className="font-semibold text-neutral-700 whitespace-nowrap">
           {item.user ? item.user.name : "Saya"}
         </span>
+=======
+      header: "Nasabah / Bank Sampah",
+      render: (item: SetorSampahItem) => (
+        <div>
+          <span className="font-semibold text-neutral-800 text-xs block">
+            {item.user ? item.user.name : "Saya"}
+          </span>
+          <div className="flex items-center gap-1 mt-0.5">
+            {item.user?.role === "bank-sampah-b" ? (
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                Tipe B
+              </span>
+            ) : (
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                Tipe A
+              </span>
+            )}
+            {item.sumberSampah && (
+              <span className="text-[9px] font-semibold text-neutral-600 bg-neutral-100 border border-neutral-200 px-1.5 py-0.2 rounded">
+                {item.sumberSampah}
+              </span>
+            )}
+          </div>
+        </div>
+>>>>>>> backup-lokal-fa650a6
       ),
     },
     {
@@ -905,6 +935,25 @@ export default function LaporanBankSampahPage() {
                       </div>
                     </div>
 
+<<<<<<< HEAD
+=======
+                    {selectedItem.sumberSampah && (
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-teal-100/60 text-teal-700">
+                          <Truck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs text-neutral-500 block">
+                            Sumber Sampah (Tipe B)
+                          </span>
+                          <span className="font-bold text-teal-800 text-sm leading-tight">
+                            {selectedItem.sumberSampah}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+>>>>>>> backup-lokal-fa650a6
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
                         <AlertCircle className="w-4 h-4" />

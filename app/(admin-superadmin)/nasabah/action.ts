@@ -48,7 +48,12 @@ export async function getNasabah(params?: {
           | "admin"
           | "konsumen"
           | "warmindo"
+<<<<<<< HEAD
           | "bank-sampah",
+=======
+          | "bank-sampah"
+          | "bank-sampah-b",
+>>>>>>> backup-lokal-fa650a6
       ),
     );
   }
@@ -143,7 +148,18 @@ const userFormSchema = z.object({
     .min(3, { message: "Username minimal 3 karakter" })
     .trim(),
   password: z.string().min(6, { message: "Password minimal 6 karakter" }),
+<<<<<<< HEAD
   role: z.enum(["superadmin", "admin", "konsumen", "warmindo", "bank-sampah"]),
+=======
+  role: z.enum([
+    "superadmin",
+    "admin",
+    "konsumen",
+    "warmindo",
+    "bank-sampah",
+    "bank-sampah-b",
+  ]),
+>>>>>>> backup-lokal-fa650a6
   status: z.enum(["Aktif", "Nonaktif"]).default("Aktif"),
   nik: z.string().nullable().optional(),
   tanggalLahir: z.string().nullable().optional(),
@@ -171,7 +187,12 @@ export async function createNasabah(
     | "admin"
     | "konsumen"
     | "warmindo"
+<<<<<<< HEAD
     | "bank-sampah";
+=======
+    | "bank-sampah"
+    | "bank-sampah-b";
+>>>>>>> backup-lokal-fa650a6
   const status = formData.get("status") as string;
 
   const nik = formData.get("nik") as string;
@@ -276,7 +297,15 @@ export async function createNasabah(
         alamat: parsed.data.alamat,
         jenisBank: parsed.data.jenisBank,
         noRekening: parsed.data.noRekening,
+<<<<<<< HEAD
         poin: parsed.data.role === "konsumen" ? 0 : null,
+=======
+        poin:
+          parsed.data.role === "konsumen" ||
+          parsed.data.role === "bank-sampah-b"
+            ? 0
+            : null,
+>>>>>>> backup-lokal-fa650a6
       });
     });
   } catch (error) {
@@ -301,7 +330,12 @@ export async function updateNasabah(
     | "admin"
     | "konsumen"
     | "warmindo"
+<<<<<<< HEAD
     | "bank-sampah";
+=======
+    | "bank-sampah"
+    | "bank-sampah-b";
+>>>>>>> backup-lokal-fa650a6
   const status = formData.get("status") as string;
 
   const nik = formData.get("nik") as string;
@@ -529,7 +563,12 @@ export async function getAllNasabahForExport(params?: {
           | "admin"
           | "konsumen"
           | "warmindo"
+<<<<<<< HEAD
           | "bank-sampah",
+=======
+          | "bank-sampah"
+          | "bank-sampah-b",
+>>>>>>> backup-lokal-fa650a6
       ),
     );
   }
@@ -697,6 +736,10 @@ export async function importNasabahBatch(
       "konsumen",
       "warmindo",
       "bank-sampah",
+<<<<<<< HEAD
+=======
+      "bank-sampah-b",
+>>>>>>> backup-lokal-fa650a6
     ];
     if (!validRoles.includes(role)) {
       result.failedCount++;
@@ -824,7 +867,12 @@ export async function importNasabahBatch(
               | "admin"
               | "konsumen"
               | "warmindo"
+<<<<<<< HEAD
               | "bank-sampah",
+=======
+              | "bank-sampah"
+              | "bank-sampah-b",
+>>>>>>> backup-lokal-fa650a6
             status: status as "Aktif" | "Nonaktif",
           })
           .returning();
@@ -842,7 +890,12 @@ export async function importNasabahBatch(
             | "admin"
             | "konsumen"
             | "warmindo"
+<<<<<<< HEAD
             | "bank-sampah",
+=======
+            | "bank-sampah"
+            | "bank-sampah-b",
+>>>>>>> backup-lokal-fa650a6
           status: status as "Aktif" | "Nonaktif",
           nik: cleanNik || null,
           tanggalLahir: record.tanggalLahir || null,
@@ -851,7 +904,11 @@ export async function importNasabahBatch(
           alamat: record.alamat || null,
           jenisBank: record.jenisBank || null,
           noRekening: record.noRekening || null,
+<<<<<<< HEAD
           poin: role === "konsumen" ? 0 : null,
+=======
+          poin: role === "konsumen" || role === "bank-sampah-b" ? 0 : null,
+>>>>>>> backup-lokal-fa650a6
         });
       });
 

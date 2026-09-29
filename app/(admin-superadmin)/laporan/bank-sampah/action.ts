@@ -43,7 +43,11 @@ export async function getAllBankSampahUsers(): Promise<
 
   try {
     const list = await db.query.nasabah.findMany({
+<<<<<<< HEAD
       where: eq(nasabah.role, "bank-sampah"),
+=======
+      where: inArray(nasabah.role, ["bank-sampah", "bank-sampah-b"]),
+>>>>>>> backup-lokal-fa650a6
       orderBy: [asc(nasabah.name)],
       columns: {
         id: true,
@@ -293,7 +297,11 @@ export async function getMySetoran(params: {
   userId?: string | number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+<<<<<<< HEAD
   roleTarget?: "konsumen" | "warmindo" | "bank-sampah";
+=======
+  roleTarget?: "konsumen" | "warmindo" | "bank-sampah" | "bank-sampah-b";
+>>>>>>> backup-lokal-fa650a6
   selectedMonth?: number;
   selectedYear?: number;
 }) {
@@ -313,11 +321,23 @@ export async function getMySetoran(params: {
   const sortOrder = params?.sortOrder ?? "desc";
   const roleTarget =
     params?.roleTarget ??
+<<<<<<< HEAD
     (user.role as "konsumen" | "warmindo" | "bank-sampah");
 
   const isAdmin = user.role === "admin" || user.role === "superadmin";
 
   const filters: SQL[] = [eq(setorSampah.kategoriNasabah, roleTarget)];
+=======
+    (user.role as "konsumen" | "warmindo" | "bank-sampah" | "bank-sampah-b");
+
+  const isAdmin = user.role === "admin" || user.role === "superadmin";
+
+  const filters: SQL[] = [
+    roleTarget === "bank-sampah"
+      ? inArray(setorSampah.kategoriNasabah, ["bank-sampah", "bank-sampah-b"])
+      : eq(setorSampah.kategoriNasabah, roleTarget),
+  ];
+>>>>>>> backup-lokal-fa650a6
 
   if (params?.selectedYear) {
     filters.push(
@@ -480,6 +500,10 @@ export async function getMySetoran(params: {
       fotoBuktiTambahan: s.fotoBuktiTambahan,
       catatan: s.catatan,
       totalPoin: s.totalPoin,
+<<<<<<< HEAD
+=======
+      sumberSampah: s.sumberSampah,
+>>>>>>> backup-lokal-fa650a6
       status: s.status,
       metodeSetor: s.metodeSetor,
       ekspedisiId: s.ekspedisiId,

@@ -43,6 +43,11 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
       redirect("/dashboard");
     } else if (user.role === "bank-sampah") {
       redirect("/dashboard/bank-sampah-dashboard");
+<<<<<<< HEAD
+=======
+    } else if (user.role === "bank-sampah-b") {
+      redirect("/dashboard/bank-sampah-b-dashboard");
+>>>>>>> backup-lokal-fa650a6
     } else if (user.role === "warmindo") {
       redirect("/dashboard/warmindo-dashboard");
     } else {

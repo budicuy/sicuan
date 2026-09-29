@@ -182,6 +182,11 @@ export default function NasabahPage() {
         return "bg-amber-50 text-amber-700 border-amber-200";
       case "bank-sampah":
         return "bg-purple-50 text-purple-700 border-purple-200";
+<<<<<<< HEAD
+=======
+      case "bank-sampah-b":
+        return "bg-teal-50 text-teal-700 border-teal-200";
+>>>>>>> backup-lokal-fa650a6
       default:
         return "bg-emerald-50 text-emerald-700 border-emerald-200";
     }
@@ -332,6 +337,7 @@ export default function NasabahPage() {
     {
       header: "Role",
       sortKey: "role",
+<<<<<<< HEAD
       render: (n) => (
         <span
           className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${getRoleBadge(n.user?.role)}`}
@@ -339,6 +345,24 @@ export default function NasabahPage() {
           {n.user?.role}
         </span>
       ),
+=======
+      render: (n) => {
+        const role = n.user?.role;
+        const label =
+          role === "bank-sampah"
+            ? "BANK SAMPAH A"
+            : role === "bank-sampah-b"
+              ? "BANK SAMPAH B"
+              : role;
+        return (
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${getRoleBadge(role)}`}
+          >
+            {label}
+          </span>
+        );
+      },
+>>>>>>> backup-lokal-fa650a6
     },
     {
       header: "Status",
@@ -392,7 +416,12 @@ export default function NasabahPage() {
       options: [
         { label: "Konsumen", value: "konsumen" },
         { label: "Warmindo", value: "warmindo" },
+<<<<<<< HEAD
         { label: "Bank Sampah", value: "bank-sampah" },
+=======
+        { label: "Bank Sampah (Tipe A)", value: "bank-sampah" },
+        { label: "Bank Sampah (Tipe B)", value: "bank-sampah-b" },
+>>>>>>> backup-lokal-fa650a6
         { label: "Admin", value: "admin" },
         { label: "Superadmin", value: "superadmin" },
       ],
@@ -631,7 +660,12 @@ export default function NasabahPage() {
                   <option value="admin">Admin</option>
                   <option value="konsumen">Konsumen</option>
                   <option value="warmindo">Warmindo</option>
+<<<<<<< HEAD
                   <option value="bank-sampah">Bank Sampah</option>
+=======
+                  <option value="bank-sampah">Bank Sampah (Tipe A)</option>
+                  <option value="bank-sampah-b">Bank Sampah (Tipe B)</option>
+>>>>>>> backup-lokal-fa650a6
                 </select>
                 {formErrors.role && (
                   <p className="text-red-600 text-xs mt-1">

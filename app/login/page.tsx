@@ -55,9 +55,28 @@ export default function LoginPage() {
       });
   }, []);
 
+<<<<<<< HEAD
   // Redirect directly to dashboard when server action returns success
   useEffect(() => {
     if (state?.success) {
+=======
+  // Redirect directly to dashboard when server action returns success based on role
+  useEffect(() => {
+    if (state?.success && state?.user?.role) {
+      const role = state.user.role;
+      if (role === "bank-sampah-b") {
+        transitionTo("/dashboard/bank-sampah-b-dashboard");
+      } else if (role === "bank-sampah") {
+        transitionTo("/dashboard/bank-sampah-dashboard");
+      } else if (role === "warmindo") {
+        transitionTo("/dashboard/warmindo-dashboard");
+      } else if (role === "admin" || role === "superadmin") {
+        transitionTo("/dashboard/admin-dashboard");
+      } else {
+        transitionTo("/dashboard");
+      }
+    } else if (state?.success) {
+>>>>>>> backup-lokal-fa650a6
       transitionTo("/dashboard");
     }
   }, [state, transitionTo]);
