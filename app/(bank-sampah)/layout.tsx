@@ -49,11 +49,8 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
       redirect("/dashboard");
     } else if (user.role === "admin" || user.role === "superadmin") {
       redirect("/dashboard/admin-dashboard");
-<<<<<<< HEAD
-=======
     } else if (user.role === "bank-sampah-b") {
       redirect("/dashboard/bank-sampah-b-dashboard");
->>>>>>> backup-lokal-fa650a6
     } else if (user.role === "warmindo") {
       redirect("/dashboard/warmindo-dashboard");
     } else {

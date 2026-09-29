@@ -11,10 +11,7 @@ import { db } from "@/db";
  */
 export const ROLE_TO_CODE: Record<string, string> = {
   "bank-sampah": "B",
-<<<<<<< HEAD
-=======
   "bank-sampah-b": "B",
->>>>>>> backup-lokal-fa650a6
   warmindo: "W",
   konsumen: "K",
 };

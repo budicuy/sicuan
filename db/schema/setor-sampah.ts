@@ -30,10 +30,7 @@ export const kategoriNasabahEnum = pgEnum("kategori_nasabah", [
   "konsumen",
   "warmindo",
   "bank-sampah",
-<<<<<<< HEAD
-=======
   "bank-sampah-b",
->>>>>>> backup-lokal-fa650a6
 ]);
 
 export const setorSampah = pgTable("setor_sampah", {
@@ -61,12 +58,8 @@ export const setorSampah = pgTable("setor_sampah", {
     onDelete: "set null",
   }),
 
-<<<<<<< HEAD
-=======
   // Sumber sampah (khusus bank sampah tipe b: "Warmindo" | "Karyawan" | "Factory Visit" | "Masyarakat")
   sumberSampah: text("sumber_sampah"),
-
->>>>>>> backup-lokal-fa650a6
   // Table differentiator with enum type
   kategoriNasabah: kategoriNasabahEnum("kategori_nasabah")
     .notNull()

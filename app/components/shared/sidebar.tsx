@@ -524,15 +524,11 @@ export function SidebarLayout({
                   {user?.name || "Pengguna"}
                 </p>
                 <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider block mt-0.5">
-<<<<<<< HEAD
-                  {user?.role || "Nasabah"}
-=======
                   {user?.role === "bank-sampah"
                     ? "Bank Sampah (A)"
                     : user?.role === "bank-sampah-b"
                       ? "Bank Sampah (B)"
                       : user?.role || "Nasabah"}
->>>>>>> backup-lokal-fa650a6
                 </span>
               </div>
             </div>
@@ -587,15 +583,11 @@ export function SidebarLayout({
                 {user?.name || "Pengguna"}
               </p>
               <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider block mt-0.5">
-<<<<<<< HEAD
-                {user?.role || "Nasabah"}
-=======
                 {user?.role === "bank-sampah"
                   ? "Bank Sampah (A)"
                   : user?.role === "bank-sampah-b"
                     ? "Bank Sampah (B)"
                     : user?.role || "Nasabah"}
->>>>>>> backup-lokal-fa650a6
               </span>
             </div>
           </div>

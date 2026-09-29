@@ -146,8 +146,6 @@ export function downloadNasabahTemplate(): void {
       "No Rekening": "456701009988776",
       "Alamat Lengkap": "Jl. Pramuka Komp. Semanda, Banjarmasin",
     },
-<<<<<<< HEAD
-=======
     {
       "Nama Lengkap *": "Bank Sampah Unit Jemput B",
       "Username *": "bs.unit.jemput",
@@ -162,7 +160,6 @@ export function downloadNasabahTemplate(): void {
       "No Rekening": "8877665544",
       "Alamat Lengkap": "Jl. Belitung Darat No. 45, Banjarmasin",
     },
->>>>>>> backup-lokal-fa650a6
   ];
 
   const ws = XLSX.utils.json_to_sheet(sampleData, { header: headers });
@@ -274,8 +271,6 @@ export async function parseNasabahExcelFile(
       .toLowerCase()
       .replace(/\s+/g, "-");
     if (role === "banksampah") role = "bank-sampah";
-<<<<<<< HEAD
-=======
     if (
       role === "banksampah-b" ||
       role === "bank-sampah-tipe-b" ||
@@ -284,7 +279,6 @@ export async function parseNasabahExcelFile(
     ) {
       role = "bank-sampah-b";
     }
->>>>>>> backup-lokal-fa650a6
 
     // Normalisasi status
     let status = normalized.status || "Aktif";

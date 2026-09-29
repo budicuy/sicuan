@@ -94,21 +94,13 @@ export async function updateAppSettings(
 }
 
 export async function checkAiDisabled(
-<<<<<<< HEAD
-  flowType: "konsumen" | "bank-sampah" | "warmindo",
-=======
   flowType: "konsumen" | "bank-sampah" | "bank-sampah-b" | "warmindo",
->>>>>>> backup-lokal-fa650a6
 ): Promise<boolean> {
   try {
     const settings = await getAppSettings();
     if (flowType === "konsumen") return settings.disableAiKonsumen;
-<<<<<<< HEAD
-    if (flowType === "bank-sampah") return settings.disableAiBankSampah;
-=======
     if (flowType === "bank-sampah" || flowType === "bank-sampah-b")
       return settings.disableAiBankSampah;
->>>>>>> backup-lokal-fa650a6
     if (flowType === "warmindo") return settings.disableAiWarmindo;
     return false;
   } catch (err) {

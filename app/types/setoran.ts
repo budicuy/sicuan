@@ -12,15 +12,11 @@ export type StatusSetoran =
   | "diterima"
   | "ditolak";
 
-<<<<<<< HEAD
-=======
 export type JenisSumberSampah =
   | "Warmindo"
   | "Karyawan"
   | "Factory Visit"
   | "Masyarakat";
-
->>>>>>> backup-lokal-fa650a6
 /**
  * SetoranType — data lengkap satu record setoran dari DB.
  * Sebelumnya didefinisikan ulang (identik) di 8+ file action.ts.
@@ -41,10 +37,7 @@ export interface SetoranType {
   metodeSetor?: string | null;
   ekspedisiId?: number | null;
   ekspedisi?: { id: number; namaVendor: string; noTelepon: string } | null;
-<<<<<<< HEAD
-=======
   sumberSampah?: string | null;
->>>>>>> backup-lokal-fa650a6
   user?: {
     id: number;
     name: string;
@@ -76,10 +69,7 @@ export interface SetorSampahItem {
   fotoTimbangan: string;
   fotoBuktiTambahan?: string[] | null;
   catatan: string | null;
-<<<<<<< HEAD
-=======
   sumberSampah?: string | null;
->>>>>>> backup-lokal-fa650a6
   /** Dipakai di laporan & setor warmindo/bank-sampah */
   metodeSetor?: string | null;
   /** Dipakai di laporan warmindo */

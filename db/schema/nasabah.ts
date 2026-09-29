@@ -19,10 +19,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "konsumen",
   "warmindo",
   "bank-sampah",
-<<<<<<< HEAD
-=======
   "bank-sampah-b",
->>>>>>> backup-lokal-fa650a6
 ]);
 
 export const statusUserEnum = pgEnum("status_user", ["Aktif", "Nonaktif"]);

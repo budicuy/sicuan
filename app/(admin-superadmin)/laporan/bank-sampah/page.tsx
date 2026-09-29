@@ -15,10 +15,7 @@ import {
   Printer,
   Scale,
   Trash2,
-<<<<<<< HEAD
-=======
   Truck,
->>>>>>> backup-lokal-fa650a6
   User,
   X,
   XCircle,
@@ -484,13 +481,6 @@ export default function LaporanBankSampahPage() {
       ),
     },
     {
-<<<<<<< HEAD
-      header: "Nasabah",
-      render: (item: SetorSampahItem) => (
-        <span className="font-semibold text-neutral-700 whitespace-nowrap">
-          {item.user ? item.user.name : "Saya"}
-        </span>
-=======
       header: "Nasabah / Bank Sampah",
       render: (item: SetorSampahItem) => (
         <div>
@@ -514,7 +504,6 @@ export default function LaporanBankSampahPage() {
             )}
           </div>
         </div>
->>>>>>> backup-lokal-fa650a6
       ),
     },
     {
@@ -935,8 +924,6 @@ export default function LaporanBankSampahPage() {
                       </div>
                     </div>
 
-<<<<<<< HEAD
-=======
                     {selectedItem.sumberSampah && (
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-teal-100/60 text-teal-700">
@@ -952,8 +939,6 @@ export default function LaporanBankSampahPage() {
                         </div>
                       </div>
                     )}
-
->>>>>>> backup-lokal-fa650a6
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-neutral-200/50 text-neutral-600">
                         <AlertCircle className="w-4 h-4" />

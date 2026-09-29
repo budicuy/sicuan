@@ -55,11 +55,6 @@ export default function LoginPage() {
       });
   }, []);
 
-<<<<<<< HEAD
-  // Redirect directly to dashboard when server action returns success
-  useEffect(() => {
-    if (state?.success) {
-=======
   // Redirect directly to dashboard when server action returns success based on role
   useEffect(() => {
     if (state?.success && state?.user?.role) {
@@ -76,7 +71,6 @@ export default function LoginPage() {
         transitionTo("/dashboard");
       }
     } else if (state?.success) {
->>>>>>> backup-lokal-fa650a6
       transitionTo("/dashboard");
     }
   }, [state, transitionTo]);

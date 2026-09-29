@@ -51,11 +51,8 @@ export default async function WarmindoLayout({ children }: LayoutProps) {
       redirect("/dashboard/admin-dashboard");
     } else if (user.role === "bank-sampah") {
       redirect("/dashboard/bank-sampah-dashboard");
-<<<<<<< HEAD
-=======
     } else if (user.role === "bank-sampah-b") {
       redirect("/dashboard/bank-sampah-b-dashboard");
->>>>>>> backup-lokal-fa650a6
     } else {
       redirect("/login");
     }
