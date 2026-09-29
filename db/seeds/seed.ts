@@ -1,15 +1,13 @@
-import { seeders } from "@/db/seeds";
+import { seedDatabaseFromJson } from "@/db/seeds";
 
 async function main() {
-  console.log("🚀 Starting database seeding...\n");
+  console.log("🚀 Menjalankan Database Seeder dari JSON...\n");
 
   try {
-    for (const seeder of seeders) {
-      await seeder();
-    }
-    console.log("\n🎉 All seeds completed successfully!");
+    await seedDatabaseFromJson();
+    console.log("\n🎉 Seeding database berhasil 100%!");
   } catch (error) {
-    console.error("❌ Seeding failed:", error);
+    console.error("\n❌ Seeding database gagal:", error);
     process.exit(1);
   } finally {
     process.exit(0);
