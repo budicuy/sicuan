@@ -1,0 +1,67 @@
+{
+  "name": "sicuan",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit && biome check --write --unsafe",
+    "db:seed": "bun run db/seeds/seed.ts",
+    "db:push": "bunx drizzle-kit push --force",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1061.0",
+    "@bprogress/next": "^3.2.12",
+    "@google/generative-ai": "^0.24.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "@react-pdf/renderer": "^4.5.1",
+    "argon2": "^0.44.0",
+    "browser-image-compression": "^2.0.2",
+    "dotenv": "^17.4.2",
+    "driver.js": "^1.6.0",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-query-logger": "^1.1.2",
+    "drizzle-zod": "^0.8.3",
+    "jose": "^6.2.3",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.17.0",
+    "motion": "^12.40.0",
+    "next": "16.2.7",
+    "nodemailer": "^9.0.3",
+    "qrcode": "^1.5.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-leaflet": "^5.0.0",
+    "recharts": "^3.8.1",
+    "sharp": "^0.34.5",
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/bun": "latest",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "drizzle-kit": "^0.31.10",
+    "tailwindcss": "^4",
+    "tsx": "^4.22.4",
+    "typescript": "^5"
+  },
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "packageManager": "bun@1.3.11"
+}

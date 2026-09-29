@@ -1,0 +1,894 @@
+"use client";
+
+import { FileSpreadsheet, Loader2, Trash2, Upload, Users } from "lucide-react";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  bulkDeleteNasabah,
+  createNasabah,
+  deleteNasabah,
+  getAllNasabahForExport,
+  getNasabah,
+  updateNasabah,
+} from "@/app/(admin-superadmin)/nasabah/action";
+import { ImportNasabahModal } from "@/app/(admin-superadmin)/nasabah/ImportNasabahModal";
+import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
+import {
+  type Column,
+  DataTable,
+  type TableFilter,
+} from "@/app/components/shared/DataTable";
+import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+import { getCurrentUser } from "@/app/lib/auth-actions";
+import { exportNasabahToCSV } from "@/app/lib/nasabah-excel";
+import type { ActionState, NasabahWithUser } from "@/app/types";
+
+const nasabahSteps = [
+  {
+    element: "#tour-admin-nasabah-header",
+    popover: {
+      title: "Master Data Nasabah",
+      description:
+        "Halaman ini digunakan untuk mengelola seluruh akun login dan data diri profil nasabah/mitra (Konsumen, Warmindo, Bank Sampah).",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-nasabah-import-export",
+    popover: {
+      title: "Import & Export CSV",
+      description:
+        "Gunakan tombol ini untuk mengunduh template CSV, mengimpor data nasabah secara massal dari file CSV, atau mengekspor data nasabah ke file CSV.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-nasabah-table",
+    popover: {
+      title: "Tabel Data Nasabah",
+      description:
+        "Anda dapat melihat, mencari, memfilter berdasarkan role, menambah nasabah baru, mengedit, memilih data untuk hapus massal (bulk delete), atau menghapus data nasabah melalui tabel terintegrasi ini.",
+      side: "top" as const,
+    },
+  },
+];
+
+export default function NasabahPage() {
+  const [data, setData] = useState<NasabahWithUser[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [search, setSearch] = useState("");
+
+  const [_isTourActive, setIsTourActive] = useState(false);
+
+  const handleTourStart = () => {
+    setIsTourActive(true);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+  };
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({
+    role: "",
+  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingNasabah, setEditingNasabah] = useState<NasabahWithUser | null>(
+    null,
+  );
+  const [isPending, startTransition] = useTransition();
+  const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
+  const [globalError, setGlobalError] = useState("");
+  const [sortBy, setSortBy] = useState<string>("id");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [feedback, setFeedback] = useState<{
+    isOpen: boolean;
+    type: "success" | "error";
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    title: "",
+    message: "",
+  });
+  const [confirmDelete, setConfirmDelete] = useState<NasabahWithUser | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  const showFeedback = (
+    type: "success" | "error",
+    title: string,
+    message: string,
+  ) => {
+    setFeedback({ isOpen: true, type, title, message });
+  };
+
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const allData = await getAllNasabahForExport({
+        search,
+        role: filterValues.role,
+        sortBy,
+        sortOrder,
+      });
+      exportNasabahToCSV(allData);
+      showFeedback(
+        "success",
+        "Export Berhasil",
+        `${allData.length} data nasabah berhasil diekspor ke file CSV.`,
+      );
+    } catch (err) {
+      console.error("Gagal export CSV:", err);
+      showFeedback(
+        "error",
+        "Export Gagal",
+        "Terjadi kesalahan saat mengekspor data ke CSV.",
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const refreshData = useCallback(() => {
+    getNasabah({
+      page: currentPage,
+      limit: pageSize,
+      search,
+      role: filterValues.role,
+      sortBy,
+      sortOrder,
+    }).then((res) => {
+      setData(res.data as NasabahWithUser[]);
+      setTotalItems(res.total);
+    });
+  }, [currentPage, pageSize, search, filterValues, sortBy, sortOrder]);
+
+  useEffect(() => {
+    refreshData();
+    getCurrentUser().then((user) => {
+      if (user) {
+        setUserRole(user.role);
+      }
+    });
+  }, [refreshData]);
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(key);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "superadmin":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "admin":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "warmindo":
+        return "bg-amber-50 text-amber-700 border-amber-200";
+      case "bank-sampah":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      case "bank-sampah-b":
+        return "bg-teal-50 text-teal-700 border-teal-200";
+      default:
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    return status === "Aktif"
+      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+      : "bg-red-100 text-red-800 border-red-200";
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingNasabah(null);
+    setFormErrors({});
+    setGlobalError("");
+    setModalOpen(true);
+  };
+
+  const handleOpenEditModal = (item: NasabahWithUser) => {
+    setEditingNasabah(item);
+    setFormErrors({});
+    setGlobalError("");
+    setModalOpen(true);
+  };
+
+  const handleDelete = (item: NasabahWithUser) => {
+    setConfirmDelete(item);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+    setIsDeleting(true);
+    const res = await deleteNasabah(confirmDelete.id);
+    setIsDeleting(false);
+    setConfirmDelete(null);
+    if (res.success) {
+      showFeedback(
+        "success",
+        "Berhasil!",
+        `Nasabah "${confirmDelete.user?.name || ""}" berhasil dihapus.`,
+      );
+      setSelectedIds((prev) => prev.filter((id) => id !== confirmDelete.id));
+      refreshData();
+    } else {
+      showFeedback(
+        "error",
+        "Gagal!",
+        res.errors?._form?.[0] || "Gagal menghapus data nasabah",
+      );
+    }
+  };
+
+  const isAllSelected =
+    data.length > 0 && data.every((item) => selectedIds.includes(item.id));
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      const pageIds = new Set(data.map((item) => item.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    } else {
+      const pageIds = data.map((item) => item.id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleSelectRow = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsBulkDeleting(true);
+    const res = await bulkDeleteNasabah(selectedIds);
+    setIsBulkDeleting(false);
+    setIsBulkDeleteModalOpen(false);
+
+    if (res.success) {
+      showFeedback(
+        "success",
+        "Berhasil!",
+        `${selectedIds.length} data nasabah berhasil dihapus.`,
+      );
+      setSelectedIds([]);
+      refreshData();
+    } else {
+      showFeedback(
+        "error",
+        "Gagal!",
+        res.errors?._form?.[0] || "Gagal menghapus data nasabah terpilih",
+      );
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setFormErrors({});
+    setGlobalError("");
+
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      let result: ActionState;
+      if (editingNasabah) {
+        result = await updateNasabah(
+          editingNasabah.id,
+          { success: false },
+          formData,
+        );
+      } else {
+        result = await createNasabah({ success: false }, formData);
+      }
+
+      if (result.success) {
+        setModalOpen(false);
+        showFeedback(
+          "success",
+          "Berhasil!",
+          editingNasabah
+            ? "Data nasabah berhasil diperbarui."
+            : "Nasabah baru berhasil ditambahkan.",
+        );
+        refreshData();
+      } else {
+        if (result.errors?._form) {
+          setGlobalError(result.errors._form[0]);
+        } else if (result.errors) {
+          setFormErrors(result.errors);
+        }
+      }
+    });
+  };
+
+  const columns: Column<NasabahWithUser>[] = [
+    {
+      header: "Nama & Akun",
+      sortKey: "name",
+      render: (n) => (
+        <div>
+          <div className="font-semibold text-neutral-900">{n.user?.name}</div>
+          <div className="text-[10px] text-neutral-400 font-mono mt-0.5">
+            @{n.user?.username}
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: "Role",
+      sortKey: "role",
+      render: (n) => {
+        const role = n.user?.role;
+        const label =
+          role === "bank-sampah"
+            ? "BANK SAMPAH A"
+            : role === "bank-sampah-b"
+              ? "BANK SAMPAH B"
+              : role;
+        return (
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${getRoleBadge(role)}`}
+          >
+            {label}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Status",
+      render: (n) => (
+        <span
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getStatusBadge(n.user?.status)}`}
+        >
+          {n.user?.status}
+        </span>
+      ),
+    },
+    {
+      header: "NIK",
+      sortKey: "nik",
+      render: (n) => (
+        <span className="text-neutral-600 font-mono text-xs">
+          {n.nik || "-"}
+        </span>
+      ),
+    },
+    {
+      header: "No. Telepon",
+      sortKey: "noTelepon",
+      render: (n) => (
+        <span className="text-neutral-600">{n.noTelepon || "-"}</span>
+      ),
+    },
+    {
+      header: "Rekening Bank",
+      sortKey: "jenisBank",
+      render: (n) =>
+        n.jenisBank ? (
+          <div className="text-xs">
+            <span className="font-bold text-neutral-800 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded text-[9px] mr-1 uppercase">
+              {n.jenisBank}
+            </span>
+            <span className="font-mono text-neutral-600">
+              {n.noRekening || "-"}
+            </span>
+          </div>
+        ) : (
+          <span className="text-neutral-400">-</span>
+        ),
+    },
+  ];
+
+  const filters: TableFilter<NasabahWithUser>[] = [
+    {
+      id: "role",
+      label: "Filter Role",
+      options: [
+        { label: "Konsumen", value: "konsumen" },
+        { label: "Warmindo", value: "warmindo" },
+        { label: "Bank Sampah (Tipe A)", value: "bank-sampah" },
+        { label: "Bank Sampah (Tipe B)", value: "bank-sampah-b" },
+        { label: "Admin", value: "admin" },
+        { label: "Superadmin", value: "superadmin" },
+      ],
+      filterFn: (item, val) => item.user?.role?.toLowerCase() === val,
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <TourGuide
+        steps={nasabahSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
+      <div
+        id="tour-admin-nasabah-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
+      >
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
+            <Users className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+              Master Data Nasabah
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Kelola akun login dan profil nasabah secara bersamaan dalam satu
+              tampilan
+            </p>
+          </div>
+        </div>
+
+        {/* Action Buttons: Import & Export CSV */}
+        <div
+          id="tour-admin-nasabah-import-export"
+          className="flex flex-wrap items-center gap-2.5 w-full md:w-auto"
+        >
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 border border-emerald-300 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition-colors cursor-pointer shadow-2xs"
+            title="Import data nasabah dari file CSV"
+          >
+            <Upload className="w-4 h-4 text-emerald-600" />
+            Import CSV
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            disabled={isExporting}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 border border-neutral-200 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 font-semibold text-xs transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+            title="Ekspor data nasabah ke file CSV"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            )}
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <DataTable
+        id="tour-admin-nasabah-table"
+        data={data}
+        columns={columns}
+        totalItems={totalItems}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(e) => {
+          setPageSize(Number(e.target.value));
+          setCurrentPage(1);
+        }}
+        search={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setCurrentPage(1);
+        }}
+        filters={filters}
+        filterValues={filterValues}
+        onFilterChange={(id, val) => {
+          setFilterValues((prev) => ({ ...prev, [id]: val }));
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Cari berdasarkan nama, username, NIK, atau no telp..."
+        onAdd={handleOpenAddModal}
+        addLabel="Tambah Nasabah"
+        onEdit={handleOpenEditModal}
+        onDelete={userRole === "superadmin" ? handleDelete : undefined}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+        selectable={userRole === "superadmin"}
+        selectedIds={selectedIds}
+        onSelectRow={handleSelectRow}
+        onSelectAll={handleSelectAll}
+        isAllSelected={isAllSelected}
+        bulkActions={
+          userRole === "superadmin" ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="px-2.5 py-1.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 font-medium transition-colors cursor-pointer text-xs"
+              >
+                Batalkan Pilihan
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors cursor-pointer text-xs shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Hapus {selectedIds.length} Data Terpilih
+              </button>
+            </div>
+          ) : undefined
+        }
+      />
+
+      {/* Form Modal */}
+      <FormModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingNasabah ? "Edit Data Nasabah" : "Tambah Nasabah Baru"}
+        onSubmit={handleSubmit}
+        isPending={isPending}
+        globalError={globalError}
+      >
+        {/* Hidden userId for edit mode */}
+        {editingNasabah && (
+          <input type="hidden" name="userId" value={editingNasabah.userId} />
+        )}
+
+        {/* ───── Section: Akun Login ───── */}
+        <div className="pb-3 mb-3 border-b border-neutral-100">
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
+            Akun Login
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label
+                htmlFor="name-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Nama Lengkap
+              </label>
+              <input
+                id="name-input"
+                type="text"
+                name="name"
+                required
+                defaultValue={editingNasabah?.user?.name || ""}
+                placeholder="e.g. Budi Santoso"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+              />
+              {formErrors.name && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.name[0]}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="username-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Username
+              </label>
+              <input
+                id="username-input"
+                type="text"
+                name="username"
+                required
+                defaultValue={editingNasabah?.user?.username || ""}
+                placeholder="e.g. budi.santoso"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
+              />
+              {formErrors.username && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.username[0]}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="password-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Password{" "}
+                {editingNasabah && (
+                  <span className="text-neutral-400 capitalize">
+                    (Kosongkan jika tidak diubah)
+                  </span>
+                )}
+              </label>
+              <input
+                id="password-input"
+                type="password"
+                name="password"
+                required={!editingNasabah}
+                placeholder={editingNasabah ? "••••••••" : "Masukkan password"}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+              />
+              {formErrors.password && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.password[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="role-select"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Role Akun
+                </label>
+                <select
+                  id="role-select"
+                  name="role"
+                  defaultValue={editingNasabah?.user?.role || "konsumen"}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+                >
+                  <option value="superadmin">Superadmin</option>
+                  <option value="admin">Admin</option>
+                  <option value="konsumen">Konsumen</option>
+                  <option value="warmindo">Warmindo</option>
+                  <option value="bank-sampah">Bank Sampah (Tipe A)</option>
+                  <option value="bank-sampah-b">Bank Sampah (Tipe B)</option>
+                </select>
+                {formErrors.role && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.role[0]}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="status-select"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Status Akun
+                </label>
+                <select
+                  id="status-select"
+                  name="status"
+                  defaultValue={editingNasabah?.user?.status || "Aktif"}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+                >
+                  <option value="Aktif">Aktif</option>
+                  <option value="Nonaktif">Nonaktif</option>
+                </select>
+                {formErrors.status && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.status[0]}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ───── Section: Data Profil Nasabah ───── */}
+        <div>
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
+            Profil Nasabah
+          </p>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="nik-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  NIK
+                </label>
+                <input
+                  id="nik-input"
+                  type="text"
+                  name="nik"
+                  defaultValue={editingNasabah?.nik || ""}
+                  placeholder="Nomor NIK Kependudukan"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono"
+                />
+                {formErrors.nik && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.nik[0]}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="tanggalLahir-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Tanggal Lahir
+                </label>
+                <input
+                  id="tanggalLahir-input"
+                  type="date"
+                  name="tanggalLahir"
+                  defaultValue={editingNasabah?.tanggalLahir || ""}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
+                />
+                {formErrors.tanggalLahir && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.tanggalLahir[0]}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="noTelepon-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Nomor Telepon
+              </label>
+              <input
+                id="noTelepon-input"
+                type="text"
+                name="noTelepon"
+                defaultValue={editingNasabah?.noTelepon || ""}
+                placeholder="e.g. 081234567890"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
+              />
+              {formErrors.noTelepon && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.noTelepon[0]}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="email-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Email
+              </label>
+              <input
+                id="email-input"
+                type="email"
+                name="email"
+                defaultValue={editingNasabah?.email || ""}
+                placeholder="e.g. budi@email.com"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all"
+              />
+              {formErrors.email && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.email[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="jenisBank-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Jenis Bank
+                </label>
+                <input
+                  id="jenisBank-input"
+                  type="text"
+                  name="jenisBank"
+                  defaultValue={editingNasabah?.jenisBank || ""}
+                  placeholder="e.g. BCA, Mandiri, BRI"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all uppercase"
+                />
+                {formErrors.jenisBank && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.jenisBank[0]}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="noRekening-input"
+                  className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+                >
+                  Nomor Rekening
+                </label>
+                <input
+                  id="noRekening-input"
+                  type="text"
+                  name="noRekening"
+                  defaultValue={editingNasabah?.noRekening || ""}
+                  placeholder="e.g. 1234567890"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono"
+                />
+                {formErrors.noRekening && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {formErrors.noRekening[0]}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="alamat-input"
+                className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+              >
+                Alamat Lengkap
+              </label>
+              <textarea
+                id="alamat-input"
+                name="alamat"
+                defaultValue={editingNasabah?.alamat || ""}
+                placeholder="Masukkan alamat lengkap..."
+                rows={3}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all resize-none"
+              />
+              {formErrors.alamat && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors.alamat[0]}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </FormModal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        message={`Apakah Anda yakin ingin menghapus nasabah "${confirmDelete?.user?.name}"? Akun login dan seluruh data profil akan dihapus permanen.`}
+        isPending={isDeleting}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={handleConfirmBulkDelete}
+        title="Konfirmasi Hapus Massal"
+        message={`Apakah Anda yakin ingin menghapus ${selectedIds.length} data nasabah yang dipilih? Akun login dan seluruh data profil nasabah terkait akan dihapus secara permanen.`}
+        confirmLabel="Ya, Hapus Semua"
+        isPending={isBulkDeleting}
+        variant="danger"
+      />
+
+      {/* CRUD Feedback */}
+      <FeedbackModal
+        isOpen={feedback.isOpen}
+        onClose={() => setFeedback((prev) => ({ ...prev, isOpen: false }))}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+      />
+
+      {/* Import Modal */}
+      <ImportNasabahModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          refreshData();
+          showFeedback(
+            "success",
+            "Import Selesai",
+            "Data nasabah dari CSV berhasil diproses.",
+          );
+        }}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,457 @@
+"use client";
+
+import { Truck } from "lucide-react";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  createEkspedisi,
+  deleteEkspedisi,
+  getEkspedisi,
+  updateEkspedisi,
+} from "@/app/(admin-superadmin)/ekspedisi/action";
+import { ConfirmModal } from "@/app/components/shared/ConfirmModal";
+import {
+  type Column,
+  DataTable,
+  type TableFilter,
+} from "@/app/components/shared/DataTable";
+import { FeedbackModal } from "@/app/components/shared/FeedbackModal";
+import { FormModal } from "@/app/components/shared/FormModal";
+import { TourGuide } from "@/app/components/shared/TourGuide";
+import { getCurrentUser } from "@/app/lib/auth-actions";
+import type { ActionState, Ekspedisi } from "@/app/types";
+
+const ekspedisiTourSteps = [
+  {
+    element: "#tour-admin-ekspedisi-header",
+    popover: {
+      title: "Master Data Ekspedisi Logistik",
+      description:
+        "Selamat datang di halaman Master Data Ekspedisi! Di sini Administrator dan Superadmin dapat mengelola seluruh mitra penyedia armada pengiriman (seperti GoSend, GrabExpress, Logistik Internal, dsb) yang bertugas menjemput dan mengangkut sampah terpilah dari mitra Warmindo menuju Bank Sampah atau pabrik daur ulang Indofood.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-search",
+    popover: {
+      title: "Pencarian Vendor Cepat",
+      description:
+        "Ketikkan nama vendor ekspedisi atau nomor telepon pada kotak pencarian ini untuk menemukan data mitra logistik secara langsung tanpa harus menelusuri daftar satu per satu.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-filter",
+    popover: {
+      title: "Filter Status Operasional Vendor",
+      description:
+        "Gunakan menu dropdown filter ini untuk menyaring daftar vendor berdasarkan statusnya: 'Aktif' untuk vendor yang saat ini siap menerima order penjemputan sampah, atau 'Nonaktif' untuk vendor yang kerjasamanya sedang dijeda.",
+      side: "bottom" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-add",
+    popover: {
+      title: "Pendaftaran Vendor Baru",
+      description:
+        "Klik tombol 'Tambah Vendor' ini untuk mendaftarkan mitra jasa ekspedisi atau kurir baru ke dalam sistem SiCuan dengan mengisi nama vendor, kontak telepon, dan status aktifnya.",
+      side: "left" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-table",
+    popover: {
+      title: "Tabel Informasi Mitra Vendor",
+      description:
+        "Tabel ini memuat rincian lengkap vendor: Nama Vendor Ekspedisi, Nomor Telepon/Kontak untuk koordinasi penjemputan limbah daur ulang, serta Status Keaktifan (hijau untuk Aktif dan merah untuk Nonaktif).",
+      side: "top" as const,
+    },
+  },
+  {
+    element: "#tour-admin-ekspedisi-actions",
+    popover: {
+      title: "Aksi Pengelolaan & Hak Akses",
+      description:
+        "Pada kolom Aksi di setiap baris vendor, klik ikon pensil (Edit) untuk memperbarui rincian vendor seperti perubahan nomor telepon atau status. Khusus akun Superadmin, tersedia juga ikon tempat sampah (Hapus) untuk menghapus vendor jika diperlukan.",
+      side: "left" as const,
+    },
+  },
+];
+
+export default function EkspedisiPage() {
+  const [data, setData] = useState<Ekspedisi[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [search, setSearch] = useState("");
+  const [_isTourActive, setIsTourActive] = useState(false);
+
+  const handleTourStart = () => {
+    setIsTourActive(true);
+  };
+
+  const handleTourEnd = () => {
+    setIsTourActive(false);
+  };
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({
+    status: "",
+  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEkspedisi, setEditingEkspedisi] = useState<Ekspedisi | null>(
+    null,
+  );
+  const [isPending, startTransition] = useTransition();
+  const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
+  const [globalError, setGlobalError] = useState("");
+  const [sortBy, setSortBy] = useState<string>("id");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [feedback, setFeedback] = useState<{
+    isOpen: boolean;
+    type: "success" | "error";
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    title: "",
+    message: "",
+  });
+  const [confirmDelete, setConfirmDelete] = useState<Ekspedisi | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const showFeedback = (
+    type: "success" | "error",
+    title: string,
+    message: string,
+  ) => {
+    setFeedback({ isOpen: true, type, title, message });
+  };
+
+  const refreshData = useCallback(() => {
+    getEkspedisi({
+      page: currentPage,
+      limit: pageSize,
+      search,
+      status: filterValues.status,
+      sortBy,
+      sortOrder,
+    }).then((res) => {
+      setData(res.data as Ekspedisi[]);
+      setTotalItems(res.total);
+    });
+  }, [currentPage, pageSize, search, filterValues, sortBy, sortOrder]);
+
+  useEffect(() => {
+    refreshData();
+    getCurrentUser().then((user) => {
+      if (user) {
+        setUserRole(user.role);
+      }
+    });
+  }, [refreshData]);
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(key);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const getStatusBadge = (status: string) => {
+    return status === "Aktif"
+      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+      : "bg-red-100 text-red-800 border-red-200";
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingEkspedisi(null);
+    setFormErrors({});
+    setGlobalError("");
+    setModalOpen(true);
+  };
+
+  const handleOpenEditModal = (item: Ekspedisi) => {
+    setEditingEkspedisi(item);
+    setFormErrors({});
+    setGlobalError("");
+    setModalOpen(true);
+  };
+
+  const handleDelete = (item: Ekspedisi) => {
+    setConfirmDelete(item);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+    setIsDeleting(true);
+    const res = await deleteEkspedisi(confirmDelete.id);
+    setIsDeleting(false);
+    setConfirmDelete(null);
+    if (res.success) {
+      showFeedback(
+        "success",
+        "Berhasil!",
+        `Vendor "${confirmDelete.namaVendor}" berhasil dihapus.`,
+      );
+      refreshData();
+    } else {
+      showFeedback(
+        "error",
+        "Gagal!",
+        res.errors?._form?.[0] || "Gagal menghapus ekspedisi.",
+      );
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setFormErrors({});
+    setGlobalError("");
+
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      let result: ActionState;
+      if (editingEkspedisi) {
+        result = await updateEkspedisi(
+          editingEkspedisi.id,
+          { success: false },
+          formData,
+        );
+      } else {
+        result = await createEkspedisi({ success: false }, formData);
+      }
+
+      if (result.success) {
+        setModalOpen(false);
+        showFeedback(
+          "success",
+          "Berhasil!",
+          editingEkspedisi
+            ? `Data vendor "${editingEkspedisi.namaVendor}" berhasil diperbarui.`
+            : "Vendor ekspedisi baru berhasil ditambahkan.",
+        );
+        refreshData();
+      } else {
+        if (result.errors?._form) {
+          setGlobalError(result.errors._form[0]);
+        } else if (result.errors) {
+          setFormErrors(result.errors);
+        }
+      }
+    });
+  };
+
+  const columns: Column<Ekspedisi>[] = [
+    {
+      header: "Nama Vendor Ekspedisi",
+      sortKey: "namaVendor",
+      render: (item) => (
+        <span className="font-semibold text-neutral-900">
+          {item.namaVendor}
+        </span>
+      ),
+    },
+    {
+      header: "Nomor Telepon Vendor",
+      sortKey: "noTelepon",
+      render: (item) => (
+        <span className="text-neutral-600 font-mono text-xs">
+          {item.noTelepon}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      sortKey: "status",
+      render: (item) => (
+        <span
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getStatusBadge(item.status)}`}
+        >
+          {item.status}
+        </span>
+      ),
+    },
+  ];
+
+  const filters: TableFilter<Ekspedisi>[] = [
+    {
+      id: "status",
+      label: "Filter Status",
+      options: [
+        { label: "Aktif", value: "Aktif" },
+        { label: "Nonaktif", value: "Nonaktif" },
+      ],
+      filterFn: (item, val) => item.status === val,
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <TourGuide
+        steps={ekspedisiTourSteps}
+        onStart={handleTourStart}
+        onEnd={handleTourEnd}
+      />
+
+      <div
+        id="tour-admin-ekspedisi-header"
+        className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden mb-8 print:hidden"
+      >
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-md shrink-0">
+            <Truck className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+              Master Data Ekspedisi
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Kelola daftar vendor penyedia jasa ekspedisi untuk pengiriman
+              sampah dari mitra Warmindo
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <DataTable
+        id="tour-admin-ekspedisi-table-root"
+        searchId="tour-admin-ekspedisi-search"
+        filterId="tour-admin-ekspedisi-filter"
+        addButtonId="tour-admin-ekspedisi-add"
+        tableContainerId="tour-admin-ekspedisi-table"
+        actionsHeaderId="tour-admin-ekspedisi-actions"
+        data={data}
+        columns={columns}
+        totalItems={totalItems}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(e) => {
+          setPageSize(Number(e.target.value));
+          setCurrentPage(1);
+        }}
+        search={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setCurrentPage(1);
+        }}
+        filters={filters}
+        filterValues={filterValues}
+        onFilterChange={(id, val) => {
+          setFilterValues((prev) => ({ ...prev, [id]: val }));
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Cari vendor ekspedisi..."
+        onAdd={handleOpenAddModal}
+        addLabel="Tambah Vendor"
+        onEdit={handleOpenEditModal}
+        onDelete={userRole === "superadmin" ? handleDelete : undefined}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+      />
+
+      {/* CRUD Form Modal */}
+      <FormModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={
+          editingEkspedisi ? "Edit Vendor Ekspedisi" : "Tambah Vendor Ekspedisi"
+        }
+        onSubmit={handleSubmit}
+        isPending={isPending}
+        globalError={globalError}
+      >
+        <div>
+          <label
+            htmlFor="namaVendor-input"
+            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+          >
+            Nama Vendor Ekspedisi
+          </label>
+          <input
+            id="namaVendor-input"
+            type="text"
+            name="namaVendor"
+            required
+            defaultValue={editingEkspedisi?.namaVendor || ""}
+            placeholder="e.g. JNE Express"
+            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+          />
+          {formErrors.namaVendor && (
+            <p className="text-red-600 text-xs mt-1">
+              {formErrors.namaVendor[0]}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="noTelepon-input"
+            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+          >
+            Nomor Telepon Vendor
+          </label>
+          <input
+            id="noTelepon-input"
+            type="text"
+            name="noTelepon"
+            required
+            defaultValue={editingEkspedisi?.noTelepon || ""}
+            placeholder="e.g. 02129278888"
+            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
+          />
+          {formErrors.noTelepon && (
+            <p className="text-red-600 text-xs mt-1">
+              {formErrors.noTelepon[0]}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="status-select"
+            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+          >
+            Status Vendor
+          </label>
+          <select
+            id="status-select"
+            name="status"
+            defaultValue={editingEkspedisi?.status || "Aktif"}
+            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-850"
+          >
+            <option value="Aktif">Aktif</option>
+            <option value="Nonaktif">Nonaktif</option>
+          </select>
+          {formErrors.status && (
+            <p className="text-red-600 text-xs mt-1">{formErrors.status[0]}</p>
+          )}
+        </div>
+      </FormModal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        message={`Apakah Anda yakin ingin menghapus vendor "${confirmDelete?.namaVendor}"? Tindakan ini tidak dapat dibatalkan.`}
+        isPending={isDeleting}
+      />
+
+      {/* CRUD Feedback */}
+      <FeedbackModal
+        isOpen={feedback.isOpen}
+        onClose={() => setFeedback((prev) => ({ ...prev, isOpen: false }))}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+      />
+    </div>
+  );
+}

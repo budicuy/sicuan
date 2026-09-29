@@ -1,0 +1,172 @@
+"use server";
+
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import sharp from "sharp";
+
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID ?? ""}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
+  },
+});
+
+/**
+ * Normalisasi URL media agar melalui proxy internal /api/media/
+ * dan tidak terblokir oleh ISP Indonesia (Internet Positif / XL / Telkomsel).
+ */
+export async function normalizeMediaUrl(
+  url: string | null | undefined,
+): Promise<string> {
+  if (!url) return "";
+  if (url.includes(".r2.dev/")) {
+    const parts = url.split(".r2.dev/");
+    return `/api/media/${parts[1]}`;
+  }
+  return url;
+}
+
+/**
+ * Hapus object dari Cloudflare R2 berdasarkan URL atau key.
+ */
+export async function deleteFromR2(urlOrKey: string): Promise<boolean> {
+  try {
+    let key = urlOrKey;
+    if (urlOrKey.startsWith("/api/media/")) {
+      key = urlOrKey.replace(/^\/api\/media\//, "");
+    } else {
+      const endpoint = process.env.R2_ENDPOINT ?? "";
+      if (endpoint && urlOrKey.startsWith(endpoint)) {
+        key = urlOrKey.substring(endpoint.length).replace(/^\//, "");
+      } else if (urlOrKey.startsWith("http")) {
+        const url = new URL(urlOrKey);
+        key = url.pathname.replace(/^\//, "");
+      }
+    }
+
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME ?? "",
+      Key: key,
+    });
+
+    await r2Client.send(command);
+    return true;
+  } catch (error) {
+    console.error("Gagal menghapus file dari R2:", error);
+    return false;
+  }
+}
+
+/**
+ * Optimasi gambar sebelum upload:
+ * - Resize max 1200px (lebar) agar tidak terlalu besar
+ * - Konversi ke WebP, quality 75
+ * - Pastikan ukuran akhir < 500 KB
+ */
+export async function optimizeImage(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer)
+    .resize({ width: 1200, withoutEnlargement: true })
+    .webp({ quality: 75 })
+    .toBuffer();
+}
+
+/**
+ * Upload buffer ke Cloudflare R2 dan kembalikan URL internal proxy.
+ * @param buffer  - gambar yang sudah dioptimasi
+ * @param key     - path di bucket (misal: setor-sampah/timbangan/uuid.webp)
+ * @returns internal proxy URL (/api/media/...)
+ */
+export async function uploadToR2(buffer: Buffer, key: string): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME ?? "",
+    Key: key,
+    Body: buffer,
+    ContentType: "image/webp",
+    CacheControl: "public, max-age=31536000, immutable",
+  });
+
+  await r2Client.send(command);
+  return `/api/media/${key}`;
+}
+
+/**
+ * Upload gambar ke R2 dengan optimasi otomatis.
+ * @param imageData - base64 string atau Buffer
+ * @param folder    - sub-folder di bucket (contoh: "timbangan" atau "bukti")
+ * @param filename  - nama file tanpa ekstensi
+ * @returns internal proxy URL
+ */
+export async function uploadImageToR2(
+  imageData: string | Buffer,
+  folder: string,
+  filename: string,
+): Promise<string> {
+  const rawBuffer =
+    typeof imageData === "string"
+      ? Buffer.from(imageData.replace(/^data:image\/\w+;base64,/, ""), "base64")
+      : imageData;
+
+  const optimized = await optimizeImage(rawBuffer);
+  const key = `setor-sampah/${folder}/${filename}.webp`;
+  return uploadToR2(optimized, key);
+}
+
+/**
+ * Upload video (MP4/WebM) ke Cloudflare R2 tanpa kompresi gambar sharp.
+ */
+export async function uploadVideoToR2(
+  videoData: string | Buffer,
+  filename: string,
+  contentType: string = "video/mp4",
+): Promise<string> {
+  const rawBuffer =
+    typeof videoData === "string"
+      ? Buffer.from(videoData.replace(/^data:video\/\w+;base64,/, ""), "base64")
+      : videoData;
+
+  const key = `videos/${filename}`;
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME ?? "",
+    Key: key,
+    Body: rawBuffer,
+    ContentType: contentType,
+    CacheControl: "public, max-age=31536000, immutable",
+  });
+
+  await r2Client.send(command);
+  return `/api/media/${key}`;
+}
+
+/**
+ * Upload dokumen PDF ke Cloudflare R2 tanpa sharp (menyimpan file binary PDF asli).
+ */
+export async function uploadPdfToR2(
+  pdfData: string | Buffer,
+  folder: string,
+  filename: string,
+): Promise<string> {
+  const rawBuffer =
+    typeof pdfData === "string"
+      ? Buffer.from(
+          pdfData.replace(/^data:application\/pdf;base64,/, ""),
+          "base64",
+        )
+      : pdfData;
+
+  const key = `dokumen/${folder}/${filename}.pdf`;
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME ?? "",
+    Key: key,
+    Body: rawBuffer,
+    ContentType: "application/pdf",
+    CacheControl: "public, max-age=31536000, immutable",
+  });
+
+  await r2Client.send(command);
+  return `/api/media/${key}`;
+}
