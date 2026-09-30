@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clock,
   Factory,
+  Gift,
   Layers,
   Plus,
   Scale,
@@ -227,14 +228,21 @@ export default function BankSampahBDashboardPage() {
           <div className="flex flex-wrap gap-2.5 shrink-0">
             <Link
               href="/setor-sampah/bank-sampah-b-setor"
-              className="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all"
+              className="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Jemput Sampah Baru</span>
             </Link>
             <Link
+              href="/tukar-reward/bank-sampah-b-tukar-reward"
+              className="px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <Gift className="w-4 h-4" />
+              <span>Tukar Reward</span>
+            </Link>
+            <Link
               href="/laporan/bank-sampah-b-laporan"
-              className="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2"
+              className="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
             >
               <BarChart3 className="w-4 h-4" />
               <span>Laporan Setoran</span>
@@ -249,24 +257,33 @@ export default function BankSampahBDashboardPage() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
       >
         {/* Saldo Poin */}
-        <div className="bg-white rounded-2xl p-5 border border-neutral-200/80 shadow-xs relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
-              Total Poin Reward
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
-              <Sparkles className="w-5 h-5" />
+        <div className="bg-white rounded-2xl p-5 border border-neutral-200/80 shadow-xs relative overflow-hidden group flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                Total Poin Reward
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                <Sparkles className="w-5 h-5" />
+              </div>
             </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-neutral-900">
+                <AnimatedCounter value={stats.totalPoin} />
+              </span>
+              <span className="text-xs font-bold text-amber-600">POIN</span>
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-1">
+              Reward instan siap digunakan
+            </p>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-neutral-900">
-              <AnimatedCounter value={stats.totalPoin} />
-            </span>
-            <span className="text-xs font-bold text-amber-600">POIN</span>
-          </div>
-          <p className="text-[11px] text-neutral-400 mt-1">
-            Reward instan siap digunakan
-          </p>
+          <Link
+            href="/tukar-reward/bank-sampah-b-tukar-reward"
+            className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+          >
+            <span>Tukar Hadiah</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* Total Sampah Dijemput */}

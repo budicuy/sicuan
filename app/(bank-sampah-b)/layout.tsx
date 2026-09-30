@@ -71,6 +71,12 @@ export default async function BankSampahBLayout({ children }: LayoutProps) {
       },
       {
         type: "link",
+        href: "/tukar-reward/bank-sampah-b-tukar-reward",
+        label: "Tukar Reward",
+        icon: "Gift",
+      },
+      {
+        type: "link",
         href: "/laporan/bank-sampah-b-laporan",
         label: "Laporan Setoran",
         icon: "FileText",

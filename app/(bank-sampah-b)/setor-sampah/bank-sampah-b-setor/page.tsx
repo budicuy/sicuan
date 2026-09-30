@@ -59,9 +59,9 @@ const tourSteps = [
   {
     element: "#tour-bank-b-berat",
     popover: {
-      title: "Timbangan & Foto Timbangan",
+      title: "Timbangan & Deteksi AI",
       description:
-        "Masukkan berat sampah dalam kilogram dan unggah foto timbangan yang jelas. Anda juga dapat menggunakan bantuan AI untuk membaca angka timbangan secara otomatis.",
+        "Unggah foto timbangan Anda. AI akan secara otomatis mendeteksi berat sampah. Jika AI gagal mendeteksi, Anda dapat mengajukan validasi manual ke admin.",
       side: "top" as const,
     },
   },
@@ -265,13 +265,13 @@ export default function BankSampahBSetorPage() {
   const [wastePoints, setWastePoints] = useState<Record<string, number>>({});
   const [isAiDisabled, setIsAiDisabled] = useState(false);
 
-  // States
+  // States AI & Validasi Manual
   const [showCamera, setShowCamera] = useState(false);
-  const [isAiValidating, setIsAiValidating] = useState(false);
-  const [aiMessage, setAiMessage] = useState<{
-    type: "success" | "warning" | "error";
-    text: string;
-  } | null>(null);
+  const [isValidatingAI, setIsValidatingAI] = useState(false);
+  const [aiValidated, setAiValidated] = useState(false);
+  const [isWeightConfirmed, setIsWeightConfirmed] = useState(false);
+  const [requestManual, setRequestManual] = useState(false);
+  const [aiError, setAiError] = useState("");
 
   const [isSubmitting, startTransition] = useTransition();
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
@@ -289,20 +289,59 @@ export default function BankSampahBSetorPage() {
 
   useEffect(() => {
     getWastePoints().then(setWastePoints);
-    checkAiDisabled("bank-sampah-b").then(setIsAiDisabled);
+    checkAiDisabled("bank-sampah-b").then((disabled) => {
+      setIsAiDisabled(disabled);
+      if (disabled) {
+        setRequestManual(true);
+      }
+    });
   }, []);
 
   const pointPerKg = wastePoints[jenisSampah] || 0;
   const parsedBerat = Number.parseFloat(beratKg) || 0;
   const estimatedPoin = Math.floor(parsedBerat * pointPerKg);
 
-  const handleFotoTimbanganUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const runAiDetection = async (imgBase64: string) => {
+    setIsValidatingAI(true);
+    setAiError("");
+    setAiValidated(false);
+    setIsWeightConfirmed(false);
 
     try {
+      const result = await validateFotoTimbangan(imgBase64);
+      setIsValidatingAI(false);
+
+      if (result.success && result.berat > 0) {
+        setAiValidated(true);
+        setBeratAiKg(String(result.berat));
+        setBeratKg(String(result.berat));
+      } else {
+        setBeratAiKg("");
+        setBeratKg("");
+        setAiError(
+          result.message ||
+            "AI tidak dapat membaca angka timbangan. Pastikan foto timbangan jelas dan angka terlihat.",
+        );
+      }
+    } catch (_err) {
+      setIsValidatingAI(false);
+      setBeratAiKg("");
+      setBeratKg("");
+      setAiError("Terjadi kendala saat membaca foto timbangan dengan AI.");
+    }
+  };
+
+  const processTimbanganImage = async (dataUrlOrFile: File | string) => {
+    try {
+      let file: File;
+      if (typeof dataUrlOrFile === "string") {
+        const res = await fetch(dataUrlOrFile);
+        const blob = await res.blob();
+        file = new File([blob], "timbangan.jpg", { type: "image/jpeg" });
+      } else {
+        file = dataUrlOrFile;
+      }
+
       const options = {
         maxSizeMB: 0.2,
         maxWidthOrHeight: 1200,
@@ -311,13 +350,47 @@ export default function BankSampahBSetorPage() {
       const compressed = await imageCompression(file, options);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFotoTimbangan(reader.result as string);
-        setAiMessage(null);
+        const base64 = reader.result as string;
+        setFotoTimbangan(base64);
+        setAiValidated(false);
+        setAiError("");
+        setBeratAiKg("");
+        setIsWeightConfirmed(false);
+        setRequestManual(false);
+
+        if (isAiDisabled) {
+          setRequestManual(true);
+        } else {
+          runAiDetection(base64);
+        }
       };
       reader.readAsDataURL(compressed);
     } catch (err) {
       console.error("Gagal kompres gambar timbangan:", err);
     }
+  };
+
+  const handleFotoTimbanganUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processTimbanganImage(file);
+  };
+
+  const handleCameraCapture = (dataUrl: string) => {
+    setShowCamera(false);
+    processTimbanganImage(dataUrl);
+  };
+
+  const resetFotoTimbangan = () => {
+    setFotoTimbangan("");
+    setBeratAiKg("");
+    setBeratKg("");
+    setAiValidated(false);
+    setIsWeightConfirmed(false);
+    setRequestManual(false);
+    setAiError("");
   };
 
   const handleBuktiTambahanUpload = async (
@@ -358,59 +431,28 @@ export default function BankSampahBSetorPage() {
     setFotoBuktiTambahan((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAiCheck = async () => {
-    if (!fotoTimbangan) {
-      setAiMessage({
-        type: "error",
-        text: "Silakan unggah foto timbangan terlebih dahulu.",
-      });
-      return;
-    }
-    const currentWeight = Number.parseFloat(beratKg) || 0;
-    if (currentWeight <= 0) {
-      setAiMessage({
-        type: "error",
-        text: "Masukkan angka berat manual terlebih dahulu sebelum memvalidasi AI.",
-      });
-      return;
-    }
-
-    setIsAiValidating(true);
-    setAiMessage(null);
-    try {
-      const res = await validateFotoTimbangan(fotoTimbangan, currentWeight);
-      if (res.detectedWeight) {
-        setBeratAiKg(String(res.detectedWeight));
-      }
-
-      if (res.isValid) {
-        setAiMessage({
-          type: "success",
-          text: `Validasi AI Sukses: Angka terbaca ${res.detectedWeight} kg (Toleransi selisih sesuai).`,
-        });
-      } else {
-        setAiMessage({
-          type: "warning",
-          text:
-            res.message || "Angka timbangan terbaca berbeda dengan input Anda.",
-        });
-      }
-    } catch {
-      setAiMessage({
-        type: "error",
-        text: "Terjadi kendala saat menganalisis foto timbangan via AI.",
-      });
-    } finally {
-      setIsAiValidating(false);
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormErrors({});
 
     if (!fotoTimbangan) {
       setFormErrors({ fotoTimbangan: ["Foto timbangan wajib diunggah."] });
+      return;
+    }
+
+    if (!isWeightConfirmed && !requestManual) {
+      setFormErrors({
+        fotoTimbangan: [
+          "Mohon konfirmasi berat hasil AI atau ajukan validasi manual ke admin terlebih dahulu.",
+        ],
+      });
+      return;
+    }
+
+    if (requestManual && (!beratKg || Number.parseFloat(beratKg) <= 0)) {
+      setFormErrors({
+        beratKg: ["Isi berat sampah aktual secara manual terlebih dahulu."],
+      });
       return;
     }
 
@@ -427,6 +469,10 @@ export default function BankSampahBSetorPage() {
     formData.append("tanggalSetor", tanggalSetor);
     formData.append("catatan", catatan);
     formData.append("fotoTimbangan", fotoTimbangan);
+    formData.append(
+      "requestManualValidation",
+      requestManual ? "true" : "false",
+    );
 
     for (const img of fotoBuktiTambahan) {
       formData.append("fotoBuktiTambahan", img);
@@ -442,18 +488,19 @@ export default function BankSampahBSetorPage() {
         setFeedback({
           isOpen: true,
           type: "success",
-          title: "Penjemputan Berhasil Disimpan!",
+          title: requestManual
+            ? "Penjemputan Sampah Diajukan!"
+            : "Penjemputan Berhasil Disimpan!",
           message:
             res.message ||
-            `Sampah ${jenisSampah} seberat ${beratKg} kg dari ${sumberSampah} berhasil dicatat dan menghasilkan +${estimatedPoin} Poin.`,
+            (requestManual
+              ? `Sampah ${jenisSampah} seberat ${beratKg} kg dari ${sumberSampah} berhasil diajukan untuk validasi manual Admin.`
+              : `Sampah ${jenisSampah} seberat ${beratKg} kg dari ${sumberSampah} berhasil dicatat dan menghasilkan +${estimatedPoin} Poin.`),
         });
         // Reset form
-        setBeratKg("");
-        setBeratAiKg("");
+        resetFotoTimbangan();
         setCatatan("");
-        setFotoTimbangan("");
         setFotoBuktiTambahan([]);
-        setAiMessage(null);
       } else {
         if (res.errors) {
           setFormErrors(res.errors);
@@ -654,7 +701,7 @@ export default function BankSampahBSetorPage() {
           </div>
         </div>
 
-        {/* Step 3: Timbangan & Foto Timbangan */}
+        {/* Step 3: Timbangan & Tanggal Penjemputan */}
         <div
           id="tour-bank-b-berat"
           className="bg-white rounded-3xl p-6 border border-neutral-200/80 shadow-sm space-y-6"
@@ -670,101 +717,253 @@ export default function BankSampahBSetorPage() {
                   <span className="text-red-500">*</span>
                 </h3>
                 <p className="text-xs text-neutral-500">
-                  Input berat aktual dan unggah foto skala timbangan
+                  Unggah foto skala timbangan untuk deteksi otomatis berat
+                  sampah oleh AI
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label
-                htmlFor="input-berat-b"
-                className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
-              >
-                Berat Sampah (kg) <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="input-berat-b"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  required
-                  value={beratKg}
-                  onChange={(e) => setBeratKg(e.target.value)}
-                  placeholder="Contoh: 15.5"
-                  className="w-full pl-3.5 pr-12 py-2.5 rounded-xl border border-neutral-200 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">
-                  KG
-                </span>
-              </div>
-              {formErrors.beratKg && (
-                <p className="text-xs text-red-600">{formErrors.beratKg[0]}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="input-tanggal-b"
-                className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
-              >
-                Tanggal Penjemputan <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="input-tanggal-b"
-                type="date"
-                required
-                value={tanggalSetor}
-                onChange={(e) => setTanggalSetor(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label
+              htmlFor="input-tanggal-b"
+              className="text-xs font-bold text-neutral-700 uppercase tracking-wider block"
+            >
+              Tanggal Penjemputan <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="input-tanggal-b"
+              type="date"
+              required
+              value={tanggalSetor}
+              onChange={(e) => setTanggalSetor(e.target.value)}
+              className="w-full sm:w-72 px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+            />
           </div>
 
           {/* Foto Timbangan Upload & Camera */}
-          <div className="space-y-3 pt-2 border-t border-neutral-100">
+          <div className="space-y-4 pt-2 border-t border-neutral-100">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
-                Foto Timbangan <span className="text-red-500">*</span>
+                Foto Skala Timbangan <span className="text-red-500">*</span>
               </span>
-              {!isAiDisabled && fotoTimbangan && (
-                <button
-                  type="button"
-                  onClick={handleAiCheck}
-                  disabled={isAiValidating}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-bold border border-violet-200 cursor-pointer transition-colors"
-                >
-                  {isAiValidating ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5 text-violet-600" />
-                  )}
-                  <span>Validasi Timbangan AI</span>
-                </button>
-              )}
+              <span className="text-[11px] text-neutral-500 font-medium">
+                AI akan membaca angka berat secara otomatis
+              </span>
             </div>
 
             {fotoTimbangan ? (
-              <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-900 max-w-sm">
-                <Image
-                  src={fotoTimbangan}
-                  alt="Foto Timbangan"
-                  width={400}
-                  height={250}
-                  className="w-full h-48 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFotoTimbangan("");
-                    setAiMessage(null);
-                  }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <div className="space-y-4">
+                <div className="relative rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-900 max-w-sm">
+                  <Image
+                    src={fotoTimbangan}
+                    alt="Foto Timbangan"
+                    width={400}
+                    height={250}
+                    className="w-full h-48 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={resetFotoTimbangan}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Status AI: Loading */}
+                {isValidatingAI && (
+                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-blue-900">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold">
+                        Mendeteksi berat dengan AI...
+                      </p>
+                      <p className="text-[11px] text-blue-700/80">
+                        Memindai angka dan jarum skala timbangan dari gambar.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status AI: Berhasil */}
+                {aiValidated && !requestManual && (
+                  <div className="space-y-3">
+                    {!isWeightConfirmed ? (
+                      <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 space-y-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+                            <Sparkles className="w-4.5 h-4.5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-emerald-950">
+                              Berat Terdeteksi AI:{" "}
+                              <span className="text-sm font-black text-emerald-700">
+                                {beratAiKg} kg
+                              </span>
+                            </span>
+                            <p className="text-[11px] text-emerald-700">
+                              Apakah angka timbangan yang terdeteksi ini sudah
+                              sesuai?
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setIsWeightConfirmed(true)}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-sm shadow-emerald-600/20"
+                          >
+                            Konfirmasi Berat ({beratAiKg} kg)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (fotoTimbangan) runAiDetection(fotoTimbangan);
+                            }}
+                            disabled={isValidatingAI}
+                            className="px-3.5 py-2 rounded-xl border border-neutral-300 hover:bg-white text-neutral-700 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            Deteksi Ulang
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200">
+                        <span className="text-xs text-emerald-900 font-bold flex items-center gap-2">
+                          <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                          Berat Dikonfirmasi: <strong>{beratAiKg} kg</strong>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsWeightConfirmed(false)}
+                          className="text-xs text-neutral-500 hover:text-neutral-800 underline font-medium cursor-pointer"
+                        >
+                          Ubah / Deteksi Ulang
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Status AI: Gagal */}
+                {aiError && !aiValidated && !requestManual && (
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4.5 h-4.5 text-red-600 shrink-0" />
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Deteksi AI Gagal
+                        </span>
+                      </div>
+                      <p className="text-xs leading-relaxed">{aiError}</p>
+                      <p className="text-xs font-semibold text-red-600">
+                        Silakan coba deteksi ulang atau ajukan validasi manual
+                        di bawah jika jarum/angka sulit terbaca.
+                      </p>
+                      <div className="flex items-center gap-3 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (fotoTimbangan) runAiDetection(fotoTimbangan);
+                          }}
+                          disabled={isValidatingAI}
+                          className="px-3.5 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-800 text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Coba Deteksi Ulang
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Checkbox Ajukan Validasi Manual ke Admin */}
+                    <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+                      <input
+                        type="checkbox"
+                        id="requestManual"
+                        checked={requestManual}
+                        onChange={(e) => {
+                          setRequestManual(e.target.checked);
+                          if (!e.target.checked) setBeratKg("");
+                        }}
+                        className="w-4 h-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500 cursor-pointer mt-0.5 shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <label
+                          htmlFor="requestManual"
+                          className="text-xs text-amber-900 font-bold cursor-pointer"
+                        >
+                          Ajukan Validasi Manual ke Admin
+                        </label>
+                        <span className="text-[11px] text-amber-700 mt-0.5 leading-snug">
+                          Jika AI gagal mendeteksi, centang opsi ini untuk
+                          menginput berat secara manual. Berat akan divalidasi
+                          oleh Admin dan poin dicairkan setelah disetujui.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Input Berat Manual (Hanya Tampil Jika Validasi Manual Aktif) */}
+                {requestManual && (
+                  <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                        Input Berat Manual (Validasi Admin)
+                      </span>
+                      {!isAiDisabled && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRequestManual(false);
+                            if (fotoTimbangan) runAiDetection(fotoTimbangan);
+                          }}
+                          className="text-[11px] text-amber-700 hover:text-amber-900 underline font-medium cursor-pointer"
+                        >
+                          Kembali ke Deteksi AI
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor="manual-berat-b"
+                        className="text-xs font-bold text-neutral-700 block"
+                      >
+                        Berat Sampah Aktual (kg){" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative max-w-xs">
+                        <input
+                          id="manual-berat-b"
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          required
+                          value={beratKg}
+                          onChange={(e) => setBeratKg(e.target.value)}
+                          placeholder="Contoh: 15.5"
+                          className="w-full pl-3.5 pr-12 py-2.5 rounded-xl border border-neutral-200 text-sm font-bold bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none"
+                        />
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">
+                          KG
+                        </span>
+                      </div>
+                      {formErrors.beratKg && (
+                        <p className="text-xs text-red-600">
+                          {formErrors.beratKg[0]}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-snug">
+                      💡 Status penjemputan akan disimpan sebagai{" "}
+                      <strong>&apos;Pending&apos;</strong>. Admin akan memeriksa
+                      foto timbangan dan mencairkan reward poin setelah
+                      disetujui.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -774,7 +973,7 @@ export default function BankSampahBSetorPage() {
                     Upload Foto Timbangan
                   </span>
                   <span className="text-[10px] text-neutral-400 mt-0.5">
-                    PNG, JPG hingga 10MB
+                    PNG, JPG hingga 10MB (AI mendeteksi otomatis)
                   </span>
                   <input
                     type="file"
@@ -794,26 +993,12 @@ export default function BankSampahBSetorPage() {
                     Buka Kamera Langsung
                   </span>
                   <span className="text-[10px] text-neutral-400 mt-0.5">
-                    Potret layar timbangan
+                    Potret layar/skala timbangan
                   </span>
                 </button>
               </div>
             )}
 
-            {aiMessage && (
-              <div
-                className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
-                  aiMessage.type === "success"
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                    : aiMessage.type === "warning"
-                      ? "bg-amber-50 border-amber-200 text-amber-800"
-                      : "bg-red-50 border-red-200 text-red-800"
-                }`}
-              >
-                <Sparkles className="w-4 h-4 shrink-0" />
-                <span>{aiMessage.text}</span>
-              </div>
-            )}
             {formErrors.fotoTimbangan && (
               <p className="text-xs text-red-600">
                 {formErrors.fotoTimbangan[0]}
@@ -916,19 +1101,27 @@ export default function BankSampahBSetorPage() {
         >
           <div className="space-y-1 text-center sm:text-left">
             <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
-              Estimasi Perolehan Reward
+              {requestManual
+                ? "Estimasi Reward (Validasi Manual)"
+                : "Estimasi Perolehan Reward"}
             </span>
             <div className="flex items-baseline justify-center sm:justify-start gap-2">
               <span className="text-3xl font-black text-white">
                 +{estimatedPoin}
               </span>
               <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
-                Poin Langsung
+                {requestManual ? "Poin (Pending Admin)" : "Poin Langsung"}
               </span>
             </div>
             <p className="text-[11px] text-neutral-400">
-              {parsedBerat} kg × {pointPerKg} poin/kg ({jenisSampah} dari{" "}
-              {sumberSampah})
+              {parsedBerat > 0 ? (
+                <>
+                  {parsedBerat} kg × {pointPerKg} poin/kg ({jenisSampah} dari{" "}
+                  {sumberSampah})
+                </>
+              ) : (
+                "Unggah foto timbangan untuk membaca berat sampah"
+              )}
             </p>
           </div>
 
@@ -955,10 +1148,7 @@ export default function BankSampahBSetorPage() {
       {/* Camera Capture Modal */}
       {showCamera && (
         <CameraCapture
-          onCapture={(dataUrl) => {
-            setFotoTimbangan(dataUrl);
-            setAiMessage(null);
-          }}
+          onCapture={handleCameraCapture}
           onClose={() => setShowCamera(false)}
         />
       )}

@@ -5,10 +5,7 @@ import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import {
-  readWeightFromImage,
-  validateBeratTolerance,
-} from "@/app/lib/gemini-weight-reader";
+import { readWeightFromImage } from "@/app/lib/gemini-weight-reader";
 import { calculateSetoranReward } from "@/app/lib/pricing";
 import { uploadImageToR2 } from "@/app/lib/r2";
 import { getNextNomorUrut } from "@/app/lib/setor-helper";
@@ -61,13 +58,10 @@ export async function getWastePoints() {
   }
 }
 
-export async function validateFotoTimbangan(
-  base64Image: string,
-  inputBerat: number,
-): Promise<{
-  isValid: boolean;
+export async function validateFotoTimbangan(base64Image: string): Promise<{
+  success: boolean;
+  berat: number;
   message: string;
-  detectedWeight?: number;
 }> {
   try {
     const readResult = await readWeightFromImage(base64Image);
@@ -75,29 +69,28 @@ export async function validateFotoTimbangan(
     if (
       !readResult.success ||
       readResult.berat === null ||
-      readResult.berat === undefined
+      readResult.berat === undefined ||
+      readResult.berat <= 0
     ) {
       return {
-        isValid: false,
+        success: false,
+        berat: 0,
         message:
           readResult.message ||
           "AI tidak dapat mendeteksi angka timbangan dengan jelas. Pastikan foto fokus dan angka timbangan terlihat terang.",
       };
     }
 
-    const isValid = await validateBeratTolerance(inputBerat, readResult.berat);
-
     return {
-      isValid,
-      message: isValid
-        ? "Berat sesuai dengan pembacaan AI timbangan."
-        : `Berat yang diinput (${inputBerat} kg) tidak cocok dengan hasil bacaan timbangan AI (${readResult.berat} kg).`,
-      detectedWeight: readResult.berat,
+      success: true,
+      berat: readResult.berat,
+      message: "Berat timbangan berhasil dideteksi oleh AI.",
     };
   } catch (error) {
     console.error("Validasi AI foto timbangan gagal:", error);
     return {
-      isValid: false,
+      success: false,
+      berat: 0,
       message: "Terjadi gangguan saat memvalidasi foto timbangan via AI.",
     };
   }
@@ -123,6 +116,7 @@ export async function submitJemputSampah(
   const tanggalSetor = formData.get("tanggalSetor") as string;
   const sumberSampah = formData.get("sumberSampah") as JenisSumberSampah;
   const fotoTimbanganBase64 = formData.get("fotoTimbangan") as string;
+  const isManualValidation = formData.get("requestManualValidation") === "true";
   const fotoBuktiTambahanBase64 = formData.getAll(
     "fotoBuktiTambahan",
   ) as string[];
@@ -199,32 +193,41 @@ export async function submitJemputSampah(
     const nextUrut = await getNextNomorUrut();
     const nomorSetor = String(nextUrut);
 
-    // Simpan ke DB dengan status diterima langsung & reward poin
+    // Tentukan status setoran:
+    // Jika AI sukses -> langsung 'diterima' & poin langsung bertambah
+    // Jika manual validation diajukan ke admin -> 'pending' & poin bertambah setelah disetujui admin
+    const finalStatus = isManualValidation ? "pending" : "diterima";
+
     await db.transaction(async (tx) => {
       await tx.insert(setorSampah).values({
         nomorSetor,
         userId: user.id,
         jenisSampah: jenisSampah as "Karton" | "Etiket" | "Paper Cup",
         beratKg,
-        beratAiKg: beratAiKgRaw ? Number.parseFloat(beratAiKgRaw) : null,
+        beratAiKg:
+          !isManualValidation && beratAiKgRaw
+            ? Number.parseFloat(beratAiKgRaw)
+            : null,
         tanggalSetor,
         fotoTimbangan: fotoTimbanganUrl,
         fotoBuktiTambahan: fotoBuktiUrls,
         catatan,
-        totalPoin,
-        status: "diterima",
+        totalPoin: isManualValidation ? 0 : totalPoin,
+        status: finalStatus,
         kategoriNasabah: "bank-sampah-b",
         sumberSampah,
       });
 
-      // Tambahkan poin ke profil nasabah
-      await tx
-        .update(nasabah)
-        .set({
-          poin: sql`COALESCE(${nasabah.poin}, 0) + ${totalPoin}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(nasabah.id, user.id));
+      // Tambahkan poin ke profil nasabah HANYA jika langsung diterima (validasi AI)
+      if (!isManualValidation) {
+        await tx
+          .update(nasabah)
+          .set({
+            poin: sql`COALESCE(${nasabah.poin}, 0) + ${totalPoin}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(nasabah.id, user.id));
+      }
     });
 
     revalidatePath("/dashboard/bank-sampah-b-dashboard");
@@ -233,7 +236,9 @@ export async function submitJemputSampah(
 
     return {
       success: true,
-      message: `Setoran penjemputan berhasil dicatat! Anda mendapatkan +${totalPoin} Poin.`,
+      message: isManualValidation
+        ? "Setoran penjemputan berhasil diajukan untuk validasi manual oleh Admin! Poin reward akan masuk setelah diverifikasi."
+        : `Setoran penjemputan berhasil diverifikasi AI dan dicatat! Anda mendapatkan +${totalPoin} Poin.`,
     };
   } catch (error) {
     console.error("Gagal submit jemput sampah Tipe B:", error);
