@@ -52,6 +52,7 @@ export default async function KonsumenLayout({ children }: LayoutProps) {
     { href: "/setor-sampah", label: "Setor Sampah", icon: "ShoppingBag" },
     { href: "/tukar-kupon", label: "Tukar Reward", icon: "Gift" },
     { href: "/profil", label: "Profil Saya", icon: "User" },
+    { href: "/peta-sampah/konsumen", label: "Peta Sampah", icon: "Map" },
   ];
 
   return (

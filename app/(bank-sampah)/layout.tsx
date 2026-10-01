@@ -139,6 +139,12 @@ export default async function BankSampahLayout({ children }: LayoutProps) {
         label: "Profil Saya",
         icon: "User",
       },
+      {
+        type: "link",
+        href: "/peta-sampah/bank-sampah",
+        label: "Peta Sampah",
+        icon: "Map",
+      },
     ];
 
   return (

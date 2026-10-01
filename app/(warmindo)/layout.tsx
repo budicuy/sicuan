@@ -93,6 +93,7 @@ export default async function WarmindoLayout({ children }: LayoutProps) {
       icon: "Gift",
     },
     { href: "/profil/warmindo-profil", label: "Profil Saya", icon: "User" },
+    { href: "/peta-sampah/warmindo", label: "Peta Sampah", icon: "Map" },
   ];
 
   return (
