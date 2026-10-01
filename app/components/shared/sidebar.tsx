@@ -622,7 +622,7 @@ export function SidebarLayout({
 
         <main
           className={
-            pathname?.startsWith("/peta-sampah")
+            pathname === "/peta-sampah"
               ? "flex-1 w-full relative min-h-0 flex flex-col"
               : "flex-1 p-4 sm:p-6 lg:p-8 w-full"
           }

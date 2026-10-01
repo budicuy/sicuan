@@ -93,34 +93,34 @@ export function PetaVisualGambarAlur({
     data.steps.find((s) => s.stepNumber === selectedStation) || data.steps[0];
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       {/* Tour Guide System */}
       <TourGuide steps={tourSteps} />
 
       {/* ══════════════════════════════════════════════════════════════════════════════
-          1. TAMPILAN WEB INTERAKTIF (DISEMBUNYIKAN SAAT DICETAK KE PDF)
+          1. TAMPILAN WEB INTERAKTIF (CLEAN WHITE MODERN - KONSISTEN DENGAN PORTAL)
       ══════════════════════════════════════════════════════════════════════════════ */}
       <div className="space-y-6 print:hidden">
         {/* ── HEADER HALAMAN ── */}
         <div
           id="tour-visual-header"
-          className="flex flex-col gap-4 rounded-3xl border border-neutral-200/80 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800 dark:bg-neutral-900"
+          className="flex flex-col gap-4 rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-xs sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                <Sparkles className="h-3.5 w-3.5" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-xs font-bold text-emerald-800">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
                 {data.badgeLabel}
               </span>
-              <span className="text-xs text-neutral-400">•</span>
-              <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+              <span className="text-xs text-neutral-300">•</span>
+              <span className="text-xs font-semibold text-neutral-600">
                 Mitra: {userName || "Pengguna SiCuan"}
               </span>
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-3xl">
+            <h1 className="text-2xl font-black tracking-tight text-neutral-900 sm:text-3xl">
               {data.title}
             </h1>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-3xl">
+            <p className="text-sm text-neutral-500 max-w-3xl leading-relaxed">
               Infografis visual alur perjalanan sampah kemasan mi instan dari
               hulu hingga hilir menjadi reward sembako dan cuan resmi PT
               Indofood CBP Sukses Makmur Tbk.
@@ -130,13 +130,13 @@ export function PetaVisualGambarAlur({
           {/* Action Buttons */}
           <div
             id="tour-visual-actions"
-            className="flex flex-wrap items-center gap-2.5"
+            className="flex flex-wrap items-center gap-2.5 shrink-0"
           >
             {/* Unduh Gambar Asli HD */}
             <button
               type="button"
               onClick={handleDownloadImage}
-              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all cursor-pointer"
             >
               <Download className="h-4 w-4" />
               Unduh Gambar (HD)
@@ -146,7 +146,7 @@ export function PetaVisualGambarAlur({
             <button
               type="button"
               onClick={() => setIsLightboxOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-neutral-700 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-neutral-700 shadow-xs hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer"
             >
               <Maximize2 className="h-4 w-4 text-neutral-500" />
               Perbesar
@@ -156,20 +156,21 @@ export function PetaVisualGambarAlur({
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-800 shadow-sm hover:bg-emerald-100 active:scale-95 transition-all dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 active:scale-95 transition-all cursor-pointer"
             >
-              <Printer className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <Printer className="h-4 w-4 text-emerald-600" />
               Cetak / Simpan PDF
             </button>
           </div>
         </div>
 
-        {/* ── HERO VISUAL GAMBAR ALUR SAMPAH KE REWARD (UTAMA) ── */}
+        {/* ── HERO VISUAL GAMBAR ALUR SAMPAH KE REWARD (FRAME CLEAN WHITE) ── */}
         <div
           id="tour-visual-hero-image"
-          className="group relative overflow-hidden rounded-3xl border border-neutral-200/90 bg-slate-950 p-2 shadow-xl dark:border-neutral-800"
+          className="group relative overflow-hidden rounded-3xl border border-neutral-200/90 bg-white p-3 sm:p-5 shadow-xs"
         >
-          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-slate-900">
+          {/* Frame Gambar dengan Latar Belakang Terang Bersih */}
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-neutral-50/50 border border-neutral-100">
             <Image
               src={imageSrc}
               alt="Peta Visual Alur Sampah dan Reward PT Indofood"
@@ -179,36 +180,39 @@ export function PetaVisualGambarAlur({
               className="object-contain transition-transform duration-500 group-hover:scale-[1.01]"
             />
 
+            {/* Tombol Overlay Perbesar Cepat */}
             <button
               type="button"
               onClick={() => setIsLightboxOpen(true)}
-              className="absolute top-4 right-4 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+              className="absolute top-4 right-4 flex items-center gap-1.5 rounded-xl bg-white/90 border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-md backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white cursor-pointer"
             >
-              <Maximize2 className="h-3.5 w-3.5" />
+              <Maximize2 className="h-3.5 w-3.5 text-neutral-600" />
               Perbesar Gambar
             </button>
 
-            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-xl bg-gradient-to-r from-black/80 via-black/60 to-transparent p-3 backdrop-blur-md text-white">
+            {/* Tagline Banner Bawah Bersih (Light Glass) */}
+            <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex items-center justify-between rounded-xl bg-white/95 border border-neutral-200/80 p-3 shadow-md backdrop-blur-md text-neutral-800">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 font-black text-xs text-neutral-950">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 font-black text-xs text-white shadow-xs">
                   5
                 </span>
                 <div>
-                  <p className="text-xs font-bold leading-tight">
-                    Alur Lengkap: Dari Warung & Konsumen Menuju Cuan Indofood
+                  <p className="text-xs font-bold leading-tight text-neutral-900">
+                    Alur Sirkular: Dari Sumber Sampah Menuju Reward & Cuan
+                    Indofood
                   </p>
-                  <p className="text-[10px] text-neutral-300">
-                    PT Indofood CBP Sukses Makmur Tbk x SiCuan
+                  <p className="text-[10px] text-neutral-500">
+                    Kemitraan Resmi PT Indofood CBP Sukses Makmur Tbk x SiCuan
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleDownloadImage}
-                className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300"
+                className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer"
               >
                 <Download className="h-3.5 w-3.5" />
-                Download JPG
+                Download JPG (HD)
               </button>
             </div>
           </div>
@@ -217,24 +221,25 @@ export function PetaVisualGambarAlur({
         {/* ── INTERAKTIF: PENJELASAN 5 STASIUN PADA GAMBAR ── */}
         <div
           id="tour-visual-role-steps"
-          className="rounded-3xl border border-neutral-200/80 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+          className="rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-xs"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-neutral-100 pb-4 dark:border-neutral-800">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-neutral-100 pb-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Panduan Detail Stasiun Gambar
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                Panduan Stasiun Gambar Alur
               </span>
-              <h3 className="text-lg font-black text-neutral-900 dark:text-white sm:text-xl">
-                5 Tahapan Perjalanan Sampah pada Gambar di Atas
+              <h3 className="text-lg font-black text-neutral-900 sm:text-xl">
+                5 Tahapan Perjalanan Sampah pada Infografis di Atas
               </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Klik stasiun untuk melihat aktivitas spesifik bagi peran{" "}
-                {data.badgeLabel}.
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Klik salah satu stasiun untuk melihat rincian aktivitas dan
+                manfaat bagi {data.badgeLabel}.
               </p>
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {/* 5 Tombol Tab Stasiun */}
+          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
             {data.steps.map((st) => {
               const isCurrent = selectedStation === st.stepNumber;
               return (
@@ -242,19 +247,19 @@ export function PetaVisualGambarAlur({
                   key={st.stepNumber}
                   type="button"
                   onClick={() => setSelectedStation(st.stepNumber)}
-                  className={`flex items-center gap-2.5 rounded-2xl border p-3 text-left transition-all ${
+                  className={`flex items-center gap-2.5 rounded-2xl border p-3 text-left transition-all cursor-pointer ${
                     isCurrent
-                      ? "border-emerald-500 bg-emerald-50/70 shadow-sm ring-2 ring-emerald-500/20 dark:border-emerald-400 dark:bg-emerald-950/30"
-                      : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800/40"
+                      ? "border-emerald-500 bg-emerald-50/80 shadow-xs ring-2 ring-emerald-500/20"
+                      : "border-neutral-200 bg-neutral-50/60 hover:bg-neutral-100/70"
                   }`}
                 >
                   <div
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-xs ${
                       st.stepNumber === 5
-                        ? "bg-amber-500 text-neutral-950"
+                        ? "bg-amber-500 text-white shadow-xs"
                         : isCurrent
-                          ? "bg-emerald-600 text-white"
-                          : "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : "bg-neutral-200 text-neutral-700"
                     }`}
                   >
                     {st.stepNumber}
@@ -263,7 +268,7 @@ export function PetaVisualGambarAlur({
                     <span className="block text-[10px] font-bold uppercase text-neutral-400">
                       Stasiun {st.stepNumber}
                     </span>
-                    <p className="truncate text-xs font-bold text-neutral-900 dark:text-white">
+                    <p className="truncate text-xs font-bold text-neutral-900">
                       {st.title.split(":")[0]}
                     </p>
                   </div>
@@ -272,56 +277,57 @@ export function PetaVisualGambarAlur({
             })}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-neutral-200/70 bg-neutral-50/80 p-5 dark:border-neutral-800 dark:bg-neutral-800/50">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-200/80 pb-3 dark:border-neutral-700">
+          {/* Panel Detail Stasiun Terpilih (Clean Light Container) */}
+          <div className="mt-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-200/70 pb-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 font-black text-white text-sm shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 font-black text-white text-sm shadow-xs">
                   {activeStep.stepNumber}
                 </span>
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
                     Stasiun {activeStep.stepNumber}: {activeStep.badgeText}
                   </span>
-                  <h4 className="text-base font-bold text-neutral-900 dark:text-white">
+                  <h4 className="text-base font-bold text-neutral-900">
                     {activeStep.title}
                   </h4>
                 </div>
               </div>
-              <span className="rounded-xl bg-white px-3 py-1 text-xs font-semibold text-neutral-700 shadow-sm border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-200">
+              <span className="rounded-xl bg-white px-3 py-1 text-xs font-semibold text-neutral-700 shadow-2xs border border-neutral-200">
                 📍 {activeStep.location}
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-xs">
-              <div className="rounded-xl bg-white p-3.5 border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800 space-y-1">
+              <div className="rounded-xl bg-white p-4 border border-neutral-200/80 shadow-2xs space-y-1">
                 <span className="text-[10px] font-bold uppercase text-neutral-400">
                   Pihak Terlibat
                 </span>
-                <p className="font-semibold text-neutral-900 dark:text-white text-sm">
+                <p className="font-semibold text-neutral-900 text-sm">
                   {activeStep.actor}
                 </p>
-                <p className="text-neutral-500 dark:text-neutral-400 text-[11px]">
+                <p className="text-neutral-500 text-[11px]">
                   Bertanggung jawab dalam kelancaran alur di titik ini.
                 </p>
               </div>
 
-              <div className="rounded-xl bg-emerald-50/80 p-3.5 border border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/60 space-y-1">
-                <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400">
+              <div className="rounded-xl bg-emerald-50/80 p-4 border border-emerald-200/80 shadow-2xs space-y-1">
+                <span className="text-[10px] font-bold uppercase text-emerald-800">
                   Perjalanan Fisik Sampah
                 </span>
-                <p className="text-emerald-950 dark:text-emerald-200 leading-relaxed">
+                <p className="text-emerald-950 leading-relaxed">
                   {activeStep.description}
                 </p>
               </div>
 
-              <div className="rounded-xl bg-amber-50/80 p-3.5 border border-amber-200/80 dark:bg-amber-950/20 dark:border-amber-800/60 space-y-1">
-                <span className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">
+              <div className="rounded-xl bg-amber-50/80 p-4 border border-amber-200/80 shadow-2xs space-y-1">
+                <span className="text-[10px] font-bold uppercase text-amber-800">
                   Nilai Reward & Cuan
                 </span>
-                <p className="font-bold text-amber-900 dark:text-amber-200 text-sm">
+                <p className="font-bold text-amber-900 text-sm">
                   {activeStep.rewardInfo || "Poin & Insentif Kemitraan"}
                 </p>
-                <p className="text-amber-800/80 dark:text-amber-300/80 text-[11px]">
+                <p className="text-amber-800/80 text-[11px]">
                   Dapat langsung ditukarkan di katalog resmi SiCuan.
                 </p>
               </div>
@@ -330,16 +336,16 @@ export function PetaVisualGambarAlur({
         </div>
 
         {/* ── KATALOG VISUAL REWARD PRODUK INDOFOOD ── */}
-        <div className="rounded-3xl border border-neutral-200/80 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-neutral-100 pb-4 dark:border-neutral-800">
+        <div className="rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-neutral-100 pb-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
                 Stasiun 5: Muara Cuan & Keuntungan
               </span>
-              <h3 className="text-lg font-black text-neutral-900 dark:text-white sm:text-xl">
+              <h3 className="text-lg font-black text-neutral-900 sm:text-xl">
                 Katalog Reward Resmi PT. Indofood CBP Sukses Makmur
               </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-500 mt-0.5">
                 Semua poin setoran dapat ditukarkan secara resmi menjadi produk
                 sembako dan insentif tunai.
               </p>
@@ -347,19 +353,19 @@ export function PetaVisualGambarAlur({
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-b from-amber-50/40 to-white p-4 dark:border-amber-900/40 dark:from-amber-950/20 dark:to-neutral-900">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white font-bold shadow-md shadow-amber-500/20">
+            <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-b from-amber-50/40 to-white p-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white font-bold shadow-xs">
                 <Gift className="h-6 w-6" />
               </div>
-              <h4 className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
+              <h4 className="mt-3 text-sm font-bold text-neutral-900">
                 Minyak Goreng Bimoli
               </h4>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-xs text-neutral-500">
                 Pouch 1 Liter & 2 Liter Spesial kemasan resmi Indofood untuk
                 kebutuhan gerai dan rumah tangga.
               </p>
-              <div className="mt-3 pt-2 border-t border-amber-100 dark:border-neutral-800 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+              <div className="mt-3 pt-2 border-t border-amber-100 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-amber-700">
                   Reward Terlaris
                 </span>
                 <span className="text-[10px] text-neutral-400">
@@ -368,19 +374,19 @@ export function PetaVisualGambarAlur({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-b from-blue-50/40 to-white p-4 dark:border-blue-900/40 dark:from-blue-950/20 dark:to-neutral-900">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20">
+            <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-b from-blue-50/40 to-white p-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white font-bold shadow-xs">
                 <Store className="h-6 w-6" />
               </div>
-              <h4 className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
+              <h4 className="mt-3 text-sm font-bold text-neutral-900">
                 Tepung Terigu Segitiga Biru
               </h4>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-xs text-neutral-500">
                 Tepung terigu serbaguna 1 kg Bogasari untuk bahan baku gorengan
                 dan olahan warung.
               </p>
-              <div className="mt-3 pt-2 border-t border-blue-100 dark:border-neutral-800 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400">
+              <div className="mt-3 pt-2 border-t border-blue-100 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-blue-700">
                   Bahan Pokok Usaha
                 </span>
                 <span className="text-[10px] text-neutral-400">
@@ -389,19 +395,19 @@ export function PetaVisualGambarAlur({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-emerald-50/40 to-white p-4 dark:border-emerald-900/40 dark:from-emerald-950/20 dark:to-neutral-900">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20">
+            <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-emerald-50/40 to-white p-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold shadow-xs">
                 <Recycle className="h-6 w-6" />
               </div>
-              <h4 className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
+              <h4 className="mt-3 text-sm font-bold text-neutral-900">
                 Kecap Indofood & Mi Instan
               </h4>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-xs text-neutral-500">
                 Karton mi instan Indomie dan botol kecap manis refill langsung
                 dari distributor pabrik.
               </p>
-              <div className="mt-3 pt-2 border-t border-emerald-100 dark:border-neutral-800 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+              <div className="mt-3 pt-2 border-t border-emerald-100 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-emerald-700">
                   Paling Diminati
                 </span>
                 <span className="text-[10px] text-neutral-400">
@@ -410,19 +416,19 @@ export function PetaVisualGambarAlur({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-purple-200/80 bg-gradient-to-b from-purple-50/40 to-white p-4 dark:border-purple-900/40 dark:from-purple-950/20 dark:to-neutral-900">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-600 text-white font-bold shadow-md shadow-purple-600/20">
+            <div className="rounded-2xl border border-purple-200/80 bg-gradient-to-b from-purple-50/40 to-white p-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-600 text-white font-bold shadow-xs">
                 <Wallet className="h-6 w-6" />
               </div>
-              <h4 className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
+              <h4 className="mt-3 text-sm font-bold text-neutral-900">
                 Saldo E-Wallet & Kas Bank
               </h4>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-xs text-neutral-500">
                 Cairkan poin menjadi saldo rupiah GoPay, OVO, DANA atau transfer
                 bank langsung.
               </p>
-              <div className="mt-3 pt-2 border-t border-purple-100 dark:border-neutral-800 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400">
+              <div className="mt-3 pt-2 border-t border-purple-100 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-purple-700">
                   Cuan Fleksibel
                 </span>
                 <span className="text-[10px] text-neutral-400">
@@ -439,9 +445,7 @@ export function PetaVisualGambarAlur({
           MUNCUL OTOMATIS SAAT WINDOW.PRINT() / CETAK PDF
       ══════════════════════════════════════════════════════════════════════════════ */}
       <div className="hidden print:block font-sans text-neutral-900 bg-white">
-        {/* ────────────────────────────────────────────────────────────────────────
-            HALAMAN 1: INFOGRAFIS UTAMA & IKHTISAR ALUR SIRKULAR
-        ──────────────────────────────────────────────────────────────────────── */}
+        {/* ── HALAMAN 1: INFOGRAFIS UTAMA & IKHTISAR ALUR SIRKULAR ── */}
         <div className="print-page-1 flex flex-col justify-between min-h-[96vh]">
           <div>
             {/* KOP RESMI DOKUMEN KEMITRAAN */}
@@ -515,7 +519,7 @@ export function PetaVisualGambarAlur({
               </p>
             </div>
 
-            {/* GAMBAR ALUR UTAMA (UKURAN PROPORSIONAL AGAR PAS SEMPURNA DI HALAMAN 1) */}
+            {/* GAMBAR ALUR UTAMA (UKURAN PROPORSIONAL PAS DI HALAMAN 1) */}
             <div className="my-2 border border-neutral-300 rounded-xl p-1.5 bg-neutral-50">
               <div className="relative aspect-[16/9] w-full max-h-[290px] overflow-hidden rounded-lg mx-auto">
                 <Image
@@ -596,9 +600,7 @@ export function PetaVisualGambarAlur({
           </div>
         </div>
 
-        {/* ────────────────────────────────────────────────────────────────────────
-            HALAMAN 2: MATRIKS DETAIL 5 STASIUN, KATALOG REWARD & PENGESAHAN
-        ──────────────────────────────────────────────────────────────────────── */}
+        {/* ── HALAMAN 2: MATRIKS DETAIL 5 STASIUN, KATALOG REWARD & PENGESAHAN ── */}
         <div className="print-page-2 flex flex-col justify-between min-h-[96vh]">
           <div>
             {/* RUNNING HEADER HALAMAN 2 */}
@@ -613,7 +615,7 @@ export function PetaVisualGambarAlur({
               </span>
             </div>
 
-            {/* TABEL RINCIAN 5 TAHAPAN (SEMUA 5 BARIS TAMPIL LENGKAP & UTUH DI HALAMAN 2) */}
+            {/* TABEL RINCIAN 5 TAHAPAN (SEMUA 5 BARIS TAMPIL LENGKAP DI HALAMAN 2) */}
             <div className="mb-4">
               <h3 className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 mb-1.5">
                 Tabel Spesifikasi & Alur Pelaksanaan 5 Stasiun:
@@ -805,7 +807,7 @@ export function PetaVisualGambarAlur({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
         >
           <div className="relative max-h-[92vh] max-w-6xl w-full flex flex-col items-center">
             <div className="flex w-full items-center justify-between pb-3 text-white">
@@ -819,7 +821,7 @@ export function PetaVisualGambarAlur({
                 <button
                   type="button"
                   onClick={handleDownloadImage}
-                  className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5"
+                  className="rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Unduh Gambar
@@ -827,14 +829,14 @@ export function PetaVisualGambarAlur({
                 <button
                   type="button"
                   onClick={() => setIsLightboxOpen(false)}
-                  className="rounded-xl bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+                  className="rounded-xl bg-white/20 p-2 text-white hover:bg-white/30 transition-colors cursor-pointer"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-black border border-white/10 shadow-2xl">
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-white border border-neutral-200 shadow-2xl">
               <Image
                 src={imageSrc}
                 alt="Peta Alur Sampah HD"
