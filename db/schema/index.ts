@@ -11,4 +11,5 @@ export * from "@/db/schema/relations";
 export * from "@/db/schema/reward-top-kontributor";
 export * from "@/db/schema/reward-warmindo";
 export * from "@/db/schema/setor-sampah";
+export * from "@/db/schema/surat-perjanjian";
 export * from "@/db/schema/video-post";

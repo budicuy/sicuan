@@ -1,10 +1,11 @@
 "use client";
 
-import { Truck } from "lucide-react";
+import { Recycle, Truck } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   createEkspedisi,
   deleteEkspedisi,
+  getBankSampahBList,
   getEkspedisi,
   updateEkspedisi,
 } from "@/app/(admin-superadmin)/ekspedisi/action";
@@ -53,7 +54,7 @@ const ekspedisiTourSteps = [
     popover: {
       title: "Pendaftaran Vendor Baru",
       description:
-        "Klik tombol 'Tambah Vendor' ini untuk mendaftarkan mitra jasa ekspedisi atau kurir baru ke dalam sistem SiCuan dengan mengisi nama vendor, kontak telepon, dan status aktifnya.",
+        "Klik tombol 'Tambah Vendor' ini untuk mendaftarkan mitra jasa ekspedisi reguler baru (seperti GoSend/Grab) atau mendaftarkan armada Bank Sampah Tipe B yang terhubung langsung dengan akun mitranya.",
       side: "left" as const,
     },
   },
@@ -95,6 +96,7 @@ export default function EkspedisiPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({
     status: "",
+    tipe: "",
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEkspedisi, setEditingEkspedisi] = useState<Ekspedisi | null>(
@@ -105,6 +107,24 @@ export default function EkspedisiPage() {
   const [globalError, setGlobalError] = useState("");
   const [sortBy, setSortBy] = useState<string>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // State Ekspedisi Bank Sampah Tipe B
+  const [bankSampahBList, setBankSampahBList] = useState<
+    Array<{
+      id: number;
+      name: string;
+      username: string;
+      noTelepon?: string | null;
+      alamat?: string | null;
+    }>
+  >([]);
+  const [tipeVendor, setTipeVendor] = useState<"reguler" | "bank-sampah-b">(
+    "reguler",
+  );
+  const [selectedBankSampahId, setSelectedBankSampahId] = useState<string>("");
+  const [formNamaVendor, setFormNamaVendor] = useState<string>("");
+  const [formNoTelepon, setFormNoTelepon] = useState<string>("");
+
   const [feedback, setFeedback] = useState<{
     isOpen: boolean;
     type: "success" | "error";
@@ -133,6 +153,7 @@ export default function EkspedisiPage() {
       limit: pageSize,
       search,
       status: filterValues.status,
+      tipe: filterValues.tipe,
       sortBy,
       sortOrder,
     }).then((res) => {
@@ -148,6 +169,7 @@ export default function EkspedisiPage() {
         setUserRole(user.role);
       }
     });
+    getBankSampahBList().then(setBankSampahBList);
   }, [refreshData]);
 
   const handleSort = (key: string) => {
@@ -168,6 +190,10 @@ export default function EkspedisiPage() {
 
   const handleOpenAddModal = () => {
     setEditingEkspedisi(null);
+    setTipeVendor("reguler");
+    setSelectedBankSampahId("");
+    setFormNamaVendor("");
+    setFormNoTelepon("");
     setFormErrors({});
     setGlobalError("");
     setModalOpen(true);
@@ -175,6 +201,12 @@ export default function EkspedisiPage() {
 
   const handleOpenEditModal = (item: Ekspedisi) => {
     setEditingEkspedisi(item);
+    const itemTipe =
+      item.tipe === "bank-sampah-b" ? "bank-sampah-b" : "reguler";
+    setTipeVendor(itemTipe);
+    setSelectedBankSampahId(item.bankSampahId ? String(item.bankSampahId) : "");
+    setFormNamaVendor(item.namaVendor);
+    setFormNoTelepon(item.noTelepon);
     setFormErrors({});
     setGlobalError("");
     setModalOpen(true);
@@ -250,17 +282,37 @@ export default function EkspedisiPage() {
       header: "Nama Vendor Ekspedisi",
       sortKey: "namaVendor",
       render: (item) => (
-        <span className="font-semibold text-neutral-900">
-          {item.namaVendor}
-        </span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-neutral-900 text-xs sm:text-sm">
+              {item.namaVendor}
+            </span>
+            {item.tipe === "bank-sampah-b" ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Recycle className="w-3 h-3 text-emerald-600" />
+                Bank Sampah Tipe B
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200">
+                <Truck className="w-3 h-3 text-neutral-500" />
+                Vendor Reguler
+              </span>
+            )}
+          </div>
+          {item.bankSampah?.alamat && (
+            <span className="text-[11px] text-neutral-500 block">
+              📍 {item.bankSampah.alamat}
+            </span>
+          )}
+        </div>
       ),
     },
     {
       header: "Nomor Telepon Vendor",
       sortKey: "noTelepon",
       render: (item) => (
-        <span className="text-neutral-600 font-mono text-xs">
-          {item.noTelepon}
+        <span className="text-neutral-600 font-mono text-xs font-semibold">
+          {item.noTelepon || "-"}
         </span>
       ),
     },
@@ -286,6 +338,15 @@ export default function EkspedisiPage() {
         { label: "Nonaktif", value: "Nonaktif" },
       ],
       filterFn: (item, val) => item.status === val,
+    },
+    {
+      id: "tipe",
+      label: "Tipe Vendor",
+      options: [
+        { label: "Vendor Reguler", value: "reguler" },
+        { label: "Bank Sampah Tipe B", value: "bank-sampah-b" },
+      ],
+      filterFn: (item, val) => item.tipe === val,
     },
   ];
 
@@ -367,71 +428,204 @@ export default function EkspedisiPage() {
         isPending={isPending}
         globalError={globalError}
       >
-        <div>
-          <label
-            htmlFor="namaVendor-input"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Nama Vendor Ekspedisi
-          </label>
-          <input
-            id="namaVendor-input"
-            type="text"
-            name="namaVendor"
-            required
-            defaultValue={editingEkspedisi?.namaVendor || ""}
-            placeholder="e.g. JNE Express"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
-          />
-          {formErrors.namaVendor && (
-            <p className="text-red-600 text-xs mt-1">
-              {formErrors.namaVendor[0]}
-            </p>
-          )}
-        </div>
+        <div className="space-y-4">
+          {/* Pilihan Jenis / Tipe Vendor */}
+          <div>
+            <span className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">
+              Jenis Vendor Ekspedisi <span className="text-red-500">*</span>
+            </span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setTipeVendor("reguler");
+                  if (!editingEkspedisi) {
+                    setSelectedBankSampahId("");
+                    setFormNamaVendor("");
+                    setFormNoTelepon("");
+                  }
+                }}
+                className={`p-3 rounded-xl border-2 text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                  tipeVendor === "reguler"
+                    ? "border-primary-500 bg-primary-50/60 ring-2 ring-primary-500/10"
+                    : "border-neutral-200 hover:border-neutral-300 bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      tipeVendor === "reguler"
+                        ? "bg-primary-600 text-white"
+                        : "bg-neutral-100 text-neutral-500"
+                    }`}
+                  >
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-neutral-800">
+                    Vendor Reguler
+                  </span>
+                </div>
+                <span className="text-[10px] text-neutral-500">
+                  Gojek, Grab, GoSend, Internal dsb.
+                </span>
+              </button>
 
-        <div>
-          <label
-            htmlFor="noTelepon-input"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Nomor Telepon Vendor
-          </label>
-          <input
-            id="noTelepon-input"
-            type="text"
-            name="noTelepon"
-            required
-            defaultValue={editingEkspedisi?.noTelepon || ""}
-            placeholder="e.g. 02129278888"
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
-          />
-          {formErrors.noTelepon && (
-            <p className="text-red-600 text-xs mt-1">
-              {formErrors.noTelepon[0]}
-            </p>
-          )}
-        </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setTipeVendor("bank-sampah-b");
+                  if (bankSampahBList.length > 0 && !selectedBankSampahId) {
+                    const first = bankSampahBList[0];
+                    setSelectedBankSampahId(String(first.id));
+                    setFormNamaVendor(`Bank Sampah Tipe B - ${first.name}`);
+                    setFormNoTelepon(first.noTelepon || "");
+                  }
+                }}
+                className={`p-3 rounded-xl border-2 text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                  tipeVendor === "bank-sampah-b"
+                    ? "border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/10"
+                    : "border-neutral-200 hover:border-neutral-300 bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                      tipeVendor === "bank-sampah-b"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-neutral-100 text-neutral-500"
+                    }`}
+                  >
+                    <Recycle className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-neutral-800">
+                    Bank Sampah Tipe B
+                  </span>
+                </div>
+                <span className="text-[10px] text-neutral-500">
+                  Armada jemput sampah SiCuan
+                </span>
+              </button>
+            </div>
+            <input type="hidden" name="tipe" value={tipeVendor} />
+            <input
+              type="hidden"
+              name="bankSampahId"
+              value={selectedBankSampahId}
+            />
+          </div>
 
-        <div>
-          <label
-            htmlFor="status-select"
-            className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
-          >
-            Status Vendor
-          </label>
-          <select
-            id="status-select"
-            name="status"
-            defaultValue={editingEkspedisi?.status || "Aktif"}
-            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-850"
-          >
-            <option value="Aktif">Aktif</option>
-            <option value="Nonaktif">Nonaktif</option>
-          </select>
-          {formErrors.status && (
-            <p className="text-red-600 text-xs mt-1">{formErrors.status[0]}</p>
+          {/* Jika Bank Sampah Tipe B: Dropdown Pilihan Akun Bank Sampah B */}
+          {tipeVendor === "bank-sampah-b" && (
+            <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2 animate-in fade-in duration-200">
+              <label
+                htmlFor="selectBankB"
+                className="block text-xs font-bold text-emerald-900"
+              >
+                Pilih Akun Bank Sampah Tipe B{" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="selectBankB"
+                value={selectedBankSampahId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedBankSampahId(id);
+                  const found = bankSampahBList.find(
+                    (b) => String(b.id) === id,
+                  );
+                  if (found) {
+                    setFormNamaVendor(`Bank Sampah Tipe B - ${found.name}`);
+                    setFormNoTelepon(found.noTelepon || "");
+                  }
+                }}
+                required
+                className="w-full px-3 py-2 border border-emerald-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-neutral-800 font-medium"
+              >
+                <option value="">-- Pilih Akun Bank Sampah Tipe B --</option>
+                {bankSampahBList.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.username}) {b.alamat ? `— ${b.alamat}` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-emerald-700">
+                Pilih akun mitra Bank Sampah Tipe B di atas. Data nama vendor
+                dan kontak telepon akan otomatis terisi serta terhubung
+                langsung.
+              </p>
+            </div>
           )}
+
+          <div>
+            <label
+              htmlFor="namaVendor-input"
+              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+            >
+              Nama Vendor Ekspedisi <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="namaVendor-input"
+              type="text"
+              name="namaVendor"
+              required
+              value={formNamaVendor}
+              onChange={(e) => setFormNamaVendor(e.target.value)}
+              placeholder="e.g. Bank Sampah Banjarbaru / JNE"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800 font-medium"
+            />
+            {formErrors.namaVendor && (
+              <p className="text-red-600 text-xs mt-1">
+                {formErrors.namaVendor[0]}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="noTelepon-input"
+              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+            >
+              Nomor Telepon Vendor <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="noTelepon-input"
+              type="text"
+              name="noTelepon"
+              required
+              value={formNoTelepon}
+              onChange={(e) => setFormNoTelepon(e.target.value)}
+              placeholder="e.g. 08123456789"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all font-mono text-neutral-800"
+            />
+            {formErrors.noTelepon && (
+              <p className="text-red-600 text-xs mt-1">
+                {formErrors.noTelepon[0]}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="status-select"
+              className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1"
+            >
+              Status Operasional Vendor
+            </label>
+            <select
+              id="status-select"
+              name="status"
+              defaultValue={editingEkspedisi?.status || "Aktif"}
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all text-neutral-800"
+            >
+              <option value="Aktif">Aktif</option>
+              <option value="Nonaktif">Nonaktif</option>
+            </select>
+            {formErrors.status && (
+              <p className="text-red-600 text-xs mt-1">
+                {formErrors.status[0]}
+              </p>
+            )}
+          </div>
         </div>
       </FormModal>
 

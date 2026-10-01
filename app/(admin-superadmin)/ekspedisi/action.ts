@@ -5,13 +5,37 @@ import { revalidatePath } from "next/cache";
 import { verifyIsSuperadmin } from "@/app/lib/auth-actions";
 import type { ActionState } from "@/app/types";
 import { db } from "@/db";
-import { ekspedisi, insertEkspedisiSchema } from "@/db/schema";
+import { ekspedisi, insertEkspedisiSchema, nasabah } from "@/db/schema";
+
+export async function getBankSampahBList() {
+  try {
+    const list = await db.query.nasabah.findMany({
+      where: and(
+        eq(nasabah.role, "bank-sampah-b"),
+        eq(nasabah.status, "Aktif"),
+      ),
+      orderBy: [asc(nasabah.name)],
+      columns: {
+        id: true,
+        name: true,
+        username: true,
+        noTelepon: true,
+        alamat: true,
+      },
+    });
+    return list;
+  } catch (error) {
+    console.error("Gagal mengambil daftar bank sampah tipe B:", error);
+    return [];
+  }
+}
 
 export async function getEkspedisi(params?: {
   page?: number;
   limit?: number;
   search?: string;
   status?: string;
+  tipe?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }) {
@@ -20,6 +44,7 @@ export async function getEkspedisi(params?: {
   const offset = (page - 1) * limit;
   const search = params?.search ?? "";
   const status = params?.status ?? "";
+  const tipe = params?.tipe ?? "";
   const sortBy = params?.sortBy ?? "id";
   const sortOrder = params?.sortOrder ?? "desc";
 
@@ -36,6 +61,10 @@ export async function getEkspedisi(params?: {
 
   if (status) {
     whereConditions.push(eq(ekspedisi.status, status));
+  }
+
+  if (tipe) {
+    whereConditions.push(eq(ekspedisi.tipe, tipe));
   }
 
   const queryCondition =
@@ -64,16 +93,29 @@ export async function getEkspedisi(params?: {
   } else if (sortBy === "status") {
     orderColumn =
       sortOrder === "desc" ? desc(ekspedisi.status) : asc(ekspedisi.status);
+  } else if (sortBy === "tipe") {
+    orderColumn =
+      sortOrder === "desc" ? desc(ekspedisi.tipe) : asc(ekspedisi.tipe);
   }
 
-  // Get data
-  const data = await db
-    .select()
-    .from(ekspedisi)
-    .where(queryCondition)
-    .orderBy(orderColumn)
-    .limit(limit)
-    .offset(offset);
+  // Get data with relation to bankSampah
+  const data = await db.query.ekspedisi.findMany({
+    where: queryCondition,
+    orderBy: [orderColumn],
+    limit,
+    offset,
+    with: {
+      bankSampah: {
+        columns: {
+          id: true,
+          name: true,
+          username: true,
+          noTelepon: true,
+          alamat: true,
+        },
+      },
+    },
+  });
 
   return { data, total };
 }
@@ -88,14 +130,22 @@ export async function createEkspedisi(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const namaVendor = formData.get("namaVendor") as string;
-  const noTelepon = formData.get("noTelepon") as string;
-  const status = formData.get("status") as string;
+  const namaVendor = (formData.get("namaVendor") as string)?.trim();
+  const noTelepon = (formData.get("noTelepon") as string)?.trim();
+  const status = (formData.get("status") as string) || "Aktif";
+  const tipe = (formData.get("tipe") as string) || "reguler";
+  const bankSampahIdRaw = formData.get("bankSampahId") as string;
+  const bankSampahId =
+    tipe === "bank-sampah-b" && bankSampahIdRaw
+      ? Number(bankSampahIdRaw)
+      : null;
 
   const parsed = ekspedisiFormSchema.safeParse({
     namaVendor,
     noTelepon,
     status,
+    tipe,
+    bankSampahId,
   });
 
   if (!parsed.success) {
@@ -110,6 +160,7 @@ export async function createEkspedisi(
   }
 
   revalidatePath("/dashboard/ekspedisi");
+  revalidatePath("/ekspedisi");
   return { success: true };
 }
 
@@ -118,14 +169,22 @@ export async function updateEkspedisi(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const namaVendor = formData.get("namaVendor") as string;
-  const noTelepon = formData.get("noTelepon") as string;
-  const status = formData.get("status") as string;
+  const namaVendor = (formData.get("namaVendor") as string)?.trim();
+  const noTelepon = (formData.get("noTelepon") as string)?.trim();
+  const status = (formData.get("status") as string) || "Aktif";
+  const tipe = (formData.get("tipe") as string) || "reguler";
+  const bankSampahIdRaw = formData.get("bankSampahId") as string;
+  const bankSampahId =
+    tipe === "bank-sampah-b" && bankSampahIdRaw
+      ? Number(bankSampahIdRaw)
+      : null;
 
   const parsed = ekspedisiFormSchema.safeParse({
     namaVendor,
     noTelepon,
     status,
+    tipe,
+    bankSampahId,
   });
 
   if (!parsed.success) {
@@ -146,6 +205,7 @@ export async function updateEkspedisi(
   }
 
   revalidatePath("/dashboard/ekspedisi");
+  revalidatePath("/ekspedisi");
   return { success: true };
 }
 
@@ -169,9 +229,19 @@ export async function deleteEkspedisi(id: number): Promise<ActionState> {
 }
 
 export async function getAllActiveEkspedisi() {
-  return db
-    .select()
-    .from(ekspedisi)
-    .where(eq(ekspedisi.status, "Aktif"))
-    .orderBy(asc(ekspedisi.namaVendor));
+  return db.query.ekspedisi.findMany({
+    where: eq(ekspedisi.status, "Aktif"),
+    orderBy: [asc(ekspedisi.namaVendor)],
+    with: {
+      bankSampah: {
+        columns: {
+          id: true,
+          name: true,
+          username: true,
+          noTelepon: true,
+          alamat: true,
+        },
+      },
+    },
+  });
 }

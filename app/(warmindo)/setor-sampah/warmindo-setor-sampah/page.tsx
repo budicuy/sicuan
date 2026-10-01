@@ -72,7 +72,13 @@ export default function WarmindoSetorSampah() {
   ];
 
   const [bankSampahList, setBankSampahList] = useState<
-    { id: number; name: string; username: string; alamat: string | null }[]
+    {
+      id: number;
+      name: string;
+      username: string;
+      alamat: string | null;
+      role?: string;
+    }[]
   >([]);
   const [selectedBankSampahId, setSelectedBankSampahId] = useState("");
   const [metodeSetor, setMetodeSetor] = useState<"ekspedisi" | "langsung">(
@@ -539,11 +545,39 @@ export default function WarmindoSetorSampah() {
                     ) : (
                       bankSampahList.map((bs) => (
                         <option key={bs.id} value={bs.id}>
-                          {bs.name} ({bs.username})
+                          {bs.name} (
+                          {bs.role === "bank-sampah-b"
+                            ? "Bank Sampah Tipe B - Penjemputan"
+                            : "Bank Sampah Tipe A"}
+                          )
                         </option>
                       ))
                     )}
                   </select>
+
+                  {/* Keterangan Bank Sampah Tipe B jika dipilih */}
+                  {(() => {
+                    const selected = bankSampahList.find(
+                      (bs) => String(bs.id) === selectedBankSampahId,
+                    );
+                    if (selected?.role === "bank-sampah-b") {
+                      return (
+                        <div className="mt-2.5 p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs space-y-1 animate-in fade-in duration-200">
+                          <p className="font-bold flex items-center gap-1.5 text-teal-900">
+                            <Truck className="w-4 h-4 text-teal-600" />
+                            Armada Penjemputan Bank Sampah Tipe B
+                          </p>
+                          <p className="text-teal-700 text-[11px] leading-relaxed">
+                            {selected.name} menyediakan armada penjemputan
+                            sampah langsung ke lokasi warung Warmindo Anda.
+                            Pilih metode <strong>Via Ekspedisi</strong> agar tim
+                            Bank Sampah Tipe B dapat menjemput sampah Anda.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   {/* Metode Setor Pilihan */}
                   <div className="mt-3 space-y-2">
@@ -637,9 +671,9 @@ export default function WarmindoSetorSampah() {
 
                     {/* Info ekspedisi */}
                     {metodeSetor === "ekspedisi" && (
-                      <p className="text-[11px] text-neutral-400 mt-1">
-                        Sampah akan dijemput oleh kurir ekspedisi setelah
-                        diverifikasi Admin.
+                      <p className="text-[11px] text-neutral-500 mt-1">
+                        Sampah akan dijemput oleh armada penjemput (Bank Sampah
+                        Tipe B atau kurir ekspedisi) setelah diverifikasi Admin.
                       </p>
                     )}
                   </div>

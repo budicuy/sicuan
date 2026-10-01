@@ -3,7 +3,17 @@
  * Re-ekspor langsung dari Drizzle ORM schemas.
  */
 
-export type { Ekspedisi } from "@/db/schema/ekspedisi";
+import type { Ekspedisi as BaseEkspedisi } from "@/db/schema/ekspedisi";
+
+export type Ekspedisi = BaseEkspedisi & {
+  bankSampah?: {
+    id: number;
+    name: string;
+    username: string;
+    noTelepon?: string | null;
+    alamat?: string | null;
+  } | null;
+};
 export type { HargaSampah } from "@/db/schema/harga-sampah";
 export type { PoinSampah } from "@/db/schema/poin-sampah";
 export type { PoinSampahWarmindo } from "@/db/schema/poin-warmindo";

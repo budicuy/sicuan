@@ -10,3 +10,4 @@ export * from "@/app/types/nasabah";
 export * from "@/app/types/pencairan";
 export * from "@/app/types/raw-material";
 export * from "@/app/types/setoran";
+export * from "@/app/types/surat-perjanjian";

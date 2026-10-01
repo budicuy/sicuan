@@ -9,6 +9,7 @@ import {
   rewardWarmindo,
 } from "@/db/schema/reward-warmindo";
 import { setorSampah } from "@/db/schema/setor-sampah";
+import { suratPerjanjian } from "@/db/schema/surat-perjanjian";
 
 export const usersRelations = relations(users, ({ one }) => ({
   profile: one(nasabah, {
@@ -24,6 +25,8 @@ export const nasabahRelations = relations(nasabah, ({ one, many }) => ({
   }),
   setorSampah: many(setorSampah),
   penukaranRewardWarmindo: many(penukaranRewardWarmindo),
+  suratPerjanjian: many(suratPerjanjian),
+  ekspedisi: many(ekspedisi),
 }));
 
 export const setorSampahRelations = relations(setorSampah, ({ one }) => ({
@@ -100,3 +103,25 @@ export const rewardTopKontributorRelations = relations(
     }),
   }),
 );
+
+export const suratPerjanjianRelations = relations(
+  suratPerjanjian,
+  ({ one }) => ({
+    mitra: one(nasabah, {
+      fields: [suratPerjanjian.userId],
+      references: [nasabah.id],
+    }),
+    suratSebelumnya: one(suratPerjanjian, {
+      fields: [suratPerjanjian.suratSebelumnyaId],
+      references: [suratPerjanjian.id],
+    }),
+  }),
+);
+
+export const ekspedisiRelations = relations(ekspedisi, ({ one, many }) => ({
+  bankSampah: one(nasabah, {
+    fields: [ekspedisi.bankSampahId],
+    references: [nasabah.id],
+  }),
+  setorSampah: many(setorSampah),
+}));

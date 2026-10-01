@@ -82,7 +82,7 @@ export default function LaporanWarmindoPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [ekspedisiList, setEkspedisiList] = useState<
-    { id: number; namaVendor: string; noTelepon: string }[]
+    { id: number; namaVendor: string; noTelepon: string; tipe?: string }[]
   >([]);
   const [selectedEkspedisiId, setSelectedEkspedisiId] = useState<string>("");
   const [selectedEkspedisiMap, setSelectedEkspedisiMap] = useState<
@@ -335,6 +335,9 @@ export default function LaporanWarmindoPage() {
                   ) : (
                     ekspedisiList.map((e) => (
                       <option key={e.id} value={e.id}>
+                        {e.tipe === "bank-sampah-b"
+                          ? "🚛 [Bank Sampah B] "
+                          : ""}
                         {e.namaVendor}
                       </option>
                     ))

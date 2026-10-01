@@ -26,7 +26,10 @@ import { hargaSampah, nasabah, setorSampah } from "@/db/schema";
 export async function getBankSampahList() {
   try {
     const list = await db.query.nasabah.findMany({
-      where: and(eq(nasabah.role, "bank-sampah"), eq(nasabah.status, "Aktif")),
+      where: and(
+        or(eq(nasabah.role, "bank-sampah"), eq(nasabah.role, "bank-sampah-b")),
+        eq(nasabah.status, "Aktif"),
+      ),
       orderBy: [asc(nasabah.name)],
     });
     return list.map((item) => ({
@@ -34,6 +37,7 @@ export async function getBankSampahList() {
       name: item.name,
       username: item.username,
       alamat: item.alamat ?? null,
+      role: item.role,
     }));
   } catch (error) {
     console.error("Gagal mengambil daftar bank sampah:", error);

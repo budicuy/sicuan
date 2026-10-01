@@ -1,4 +1,4 @@
-import { and, count, eq, isNotNull, or } from "drizzle-orm";
+import { and, count, eq, isNotNull, lte, or } from "drizzle-orm";
 import { decodeJwt } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -8,6 +8,7 @@ import {
   pencairanDana,
   penukaranRewardWarmindo,
   setorSampah,
+  suratPerjanjian,
 } from "@/db/schema";
 
 async function logoutAction() {
@@ -108,6 +109,25 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
 
   const countReward = pendingReward?.count ?? 0;
 
+  // Fetch expired surat perjanjian (PKS) count (surat lewat 1 bulan / status expired)
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [expiredPks] = await db
+    .select({ count: count() })
+    .from(suratPerjanjian)
+    .where(
+      and(
+        or(
+          eq(suratPerjanjian.status, "expired"),
+          and(
+            eq(suratPerjanjian.status, "aktif"),
+            lte(suratPerjanjian.tanggalBerakhir, todayStr),
+          ),
+        ),
+      ),
+    );
+
+  const countExpiredPks = expiredPks?.count ?? 0;
+
   const sidebarItems: import("@/app/components/shared/sidebar").SidebarItem[] =
     [
       {
@@ -115,6 +135,13 @@ export default async function AdminSuperadminLayout({ children }: LayoutProps) {
         href: "/dashboard/admin-dashboard",
         label: "Ringkasan",
         icon: "LayoutDashboard",
+      },
+      {
+        type: "link",
+        href: "/perjanjian-kerjasama",
+        label: "Perjanjian Kerja Sama",
+        icon: "BookOpen",
+        badgeCount: countExpiredPks,
       },
       {
         type: "group",
